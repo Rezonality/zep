@@ -1,0 +1,80 @@
+language: cpp
+dist: trusty
+
+linux-gcc: &linux-gcc
+  os: linux
+  compiler: gcc
+  addons:
+    apt:
+      sources:
+        - ubuntu-toolchain-r-test
+      packages:
+        - g++-6
+        - cmake
+        
+linux-clang: &linux-clang
+  os: linux
+  compiler: clang
+  addons:
+    apt:
+      sources:
+          - ubuntu-toolchain-r-test
+      packages:
+        - clang-3.8
+        - cmake
+        - g++-6
+        
+osx-gcc: &osx-gcc
+  os: osx
+  osx_image: xcode8.2
+  compiler: gcc
+
+osx-clang: &osx-clang
+  os: osx
+  osx_image: xcode8.2
+  compiler: clang gcc
+
+matrix:
+  include:
+    - <<: *linux-gcc
+      env: BUILD_TYPE=Debug TEST_TARGET=test CMAKE_C_COMPILER=gcc-6 CMAKE_CXX_COMPILER=g++-6
+    - <<: *linux-gcc
+      env: BUILD_TYPE=Release TEST_TARGET=test CMAKE_C_COMPILER=gcc-6 CMAKE_CXX_COMPILER=g++-6
+    - <<: *linux-clang
+      env: BUILD_TYPE=Debug TEST_TARGET=test CMAKE_C_COMPILER=clang-3.8 CMAKE_CXX_COMPILER=clang++-3.8
+    - <<: *linux-clang
+      env: BUILD_TYPE=Release TEST_TARGET=test CMAKE_C_COMPILER=clang-3.8 CMAKE_CXX_COMPILER=clang++-3.8
+    - <<: *linux-gcc
+      env: BUILD_TYPE=Coverage TEST_TARGET=gen-cov CMAKE_C_COMPILER=gcc-6 CMAKE_CXX_COMPILER=g++-6 GCOV=gcov-6
+    - <<: *linux-gcc
+      env:
+        - BUILD_TYPE=Coverity CMAKE_C_COMPILER=gcc-6 CMAKE_CXX_COMPILER=g++-6
+        - COVERITY_SCAN_PROJECT_NAME="cmaughan/zep"
+        - COVERITY_SCAN_NOTIFICATION_EMAIL="${TRAVIS_COVERITY_EMAIL}"
+        - COVERITY_SCAN_BRANCH_PATTERN="coverity_scan"
+        - COVERITY_SCAN_BUILD_COMMAND_PREPEND="cov-configure --comptype gcc --compiler gcc-6 --template"
+        - COVERITY_SCAN_BUILD_COMMAND="cmake --build ."
+        - secure: "satF0frPWSQsvIx+qsNpeSZn62etbn6Z6tX0qtrgacdxfKdMbLgEglM+xcs2pKlhKPLTZzEtZdnRUPjfzXa56xkpuE+p4Bq5MUQVsHaoY7c0W6XVl0RvyiThiG3wn+lNuw33x11jsJl4FhmDBbO5TbZeLbPxoPn7Ww02cQsE5bLpFpWmEi7hod1pAIufcMwiJu3kBq1SbWfAqShbYE22YB469dwLGD6YtTz9aE0xbrJakTxhlTcmz3xgzJBpUrnrNepBHJox6aJ8zaZyfNitt8wqdoyD0Bb6ZKZcNSwWfw86wnqI2kO+Zi3IXkgitaYx3h7BpXK+00aEY1Yc9Hbqfu1ARoOCcdcTma68lRdRPSqEqsg+zb3+QpApLJ+Lp0K4l5KAYsmvsG/DPDjkyf+sK7douJaQ3voZA2wtCvSlSSuWWPnUjqXAKCeDRIKUM9t36XC7Dl3u9tJQ+Bjmx34j3neLQL4P+bBjpcWwNwLpxBX//ltYaqUGdUoezGM30X8lOncsewq6ebf7973j4iMwFCFRwna5pketCKjOESbGoKuRImf9mDox0MWUz1VUW8sUAyvb1+9F5454AEdGLKHdKiADXkWyXssyoYGWHQhxvMqyevUHOu4DnvjNtVKA88542sQjJJ6LHCnwIWaB3MVUz9PpkbYmhNy15NbrC43dwCQ="
+    - <<: *osx-clang
+      env: BUILD_TYPE=Debug TEST_TARGET=test CMAKE_C_COMPILER=clang CMAKE_CXX_COMPILER=clang++
+    - <<: *osx-clang
+      env: BUILD_TYPE=Release TEST_TARGET=test CMAKE_C_COMPILER=clang CMAKE_CXX_COMPILER=clang++
+      
+before_install: |
+  if test "${BUILD_TYPE}" = "Coverity"; then
+    if test "${TRAVIS_BRANCH}" != "${COVERITY_SCAN_BRANCH_PATTERN}"; then
+      exit 0
+    fi
+    if test "${TRAVIS_PULL_REQUEST}" != "false"; then
+      exit 0
+    fi
+  fi     
+
+install: |
+  source scripts/travis_install.sh
+
+script: |
+  source scripts/travis_script.sh
+
+after_success: |
+  source ${TRAVIS_BUILD_DIR}/scripts/travis_success.sh    
