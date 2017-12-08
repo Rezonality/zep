@@ -1113,7 +1113,7 @@ std::string ZepMode_Vim::GetCommandAndCount(std::string strCommand, int& count)
     return command;
 }
 
-void ZepMode_Vim::EnterMode()
+void ZepMode_Vim::Enable()
 {
     if (m_pCurrentWindow)
     {

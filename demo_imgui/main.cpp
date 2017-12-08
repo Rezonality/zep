@@ -83,8 +83,10 @@ int main(int, char**)
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+    // Create an editor
     auto spEditor = std::make_unique<ZepEditor_ImGui>();
-    
+   
+    // Add a shader
     ZepBuffer* pBuffer = spEditor->AddBuffer("shader.vert");
     pBuffer->SetText(shader.c_str());
 
@@ -103,6 +105,8 @@ int main(int, char**)
         }
         else
         {
+            // Save battery by skipping display if not required.
+            // This will check for cursor flash, for example, to keep that updated.
             if (!spEditor->GetDisplay()->RefreshRequired())
             {
                 continue;
@@ -111,20 +115,12 @@ int main(int, char**)
 
         ImGui_ImplSdlGL3_NewFrame(window);
 
-        bool open = true;
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(.1f, .1f, .1f, 1.0f));
+        ImGui::Begin("Zep");
 
-        auto size = ImGui::GetIO().DisplaySize;
-        ImGui::SetNextWindowSize(size, ImGuiCond_Always);
-        ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-        ImGui::Begin("Zep", &open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
-
-        spEditor->Display(toNVec2f(ImGui::GetCursorScreenPos()), toNVec2f(size));
+        // Display the editor inside this window
+        spEditor->Display(toNVec2f(ImGui::GetCursorScreenPos()), toNVec2f(ImGui::GetContentRegionAvail()));
 
         ImGui::End();
-        ImGui::PopStyleColor(1);
-        ImGui::PopStyleVar(1);
 
         // Rendering
         glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
