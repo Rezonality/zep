@@ -115,7 +115,7 @@ int main(int, char**)
 
         ImGui_ImplSdlGL3_NewFrame(window);
 
-        ImGui::Begin("Zep");
+        ImGui::Begin("Zep", nullptr, ImVec2(500, 500));
 
         // Display the editor inside this window
         spEditor->Display(toNVec2f(ImGui::GetCursorScreenPos()), toNVec2f(ImGui::GetContentRegionAvail()));

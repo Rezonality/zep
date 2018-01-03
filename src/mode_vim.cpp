@@ -159,6 +159,7 @@ ZepMode_Vim::~ZepMode_Vim()
 
 void ZepMode_Vim::Init()
 {
+    m_spInsertEscapeTimer = std::make_shared<Timer>();
     for (int i = 0; i <= 9; i++)
     {
         GetEditor().SetRegister('0' + i, "");
