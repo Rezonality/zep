@@ -56,7 +56,7 @@ void ZepEditor::SetMode(const std::string& mode)
     if (itrMode != m_mapModes.end())
     {
         m_pCurrentMode = itrMode->second.get();
-        m_pCurrentMode->EnterMode();
+        m_pCurrentMode->Enable();
     }
 }
 

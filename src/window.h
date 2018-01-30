@@ -49,7 +49,7 @@ struct Region
 };
 
 // A really big cursor move; which will likely clamp
-static const long MaxCursorMove = long(0xFFFFFFFFF);
+static const long MaxCursorMove = long(0xFFFFFFF);
 
 // Line information, calculated during display update.
 // This is a screen line, not a text buffer line, since we may wrap across multiple lines

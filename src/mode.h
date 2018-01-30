@@ -57,7 +57,7 @@ public:
     // Keys handled by modes
     virtual void AddCommandText(std::string strText);
     virtual void AddKeyPress(uint32_t key, uint32_t modifierKeys = ModifierKey::None) = 0;
-    virtual void EnterMode() = 0;
+    virtual void Enable() = 0;
     virtual void Notify(std::shared_ptr<ZepMessage> message) override {}
     virtual void AddCommand(std::shared_ptr<ZepCommand> spCmd);
     virtual void SetCurrentWindow(ZepWindow* pWindow);

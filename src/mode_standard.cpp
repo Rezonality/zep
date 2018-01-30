@@ -64,16 +64,23 @@ void ZepMode_Standard::SetCurrentWindow(ZepWindow* pWindow)
     if (m_pCurrentWindow != pWindow)
     {
         ZepMode::SetCurrentWindow(pWindow);
+        SwitchMode(EditorMode::Insert);
     }
 }
 
-void ZepMode_Standard::EnterMode()
+void ZepMode_Standard::Enable()
 {
+    SwitchMode(EditorMode::Insert);
+}
+
+void ZepMode_Standard::SwitchMode(EditorMode mode)
+{
+    assert(mode == EditorMode::Insert || mode == EditorMode::Visual);
+    m_currentMode = mode;
     if (m_pCurrentWindow)
     {
-        m_pCurrentWindow->SetCursorMode(CursorMode::Insert);
+        m_pCurrentWindow->SetCursorMode(mode == EditorMode::Insert ? CursorMode::Insert : CursorMode::Visual);
     }
-    m_currentMode = EditorMode::Insert;
 }
 
 void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
@@ -106,7 +113,11 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     };
     CommandOperation op = CommandOperation::None;
 
-    if (key == 'x' && (modifierKeys & ModifierKey::Ctrl))
+    if (key == ExtKeys::ESCAPE)
+    {
+        SwitchMode(EditorMode::Insert);
+    }
+    else if (key == 'x' && (modifierKeys & ModifierKey::Ctrl))
     {
         op = CommandOperation::Delete;
         copyRegion = true;
@@ -192,12 +203,12 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     {
         if (modifierKeys & ModifierKey::Ctrl)
         {
-            m_pCurrentWindow->MoveCursorTo(pBuffer->EndLocation());
+            m_pCurrentWindow->MoveCursorTo(pBuffer->EndLocation(), LineLocation::LineEnd);
         }
         else
         {
-            auto pos = pBuffer->GetLinePos(pLineInfo->lineNumber, LineLocation::LineCRBegin);
-            m_pCurrentWindow->MoveCursorTo(pos);
+            auto pos = pBuffer->GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd);
+            m_pCurrentWindow->MoveCursorTo(pos, LineLocation::LineEnd);
         }
     }
     else if (key == ExtKeys::RIGHT)
@@ -205,11 +216,15 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         if (modifierKeys & ModifierKey::Ctrl)
         {
             auto block = pBuffer->GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Forward);
-            m_pCurrentWindow->MoveCursorTo(WordMotion(block));
+            m_pCurrentWindow->MoveCursorTo(WordMotion(block), Zep::LineLocation::LineEnd);
         }
         else
         {
-            m_pCurrentWindow->MoveCursor(Zep::NVec2i(1, 0));
+            if (cursor.x == pLineInfo->Length() - 1)
+            {
+                m_pCurrentWindow->MoveCursor(Zep::NVec2i(-MaxCursorMove, 1), Zep::LineLocation::LineEnd);
+            }
+            m_pCurrentWindow->MoveCursor(Zep::NVec2i(1, 0), Zep::LineLocation::LineEnd);
         }
     }
     else if (key == ExtKeys::LEFT)
@@ -221,7 +236,14 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         }
         else
         {
-            m_pCurrentWindow->MoveCursor(Zep::NVec2i(-1, 0));
+            if (cursor.x == 0)
+            {
+                m_pCurrentWindow->MoveCursor(Zep::NVec2i(MaxCursorMove, -1), Zep::LineLocation::LineEnd);
+            }
+            else
+            {
+                m_pCurrentWindow->MoveCursor(Zep::NVec2i(-1, 0), Zep::LineLocation::LineEnd);
+            }
         }
     }
     else if (key == ExtKeys::UP)

@@ -38,17 +38,17 @@ public:
     ~ZepMode_Vim();
 
     virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
-    virtual void EnterMode() override;
+    virtual void Enable() override;
     virtual void SetCurrentWindow(ZepWindow* pWindow) override;
 
 private:
     void HandleInsert(uint32_t key);
     std::string GetCommandAndCount(std::string strCommand, int& count);
     bool GetBlockOpRange(const std::string& op, EditorMode mode, BufferLocation& beginRange, BufferLocation& endRange, BufferLocation& cursorAfter) const;
-    virtual void SwitchMode(EditorMode mode);
-    virtual void ResetCommand();
-    virtual bool GetCommand(std::string strCommand, uint32_t lastKey, uint32_t modifiers, EditorMode mode, int count, CommandResult& commandResult);
-    virtual void Init();
+    void SwitchMode(EditorMode mode);
+    void ResetCommand();
+    bool GetCommand(std::string strCommand, uint32_t lastKey, uint32_t modifiers, EditorMode mode, int count, CommandResult& commandResult);
+    void Init();
 
     std::string m_currentCommand;
     std::string m_lastCommand;

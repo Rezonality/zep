@@ -11,10 +11,12 @@ public:
     ZepMode_Standard(ZepEditor& editor);
     ~ZepMode_Standard();
 
-    virtual void SwitchMode(EditorMode mode) {};
     virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
-    virtual void EnterMode() override;
+    virtual void Enable() override;
     virtual void SetCurrentWindow(ZepWindow* pWindow) override;
+
+private:
+    virtual void SwitchMode(EditorMode mode);
 };
 
 } // Zep
