@@ -72,6 +72,7 @@ int main(int, char**)
 
     // Less packed font in X
     ImGuiIO& io = ImGui::GetIO();
+
     ImFontConfig config;
     config.OversampleH = 3;
     config.OversampleV = 1;
