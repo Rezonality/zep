@@ -256,7 +256,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     }
     else if (key == ExtKeys::RETURN)
     {
-        ch = "\r\n";
+        ch = "\n";
         op = CommandOperation::Insert;
         cursorAfter = pBuffer->LocationFromOffsetByChars(startOffset, long(ch.length()));
     }

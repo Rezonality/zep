@@ -269,10 +269,10 @@ void ZepWindow::MoveCursor(const NVec2i& distance, LineLocation clampLocation)
     }
     // Scroll the whole document down if we are near the bottom
     else if ((target.y > long(visibleLines.size()) - 4) &&
-        m_pCurrentBuffer->GetProcessedLine() > bufferCL.y + visibleLines.size())
+        m_pCurrentBuffer->GetLineCount() > bufferCL.y + visibleLines.size())
     {
         bufferCL.y += distance.y;
-        bufferCL.y = std::min(long(m_pCurrentBuffer->GetProcessedLine() - visibleLines.size()), bufferCL.y);
+        bufferCL.y = std::min(long(m_pCurrentBuffer->GetLineCount() - visibleLines.size()), bufferCL.y);
         bufferCL.y = std::max(0l, bufferCL.y);
         target.y = cursorCL.y;
 
@@ -381,7 +381,7 @@ void ZepWindow::PreDisplay(const DisplayRegion& region)
         {
             // We haven't processed this line yet, so we can't display anything
             // else
-            if (m_pCurrentBuffer->GetProcessedLine() <= lineInfo.lineNumber)
+            if (m_pCurrentBuffer->GetLineCount() <= lineInfo.lineNumber)
                 break;
 
             NVec2i columnOffsets;
@@ -400,7 +400,7 @@ void ZepWindow::PreDisplay(const DisplayRegion& region)
 
             // Walk from the start of the line to the end of the line (in buffer chars)
             // Line:
-            // [beginoffset]ABCDEF\r\n[endoffset]
+            // [beginoffset]ABCDEF\n[endoffset]
             for (auto ch = columnOffsets.x; ch < columnOffsets.y; ch++)
             {
                 const utf8* pCh = &textBuffer[ch];
@@ -416,8 +416,7 @@ void ZepWindow::PreDisplay(const DisplayRegion& region)
                 }
 
                 // Shown only one char for end of line
-                if (*pCh == '\r' ||
-                    *pCh == '\n' ||
+                if (*pCh == '\n' ||
                     *pCh == 0)
                 {
                     inEndLine = true;
@@ -576,8 +575,7 @@ bool ZepWindow::DisplayLine(const LineInfo& lineInfo, const DisplayRegion& regio
         }
 
         // Shown only one char for end of line
-        if (*pCh == '\r' ||
-            *pCh == '\n' ||
+        if (*pCh == '\n' ||
             *pCh == 0)
         {
             invalidChar = '@' + *pCh;

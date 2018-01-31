@@ -112,12 +112,10 @@ public:
 
     ThreadPool& GetThreadPool() { return m_threadPool; }
 
-    long GetProcessedLine() const { return m_processedLine; }
-    //void LockRead();
-
     bool Delete(const BufferLocation& startOffset, const BufferLocation& endOffset, const BufferLocation& cursorAfter = BufferLocation{ -1 });
     bool Insert(const BufferLocation& startOffset, const std::string& str, const BufferLocation& cursorAfter = BufferLocation{ -1 });
 
+    long GetLineCount() const { return long(m_lineEnds.size()); }
     long LineFromOffset(long offset) const;
     BufferLocation LocationFromOffset(const BufferLocation& location, long offset) const;
     BufferLocation LocationFromOffset(long offset) const;
@@ -134,25 +132,22 @@ public:
     const std::string& GetName() const { return m_strName; }
 
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
-    void StopThreads(bool immediate = true);
+
 private:
     // Internal
     GapBuffer<utf8>::const_iterator SearchWord(uint32_t searchType, GapBuffer<utf8>::const_iterator itrBegin, GapBuffer<utf8>::const_iterator itrEnd, SearchDirection dir) const;
 
-    void FindLineEnds();
+    void ProcessInput(const std::string& str);
 
 private:
     bool m_dirty;                              // Is the text modified?
     GapBuffer<utf8> m_buffer;                  // Storage for the text - a gap buffer for efficiency
     std::vector<long> m_lineEnds;              // End of each line
-    mutable std::shared_mutex m_lineEndsLock;
     ThreadPool m_threadPool;
     uint32_t m_flags;
-    std::future<void> m_lineCountResult;
-    std::atomic<long> m_processedLine;
-    std::atomic<bool> m_stop = {false};
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::string m_strName;
+    bool m_bStrippedCR;
 };
 
 } // Zep

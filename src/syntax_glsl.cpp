@@ -96,8 +96,8 @@ void ZepSyntaxGlsl::UpdateSyntax(long startOffset, long endOffset)
     // for now assume the rest of the file needs updating
     auto itrEnd = buffer.end();
 
-    std::string delim(" \t.\r\n;(){}=");
-    std::string lineEnd("\r\n");
+    std::string delim(" \t.\n;(){}=");
+    std::string lineEnd("\n");
 
     // Walk backwards to the previous line
     while (itrCurrent > buffer.begin())

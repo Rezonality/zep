@@ -227,7 +227,7 @@ COMMAND_TEST(delete_cw_inside_2, "one two three", "llllllllcwabc", "one two abc"
 COMMAND_TEST(delete_cW, "one two! three", "llllcWabc", "one abcthree");
 
 // paste
-COMMAND_TEST(paste_p_at_end_cr, "(one) two three\r\n", "vllllxlllllllllllljp", " two three\r\n(one)");
+COMMAND_TEST(paste_p_at_end_cr, "(one) two three\r\n", "vllllxlllllllllllljp", " two three\n(one)"); // Will replace \r
 COMMAND_TEST(paste_p_at_end, "(one) two three", "vllllxllllllllllllp", " two three(one)");
 COMMAND_TEST(paste_P_at_end, "(one) two three", "vllllxllllllllllllP", " two thre(one)e");
 COMMAND_TEST(paste_P_middle, "(one) two three", "llllllvlylp", "(one) twtwo three");

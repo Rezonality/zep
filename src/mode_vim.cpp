@@ -59,8 +59,6 @@
 // visual-repeat (dot command should use last visual selection range)
 
 // 'R'/'r' overstrike
-
-// Standardize buffer format (remove \r\n, use just \n)
 // Standard Mode
 
 namespace
@@ -876,7 +874,7 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
                     if (!reg.second.text.empty())
                     {
                         std::string displayText = reg.second.text;
-                        displayText = StringUtils::ReplaceString(displayText, "\r\n", "^J");
+                        displayText = StringUtils::ReplaceString(displayText, "\n", "^J");
                         str << "\"" << reg.first << "   " << displayText << '\n';
                     }
                 }
@@ -893,7 +891,7 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
                     if (!buffer->GetName().empty())
                     {
                         std::string displayText = buffer->GetName();
-                        displayText = StringUtils::ReplaceString(displayText, "\r\n", "^J");
+                        displayText = StringUtils::ReplaceString(displayText, "\n", "^J");
                         if (pBuffer == buffer.get())
                         {
                             str << "*";
@@ -1333,7 +1331,7 @@ void ZepMode_Vim::HandleInsert(uint32_t key)
     std::string ch((char*)&key);
     if (key == ExtKeys::RETURN)
     {
-        ch = "\r\n";
+        ch = "\n";
     }
     else if (key == ExtKeys::TAB)
     {

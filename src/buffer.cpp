@@ -3,6 +3,7 @@
 #include <cstdlib>
 
 #include "buffer.h"
+#include "utils/stringutils.h"
 
 #include <algorithm>
 #include <regex>
@@ -31,22 +32,6 @@ ZepBuffer::ZepBuffer(ZepEditor& editor, const std::string& strName)
 
 ZepBuffer::~ZepBuffer()
 {
-    // TODO: Ensure careful shutdown
-    StopThreads();
-}
-
-void ZepBuffer::StopThreads(bool immediate)
-{
-    // Stop the thread, wait for it
-    if (immediate)
-    {
-        m_stop = true;
-    }
-    if (m_lineCountResult.valid())
-    {
-        m_lineCountResult.get();
-    }
-    m_stop = false;
 }
 
 void ZepBuffer::Notify(std::shared_ptr<ZepMessage> message)
@@ -56,15 +41,8 @@ void ZepBuffer::Notify(std::shared_ptr<ZepMessage> message)
 
 BufferLocation ZepBuffer::LocationFromOffsetByChars(const BufferLocation& location, long offset) const
 {
-    // Walk and find multibyte.
-    // TODO: Only handles CR/LF
+    // Walk and find.
     long dir = offset > 0 ? 1 : -1;
-    char firstCR = '\r';
-    char nextCR = '\n';
-    if (dir < 0)
-    {
-        std::swap(firstCR, nextCR);
-    }
 
     // TODO: This can be cleaner(?)
     long current = location;
@@ -77,15 +55,11 @@ BufferLocation ZepBuffer::LocationFromOffsetByChars(const BufferLocation& locati
         if (current >= m_buffer.size())
             break;
 
-        if (m_buffer[current] == firstCR)
+        if (m_buffer[current] == '\n')
         {
             if ((current + dir) >= m_buffer.size())
             {
                 break;
-            }
-            if (m_buffer[current + dir] == nextCR)
-            {
-                current += dir;
             }
         }
 
@@ -260,50 +234,44 @@ BufferBlock ZepBuffer::GetBlock(uint32_t searchType, BufferLocation start, Searc
     return ret;
 }
 
-// TODO:
-// We could count line ends on different threads and collate them for speed
-void ZepBuffer::FindLineEnds()
+void ZepBuffer::ProcessInput(const std::string& text)
 {
-    m_processedLine = 0;
+    m_buffer.clear();
     m_lineEnds.clear();
 
-    long offset = 0;
-    long lastEnd = 0;
+    m_bStrippedCR = false;
 
-    auto itrEnd = m_buffer.end();
-    auto itrBegin = m_buffer.begin();
-    auto itr = m_buffer.begin();
-
-    std::string lineEndSymbols("\r\n");
-    while (itr != itrEnd)
+    if (text.empty())
     {
-        if (m_stop)
-            break;
-
-        // Get to first point after "\n" or "\r\n"
-        // That's the point just after the end of the current line
-        itr = m_buffer.find_first_of(itr, itrEnd, lineEndSymbols.begin(), lineEndSymbols.end());
-        if (itr != itrEnd)
+        m_buffer.push_back(0);
+    }
+    else
+    {
+        // Update the gap buffer with the text
+        // We remove \r, we only care about \n
+        for (auto& ch : text)
         {
-            if (*itr == '\r')
-                itr++;
-            if (itr != itrEnd &&
-                *itr == '\n')
+            if (ch == '\r')
             {
-                itr++;
+                m_bStrippedCR = true;
+            }
+            else
+            {
+                m_buffer.push_back(ch);
+                if (ch == '\n')
+                {
+                    m_lineEnds.push_back(long(m_buffer.size()));
+                }
             }
         }
-
-        // Note; if itrEnd then we store a line end for the '0' at the end of the buffer.
-        // This makes a buffer of 0 length have a single 0-length line
-        // Lock the line end buffer and update 
-        std::unique_lock<std::shared_mutex> lineLock(m_lineEndsLock);
-        m_lineEnds.push_back(long(itr - itrBegin));
-        lineLock.unlock();
-
-        // Update the atomic line counter so clients can see where we are up to.
-        m_processedLine = long(m_lineEnds.size());
     }
+
+    if (m_buffer[m_buffer.size() - 1] != 0)
+    {
+        m_buffer.push_back(0);
+    }
+
+    m_lineEnds.push_back(long(m_buffer.size()));
 }
 
 BufferLocation ZepBuffer::Clamp(BufferLocation in) const
@@ -316,10 +284,7 @@ BufferLocation ZepBuffer::Clamp(BufferLocation in) const
 // Method for querying the beginning and end of a line
 bool ZepBuffer::GetLineOffsets(const long line, long& lineStart, long& lineEnd) const
 {
-    // Reader lock
-    std::shared_lock<std::shared_mutex> lineLock(m_lineEndsLock);
-
-    // No more lines; may not have finished processing
+    // Not valid
     if (m_lineEnds.size() <= line)
     {
         lineStart = 0;
@@ -347,41 +312,12 @@ void ZepBuffer::LockRead()
 // Replace the buffer buffer with the text 
 void ZepBuffer::SetText(const std::string& text)
 {
-    // Stop threads
-    StopThreads();
-
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this,
         BufferMessageType::TextDeleted,
         BufferLocation{ 0 },
         BufferLocation{ long(m_buffer.size()) }));
 
-    // Ensure the buffer always has a '0' - ie. it is size 1, with file end in it!
-    if (text.empty())
-    {
-        m_buffer.clear();
-        m_buffer.push_back(0);
-    }
-    else
-    {
-        // Update the gap buffer with the text
-        m_buffer.insert(m_buffer.begin(), text.begin(), text.end());
-        if (m_buffer[m_buffer.size() - 1] != 0)
-        {
-            m_buffer.push_back(0);
-        }
-    }
-
-    // Count lines into another gap buffer
-    m_processedLine = 0;
-
-    if (GetEditor().GetFlags() & ZepEditorFlags::DisableThreads)
-    {
-        FindLineEnds();
-    }
-    else
-    {
-        m_lineCountResult = m_threadPool.enqueue([&]() { FindLineEnds(); });
-    }
+    ProcessInput(text);
 
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this,
         BufferMessageType::TextAdded,
@@ -436,7 +372,7 @@ BufferLocation ZepBuffer::GetLinePos(long line, LineLocation location) const
         auto loc = std::find_if(m_buffer.begin() + searchStart, m_buffer.end() + searchEnd,
             [&](const utf8& ch)
         {
-            if (ch == '\n' || ch == '\r' || ch == 0)
+            if (ch == '\n' || ch == 0)
                 return true;
             return false;
         });
@@ -459,7 +395,7 @@ BufferLocation ZepBuffer::GetLinePos(long line, LineLocation location) const
         auto loc = std::find_if(begin, end,
             [&](const utf8& ch)
         {
-            return ch != '\r' && ch != '\n' && ch != 0;
+            return ch != '\n' && ch != 0;
         });
         if (loc == end)
         {
@@ -500,8 +436,6 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
         return false;
     }
 
-    StopThreads();
-
     BufferLocation changeRange{ long(m_buffer.size()) };
 
     // We are about to modify this range
@@ -520,16 +454,14 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
     auto itr = str.begin();
 
     std::vector<long> lines;
-    std::string lineEndSymbols("\r\n");
+    std::string lineEndSymbols("\n");
     while (itr != itrEnd)
     {
-        // Get to first point after "\n" or "\r\n"
+        // Get to first point after "\n" 
         // That's the point just after the end of the current line
         itr = std::find_first_of(itr, itrEnd, lineEndSymbols.begin(), lineEndSymbols.end());
         if (itr != itrEnd)
         {
-            if (*itr == '\r')
-                itr++;
             if (itr != itrEnd &&
                 *itr == '\n')
             {
@@ -551,7 +483,6 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
     if (!lines.empty())
     {
         // Update the atomic line counter so clients can see where we are up to.
-        m_processedLine += long(lines.size());
         m_lineEnds.insert(itrLine, lines.begin(), lines.end());
     }
 
@@ -574,8 +505,6 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
 bool ZepBuffer::Delete(const BufferLocation& startOffset, const BufferLocation& endOffset, const BufferLocation& cursorAfter)
 {
     assert(startOffset >= 0 && endOffset <= (m_buffer.size() - 1));
-
-    StopThreads();
 
     // We are about to modify this range
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, startOffset, endOffset));
@@ -603,7 +532,6 @@ bool ZepBuffer::Delete(const BufferLocation& startOffset, const BufferLocation& 
     if (itrLine != itrLastLine)
     {
         m_lineEnds.erase(itrLine, itrLastLine);
-        m_processedLine -= long(itrLastLine - itrLine);
     }
 
     m_buffer.erase(m_buffer.begin() + startOffset, m_buffer.begin() + endOffset);
