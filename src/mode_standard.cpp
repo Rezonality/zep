@@ -4,8 +4,7 @@
 
 // Note:
 // This is a version of the buffer that behaves like notepad.
-// Since Vim is my usual buffer, this mode doesn't yet have many advanced operations, such as line-wise select, etc.
-// These can all be copied from the Vim mode as and when needed
+// It is basic, but can easily be extended
 
 // STANDARD: 
 //

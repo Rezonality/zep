@@ -28,6 +28,7 @@ ZepBuffer::ZepBuffer(ZepEditor& editor, const std::string& strName)
     m_threadPool(),
     m_strName(strName)
 {
+    SetText("");
 }
 
 ZepBuffer::~ZepBuffer()
@@ -312,10 +313,13 @@ void ZepBuffer::LockRead()
 // Replace the buffer buffer with the text 
 void ZepBuffer::SetText(const std::string& text)
 {
-    GetEditor().Broadcast(std::make_shared<BufferMessage>(this,
-        BufferMessageType::TextDeleted,
-        BufferLocation{ 0 },
-        BufferLocation{ long(m_buffer.size()) }));
+    if (m_buffer.size() != 0)
+    {
+        GetEditor().Broadcast(std::make_shared<BufferMessage>(this,
+            BufferMessageType::TextDeleted,
+            BufferLocation{ 0 },
+            BufferLocation{ long(m_buffer.size()) }));
+    }
 
     ProcessInput(text);
 

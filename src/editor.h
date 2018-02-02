@@ -7,6 +7,7 @@
 #include <deque>
 #include <memory>
 #include <threadpool/ThreadPool.hpp>
+#include <sstream>
 
 // Basic Architecture
 

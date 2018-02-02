@@ -535,6 +535,7 @@ public:
     template<class ForwardIt>
     T* find_first_of(T* pStart,  T* pEnd, ForwardIt s_first, ForwardIt s_last) const
     {
+        assert(pEnd <= m_pEnd);
         assert(pStart <= pEnd);
         while (pStart < m_pGapStart &&
             pStart < pEnd)
@@ -556,7 +557,7 @@ public:
             pStart = m_pGapEnd;
         }
 
-        while (pStart < m_pEnd)
+        while (pStart < pEnd)
         {
             for (ForwardIt it = s_first; it != s_last; ++it) 
             {

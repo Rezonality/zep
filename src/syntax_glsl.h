@@ -12,7 +12,7 @@ public:
     ZepSyntaxGlsl(ZepBuffer& buffer);
     virtual ~ZepSyntaxGlsl();
 
-    virtual void UpdateSyntax(long startOffset, long endOffset) override;
+    virtual void UpdateSyntax() override;
 
     virtual uint32_t GetColor(long i) const override;
     virtual SyntaxType GetType(long i) const override;

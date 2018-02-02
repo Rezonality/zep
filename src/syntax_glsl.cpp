@@ -72,29 +72,11 @@ void ZepSyntaxGlsl::Interrupt()
 
 // TODO: We can be more optimal about redoing syntax highlighting if we know we have done it before
 // and we have changed some text 'in the middle'.  When we get to a stable syntax state, we don't have to keep going
-void ZepSyntaxGlsl::UpdateSyntax(long startOffset, long endOffset)
+void ZepSyntaxGlsl::UpdateSyntax()
 {
-    assert(startOffset >= 0);
-    assert(endOffset >= 0);
-    if ((endOffset - startOffset) <= 0)
-    {
-        return;
-    }
-
-#if 0
-    return;
-#endif
-
-    // Ensure syntax is the right size for the buffer
-    m_syntax.resize(m_buffer.GetText().size(), SyntaxType::Normal);
-
     auto& buffer = m_buffer.GetText();
-
-    auto itrCurrent = buffer.begin() + startOffset;
-
-    // Note: Ignore the endoffset for now; it can be used to detect no changes beyond, but 
-    // for now assume the rest of the file needs updating
-    auto itrEnd = buffer.end();
+    auto itrCurrent = buffer.begin() + m_processedChar;
+    auto itrEnd = buffer.begin() + m_targetChar;
 
     std::string delim(" \t.\n;(){}=");
     std::string lineEnd("\n");
@@ -112,7 +94,7 @@ void ZepSyntaxGlsl::UpdateSyntax(long startOffset, long endOffset)
         }
     }
 
-    // Walk backwards
+    // Walk backwards to previous delimiter
     while (itrCurrent > buffer.begin())
     {
         if (std::find(delim.begin(), delim.end(), *itrCurrent) == delim.end())
@@ -124,6 +106,9 @@ void ZepSyntaxGlsl::UpdateSyntax(long startOffset, long endOffset)
             break;
         }
     }
+   
+    // Update start location
+    m_processedChar = long(itrCurrent - buffer.begin());
 
     // Mark a region of the syntax buffer with the correct marker
     auto mark = [&](GapBuffer<utf8>::const_iterator itrA, GapBuffer<utf8>::const_iterator itrB, SyntaxType type)
@@ -165,7 +150,7 @@ void ZepSyntaxGlsl::UpdateSyntax(long startOffset, long endOffset)
 
         if (m_stop == true)
         {
-            break;
+            return;
         }
 
         // Find a token, skipping delim <itrFirst, itrLast>
@@ -226,6 +211,10 @@ void ZepSyntaxGlsl::UpdateSyntax(long startOffset, long endOffset)
         m_processedChar = long(itrCurrent - buffer.begin());
         itrCurrent = itrLast;
     }
+
+    // If we got here, we sucessfully completed
+    // Reset the target to the beginning
+    m_targetChar = long(0);
     m_processedChar = long(buffer.size() - 1);
 }
 
