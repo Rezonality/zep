@@ -17,9 +17,6 @@ ZepSyntax::~ZepSyntax()
 
 void ZepSyntax::QueueUpdateSyntax(BufferLocation startLocation, BufferLocation endLocation)
 {
-    // Stop the syntax thread, since it is no longer valid
-    Interrupt();
-
     // Record the max location the syntax is valid up to.  This will 
     // ensure that multiple calls to restart the thread keep track of where to start
     // This means a small edit at the end of a big file, followed by a small edit at the top
@@ -27,22 +24,12 @@ void ZepSyntax::QueueUpdateSyntax(BufferLocation startLocation, BufferLocation e
     m_processedChar = std::min(startLocation, long(m_processedChar));
     m_targetChar = std::max(endLocation, long(m_targetChar));
 
-    if (m_syntax.size() > endLocation)
-    {
-        // This region is 'invalid'; update it
-        std::fill(m_syntax.begin() + m_processedChar, m_syntax.begin() + m_targetChar, SyntaxType::Normal);
-    }
-
     // Make sure the syntax buffer is big enough - adding normal syntax to the end
     // This may also 'chop'
     m_syntax.resize(m_buffer.GetText().size(), SyntaxType::Normal);
 
     m_processedChar = std::min(long(m_processedChar), long(m_buffer.GetText().size() - 1));
     m_targetChar = std::min(long(m_targetChar), long(m_buffer.GetText().size() - 1));
-
-    m_processedChar = 0;
-    m_targetChar = long(m_buffer.GetText().size() - 1);
-    // "Update Syntax, Range: " << m_processedChar << "-" << m_targetChar;
 
     // Have the thread update the syntax in the new region
     if (GetEditor().GetFlags() & ZepEditorFlags::DisableThreads)
@@ -75,11 +62,15 @@ void ZepSyntax::Notify(std::shared_ptr<ZepMessage> spMsg)
         else if (spBufferMsg->type == BufferMessageType::TextDeleted)
         {
             Interrupt();
+            m_syntax.erase(m_syntax.begin() + spBufferMsg->startLocation, m_syntax.begin() + spBufferMsg->endLocation);
             QueueUpdateSyntax(spBufferMsg->startLocation, spBufferMsg->endLocation);
         }
         else if (spBufferMsg->type == BufferMessageType::TextAdded)
         {
             Interrupt();
+            m_syntax.insert(m_syntax.begin() + spBufferMsg->startLocation,
+                spBufferMsg->endLocation - spBufferMsg->startLocation,
+                SyntaxType::Normal);
             QueueUpdateSyntax(spBufferMsg->startLocation, spBufferMsg->endLocation);
         }
         else if (spBufferMsg->type == BufferMessageType::TextChanged)

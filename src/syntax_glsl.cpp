@@ -122,7 +122,7 @@ void ZepSyntaxGlsl::UpdateSyntax()
 
     };
 
-    auto markWhiteSpace = [&](GapBuffer<utf8>::const_iterator itrA, GapBuffer<utf8>::const_iterator itrB)
+    auto markDefault = [&](GapBuffer<utf8>::const_iterator itrA, GapBuffer<utf8>::const_iterator itrB)
     {
         for (auto itrSpace = itrA; itrSpace < itrB; itrSpace++)
         {
@@ -130,8 +130,14 @@ void ZepSyntaxGlsl::UpdateSyntax()
             {
                 markSingle(itrSpace, SyntaxType::Whitespace);
             }
+            else
+            {
+                markSingle(itrSpace, SyntaxType::Normal);
+            }
         }
     };
+
+    markDefault(itrCurrent, itrEnd);
 
     // Walk the buffer updating information about syntax coloring
     GapBuffer<utf8>::const_iterator multiLineCommentBegin = buffer.end();
@@ -154,11 +160,11 @@ void ZepSyntaxGlsl::UpdateSyntax()
         }
 
         // Find a token, skipping delim <itrFirst, itrLast>
-        auto itrFirst = buffer.find_first_not_of(itrCurrent, itrEnd, delim.begin(), delim.end());
-        if (itrFirst == itrEnd)
+        auto itrFirst = buffer.find_first_not_of(itrCurrent, buffer.end(), delim.begin(), delim.end());
+        if (itrFirst == buffer.end())
             break;
 
-        auto itrLast = buffer.find_first_of(itrFirst, itrEnd, delim.begin(), delim.end());
+        auto itrLast = buffer.find_first_of(itrFirst, buffer.end(), delim.begin(), delim.end());
 
         // Ensure we found a token
         assert(itrLast >= itrFirst);
@@ -168,9 +174,8 @@ void ZepSyntaxGlsl::UpdateSyntax()
         if (token == "//")
         {
             // Find the end of the line.  Mark the whole thing as a comment
-            itrLast = buffer.find_first_of(itrLast, itrEnd, lineEnd.begin(), lineEnd.end());
+            itrLast = buffer.find_first_of(itrLast, buffer.end(), lineEnd.begin(), lineEnd.end());
             mark(itrFirst, itrLast, SyntaxType::Comment);
-            markWhiteSpace(itrCurrent, itrLast);
             itrCurrent = itrLast;
             continue;
         }
@@ -185,7 +190,6 @@ void ZepSyntaxGlsl::UpdateSyntax()
             if (multiLineCommentBegin != buffer.end())
             {
                 mark(multiLineCommentBegin, itrLast, SyntaxType::Comment);
-                markWhiteSpace(multiLineCommentBegin, itrLast);
                 multiLineCommentBegin = buffer.end();
             }
         }
@@ -194,7 +198,6 @@ void ZepSyntaxGlsl::UpdateSyntax()
             if (keywords.find(token) != keywords.end())
             {
                 mark(itrFirst, itrLast, SyntaxType::Keyword);
-                std::fill(m_syntax.begin() + (itrFirst - buffer.begin()), m_syntax.begin() + (itrLast - buffer.begin()), SyntaxType::Keyword);
             }
             else if (token.find_first_not_of("0123456789") == std::string::npos)
             {
@@ -204,7 +207,6 @@ void ZepSyntaxGlsl::UpdateSyntax()
             {
                 mark(itrFirst, itrLast, SyntaxType::Normal);
             }
-            markWhiteSpace(itrCurrent, itrLast);
         }
 
         // Record our progress
@@ -217,6 +219,5 @@ void ZepSyntaxGlsl::UpdateSyntax()
     m_targetChar = long(0);
     m_processedChar = long(buffer.size() - 1);
 }
-
 
 } // Zep
