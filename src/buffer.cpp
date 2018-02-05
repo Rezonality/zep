@@ -237,6 +237,9 @@ BufferBlock ZepBuffer::GetBlock(uint32_t searchType, BufferLocation start, Searc
 
 void ZepBuffer::ProcessInput(const std::string& text)
 {
+    // Inform clients we are about to change the buffer
+    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, 0, BufferLocation(m_buffer.size() - 1)));
+
     m_buffer.clear();
     m_lineEnds.clear();
 

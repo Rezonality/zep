@@ -15,7 +15,7 @@ public:
     virtual void UpdateSyntax() override;
 
     virtual uint32_t GetColor(long i) const override;
-    virtual SyntaxType GetType(long i) const override;
+    virtual uint32_t GetType(long i) const override;
     virtual void Interrupt() override;
 
     std::set<std::string> keywords;
