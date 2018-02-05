@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -46,6 +46,17 @@ typedef struct SDL_VideoData {
      * passed to eglGetDisplay and eglCreateWindowSurface:
      */
     IUnknown *winrtEglWindow;
+
+    /* Event token(s), for unregistering WinRT event handler(s).
+       These are just a struct with a 64-bit integer inside them
+    */
+    Windows::Foundation::EventRegistrationToken gameBarIsInputRedirectedToken;
+
+    /* A WinRT DisplayRequest, used for implementing SDL_*ScreenSaver() functions.
+     * This is really a pointer to a 'ABI::Windows::System::Display::IDisplayRequest *',
+     * It's casted to 'IUnknown *', to help with building SDL.
+    */
+    IUnknown *displayRequest;
 } SDL_VideoData;
 
 /* The global, WinRT, SDL Window.

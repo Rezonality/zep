@@ -25,7 +25,7 @@ int _userdataValue1 = 1;
 int _userdataValue2 = 2;
 
 /* Event filter that sets some flags and optionally checks userdata */
-int _events_sampleNullEventFilter(void *userdata, SDL_Event *event)
+int SDLCALL _events_sampleNullEventFilter(void *userdata, SDL_Event *event)
 {
    _eventFilterCalled = 1;
 
@@ -87,7 +87,7 @@ events_addDelEventWatch(void *arg)
 
    /* Create user event */
    event.type = SDL_USEREVENT;
-   event.user.code = SDLTest_RandomSint32();;
+   event.user.code = SDLTest_RandomSint32();
    event.user.data1 = (void *)&_userdataValue1;
    event.user.data2 = (void *)&_userdataValue2;
 
@@ -137,7 +137,7 @@ events_addDelEventWatchWithUserdata(void *arg)
 
    /* Create user event */
    event.type = SDL_USEREVENT;
-   event.user.code = SDLTest_RandomSint32();;
+   event.user.code = SDLTest_RandomSint32();
    event.user.data1 = (void *)&_userdataValue1;
    event.user.data2 = (void *)&_userdataValue2;
 

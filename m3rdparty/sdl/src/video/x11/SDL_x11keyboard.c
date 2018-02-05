@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -32,6 +32,10 @@
 #include <X11/XKBlib.h>
 
 #include "imKStoUCS.h"
+
+#ifdef X_HAVE_UTF8_STRING
+#include <locale.h>
+#endif
 
 /* *INDENT-OFF* */
 static const struct {
@@ -133,6 +137,17 @@ static const struct {
     { XK_Meta_R, SDL_SCANCODE_RGUI },
     { XK_Super_R, SDL_SCANCODE_RGUI },
     { XK_Mode_switch, SDL_SCANCODE_MODE },
+    { XK_period, SDL_SCANCODE_PERIOD },
+    { XK_comma, SDL_SCANCODE_COMMA },
+    { XK_slash, SDL_SCANCODE_SLASH },
+    { XK_backslash, SDL_SCANCODE_BACKSLASH },
+    { XK_minus, SDL_SCANCODE_MINUS },
+    { XK_equal, SDL_SCANCODE_EQUALS },
+    { XK_space, SDL_SCANCODE_SPACE },
+    { XK_grave, SDL_SCANCODE_GRAVE },
+    { XK_apostrophe, SDL_SCANCODE_APOSTROPHE },
+    { XK_bracketleft, SDL_SCANCODE_LEFTBRACKET },
+    { XK_bracketright, SDL_SCANCODE_RIGHTBRACKET },
 };
 
 static const struct
@@ -143,31 +158,34 @@ static const struct
     { darwin_scancode_table, SDL_arraysize(darwin_scancode_table) },
     { xfree86_scancode_table, SDL_arraysize(xfree86_scancode_table) },
     { xfree86_scancode_table2, SDL_arraysize(xfree86_scancode_table2) },
+    { xvnc_scancode_table, SDL_arraysize(xvnc_scancode_table) },
 };
 /* *INDENT-OFF* */
 
 /* This function only works for keyboards in US QWERTY layout */
 static SDL_Scancode
-X11_KeyCodeToSDLScancode(Display *display, KeyCode keycode)
+X11_KeyCodeToSDLScancode(_THIS, KeyCode keycode)
 {
     KeySym keysym;
     int i;
 
-#if SDL_VIDEO_DRIVER_X11_HAS_XKBKEYCODETOKEYSYM
-    keysym = X11_XkbKeycodeToKeysym(display, keycode, 0, 0);
-#else
-    keysym = X11_XKeycodeToKeysym(display, keycode, 0);
-#endif
+    keysym = X11_KeyCodeToSym(_this, keycode, 0);
     if (keysym == NoSymbol) {
         return SDL_SCANCODE_UNKNOWN;
     }
 
+    if (keysym >= XK_a && keysym <= XK_z) {
+        return SDL_SCANCODE_A + (keysym - XK_a);
+    }
     if (keysym >= XK_A && keysym <= XK_Z) {
         return SDL_SCANCODE_A + (keysym - XK_A);
     }
 
-    if (keysym >= XK_0 && keysym <= XK_9) {
-        return SDL_SCANCODE_0 + (keysym - XK_0);
+    if (keysym == XK_0) {
+        return SDL_SCANCODE_0;
+    }
+    if (keysym >= XK_1 && keysym <= XK_9) {
+        return SDL_SCANCODE_1 + (keysym - XK_1);
     }
 
     for (i = 0; i < SDL_arraysize(KeySymToSDLScancode); ++i) {
@@ -179,20 +197,51 @@ X11_KeyCodeToSDLScancode(Display *display, KeyCode keycode)
 }
 
 static Uint32
-X11_KeyCodeToUcs4(Display *display, KeyCode keycode, unsigned char group)
+X11_KeyCodeToUcs4(_THIS, KeyCode keycode, unsigned char group)
 {
-    KeySym keysym;
+    KeySym keysym = X11_KeyCodeToSym(_this, keycode, group);
 
-#if SDL_VIDEO_DRIVER_X11_HAS_XKBKEYCODETOKEYSYM
-    keysym = X11_XkbKeycodeToKeysym(display, keycode, group, 0);
-#else
-    keysym = X11_XKeycodeToKeysym(display, keycode, 0);
-#endif
     if (keysym == NoSymbol) {
         return 0;
     }
 
     return X11_KeySymToUcs4(keysym);
+}
+
+KeySym
+X11_KeyCodeToSym(_THIS, KeyCode keycode, unsigned char group)
+{
+    SDL_VideoData *data = (SDL_VideoData *) _this->driverdata;
+    KeySym keysym;
+
+#if SDL_VIDEO_DRIVER_X11_HAS_XKBKEYCODETOKEYSYM
+    if (data->xkb) {
+        int num_groups     = XkbKeyNumGroups(data->xkb, keycode);
+        unsigned char info = XkbKeyGroupInfo(data->xkb, keycode);
+        
+        if (num_groups && group >= num_groups) {
+        
+            int action = XkbOutOfRangeGroupAction(info);
+            
+            if (action == XkbRedirectIntoRange) {
+                if ((group = XkbOutOfRangeGroupNumber(info)) >= num_groups) {
+                    group = 0;
+                }
+            } else if (action == XkbClampIntoRange) {
+                group = num_groups - 1;
+            } else {
+                group %= num_groups;
+            }
+        }
+        keysym = X11_XkbKeycodeToKeysym(data->display, keycode, group, 0);
+    } else {
+        keysym = X11_XKeycodeToKeysym(data->display, keycode, 0);
+    }
+#else
+    keysym = X11_XKeycodeToKeysym(data->display, keycode, 0);
+#endif
+
+    return keysym;
 }
 
 int
@@ -217,9 +266,82 @@ X11_InitKeyboard(_THIS)
     int best_distance;
     int best_index;
     int distance;
-
+    BOOL xkb_repeat = 0;
+    
     X11_XAutoRepeatOn(data->display);
 
+#if SDL_VIDEO_DRIVER_X11_HAS_XKBKEYCODETOKEYSYM
+    {
+        int xkb_major = XkbMajorVersion;
+        int xkb_minor = XkbMinorVersion;
+
+        if (X11_XkbQueryExtension(data->display, NULL, NULL, NULL, &xkb_major, &xkb_minor)) {
+            data->xkb = X11_XkbGetMap(data->display, XkbAllClientInfoMask, XkbUseCoreKbd);
+        }
+
+        /* This will remove KeyRelease events for held keys */
+        X11_XkbSetDetectableAutoRepeat(data->display, True, &xkb_repeat);
+    }
+#endif
+    
+    /* Open a connection to the X input manager */
+#ifdef X_HAVE_UTF8_STRING
+    if (SDL_X11_HAVE_UTF8) {
+        /* Set the locale, and call XSetLocaleModifiers before XOpenIM so that 
+           Compose keys will work correctly. */
+        char *prev_locale = setlocale(LC_ALL, NULL);
+        char *prev_xmods  = X11_XSetLocaleModifiers(NULL);
+        const char *new_xmods = "";
+#if defined(HAVE_IBUS_IBUS_H) || defined(HAVE_FCITX_FRONTEND_H)
+        const char *env_xmods = SDL_getenv("XMODIFIERS");
+#endif
+        SDL_bool has_dbus_ime_support = SDL_FALSE;
+
+        if (prev_locale) {
+            prev_locale = SDL_strdup(prev_locale);
+        }
+
+        if (prev_xmods) {
+            prev_xmods = SDL_strdup(prev_xmods);
+        }
+
+        /* IBus resends some key events that were filtered by XFilterEvents
+           when it is used via XIM which causes issues. Prevent this by forcing
+           @im=none if XMODIFIERS contains @im=ibus. IBus can still be used via 
+           the DBus implementation, which also has support for pre-editing. */
+#ifdef HAVE_IBUS_IBUS_H
+        if (env_xmods && SDL_strstr(env_xmods, "@im=ibus") != NULL) {
+            has_dbus_ime_support = SDL_TRUE;
+        }
+#endif
+#ifdef HAVE_FCITX_FRONTEND_H
+        if (env_xmods && SDL_strstr(env_xmods, "@im=fcitx") != NULL) {
+            has_dbus_ime_support = SDL_TRUE;
+        }
+#endif
+        if (has_dbus_ime_support || !xkb_repeat) {
+            new_xmods = "@im=none";
+        }
+
+        setlocale(LC_ALL, "");
+        X11_XSetLocaleModifiers(new_xmods);
+
+        data->im = X11_XOpenIM(data->display, NULL, data->classname, data->classname);
+
+        /* Reset the locale + X locale modifiers back to how they were,
+           locale first because the X locale modifiers depend on it. */
+        setlocale(LC_ALL, prev_locale);
+        X11_XSetLocaleModifiers(prev_xmods);
+
+        if (prev_locale) {
+            SDL_free(prev_locale);
+        }
+
+        if (prev_xmods) {
+            SDL_free(prev_xmods);
+        }
+    }
+#endif
     /* Try to determine which scancodes are being used based on fingerprint */
     best_distance = SDL_arraysize(fingerprint) + 1;
     best_index = -1;
@@ -258,22 +380,18 @@ X11_InitKeyboard(_THIS)
         SDL_Keycode keymap[SDL_NUM_SCANCODES];
 
         printf
-            ("Keyboard layout unknown, please send the following to the SDL mailing list (sdl@libsdl.org):\n");
+            ("Keyboard layout unknown, please report the following to the SDL forums/mailing list (https://discourse.libsdl.org/):\n");
 
         /* Determine key_layout - only works on US QWERTY layout */
         SDL_GetDefaultKeymap(keymap);
         for (i = min_keycode; i <= max_keycode; ++i) {
             KeySym sym;
-#if SDL_VIDEO_DRIVER_X11_HAS_XKBKEYCODETOKEYSYM
-            sym = X11_XkbKeycodeToKeysym(data->display, i, 0, 0);
-#else
-            sym = X11_XKeycodeToKeysym(data->display, i, 0);
-#endif
+            sym = X11_KeyCodeToSym(_this, (KeyCode) i, 0);
             if (sym != NoSymbol) {
                 SDL_Scancode scancode;
                 printf("code = %d, sym = 0x%X (%s) ", i - min_keycode,
                        (unsigned int) sym, X11_XKeysymToString(sym));
-                scancode = X11_KeyCodeToSDLScancode(data->display, i);
+                scancode = X11_KeyCodeToSDLScancode(_this, i);
                 data->key_layout[i] = scancode;
                 if (scancode == SDL_SCANCODE_UNKNOWN) {
                     printf("scancode not found\n");
@@ -288,8 +406,8 @@ X11_InitKeyboard(_THIS)
 
     SDL_SetScancodeName(SDL_SCANCODE_APPLICATION, "Menu");
 
-#ifdef SDL_USE_IBUS
-    SDL_IBus_Init();
+#ifdef SDL_USE_IME
+    SDL_IME_Init();
 #endif
 
     return 0;
@@ -305,10 +423,12 @@ X11_UpdateKeymap(_THIS)
     unsigned char group = 0;
 
     SDL_GetDefaultKeymap(keymap);
-    
+
 #if SDL_VIDEO_DRIVER_X11_HAS_XKBKEYCODETOKEYSYM
-    {
+    if (data->xkb) {
         XkbStateRec state;
+        X11_XkbGetUpdatedMap(data->display, XkbAllClientInfoMask, data->xkb);
+
         if (X11_XkbGetState(data->display, XkbUseCoreKbd, &state) == Success) {
             group = state.group;
         }
@@ -326,11 +446,11 @@ X11_UpdateKeymap(_THIS)
         }
 
         /* See if there is a UCS keycode for this scancode */
-        key = X11_KeyCodeToUcs4(data->display, (KeyCode)i, group);
+        key = X11_KeyCodeToUcs4(_this, (KeyCode)i, group);
         if (key) {
             keymap[scancode] = key;
         } else {
-            SDL_Scancode keyScancode = X11_KeyCodeToSDLScancode(data->display, (KeyCode)i);
+            SDL_Scancode keyScancode = X11_KeyCodeToSDLScancode(_this, (KeyCode)i);
 
             switch (keyScancode) {
                 case SDL_SCANCODE_RETURN:
@@ -360,22 +480,54 @@ X11_UpdateKeymap(_THIS)
 void
 X11_QuitKeyboard(_THIS)
 {
-#ifdef SDL_USE_IBUS
-    SDL_IBus_Quit();
+    SDL_VideoData *data = (SDL_VideoData *) _this->driverdata;
+
+#if SDL_VIDEO_DRIVER_X11_HAS_XKBKEYCODETOKEYSYM
+    if (data->xkb) {
+        X11_XkbFreeKeyboard(data->xkb, 0, True);
+        data->xkb = NULL;
+    }
+#endif
+
+#ifdef SDL_USE_IME
+    SDL_IME_Quit();
+#endif
+}
+
+static void
+X11_ResetXIM(_THIS)
+{
+#ifdef X_HAVE_UTF8_STRING
+    SDL_VideoData *videodata = (SDL_VideoData *) _this->driverdata;
+    int i;
+
+    if (videodata && videodata->windowlist) {
+        for (i = 0; i < videodata->numwindows; ++i) {
+            SDL_WindowData *data = videodata->windowlist[i];
+            if (data && data->ic) {
+                /* Clear any partially entered dead keys */
+                char *contents = X11_Xutf8ResetIC(data->ic);
+                if (contents) {
+                    X11_XFree(contents);
+                }
+            }
+        }
+    }
 #endif
 }
 
 void
 X11_StartTextInput(_THIS)
 {
-
+    X11_ResetXIM(_this);
 }
 
 void
 X11_StopTextInput(_THIS)
 {
-#ifdef SDL_USE_IBUS
-    SDL_IBus_Reset();
+    X11_ResetXIM(_this);
+#ifdef SDL_USE_IME
+    SDL_IME_Reset();
 #endif
 }
 
@@ -387,8 +539,8 @@ X11_SetTextInputRect(_THIS, SDL_Rect *rect)
         return;
     }
        
-#ifdef SDL_USE_IBUS
-    SDL_IBus_UpdateTextRect(rect);
+#ifdef SDL_USE_IME
+    SDL_IME_UpdateTextRect(rect);
 #endif
 }
 

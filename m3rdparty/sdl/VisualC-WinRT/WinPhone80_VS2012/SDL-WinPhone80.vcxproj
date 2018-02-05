@@ -208,7 +208,6 @@
     <ClInclude Include="..\..\src\audio\disk\SDL_diskaudio.h" />
     <ClInclude Include="..\..\src\audio\dummy\SDL_dummyaudio.h" />
     <ClInclude Include="..\..\src\audio\SDL_audiodev_c.h" />
-    <ClInclude Include="..\..\src\audio\SDL_audiomem.h" />
     <ClInclude Include="..\..\src\audio\SDL_audio_c.h" />
     <ClInclude Include="..\..\src\audio\SDL_sysaudio.h" />
     <ClInclude Include="..\..\src\audio\SDL_wave.h" />
@@ -251,6 +250,7 @@
     <ClInclude Include="..\..\src\render\software\SDL_render_sw_c.h" />
     <ClInclude Include="..\..\src\render\software\SDL_rotate.h" />
     <ClInclude Include="..\..\src\SDL_assert_c.h" />
+    <ClInclude Include="..\..\src\SDL_dataqueue.h" />
     <ClInclude Include="..\..\src\SDL_error_c.h" />
     <ClInclude Include="..\..\src\SDL_fatal.h" />
     <ClInclude Include="..\..\src\SDL_hints_c.h" />
@@ -273,6 +273,7 @@
     <ClInclude Include="..\..\src\video\SDL_shape_internals.h" />
     <ClInclude Include="..\..\src\video\SDL_sysvideo.h" />
     <ClInclude Include="..\..\src\video\winrt\SDL_winrtevents_c.h" />
+    <ClInclude Include="..\..\src\video\winrt\SDL_winrtgamebar_cpp.h" />
     <ClInclude Include="..\..\src\video\winrt\SDL_winrtmessagebox.h" />
     <ClInclude Include="..\..\src\video\winrt\SDL_winrtmouse_c.h" />
     <ClInclude Include="..\..\src\video\winrt\SDL_winrtopengles.h" />
@@ -364,6 +365,7 @@
     <ClCompile Include="..\..\src\render\software\SDL_rotate.c" />
     <ClCompile Include="..\..\src\SDL.c" />
     <ClCompile Include="..\..\src\SDL_assert.c" />
+    <ClCompile Include="..\..\src\SDL_dataqueue.c" />
     <ClCompile Include="..\..\src\SDL_error.c" />
     <ClCompile Include="..\..\src\SDL_hints.c" />
     <ClCompile Include="..\..\src\SDL_log.c" />
@@ -407,6 +409,12 @@
       <CompileAsWinRT Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">true</CompileAsWinRT>
       <CompileAsWinRT Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</CompileAsWinRT>
       <CompileAsWinRT Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</CompileAsWinRT>
+    </ClCompile>
+    <ClCompile Include="..\..\src\video\winrt\SDL_winrtgamebar.cpp">
+      <CompileAsWinRT Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</CompileAsWinRT>
+      <CompileAsWinRT Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</CompileAsWinRT>
+      <CompileAsWinRT Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</CompileAsWinRT>
+      <CompileAsWinRT Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">true</CompileAsWinRT>
     </ClCompile>
     <ClCompile Include="..\..\src\video\winrt\SDL_winrtkeyboard.cpp">
       <CompileAsWinRT Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</CompileAsWinRT>

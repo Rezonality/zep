@@ -84,19 +84,6 @@ void ZepSyntaxGlsl::UpdateSyntax()
     std::string delim(" \t.\n;(){}=");
     std::string lineEnd("\n");
 
-    // Walk backwards to the previous line; since line comments require the whole line
-    while (itrCurrent > buffer.begin())
-    {
-        if (std::find(lineEnd.begin(), lineEnd.end(), *itrCurrent) == lineEnd.end())
-        {
-            itrCurrent--;
-        }
-        else
-        {
-            break;
-        }
-    }
-
     // Walk backwards to previous delimiter
     while (itrCurrent > buffer.begin())
     {
@@ -126,7 +113,7 @@ void ZepSyntaxGlsl::UpdateSyntax()
     m_processedChar = long(itrCurrent - buffer.begin());
 
     // Walk the buffer updating information about syntax coloring
-    while (itrCurrent != buffer.end())
+    while (itrCurrent != itrEnd)
     {
         if (m_stop == true)
         {
@@ -156,15 +143,14 @@ void ZepSyntaxGlsl::UpdateSyntax()
 
         std::string commentStr = "/";
         auto itrComment = buffer.find_first_of(itrFirst, itrLast, commentStr.begin(), commentStr.end());
-        if (itrComment != itrLast)
+        if (itrComment != buffer.end())
         {
             auto itrCommentStart = itrComment++;
             if (itrComment < buffer.end())
             {
                 if (*itrComment == '/')
                 {
-                    itrLast = buffer.find_first_of(itrCommentStart, buffer.end(), lineEnd.begin(), lineEnd.end());
-                    mark(itrCommentStart, itrLast, SyntaxType::Comment);
+                    // Line comment
                 }
             }
         }

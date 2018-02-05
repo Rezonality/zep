@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -24,6 +24,7 @@
 
 #include "SDL_video.h"
 #include "SDL_mouse.h"
+#include "SDL_hints.h"
 #include "../SDL_sysvideo.h"
 #include "../SDL_pixels_c.h"
 #include "../SDL_egl_c.h"
@@ -47,6 +48,7 @@ static void Emscripten_SetWindowSize(_THIS, SDL_Window * window);
 static void Emscripten_DestroyWindow(_THIS, SDL_Window * window);
 static void Emscripten_SetWindowFullscreen(_THIS, SDL_Window * window, SDL_VideoDisplay * display, SDL_bool fullscreen);
 static void Emscripten_PumpEvents(_THIS);
+static void Emscripten_SetWindowTitle(_THIS, SDL_Window * window);
 
 
 /* Emscripten driver bootstrap functions */
@@ -75,6 +77,12 @@ Emscripten_CreateDevice(int devindex)
         return (0);
     }
 
+    /* Firefox sends blur event which would otherwise prevent full screen
+     * when the user clicks to allow full screen.
+     * See https://bugzilla.mozilla.org/show_bug.cgi?id=1144964
+    */
+    SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
+
     /* Set the function pointers */
     device->VideoInit = Emscripten_VideoInit;
     device->VideoQuit = Emscripten_VideoQuit;
@@ -83,10 +91,9 @@ Emscripten_CreateDevice(int devindex)
 
     device->PumpEvents = Emscripten_PumpEvents;
 
-    device->CreateWindow = Emscripten_CreateWindow;
-    /*device->CreateWindowFrom = Emscripten_CreateWindowFrom;
+    device->CreateSDLWindow = Emscripten_CreateWindow;
     device->SetWindowTitle = Emscripten_SetWindowTitle;
-    device->SetWindowIcon = Emscripten_SetWindowIcon;
+    /*device->SetWindowIcon = Emscripten_SetWindowIcon;
     device->SetWindowPosition = Emscripten_SetWindowPosition;*/
     device->SetWindowSize = Emscripten_SetWindowSize;
     /*device->ShowWindow = Emscripten_ShowWindow;
@@ -103,6 +110,7 @@ Emscripten_CreateDevice(int devindex)
     device->UpdateWindowFramebuffer = Emscripten_UpdateWindowFramebuffer;
     device->DestroyWindowFramebuffer = Emscripten_DestroyWindowFramebuffer;
 
+#if SDL_VIDEO_OPENGL_EGL
     device->GL_LoadLibrary = Emscripten_GLES_LoadLibrary;
     device->GL_GetProcAddress = Emscripten_GLES_GetProcAddress;
     device->GL_UnloadLibrary = Emscripten_GLES_UnloadLibrary;
@@ -113,6 +121,7 @@ Emscripten_CreateDevice(int devindex)
     device->GL_SwapWindow = Emscripten_GLES_SwapWindow;
     device->GL_DeleteContext = Emscripten_GLES_DeleteContext;
     device->GL_GetDrawableSize = Emscripten_GLES_GetDrawableSize;
+#endif
 
     device->free = Emscripten_DeleteDevice;
 
@@ -129,15 +138,17 @@ int
 Emscripten_VideoInit(_THIS)
 {
     SDL_DisplayMode mode;
-    double css_w, css_h;
 
     /* Use a fake 32-bpp desktop mode */
     mode.format = SDL_PIXELFORMAT_RGB888;
 
-    emscripten_get_element_css_size(NULL, &css_w, &css_h);
+    mode.w = EM_ASM_INT_V({
+        return screen.width;
+    });
 
-    mode.w = css_w;
-    mode.h = css_h;
+    mode.h = EM_ASM_INT_V({
+        return screen.height;
+    });
 
     mode.refresh_rate = 0;
     mode.driverdata = NULL;
@@ -199,7 +210,7 @@ Emscripten_CreateWindow(_THIS, SDL_Window * window)
 
     emscripten_get_element_css_size(NULL, &css_w, &css_h);
 
-    wdata->external_size = css_w != scaled_w || css_h != scaled_h;
+    wdata->external_size = SDL_floor(css_w) != scaled_w || SDL_floor(css_h) != scaled_h;
 
     if ((window->flags & SDL_WINDOW_RESIZABLE) && wdata->external_size) {
         /* external css has resized us */
@@ -218,9 +229,7 @@ Emscripten_CreateWindow(_THIS, SDL_Window * window)
         }
     }
 
-    wdata->windowed_width = scaled_w;
-    wdata->windowed_height = scaled_h;
-
+#if SDL_VIDEO_OPENGL_EGL
     if (window->flags & SDL_WINDOW_OPENGL) {
         if (!_this->egl_data) {
             if (SDL_GL_LoadLibrary(NULL) < 0) {
@@ -233,6 +242,7 @@ Emscripten_CreateWindow(_THIS, SDL_Window * window)
             return SDL_SetError("Could not create GLES window surface");
         }
     }
+#endif
 
     wdata->window = window;
 
@@ -255,6 +265,10 @@ static void Emscripten_SetWindowSize(_THIS, SDL_Window * window)
 
     if (window->driverdata) {
         data = (SDL_WindowData *) window->driverdata;
+        /* update pixel ratio */
+        if (window->flags & SDL_WINDOW_ALLOW_HIGHDPI) {
+            data->pixel_ratio = emscripten_get_device_pixel_ratio();
+        }
         emscripten_set_canvas_size(window->w * data->pixel_ratio, window->h * data->pixel_ratio);
 
         /*scale canvas down*/
@@ -273,10 +287,12 @@ Emscripten_DestroyWindow(_THIS, SDL_Window * window)
         data = (SDL_WindowData *) window->driverdata;
 
         Emscripten_UnregisterEventHandlers(data);
+#if SDL_VIDEO_OPENGL_EGL
         if (data->egl_surface != EGL_NO_SURFACE) {
             SDL_EGL_DestroySurface(_this, data->egl_surface);
             data->egl_surface = EGL_NO_SURFACE;
         }
+#endif
         SDL_free(window->driverdata);
         window->driverdata = NULL;
     }
@@ -290,28 +306,47 @@ Emscripten_SetWindowFullscreen(_THIS, SDL_Window * window, SDL_VideoDisplay * di
         data = (SDL_WindowData *) window->driverdata;
 
         if(fullscreen) {
+            EmscriptenFullscreenStrategy strategy;
+            SDL_bool is_desktop_fullscreen = (window->flags & SDL_WINDOW_FULLSCREEN_DESKTOP) == SDL_WINDOW_FULLSCREEN_DESKTOP;
+            int res;
+
+            strategy.scaleMode = is_desktop_fullscreen ? EMSCRIPTEN_FULLSCREEN_SCALE_STRETCH : EMSCRIPTEN_FULLSCREEN_SCALE_ASPECT;
+
+            if(!is_desktop_fullscreen) {
+                strategy.canvasResolutionScaleMode = EMSCRIPTEN_FULLSCREEN_CANVAS_SCALE_NONE;
+            } else if(window->flags & SDL_WINDOW_ALLOW_HIGHDPI) {
+                strategy.canvasResolutionScaleMode = EMSCRIPTEN_FULLSCREEN_CANVAS_SCALE_HIDEF;
+            } else {
+                strategy.canvasResolutionScaleMode = EMSCRIPTEN_FULLSCREEN_CANVAS_SCALE_STDDEF;
+            }
+
+            strategy.filteringMode = EMSCRIPTEN_FULLSCREEN_FILTERING_DEFAULT;
+
+            strategy.canvasResizedCallback = Emscripten_HandleCanvasResize;
+            strategy.canvasResizedCallbackUserData = data;
+
             data->requested_fullscreen_mode = window->flags & (SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_FULLSCREEN);
-            /*unset the fullscreen flags as we're not actually fullscreen yet*/
-            window->flags &= ~(SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_FULLSCREEN);
+            data->fullscreen_resize = is_desktop_fullscreen;
 
-            EM_ASM({
-                //reparent canvas (similar to Module.requestFullscreen)
-                var canvas = Module['canvas'];
-                if(canvas.parentNode.id != "SDLFullscreenElement") {
-                    var canvasContainer = document.createElement("div");
-                    canvasContainer.id = "SDLFullscreenElement";
-                    canvas.parentNode.insertBefore(canvasContainer, canvas);
-                    canvasContainer.appendChild(canvas);
-                }
-            });
-
-            int is_fullscreen;
-            emscripten_get_canvas_size(&data->windowed_width, &data->windowed_height, &is_fullscreen);
-            emscripten_request_fullscreen("SDLFullscreenElement", 1);
+            res = emscripten_request_fullscreen_strategy(NULL, 1, &strategy);
+            if(res != EMSCRIPTEN_RESULT_SUCCESS && res != EMSCRIPTEN_RESULT_DEFERRED) {
+                /* unset flags, fullscreen failed */
+                window->flags &= ~(SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_FULLSCREEN);
+            }
         }
         else
             emscripten_exit_fullscreen();
     }
+}
+
+static void
+Emscripten_SetWindowTitle(_THIS, SDL_Window * window) {
+    EM_ASM_INT({
+      if (typeof Module['setWindowTitle'] !== 'undefined') {
+        Module['setWindowTitle'](Module['Pointer_stringify']($0));
+      }
+      return 0;
+    }, window->title);
 }
 
 #endif /* SDL_VIDEO_DRIVER_EMSCRIPTEN */

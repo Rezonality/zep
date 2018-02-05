@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -26,6 +26,7 @@
 #include "SDL_endian.h"
 #include "SDL_cocoavideo.h"
 #include "SDL_cocoashape.h"
+#include "SDL_cocoavulkan.h"
 #include "SDL_assert.h"
 
 /* Initialization/Query functions */
@@ -80,8 +81,8 @@ Cocoa_CreateDevice(int devindex)
     device->PumpEvents = Cocoa_PumpEvents;
     device->SuspendScreenSaver = Cocoa_SuspendScreenSaver;
 
-    device->CreateWindow = Cocoa_CreateWindow;
-    device->CreateWindowFrom = Cocoa_CreateWindowFrom;
+    device->CreateSDLWindow = Cocoa_CreateWindow;
+    device->CreateSDLWindowFrom = Cocoa_CreateWindowFrom;
     device->SetWindowTitle = Cocoa_SetWindowTitle;
     device->SetWindowIcon = Cocoa_SetWindowIcon;
     device->SetWindowPosition = Cocoa_SetWindowPosition;
@@ -96,6 +97,7 @@ Cocoa_CreateDevice(int devindex)
     device->MinimizeWindow = Cocoa_MinimizeWindow;
     device->RestoreWindow = Cocoa_RestoreWindow;
     device->SetWindowBordered = Cocoa_SetWindowBordered;
+    device->SetWindowResizable = Cocoa_SetWindowResizable;
     device->SetWindowFullscreen = Cocoa_SetWindowFullscreen;
     device->SetWindowGammaRamp = Cocoa_SetWindowGammaRamp;
     device->GetWindowGammaRamp = Cocoa_GetWindowGammaRamp;
@@ -119,6 +121,14 @@ Cocoa_CreateDevice(int devindex)
     device->GL_GetSwapInterval = Cocoa_GL_GetSwapInterval;
     device->GL_SwapWindow = Cocoa_GL_SwapWindow;
     device->GL_DeleteContext = Cocoa_GL_DeleteContext;
+#endif
+
+#if SDL_VIDEO_VULKAN
+    device->Vulkan_LoadLibrary = Cocoa_Vulkan_LoadLibrary;
+    device->Vulkan_UnloadLibrary = Cocoa_Vulkan_UnloadLibrary;
+    device->Vulkan_GetInstanceExtensions = Cocoa_Vulkan_GetInstanceExtensions;
+    device->Vulkan_CreateSurface = Cocoa_Vulkan_CreateSurface;
+    device->Vulkan_GetDrawableSize = Cocoa_Vulkan_GetDrawableSize;
 #endif
 
     device->StartTextInput = Cocoa_StartTextInput;
@@ -149,8 +159,7 @@ Cocoa_VideoInit(_THIS)
     Cocoa_InitKeyboard(_this);
     Cocoa_InitMouse(_this);
 
-    const char *hint = SDL_GetHint(SDL_HINT_VIDEO_MAC_FULLSCREEN_SPACES);
-    data->allow_spaces = ( (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_6) && (!hint || (*hint != '0')) );
+    data->allow_spaces = ((floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_6) && SDL_GetHintBoolean(SDL_HINT_VIDEO_MAC_FULLSCREEN_SPACES, SDL_TRUE));
 
     /* The IOPM assertion API can disable the screensaver as of 10.7. */
     data->screensaver_use_iopm = floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_6;
@@ -176,13 +185,7 @@ Cocoa_CreateImage(SDL_Surface * surface)
     int i;
     NSImage *img;
 
-    converted = SDL_ConvertSurfaceFormat(surface,
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-                                         SDL_PIXELFORMAT_RGBA8888,
-#else
-                                         SDL_PIXELFORMAT_ABGR8888,
-#endif
-                                         0);
+    converted = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_RGBA32, 0);
     if (!converted) {
         return nil;
     }

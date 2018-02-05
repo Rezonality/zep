@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -20,8 +20,8 @@
 */
 #include "../../SDL_internal.h"
 
-#ifndef _SDL_x11window_h
-#define _SDL_x11window_h
+#ifndef SDL_x11window_h_
+#define SDL_x11window_h_
 
 /* We need to queue the focus in/out changes because they may occur during
    video mode changes and we can respond to them by triggering more mode
@@ -60,6 +60,7 @@ typedef struct
     int border_right;
     int border_top;
     int border_bottom;
+    Uint32 last_focus_event_time;
     PendingFocusEnum pending_focus;
     Uint32 pending_focus_time;
     XConfigureEvent last_xconfigure;
@@ -95,6 +96,7 @@ extern void X11_MaximizeWindow(_THIS, SDL_Window * window);
 extern void X11_MinimizeWindow(_THIS, SDL_Window * window);
 extern void X11_RestoreWindow(_THIS, SDL_Window * window);
 extern void X11_SetWindowBordered(_THIS, SDL_Window * window, SDL_bool bordered);
+extern void X11_SetWindowResizable(_THIS, SDL_Window * window, SDL_bool resizable);
 extern void X11_SetWindowFullscreen(_THIS, SDL_Window * window, SDL_VideoDisplay * display, SDL_bool fullscreen);
 extern int X11_SetWindowGammaRamp(_THIS, SDL_Window * window, const Uint16 * ramp);
 extern void X11_SetWindowGrab(_THIS, SDL_Window * window, SDL_bool grabbed);
@@ -103,6 +105,6 @@ extern SDL_bool X11_GetWindowWMInfo(_THIS, SDL_Window * window,
                                     struct SDL_SysWMinfo *info);
 extern int X11_SetWindowHitTest(SDL_Window *window, SDL_bool enabled);
 
-#endif /* _SDL_x11window_h */
+#endif /* SDL_x11window_h_ */
 
 /* vi: set ts=4 sw=4 expandtab: */

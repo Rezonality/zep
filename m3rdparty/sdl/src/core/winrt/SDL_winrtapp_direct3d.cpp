@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -47,7 +47,6 @@ using namespace Windows::Phone::UI::Input;
 
 /* SDL includes */
 extern "C" {
-#include "../../SDL_internal.h"
 #include "SDL_assert.h"
 #include "SDL_events.h"
 #include "SDL_hints.h"
@@ -122,7 +121,8 @@ int SDL_WinRTInitNonXAMLApp(int (*mainFunction)(int, char **))
     return 0;
 }
 
-static void WINRT_SetDisplayOrientationsPreference(void *userdata, const char *name, const char *oldValue, const char *newValue)
+static void SDLCALL
+WINRT_SetDisplayOrientationsPreference(void *userdata, const char *name, const char *oldValue, const char *newValue)
 {
     SDL_assert(SDL_strcmp(name, SDL_HINT_ORIENTATIONS) == 0);
 
@@ -822,15 +822,12 @@ static void WINRT_OnBackButtonPressed(BackButtonEventArgs ^ args)
     SDL_SendKeyboardKey(SDL_PRESSED, SDL_SCANCODE_AC_BACK);
     SDL_SendKeyboardKey(SDL_RELEASED, SDL_SCANCODE_AC_BACK);
 
-    const char *hint = SDL_GetHint(SDL_HINT_WINRT_HANDLE_BACK_BUTTON);
-    if (hint) {
-        if (*hint == '1') {
-            args->Handled = true;
-        }
+    if (SDL_GetHintBoolean(SDL_HINT_WINRT_HANDLE_BACK_BUTTON, SDL_FALSE)) {
+        args->Handled = true;
     }
 }
 
-#if NTDDI_VERSION == NTDDI_WIN10
+#if NTDDI_VERSION >= NTDDI_WIN10
 void SDL_WinRTApp::OnBackButtonPressed(Platform::Object^ sender, Windows::UI::Core::BackRequestedEventArgs^ args)
 
 {
@@ -854,3 +851,5 @@ void SDL_WinRTApp::OnGamepadAdded(Platform::Object ^sender, Windows::Gaming::Inp
     */
 }
 #endif
+
+/* vi: set ts=4 sw=4 expandtab: */

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -116,6 +116,19 @@ SDL_GetHint(const char *name)
         }
     }
     return env;
+}
+
+SDL_bool
+SDL_GetHintBoolean(const char *name, SDL_bool default_value)
+{
+    const char *hint = SDL_GetHint(name);
+    if (!hint || !*hint) {
+        return default_value;
+    }
+    if (*hint == '0' || SDL_strcasecmp(hint, "false") == 0) {
+        return SDL_FALSE;
+    }
+    return SDL_TRUE;
 }
 
 void

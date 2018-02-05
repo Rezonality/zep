@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -28,7 +28,7 @@
 #include "../video/SDL_sysvideo.h"
 
 
-static int
+static int SDLCALL
 RemovePendingResizedEvents(void * userdata, SDL_Event *event)
 {
     SDL_Event *new_event = (SDL_Event *)userdata;
@@ -42,7 +42,7 @@ RemovePendingResizedEvents(void * userdata, SDL_Event *event)
     return 1;
 }
 
-static int
+static int SDLCALL
 RemovePendingSizeChangedEvents(void * userdata, SDL_Event *event)
 {
     SDL_Event *new_event = (SDL_Event *)userdata;
@@ -56,7 +56,7 @@ RemovePendingSizeChangedEvents(void * userdata, SDL_Event *event)
     return 1;
 }
 
-static int
+static int SDLCALL
 RemovePendingMoveEvents(void * userdata, SDL_Event *event)
 {
     SDL_Event *new_event = (SDL_Event *)userdata;
@@ -65,6 +65,20 @@ RemovePendingMoveEvents(void * userdata, SDL_Event *event)
         event->window.event == SDL_WINDOWEVENT_MOVED &&
         event->window.windowID == new_event->window.windowID) {
         /* We're about to post a new move event, drop the old one */
+        return 0;
+    }
+    return 1;
+}
+
+static int SDLCALL
+RemovePendingExposedEvents(void * userdata, SDL_Event *event)
+{
+    SDL_Event *new_event = (SDL_Event *)userdata;
+
+    if (event->type == SDL_WINDOWEVENT &&
+        event->window.event == SDL_WINDOWEVENT_EXPOSED &&
+        event->window.windowID == new_event->window.windowID) {
+        /* We're about to post a new exposed event, drop the old one */
         return 0;
     }
     return 1;
@@ -195,7 +209,9 @@ SDL_SendWindowEvent(SDL_Window * window, Uint8 windowevent, int data1,
         if (windowevent == SDL_WINDOWEVENT_MOVED) {
             SDL_FilterEvents(RemovePendingMoveEvents, &event);
         }
-
+        if (windowevent == SDL_WINDOWEVENT_EXPOSED) {
+            SDL_FilterEvents(RemovePendingExposedEvents, &event);
+        }
         posted = (SDL_PushEvent(&event) > 0);
     }
 

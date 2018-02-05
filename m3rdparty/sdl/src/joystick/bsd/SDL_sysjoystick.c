@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -179,7 +179,7 @@ SDL_SYS_JoystickInit(void)
 
         SDL_snprintf(s, SDL_arraysize(s), "/dev/uhid%d", i);
 
-        joynames[SDL_SYS_numjoysticks] = strdup(s);
+        joynames[SDL_SYS_numjoysticks] = SDL_strdup(s);
 
         if (SDL_SYS_JoystickOpen(&nj, SDL_SYS_numjoysticks) == 0) {
             SDL_SYS_JoystickClose(&nj);
@@ -193,7 +193,7 @@ SDL_SYS_JoystickInit(void)
         SDL_snprintf(s, SDL_arraysize(s), "/dev/joy%d", i);
         fd = open(s, O_RDONLY);
         if (fd != -1) {
-            joynames[SDL_SYS_numjoysticks++] = strdup(s);
+            joynames[SDL_SYS_numjoysticks++] = SDL_strdup(s);
             close(fd);
         }
     }
@@ -204,12 +204,14 @@ SDL_SYS_JoystickInit(void)
     return (SDL_SYS_numjoysticks);
 }
 
-int SDL_SYS_NumJoysticks()
+int
+SDL_SYS_NumJoysticks(void)
 {
     return SDL_SYS_numjoysticks;
 }
 
-void SDL_SYS_JoystickDetect()
+void
+SDL_SYS_JoystickDetect(void)
 {
 }
 
@@ -304,14 +306,14 @@ SDL_SYS_JoystickOpen(SDL_Joystick * joy, int device_index)
     }
     joy->hwdata = hw;
     hw->fd = fd;
-    hw->path = strdup(path);
+    hw->path = SDL_strdup(path);
     if (!SDL_strncmp(path, "/dev/joy", 8)) {
         hw->type = BSDJOY_JOY;
         joy->naxes = 2;
         joy->nbuttons = 2;
         joy->nhats = 0;
         joy->nballs = 0;
-        joydevnames[device_index] = strdup("Gameport joystick");
+        joydevnames[device_index] = SDL_strdup("Gameport joystick");
         goto usbend;
     } else {
         hw->type = BSDJOY_UHID;
@@ -363,7 +365,7 @@ SDL_SYS_JoystickOpen(SDL_Joystick * joy, int device_index)
         str[i] = '\0';
         asprintf(&new_name, "%s @ %s", str, path);
         if (new_name != NULL) {
-            free(joydevnames[SDL_SYS_numjoysticks]);
+            SDL_free(joydevnames[SDL_SYS_numjoysticks]);
             joydevnames[SDL_SYS_numjoysticks] = new_name;
         }
     }
@@ -520,12 +522,8 @@ SDL_SYS_JoystickUpdate(SDL_Joystick * joy)
                 v *= 32768 / ((ymax - ymin + 1) / 2);
                 SDL_PrivateJoystickAxis(joy, 1, v);
             }
-            if (gameport.b1 != joy->buttons[0]) {
-                SDL_PrivateJoystickButton(joy, 0, gameport.b1);
-            }
-            if (gameport.b2 != joy->buttons[1]) {
-                SDL_PrivateJoystickButton(joy, 1, gameport.b2);
-            }
+            SDL_PrivateJoystickButton(joy, 0, gameport.b1);
+            SDL_PrivateJoystickButton(joy, 1, gameport.b2);
         }
         return;
     }
@@ -561,9 +559,7 @@ SDL_SYS_JoystickUpdate(SDL_Joystick * joy)
                             v *= 32768 /
                                 ((hitem.logical_maximum -
                                   hitem.logical_minimum + 1) / 2);
-                            if (v != joy->axes[naxe]) {
-                                SDL_PrivateJoystickAxis(joy, naxe, v);
-                            }
+                            SDL_PrivateJoystickAxis(joy, naxe, v);
                         } else if (usage == HUG_HAT_SWITCH) {
                             v = (Sint32) hid_get_data(REP_BUF_DATA(rep), &hitem);
                             SDL_PrivateJoystickHat(joy, 0,
@@ -574,9 +570,7 @@ SDL_SYS_JoystickUpdate(SDL_Joystick * joy)
                     }
                 case HUP_BUTTON:
                     v = (Sint32) hid_get_data(REP_BUF_DATA(rep), &hitem);
-                    if (joy->buttons[nbutton] != v) {
-                        SDL_PrivateJoystickButton(joy, nbutton, v);
-                    }
+                    SDL_PrivateJoystickButton(joy, nbutton, v);
                     nbutton++;
                     break;
                 default:

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -33,9 +33,7 @@
 #endif
 
 #define INPUT_QSIZE 32      /* Buffer up to 32 input messages */
-#define AXIS_MIN    -32768  /* minimum value for axis coordinate */
-#define AXIS_MAX    32767   /* maximum value for axis coordinate */
-#define JOY_AXIS_THRESHOLD  (((AXIS_MAX)-(AXIS_MIN))/100)   /* 1% motion */
+#define JOY_AXIS_THRESHOLD  (((SDL_JOYSTICK_AXIS_MAX)-(SDL_JOYSTICK_AXIS_MIN))/100)   /* 1% motion */
 
 /* external variables referenced. */
 extern HWND SDL_HelperWindow;
@@ -214,7 +212,7 @@ static DIOBJECTDATAFORMAT dfDIJoystick2[] = {
         { &GUID_Slider, FIELD_OFFSET(DIJOYSTATE2, rglFSlider[1]), DIDFT_OPTIONAL | DIDFT_AXIS | DIDFT_ANYINSTANCE, 0 },
 };
 
-const DIDATAFORMAT c_dfDIJoystick2 = {
+const DIDATAFORMAT SDL_c_dfDIJoystick2 = {
     sizeof(DIDATAFORMAT),
     sizeof(DIOBJECTDATAFORMAT),
     DIDF_ABSAXIS,
@@ -240,11 +238,23 @@ SDL_IsXInputDevice(const GUID* pGuidProductFromDirectInput)
     static GUID IID_ValveStreamingGamepad = { MAKELONG(0x28DE, 0x11FF), 0x0000, 0x0000, { 0x00, 0x00, 0x50, 0x49, 0x44, 0x56, 0x49, 0x44 } };
     static GUID IID_X360WiredGamepad = { MAKELONG(0x045E, 0x02A1), 0x0000, 0x0000, { 0x00, 0x00, 0x50, 0x49, 0x44, 0x56, 0x49, 0x44 } };
     static GUID IID_X360WirelessGamepad = { MAKELONG(0x045E, 0x028E), 0x0000, 0x0000, { 0x00, 0x00, 0x50, 0x49, 0x44, 0x56, 0x49, 0x44 } };
+    static GUID IID_XOneWiredGamepad = { MAKELONG(0x045E, 0x02FF), 0x0000, 0x0000, { 0x00, 0x00, 0x50, 0x49, 0x44, 0x56, 0x49, 0x44 } };
+    static GUID IID_XOneWirelessGamepad = { MAKELONG(0x045E, 0x02DD), 0x0000, 0x0000, { 0x00, 0x00, 0x50, 0x49, 0x44, 0x56, 0x49, 0x44 } };
+    static GUID IID_XOneNewWirelessGamepad = { MAKELONG(0x045E, 0x02D1), 0x0000, 0x0000, { 0x00, 0x00, 0x50, 0x49, 0x44, 0x56, 0x49, 0x44 } };
+    static GUID IID_XOneSWirelessGamepad = { MAKELONG(0x045E, 0x02EA), 0x0000, 0x0000, { 0x00, 0x00, 0x50, 0x49, 0x44, 0x56, 0x49, 0x44 } };
+    static GUID IID_XOneSBluetoothGamepad = { MAKELONG(0x045E, 0x02E0), 0x0000, 0x0000, { 0x00, 0x00, 0x50, 0x49, 0x44, 0x56, 0x49, 0x44 } };
+    static GUID IID_XOneEliteWirelessGamepad = { MAKELONG(0x045E, 0x02E3), 0x0000, 0x0000, { 0x00, 0x00, 0x50, 0x49, 0x44, 0x56, 0x49, 0x44 } };
 
     static const GUID *s_XInputProductGUID[] = {
         &IID_ValveStreamingGamepad,
-        &IID_X360WiredGamepad,   /* Microsoft's wired X360 controller for Windows. */
-        &IID_X360WirelessGamepad /* Microsoft's wireless X360 controller for Windows. */
+        &IID_X360WiredGamepad,         /* Microsoft's wired X360 controller for Windows. */
+        &IID_X360WirelessGamepad,      /* Microsoft's wireless X360 controller for Windows. */
+        &IID_XOneWiredGamepad,         /* Microsoft's wired Xbox One controller for Windows. */
+        &IID_XOneWirelessGamepad,      /* Microsoft's wireless Xbox One controller for Windows. */
+        &IID_XOneNewWirelessGamepad,   /* Microsoft's updated wireless Xbox One controller (w/ 3.5 mm jack) for Windows. */
+        &IID_XOneSWirelessGamepad,     /* Microsoft's wireless Xbox One S controller for Windows. */
+        &IID_XOneSBluetoothGamepad,    /* Microsoft's Bluetooth Xbox One S controller for Windows. */
+        &IID_XOneEliteWirelessGamepad  /* Microsoft's wireless Xbox One Elite controller for Windows. */
     };
 
     size_t iDevice;
@@ -338,27 +348,79 @@ SDL_DINPUT_JoystickInit(void)
 static BOOL CALLBACK
 EnumJoysticksCallback(const DIDEVICEINSTANCE * pdidInstance, VOID * pContext)
 {
+    const Uint16 BUS_USB = 0x03;
+    const Uint16 BUS_BLUETOOTH = 0x05;
     JoyStick_DeviceData *pNewJoystick;
     JoyStick_DeviceData *pPrevJoystick = NULL;
     const DWORD devtype = (pdidInstance->dwDevType & 0xFF);
+    Uint16 *guid16;
+    WCHAR hidPath[MAX_PATH];
 
     if (devtype == DI8DEVTYPE_SUPPLEMENTAL) {
-        return DIENUM_CONTINUE;  /* Ignore touchpads, etc. */
+        /* Add any supplemental devices that should be ignored here */
+#define MAKE_TABLE_ENTRY(VID, PID)	((((DWORD)PID)<<16)|VID)
+		static DWORD ignored_devices[] = {
+			MAKE_TABLE_ENTRY(0, 0)
+		};
+#undef MAKE_TABLE_ENTRY
+		unsigned int i;
+
+		for (i = 0; i < SDL_arraysize(ignored_devices); ++i) {
+			if (pdidInstance->guidProduct.Data1 == ignored_devices[i]) {
+				return DIENUM_CONTINUE;
+			}
+		}
     }
 
     if (SDL_IsXInputDevice(&pdidInstance->guidProduct)) {
         return DIENUM_CONTINUE;  /* ignore XInput devices here, keep going. */
     }
 
+    {
+        HRESULT result;
+        LPDIRECTINPUTDEVICE8 device;
+        LPDIRECTINPUTDEVICE8 InputDevice;
+        DIPROPGUIDANDPATH dipdw2;
+
+        result = IDirectInput8_CreateDevice(dinput, &(pdidInstance->guidInstance), &device, NULL);
+        if (FAILED(result)) {
+            return DIENUM_CONTINUE; /* better luck next time? */
+        }
+
+        /* Now get the IDirectInputDevice8 interface, instead. */
+        result = IDirectInputDevice8_QueryInterface(device, &IID_IDirectInputDevice8, (LPVOID *)&InputDevice);
+        /* We are done with this object.  Use the stored one from now on. */
+        IDirectInputDevice8_Release(device);
+        if (FAILED(result)) {
+            return DIENUM_CONTINUE; /* better luck next time? */
+        }
+        dipdw2.diph.dwSize = sizeof(dipdw2);
+        dipdw2.diph.dwHeaderSize = sizeof(dipdw2.diph);
+        dipdw2.diph.dwObj = 0; // device property
+        dipdw2.diph.dwHow = DIPH_DEVICE;
+
+        result = IDirectInputDevice8_GetProperty(InputDevice, DIPROP_GUIDANDPATH, &dipdw2.diph);
+        IDirectInputDevice8_Release(InputDevice);
+        if (FAILED(result)) {
+            return DIENUM_CONTINUE; /* better luck next time? */
+        }
+
+        /* Get device path, compare that instead of GUID, additionally update GUIDs of joysticks with matching paths, in case they're not open yet. */
+        SDL_wcslcpy(hidPath, dipdw2.wszPath, SDL_arraysize(hidPath));
+    }
+
     pNewJoystick = *(JoyStick_DeviceData **)pContext;
     while (pNewJoystick) {
-        if (!SDL_memcmp(&pNewJoystick->dxdevice.guidInstance, &pdidInstance->guidInstance, sizeof(pNewJoystick->dxdevice.guidInstance))) {
+        if (SDL_wcscmp(pNewJoystick->hidPath, hidPath) == 0) {
             /* if we are replacing the front of the list then update it */
             if (pNewJoystick == *(JoyStick_DeviceData **)pContext) {
                 *(JoyStick_DeviceData **)pContext = pNewJoystick->pNext;
             } else if (pPrevJoystick) {
                 pPrevJoystick->pNext = pNewJoystick->pNext;
             }
+
+            // Update with new guid/etc, if it has changed
+            pNewJoystick->dxdevice = *pdidInstance;
 
             pNewJoystick->pNext = SYS_Joystick;
             SYS_Joystick = pNewJoystick;
@@ -376,6 +438,7 @@ EnumJoysticksCallback(const DIDEVICEINSTANCE * pdidInstance, VOID * pContext)
     }
 
     SDL_zerop(pNewJoystick);
+    SDL_wcslcpy(pNewJoystick->hidPath, hidPath, SDL_arraysize(pNewJoystick->hidPath));
     pNewJoystick->joystickname = WIN_StringToUTF8(pdidInstance->tszProductName);
     if (!pNewJoystick->joystickname) {
         SDL_free(pNewJoystick);
@@ -385,7 +448,30 @@ EnumJoysticksCallback(const DIDEVICEINSTANCE * pdidInstance, VOID * pContext)
     SDL_memcpy(&(pNewJoystick->dxdevice), pdidInstance,
         sizeof(DIDEVICEINSTANCE));
 
-    SDL_memcpy(&pNewJoystick->guid, &pdidInstance->guidProduct, sizeof(pNewJoystick->guid));
+    SDL_memset(pNewJoystick->guid.data, 0, sizeof(pNewJoystick->guid.data));
+
+    guid16 = (Uint16 *)pNewJoystick->guid.data;
+    if (SDL_memcmp(&pdidInstance->guidProduct.Data4[2], "PIDVID", 6) == 0) {
+        *guid16++ = SDL_SwapLE16(BUS_USB);
+        *guid16++ = 0;
+        *guid16++ = SDL_SwapLE16((Uint16)LOWORD(pdidInstance->guidProduct.Data1)); /* vendor */
+        *guid16++ = 0;
+        *guid16++ = SDL_SwapLE16((Uint16)HIWORD(pdidInstance->guidProduct.Data1)); /* product */
+        *guid16++ = 0;
+        *guid16++ = 0; /* version */
+        *guid16++ = 0;
+    } else {
+        *guid16++ = SDL_SwapLE16(BUS_BLUETOOTH);
+        *guid16++ = 0;
+        SDL_strlcpy((char*)guid16, pNewJoystick->joystickname, sizeof(pNewJoystick->guid.data) - 4);
+    }
+
+    if (SDL_IsGameControllerNameAndGUID(pNewJoystick->joystickname, pNewJoystick->guid) &&
+        SDL_ShouldIgnoreGameController(pNewJoystick->joystickname, pNewJoystick->guid)) {
+        SDL_free(pNewJoystick);
+        return DIENUM_CONTINUE;
+    }
+
     SDL_SYS_AddJoystickDevice(pNewJoystick);
 
     return DIENUM_CONTINUE; /* get next device, please */
@@ -449,8 +535,8 @@ EnumDevObjectsCallback(LPCDIDEVICEOBJECTINSTANCE dev, LPVOID pvRef)
         diprg.diph.dwHeaderSize = sizeof(diprg.diph);
         diprg.diph.dwObj = dev->dwType;
         diprg.diph.dwHow = DIPH_BYID;
-        diprg.lMin = AXIS_MIN;
-        diprg.lMax = AXIS_MAX;
+        diprg.lMin = SDL_JOYSTICK_AXIS_MIN;
+        diprg.lMax = SDL_JOYSTICK_AXIS_MAX;
 
         result =
             IDirectInputDevice8_SetProperty(joystick->hwdata->InputDevice,
@@ -582,7 +668,7 @@ SDL_DINPUT_JoystickOpen(SDL_Joystick * joystick, JoyStick_DeviceData *joystickde
     /* Use the extended data structure: DIJOYSTATE2. */
     result =
         IDirectInputDevice8_SetDataFormat(joystick->hwdata->InputDevice,
-        &c_dfDIJoystick2);
+        &SDL_c_dfDIJoystick2);
     if (FAILED(result)) {
         return SetDIerror("IDirectInputDevice8::SetDataFormat", result);
     }

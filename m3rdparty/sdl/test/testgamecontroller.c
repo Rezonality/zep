@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -29,7 +29,7 @@
 #define SCREEN_HEIGHT    320
 #else
 #define SCREEN_WIDTH    512
-#define SCREEN_HEIGHT   317
+#define SCREEN_HEIGHT   320
 #endif
 
 /* This is indexed by SDL_GameControllerButton. */
@@ -53,12 +53,12 @@ static const struct { int x; int y; } button_positions[] = {
 
 /* This is indexed by SDL_GameControllerAxis. */
 static const struct { int x; int y; double angle; } axis_positions[] = {
-    {75,  154, 0.0},  /* LEFTX */
-    {75,  154, 90.0},  /* LEFTY */
-    {305, 230, 0.0},  /* RIGHTX */
-    {305, 230, 90.0},  /* RIGHTY */
-    {91, 0, 90.0},     /* TRIGGERLEFT */
-    {375, 0, 90.0},    /* TRIGGERRIGHT */
+    {74,  153, 270.0},  /* LEFTX */
+    {74,  153, 0.0},  /* LEFTY */
+    {306, 231, 270.0},  /* RIGHTX */
+    {306, 231, 0.0},  /* RIGHTY */
+    {91, -20, 0.0},     /* TRIGGERLEFT */
+    {375, -20, 0.0},    /* TRIGGERRIGHT */
 };
 
 SDL_Renderer *screen = NULL;
@@ -67,7 +67,7 @@ SDL_bool done = SDL_FALSE;
 SDL_Texture *background, *button, *axis;
 
 static SDL_Texture *
-LoadTexture(SDL_Renderer *renderer, char *file, SDL_bool transparent)
+LoadTexture(SDL_Renderer *renderer, const char *file, SDL_bool transparent)
 {
     SDL_Surface *temp = NULL;
     SDL_Texture *texture = NULL;
@@ -80,10 +80,6 @@ LoadTexture(SDL_Renderer *renderer, char *file, SDL_bool transparent)
         if (transparent) {
             if (temp->format->BytesPerPixel == 1) {
                 SDL_SetColorKey(temp, SDL_TRUE, *(Uint8 *)temp->pixels);
-            } else {
-                SDL_assert(!temp->format->palette);
-                SDL_assert(temp->format->BitsPerPixel == 24);
-                SDL_SetColorKey(temp, SDL_TRUE, (*(Uint32 *)temp->pixels) & 0x00FFFFFF);
             }
         }
 
@@ -112,6 +108,13 @@ loop(void *arg)
 
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
+        case SDL_CONTROLLERAXISMOTION:
+            SDL_Log("Controller axis %s changed to %d\n", SDL_GameControllerGetStringForAxis((SDL_GameControllerAxis)event.caxis.axis), event.caxis.value);
+            break;
+        case SDL_CONTROLLERBUTTONDOWN:
+        case SDL_CONTROLLERBUTTONUP:
+            SDL_Log("Controller button %s %s\n", SDL_GameControllerGetStringForButton((SDL_GameControllerButton)event.cbutton.button), event.cbutton.state ? "pressed" : "released");
+            break;
         case SDL_KEYDOWN:
             if (event.key.keysym.sym != SDLK_ESCAPE) {
                 break;
@@ -129,7 +132,7 @@ loop(void *arg)
     for (i = 0; i < SDL_CONTROLLER_BUTTON_MAX; ++i) {
         if (SDL_GameControllerGetButton(gamecontroller, (SDL_GameControllerButton)i) == SDL_PRESSED) {
             const SDL_Rect dst = { button_positions[i].x, button_positions[i].y, 50, 50 };
-            SDL_RenderCopyEx(screen, button, NULL, &dst, 0, NULL, 0);
+            SDL_RenderCopyEx(screen, button, NULL, &dst, 0, NULL, SDL_FLIP_NONE);
         }
     }
 
@@ -139,11 +142,11 @@ loop(void *arg)
         if (value < -deadzone) {
             const SDL_Rect dst = { axis_positions[i].x, axis_positions[i].y, 50, 50 };
             const double angle = axis_positions[i].angle;
-            SDL_RenderCopyEx(screen, axis, NULL, &dst, angle, NULL, 0);
+            SDL_RenderCopyEx(screen, axis, NULL, &dst, angle, NULL, SDL_FLIP_NONE);
         } else if (value > deadzone) {
             const SDL_Rect dst = { axis_positions[i].x, axis_positions[i].y, 50, 50 };
             const double angle = axis_positions[i].angle + 180.0;
-            SDL_RenderCopyEx(screen, axis, NULL, &dst, angle, NULL, 0);
+            SDL_RenderCopyEx(screen, axis, NULL, &dst, angle, NULL, SDL_FLIP_NONE);
         }
     }
 
@@ -181,6 +184,8 @@ WatchGameController(SDL_GameController * gamecontroller)
     window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED,
                               SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH,
                               SCREEN_HEIGHT, 0);
+    SDL_free(title);
+    title = NULL;
     if (window == NULL) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window: %s\n", SDL_GetError());
         return SDL_FALSE;
@@ -257,6 +262,19 @@ main(int argc, char *argv[])
     
     SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
 
+    /* Print information about the mappings */
+    if (!argv[1]) {
+        SDL_Log("Supported mappings:\n");
+        for (i = 0; i < SDL_GameControllerNumMappings(); ++i) {
+            char *mapping = SDL_GameControllerMappingForIndex(i);
+            if (mapping) {
+                SDL_Log("\t%s\n", mapping);
+                SDL_free(mapping);
+            }
+        }
+        SDL_Log("\n");
+    }
+
     /* Print information about the controller */
     for (i = 0; i < SDL_NumJoysticks(); ++i) {
         const char *name;
@@ -274,7 +292,9 @@ main(int argc, char *argv[])
             name = SDL_JoystickNameForIndex(i);
             description = "Joystick";
         }
-        SDL_Log("%s %d: %s (guid %s)\n", description, i, name ? name : "Unknown", guid);
+        SDL_Log("%s %d: %s (guid %s, VID 0x%.4x, PID 0x%.4x)\n",
+            description, i, name ? name : "Unknown", guid,
+            SDL_JoystickGetDeviceVendor(i), SDL_JoystickGetDeviceProduct(i));
     }
     SDL_Log("There are %d game controller(s) attached (%d joystick(s))\n", nController, SDL_NumJoysticks());
 
@@ -346,3 +366,5 @@ main(int argc, char *argv[])
 }
 
 #endif
+
+/* vi: set ts=4 sw=4 expandtab: */

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -60,7 +60,7 @@ SDL_SetSystemTimerResolution(const UINT uPeriod)
 #endif
 }
 
-static void
+static void SDLCALL
 SDL_TimerResolutionChanged(void *userdata, const char *name, const char *oldValue, const char *hint)
 {
     UINT uPeriod;
@@ -107,10 +107,8 @@ SDL_TicksInit(void)
 void
 SDL_TicksQuit(void)
 {
-    if (!hires_timer_available) {
-        SDL_DelHintCallback(SDL_HINT_TIMER_RESOLUTION,
-                            SDL_TimerResolutionChanged, NULL);
-    }
+    SDL_DelHintCallback(SDL_HINT_TIMER_RESOLUTION,
+                        SDL_TimerResolutionChanged, NULL);
 
     SDL_SetSystemTimerResolution(0);  /* always release our timer resolution request. */
 

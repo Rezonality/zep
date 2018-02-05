@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -37,6 +37,7 @@ typedef struct JoyStick_DeviceData
     BYTE SubType;
     Uint8 XInputUserId;
     DIDEVICEINSTANCE dxdevice;
+    WCHAR hidPath[MAX_PATH];
     struct JoyStick_DeviceData *pNext;
 } JoyStick_DeviceData;
 
@@ -82,6 +83,10 @@ struct joystick_hwdata
     Uint8 userid; /* XInput userid index for this joystick */
     DWORD dwPacketNumber;
 };
+
+#if SDL_JOYSTICK_DINPUT
+extern const DIDATAFORMAT SDL_c_dfDIJoystick2;
+#endif
 
 extern void SDL_SYS_AddJoystickDevice(JoyStick_DeviceData *device);
 

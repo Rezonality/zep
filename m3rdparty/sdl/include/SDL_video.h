@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,8 +25,8 @@
  *  Header file for SDL video functions.
  */
 
-#ifndef _SDL_video_h
-#define _SDL_video_h
+#ifndef SDL_video_h_
+#define SDL_video_h_
 
 #include "SDL_stdinc.h"
 #include "SDL_pixels.h"
@@ -83,6 +83,7 @@ typedef struct
  *  \sa SDL_SetWindowPosition()
  *  \sa SDL_SetWindowSize()
  *  \sa SDL_SetWindowBordered()
+ *  \sa SDL_SetWindowResizable()
  *  \sa SDL_SetWindowTitle()
  *  \sa SDL_ShowWindow()
  */
@@ -115,13 +116,14 @@ typedef enum
     SDL_WINDOW_SKIP_TASKBAR  = 0x00010000,      /**< window should not be added to the taskbar */
     SDL_WINDOW_UTILITY       = 0x00020000,      /**< window should be treated as a utility window */
     SDL_WINDOW_TOOLTIP       = 0x00040000,      /**< window should be treated as a tooltip */
-    SDL_WINDOW_POPUP_MENU    = 0x00080000       /**< window should be treated as a popup menu */
+    SDL_WINDOW_POPUP_MENU    = 0x00080000,      /**< window should be treated as a popup menu */
+    SDL_WINDOW_VULKAN        = 0x10000000       /**< window usable for Vulkan surface */
 } SDL_WindowFlags;
 
 /**
  *  \brief Used to indicate that you don't care what the window position is.
  */
-#define SDL_WINDOWPOS_UNDEFINED_MASK    0x1FFF0000
+#define SDL_WINDOWPOS_UNDEFINED_MASK    0x1FFF0000u
 #define SDL_WINDOWPOS_UNDEFINED_DISPLAY(X)  (SDL_WINDOWPOS_UNDEFINED_MASK|(X))
 #define SDL_WINDOWPOS_UNDEFINED         SDL_WINDOWPOS_UNDEFINED_DISPLAY(0)
 #define SDL_WINDOWPOS_ISUNDEFINED(X)    \
@@ -130,7 +132,7 @@ typedef enum
 /**
  *  \brief Used to indicate that the window position should be centered.
  */
-#define SDL_WINDOWPOS_CENTERED_MASK    0x2FFF0000
+#define SDL_WINDOWPOS_CENTERED_MASK    0x2FFF0000u
 #define SDL_WINDOWPOS_CENTERED_DISPLAY(X)  (SDL_WINDOWPOS_CENTERED_MASK|(X))
 #define SDL_WINDOWPOS_CENTERED         SDL_WINDOWPOS_CENTERED_DISPLAY(0)
 #define SDL_WINDOWPOS_ISCENTERED(X)    \
@@ -199,14 +201,16 @@ typedef enum
     SDL_GL_CONTEXT_PROFILE_MASK,
     SDL_GL_SHARE_WITH_CURRENT_CONTEXT,
     SDL_GL_FRAMEBUFFER_SRGB_CAPABLE,
-    SDL_GL_CONTEXT_RELEASE_BEHAVIOR
+    SDL_GL_CONTEXT_RELEASE_BEHAVIOR,
+    SDL_GL_CONTEXT_RESET_NOTIFICATION,
+    SDL_GL_CONTEXT_NO_ERROR
 } SDL_GLattr;
 
 typedef enum
 {
     SDL_GL_CONTEXT_PROFILE_CORE           = 0x0001,
     SDL_GL_CONTEXT_PROFILE_COMPATIBILITY  = 0x0002,
-    SDL_GL_CONTEXT_PROFILE_ES             = 0x0004 /* GLX_CONTEXT_ES2_PROFILE_BIT_EXT */
+    SDL_GL_CONTEXT_PROFILE_ES             = 0x0004 /**< GLX_CONTEXT_ES2_PROFILE_BIT_EXT */
 } SDL_GLprofile;
 
 typedef enum
@@ -223,6 +227,11 @@ typedef enum
     SDL_GL_CONTEXT_RELEASE_BEHAVIOR_FLUSH  = 0x0001
 } SDL_GLcontextReleaseFlag;
 
+typedef enum
+{
+    SDL_GL_CONTEXT_RESET_NO_NOTIFICATION = 0x0000,
+    SDL_GL_CONTEXT_RESET_LOSE_CONTEXT    = 0x0001
+} SDL_GLContextResetNotification;
 
 /* Function prototypes */
 
@@ -447,17 +456,32 @@ extern DECLSPEC Uint32 SDLCALL SDL_GetWindowPixelFormat(SDL_Window * window);
  *               ::SDL_WINDOW_HIDDEN,        ::SDL_WINDOW_BORDERLESS,
  *               ::SDL_WINDOW_RESIZABLE,     ::SDL_WINDOW_MAXIMIZED,
  *               ::SDL_WINDOW_MINIMIZED,     ::SDL_WINDOW_INPUT_GRABBED,
- *               ::SDL_WINDOW_ALLOW_HIGHDPI.
+ *               ::SDL_WINDOW_ALLOW_HIGHDPI, ::SDL_WINDOW_VULKAN.
  *
- *  \return The id of the window created, or zero if window creation failed.
+ *  \return The created window, or NULL if window creation failed.
  *
  *  If the window is created with the SDL_WINDOW_ALLOW_HIGHDPI flag, its size
  *  in pixels may differ from its size in screen coordinates on platforms with
  *  high-DPI support (e.g. iOS and Mac OS X). Use SDL_GetWindowSize() to query
- *  the client area's size in screen coordinates, and SDL_GL_GetDrawableSize()
- *  or SDL_GetRendererOutputSize() to query the drawable size in pixels.
+ *  the client area's size in screen coordinates, and SDL_GL_GetDrawableSize(),
+ *  SDL_Vulkan_GetDrawableSize(), or SDL_GetRendererOutputSize() to query the
+ *  drawable size in pixels.
+ *
+ *  If the window is created with any of the SDL_WINDOW_OPENGL or
+ *  SDL_WINDOW_VULKAN flags, then the corresponding LoadLibrary function
+ *  (SDL_GL_LoadLibrary or SDL_Vulkan_LoadLibrary) is called and the
+ *  corrensponding UnloadLibrary function is called by SDL_DestroyWindow().
+ *
+ *  If SDL_WINDOW_VULKAN is specified and there isn't a working Vulkan driver,
+ *  SDL_CreateWindow() will fail because SDL_Vulkan_LoadLibrary() will fail.
+ *
+ *  \note On non-Apple devices, SDL requires you to either not link to the
+ *        Vulkan loader or link to a dynamic library version. This limitation
+ *        may be removed in a future version of SDL.
  *
  *  \sa SDL_DestroyWindow()
+ *  \sa SDL_GL_LoadLibrary()
+ *  \sa SDL_Vulkan_LoadLibrary()
  */
 extern DECLSPEC SDL_Window * SDLCALL SDL_CreateWindow(const char *title,
                                                       int x, int y, int w,
@@ -468,7 +492,7 @@ extern DECLSPEC SDL_Window * SDLCALL SDL_CreateWindow(const char *title,
  *
  *  \param data A pointer to driver-dependent window creation data
  *
- *  \return The id of the window created, or zero if window creation failed.
+ *  \return The created window, or NULL if window creation failed.
  *
  *  \sa SDL_DestroyWindow()
  */
@@ -580,8 +604,8 @@ extern DECLSPEC void SDLCALL SDL_GetWindowPosition(SDL_Window * window,
  *  \param w        The width of the window, in screen coordinates. Must be >0.
  *  \param h        The height of the window, in screen coordinates. Must be >0.
  *
- *  \note You can't change the size of a fullscreen window, it automatically
- *        matches the size of the display mode.
+ *  \note Fullscreen windows automatically match the size of the display mode,
+ *        and you should use SDL_SetWindowDisplayMode() to change their size.
  *
  *  The window size in screen coordinates may differ from the size in pixels, if
  *  the window was created with SDL_WINDOW_ALLOW_HIGHDPI on a platform with
@@ -589,6 +613,7 @@ extern DECLSPEC void SDLCALL SDL_GetWindowPosition(SDL_Window * window,
  *  SDL_GetRendererOutputSize() to get the real client area size in pixels.
  *
  *  \sa SDL_GetWindowSize()
+ *  \sa SDL_SetWindowDisplayMode()
  */
 extern DECLSPEC void SDLCALL SDL_SetWindowSize(SDL_Window * window, int w,
                                                int h);
@@ -707,6 +732,23 @@ extern DECLSPEC void SDLCALL SDL_SetWindowBordered(SDL_Window * window,
                                                    SDL_bool bordered);
 
 /**
+ *  \brief Set the user-resizable state of a window.
+ *
+ *  This will add or remove the window's SDL_WINDOW_RESIZABLE flag and
+ *  allow/disallow user resizing of the window. This is a no-op if the
+ *  window's resizable state already matches the requested state.
+ *
+ *  \param window The window of which to change the resizable state.
+ *  \param resizable SDL_TRUE to allow resizing, SDL_FALSE to disallow.
+ *
+ *  \note You can't change the resizable state of a fullscreen window.
+ *
+ *  \sa SDL_GetWindowFlags()
+ */
+extern DECLSPEC void SDLCALL SDL_SetWindowResizable(SDL_Window * window,
+                                                    SDL_bool resizable);
+
+/**
  *  \brief Show a window.
  *
  *  \sa SDL_HideWindow()
@@ -789,7 +831,7 @@ extern DECLSPEC int SDLCALL SDL_UpdateWindowSurface(SDL_Window * window);
  *  \return 0 on success, or -1 on error.
  *
  *  \sa SDL_GetWindowSurface()
- *  \sa SDL_UpdateWindowSurfaceRect()
+ *  \sa SDL_UpdateWindowSurface()
  */
 extern DECLSPEC int SDLCALL SDL_UpdateWindowSurfaceRects(SDL_Window * window,
                                                          const SDL_Rect * rects,
@@ -852,7 +894,7 @@ extern DECLSPEC float SDLCALL SDL_GetWindowBrightness(SDL_Window * window);
  *  \param window The window which will be made transparent or opaque
  *  \param opacity Opacity (0.0f - transparent, 1.0f - opaque) This will be
  *                 clamped internally between 0.0f and 1.0f.
- * 
+ *
  *  \return 0 on success, or -1 if setting the opacity isn't supported.
  *
  *  \sa SDL_GetWindowOpacity()
@@ -879,7 +921,7 @@ extern DECLSPEC int SDLCALL SDL_GetWindowOpacity(SDL_Window * window, float * ou
  *
  *  \param modal_window The window that should be modal
  *  \param parent_window The parent window
- * 
+ *
  *  \return 0 on success, or -1 otherwise.
  */
 extern DECLSPEC int SDLCALL SDL_SetWindowModalFor(SDL_Window * modal_window, SDL_Window * parent_window);
@@ -892,7 +934,7 @@ extern DECLSPEC int SDLCALL SDL_SetWindowModalFor(SDL_Window * modal_window, SDL
  *  obscured by other windows.
  *
  *  \param window The window that should get the input focus
- * 
+ *
  *  \return 0 on success, or -1 otherwise.
  *  \sa SDL_RaiseWindow()
  */
@@ -1017,7 +1059,7 @@ extern DECLSPEC void SDLCALL SDL_DestroyWindow(SDL_Window * window);
 
 
 /**
- *  \brief Returns whether the screensaver is currently enabled (default on).
+ *  \brief Returns whether the screensaver is currently enabled (default off).
  *
  *  \sa SDL_EnableScreenSaver()
  *  \sa SDL_DisableScreenSaver()
@@ -1092,11 +1134,16 @@ extern DECLSPEC void SDLCALL SDL_GL_ResetAttributes(void);
 
 /**
  *  \brief Set an OpenGL window attribute before window creation.
+ *
+ *  \return 0 on success, or -1 if the attribute could not be set.
  */
 extern DECLSPEC int SDLCALL SDL_GL_SetAttribute(SDL_GLattr attr, int value);
 
 /**
  *  \brief Get the actual value for an attribute from the current context.
+ *
+ *  \return 0 on success, or -1 if the attribute could not be retrieved.
+ *          The integer at \c value will be modified in either case.
  */
 extern DECLSPEC int SDLCALL SDL_GL_GetAttribute(SDL_GLattr attr, int *value);
 
@@ -1195,6 +1242,6 @@ extern DECLSPEC void SDLCALL SDL_GL_DeleteContext(SDL_GLContext context);
 #endif
 #include "close_code.h"
 
-#endif /* _SDL_video_h */
+#endif /* SDL_video_h_ */
 
 /* vi: set ts=4 sw=4 expandtab: */

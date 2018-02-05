@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -38,6 +38,7 @@
 #include "SDL_events.h"
 #include "../../events/SDL_mouse_c.h"
 #include "../../events/SDL_keyboard_c.h"
+#include "SDL_hints.h"
 
 #ifdef SDL_INPUT_LINUXEV
 #include "../../core/linux/SDL_evdev.h"
@@ -58,11 +59,8 @@ RPI_Available(void)
 static void
 RPI_Destroy(SDL_VideoDevice * device)
 {
-    /*    SDL_VideoData *phdata = (SDL_VideoData *) device->driverdata; */
-
-    if (device->driverdata != NULL) {
-        device->driverdata = NULL;
-    }
+    SDL_free(device->driverdata);
+    SDL_free(device);
 }
 
 static SDL_VideoDevice *
@@ -88,7 +86,7 @@ RPI_Create()
 
     device->driverdata = phdata;
 
-    /* Setup amount of available displays and current display */
+    /* Setup amount of available displays */
     device->num_displays = 0;
 
     /* Set device free function */
@@ -99,8 +97,8 @@ RPI_Create()
     device->VideoQuit = RPI_VideoQuit;
     device->GetDisplayModes = RPI_GetDisplayModes;
     device->SetDisplayMode = RPI_SetDisplayMode;
-    device->CreateWindow = RPI_CreateWindow;
-    device->CreateWindowFrom = RPI_CreateWindowFrom;
+    device->CreateSDLWindow = RPI_CreateWindow;
+    device->CreateSDLWindowFrom = RPI_CreateWindowFrom;
     device->SetWindowTitle = RPI_SetWindowTitle;
     device->SetWindowIcon = RPI_SetWindowIcon;
     device->SetWindowPosition = RPI_SetWindowPosition;
@@ -113,7 +111,9 @@ RPI_Create()
     device->RestoreWindow = RPI_RestoreWindow;
     device->SetWindowGrab = RPI_SetWindowGrab;
     device->DestroyWindow = RPI_DestroyWindow;
+#if 0
     device->GetWindowWMInfo = RPI_GetWindowWMInfo;
+#endif
     device->GL_LoadLibrary = RPI_GLES_LoadLibrary;
     device->GL_GetProcAddress = RPI_GLES_GetProcAddress;
     device->GL_UnloadLibrary = RPI_GLES_UnloadLibrary;
@@ -123,6 +123,7 @@ RPI_Create()
     device->GL_GetSwapInterval = RPI_GLES_GetSwapInterval;
     device->GL_SwapWindow = RPI_GLES_SwapWindow;
     device->GL_DeleteContext = RPI_GLES_DeleteContext;
+    device->GL_DefaultProfileConfig = RPI_GLES_DefaultProfileConfig;
 
     device->PumpEvents = RPI_PumpEvents;
 
@@ -182,7 +183,9 @@ RPI_VideoInit(_THIS)
     SDL_AddVideoDisplay(&display);
 
 #ifdef SDL_INPUT_LINUXEV    
-    SDL_EVDEV_Init();
+    if (SDL_EVDEV_Init() < 0) {
+        return -1;
+    }
 #endif    
     
     RPI_InitMouse(_this);
@@ -221,6 +224,8 @@ RPI_CreateWindow(_THIS, SDL_Window * window)
     VC_RECT_T src_rect;
     VC_DISPMANX_ALPHA_T         dispman_alpha;
     DISPMANX_UPDATE_HANDLE_T dispman_update;
+    uint32_t layer = SDL_RPI_VIDEOLAYER;
+    const char *env;
 
     /* Disable alpha, otherwise the app looks composed with whatever dispman is showing (X11, console,etc) */
     dispman_alpha.flags = DISPMANX_FLAGS_ALPHA_FIXED_ALL_PIXELS; 
@@ -253,11 +258,25 @@ RPI_CreateWindow(_THIS, SDL_Window * window)
     src_rect.width = window->w << 16;
     src_rect.height = window->h << 16;
 
+    env = SDL_GetHint(SDL_HINT_RPI_VIDEO_LAYER);
+    if (env) {
+        layer = SDL_atoi(env);
+    }
+
     dispman_update = vc_dispmanx_update_start( 0 );
-    wdata->dispman_window.element = vc_dispmanx_element_add ( dispman_update, displaydata->dispman_display, SDL_RPI_VIDEOLAYER /* layer */, &dst_rect, 0/*src*/, &src_rect, DISPMANX_PROTECTION_NONE, &dispman_alpha /*alpha*/, 0/*clamp*/, 0/*transform*/);
+    wdata->dispman_window.element = vc_dispmanx_element_add (dispman_update,
+                                                             displaydata->dispman_display,
+                                                             layer /* layer */,
+                                                             &dst_rect,
+                                                             0 /*src*/,
+                                                             &src_rect,
+                                                             DISPMANX_PROTECTION_NONE,
+                                                             &dispman_alpha /*alpha*/,
+                                                             0 /*clamp*/,
+                                                             0 /*transform*/);
     wdata->dispman_window.width = window->w;
     wdata->dispman_window.height = window->h;
-    vc_dispmanx_update_submit_sync( dispman_update );
+    vc_dispmanx_update_submit_sync(dispman_update);
     
     if (!_this->egl_data) {
         if (SDL_GL_LoadLibrary(NULL) < 0) {
@@ -351,13 +370,14 @@ RPI_SetWindowGrab(_THIS, SDL_Window * window, SDL_bool grabbed)
 /*****************************************************************************/
 /* SDL Window Manager function                                               */
 /*****************************************************************************/
+#if 0
 SDL_bool
 RPI_GetWindowWMInfo(_THIS, SDL_Window * window, struct SDL_SysWMinfo *info)
 {
     if (info->version.major <= SDL_MAJOR_VERSION) {
         return SDL_TRUE;
     } else {
-        SDL_SetError("application not compiled with SDL %d.%d\n",
+        SDL_SetError("application not compiled with SDL %d.%d",
                      SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
         return SDL_FALSE;
     }
@@ -365,6 +385,7 @@ RPI_GetWindowWMInfo(_THIS, SDL_Window * window, struct SDL_SysWMinfo *info)
     /* Failed to get window manager information */
     return SDL_FALSE;
 }
+#endif
 
 #endif /* SDL_VIDEO_DRIVER_RPI */
 

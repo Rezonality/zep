@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -161,6 +161,7 @@ SDL_X11_SYM(SDL_X11_XSynchronizeRetType,XSynchronize,(Display* a,Bool b),(a,b),r
 SDL_X11_SYM(SDL_X11_XESetWireToEventRetType,XESetWireToEvent,(Display* a,int b,SDL_X11_XESetWireToEventRetType c),(a,b,c),return)
 SDL_X11_SYM(SDL_X11_XESetEventToWireRetType,XESetEventToWire,(Display* a,int b,SDL_X11_XESetEventToWireRetType c),(a,b,c),return)
 SDL_X11_SYM(void,XRefreshKeyboardMapping,(XMappingEvent *a),(a),)
+SDL_X11_SYM(int,XQueryTree,(Display* a,Window b,Window* c,Window* d,Window** e,unsigned int* f),(a,b,c,d,e,f),return)
 
 #if SDL_VIDEO_DRIVER_X11_SUPPORTS_GENERIC_EVENTS
 SDL_X11_SYM(Bool,XGetEventData,(Display* a,XGenericEventCookie* b),(a,b),return)
@@ -168,12 +169,18 @@ SDL_X11_SYM(void,XFreeEventData,(Display* a,XGenericEventCookie* b),(a,b),)
 #endif
 
 #if SDL_VIDEO_DRIVER_X11_HAS_XKBKEYCODETOKEYSYM
+SDL_X11_SYM(Bool,XkbQueryExtension,(Display* a,int * b,int * c,int * d,int * e, int *f),(a,b,c,d,e,f),return)
 #if NeedWidePrototypes
 SDL_X11_SYM(KeySym,XkbKeycodeToKeysym,(Display* a,unsigned int b,int c,int d),(a,b,c,d),return)
 #else
 SDL_X11_SYM(KeySym,XkbKeycodeToKeysym,(Display* a,KeyCode b,int c,int d),(a,b,c,d),return)
 #endif
 SDL_X11_SYM(Status,XkbGetState,(Display* a,unsigned int b,XkbStatePtr c),(a,b,c),return)
+SDL_X11_SYM(Status,XkbGetUpdatedMap,(Display* a,unsigned int b,XkbDescPtr c),(a,b,c),return)
+SDL_X11_SYM(XkbDescPtr,XkbGetMap,(Display* a,unsigned int b,unsigned int c),(a,b,c),return)
+SDL_X11_SYM(void,XkbFreeClientMap,(XkbDescPtr a,unsigned int b, Bool c),(a,b,c),)
+SDL_X11_SYM(void,XkbFreeKeyboard,(XkbDescPtr a,unsigned int b, Bool c),(a,b,c),)
+SDL_X11_SYM(BOOL,XkbSetDetectableAutoRepeat,(Display* a, BOOL b, BOOL* c),(a,b,c),return)
 #endif
 
 #if NeedWidePrototypes
@@ -195,6 +202,8 @@ SDL_X11_SYM(XIM,XOpenIM,(Display* a,struct _XrmHashBucketRec* b,char* c,char* d)
 SDL_X11_SYM(Status,XCloseIM,(XIM a),(a),return)
 SDL_X11_SYM(void,Xutf8DrawString,(Display *a, Drawable b, XFontSet c, GC d, int e, int f, _Xconst char *g, int h),(a,b,c,d,e,f,g,h),)
 SDL_X11_SYM(int,Xutf8TextExtents,(XFontSet a, _Xconst char*	b, int c, XRectangle* d, XRectangle* e),(a,b,c,d,e),return)
+SDL_X11_SYM(char*,XSetLocaleModifiers,(const char *a),(a),return)
+SDL_X11_SYM(char*,Xutf8ResetIC,(XIC a),(a),return)
 #endif
 
 #ifndef NO_SHARED_MEMORY
@@ -283,6 +292,7 @@ SDL_X11_SYM(void,XRRFreeScreenConfigInfo,(XRRScreenConfiguration *config),(confi
 SDL_X11_SYM(void,XRRSetScreenSize,(Display *dpy, Window window,int width, int height,int mmWidth, int mmHeight),(dpy,window,width,height,mmWidth,mmHeight),)
 SDL_X11_SYM(Status,XRRGetScreenSizeRange,(Display *dpy, Window window,int *minWidth, int *minHeight, int *maxWidth, int *maxHeight),(dpy,window,minWidth,minHeight,maxWidth,maxHeight),return)
 SDL_X11_SYM(XRRScreenResources *,XRRGetScreenResources,(Display *dpy, Window window),(dpy, window),return)
+SDL_X11_SYM(XRRScreenResources *,XRRGetScreenResourcesCurrent,(Display *dpy, Window window),(dpy, window),return)
 SDL_X11_SYM(void,XRRFreeScreenResources,(XRRScreenResources *resources),(resources),)
 SDL_X11_SYM(XRROutputInfo *,XRRGetOutputInfo,(Display *dpy, XRRScreenResources *resources, RROutput output),(dpy,resources,output),return)
 SDL_X11_SYM(void,XRRFreeOutputInfo,(XRROutputInfo *outputInfo),(outputInfo),)

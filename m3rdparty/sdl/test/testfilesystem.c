@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -32,9 +32,8 @@ main(int argc, char *argv[])
     if(base_path == NULL){
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't find base path: %s\n",
                    SDL_GetError());
-      return 0;
+      return 1;
     }
-
     SDL_Log("base path: '%s'\n", base_path);
     SDL_free(base_path);
 
@@ -42,7 +41,16 @@ main(int argc, char *argv[])
     if(pref_path == NULL){
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't find pref path: %s\n",
                    SDL_GetError());
-      return 0;
+      return 1;
+    }
+    SDL_Log("pref path: '%s'\n", pref_path); 
+    SDL_free(pref_path);
+
+    pref_path = SDL_GetPrefPath(NULL, "testfilesystem");
+    if(pref_path == NULL){
+      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't find pref path without organization: %s\n",
+                   SDL_GetError());
+      return 1;
     }
     SDL_Log("pref path: '%s'\n", pref_path); 
     SDL_free(pref_path);

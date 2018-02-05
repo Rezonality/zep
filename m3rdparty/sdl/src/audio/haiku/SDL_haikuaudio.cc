@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -36,6 +36,7 @@ extern "C"
 #include "../SDL_audio_c.h"
 #include "../SDL_sysaudio.h"
 #include "SDL_haikuaudio.h"
+#include "SDL_assert.h"
 
 }
 
@@ -47,25 +48,39 @@ FillSound(void *device, void *stream, size_t len,
           const media_raw_audio_format & format)
 {
     SDL_AudioDevice *audio = (SDL_AudioDevice *) device;
+    SDL_AudioCallback callback = audio->callbackspec.callback;
 
-    /* Only do soemthing if audio is enabled */
-    if (!audio->enabled)
+    /* Only do something if audio is enabled */
+    if (!SDL_AtomicGet(&audio->enabled) || SDL_AtomicGet(&audio->paused)) {
+        if (audio->stream) {
+            SDL_AudioStreamClear(audio->stream);
+        }
+        SDL_memset(stream, audio->spec.silence, len);
         return;
+    }
 
-    if (!audio->paused) {
-        if (audio->convert.needed) {
-            SDL_LockMutex(audio->mixer_lock);
-            (*audio->spec.callback) (audio->spec.userdata,
-                                     (Uint8 *) audio->convert.buf,
-                                     audio->convert.len);
-            SDL_UnlockMutex(audio->mixer_lock);
-            SDL_ConvertAudio(&audio->convert);
-            SDL_memcpy(stream, audio->convert.buf, audio->convert.len_cvt);
-        } else {
-            SDL_LockMutex(audio->mixer_lock);
-            (*audio->spec.callback) (audio->spec.userdata,
-                                     (Uint8 *) stream, len);
-            SDL_UnlockMutex(audio->mixer_lock);
+    SDL_assert(audio->spec.size == len);
+
+    if (audio->stream == NULL) {  /* no conversion necessary. */
+        SDL_LockMutex(audio->mixer_lock);
+        callback(audio->callbackspec.userdata, (Uint8 *) stream, len);
+        SDL_UnlockMutex(audio->mixer_lock);
+    } else {  /* streaming/converting */
+        const int stream_len = audio->callbackspec.size;
+        const int ilen = (int) len;
+        while (SDL_AudioStreamAvailable(audio->stream) < ilen) {
+            callback(audio->callbackspec.userdata, audio->work_buffer, stream_len);
+            if (SDL_AudioStreamPut(audio->stream, audio->work_buffer, stream_len) == -1) {
+                SDL_AudioStreamClear(audio->stream);
+                SDL_AtomicSet(&audio->enabled, 0);
+                break;
+            }
+        }
+
+        const int got = SDL_AudioStreamGet(audio->stream, stream, ilen);
+        SDL_assert((got < 0) || (got == ilen));
+        if (got != ilen) {
+            SDL_memset(stream, audio->spec.silence, len);
         }
     }
 }
@@ -73,16 +88,11 @@ FillSound(void *device, void *stream, size_t len,
 static void
 HAIKUAUDIO_CloseDevice(_THIS)
 {
-    if (_this->hidden != NULL) {
-        if (_this->hidden->audio_obj) {
-            _this->hidden->audio_obj->Stop();
-            delete _this->hidden->audio_obj;
-            _this->hidden->audio_obj = NULL;
-        }
-
-        delete _this->hidden;
-        _this->hidden = NULL;
+    if (_this->hidden->audio_obj) {
+        _this->hidden->audio_obj->Stop();
+        delete _this->hidden->audio_obj;
     }
+    delete _this->hidden;
 }
 
 
@@ -122,10 +132,10 @@ HAIKUAUDIO_OpenDevice(_THIS, void *handle, const char *devname, int iscapture)
     if (_this->hidden == NULL) {
         return SDL_OutOfMemory();
     }
-    SDL_memset(_this->hidden, 0, (sizeof *_this->hidden));
+    SDL_zerop(_this->hidden);
 
     /* Parse the audio format and fill the Be raw audio format */
-    SDL_memset(&format, '\0', sizeof(media_raw_audio_format));
+    SDL_zero(format);
     format.byte_order = B_MEDIA_LITTLE_ENDIAN;
     format.frame_rate = (float) _this->spec.freq;
     format.channel_count = _this->spec.channels;        /* !!! FIXME: support > 2? */
@@ -176,7 +186,6 @@ HAIKUAUDIO_OpenDevice(_THIS, void *handle, const char *devname, int iscapture)
     }
 
     if (!valid_datatype) {      /* shouldn't happen, but just in case... */
-        HAIKUAUDIO_CloseDevice(_this);
         return SDL_SetError("Unsupported audio format");
     }
 
@@ -195,7 +204,6 @@ HAIKUAUDIO_OpenDevice(_THIS, void *handle, const char *devname, int iscapture)
     if (_this->hidden->audio_obj->Start() == B_NO_ERROR) {
         _this->hidden->audio_obj->SetHasData(true);
     } else {
-        HAIKUAUDIO_CloseDevice(_this);
         return SDL_SetError("Unable to start Be audio");
     }
 

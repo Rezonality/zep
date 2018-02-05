@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -36,10 +36,7 @@
 
 /* Initialization/Cleanup routines */
 #if !SDL_TIMERS_DISABLED
-extern int SDL_TimerInit(void);
-extern void SDL_TimerQuit(void);
-extern void SDL_TicksInit(void);
-extern void SDL_TicksQuit(void);
+# include "timer/SDL_timer_c.h"
 #endif
 #if SDL_VIDEO_DRIVER_WINDOWS
 extern int SDL_HelperWindowCreate(void);
@@ -81,7 +78,7 @@ SDL_PrivateShouldInitSubsystem(Uint32 subsystem)
 {
     int subsystem_index = SDL_MostSignificantBitIndex32(subsystem);
     SDL_assert(SDL_SubsystemRefCount[subsystem_index] < 255);
-    return (SDL_SubsystemRefCount[subsystem_index] == 0);
+    return (SDL_SubsystemRefCount[subsystem_index] == 0) ? SDL_TRUE : SDL_FALSE;
 }
 
 /* Private helper to check if a system needs to be quit. */
@@ -95,7 +92,7 @@ SDL_PrivateShouldQuitSubsystem(Uint32 subsystem) {
     /* If we're in SDL_Quit, we shut down every subsystem, even if refcount
      * isn't zero.
      */
-    return SDL_SubsystemRefCount[subsystem_index] == 1 || SDL_bInMainQuit;
+    return (SDL_SubsystemRefCount[subsystem_index] == 1 || SDL_bInMainQuit) ? SDL_TRUE : SDL_FALSE;
 }
 
 void
@@ -115,6 +112,16 @@ SDL_InitSubSystem(Uint32 flags)
     /* Clear the error message */
     SDL_ClearError();
 
+    if ((flags & SDL_INIT_GAMECONTROLLER)) {
+        /* game controller implies joystick */
+        flags |= SDL_INIT_JOYSTICK;
+    }
+
+    if ((flags & (SDL_INIT_VIDEO|SDL_INIT_JOYSTICK))) {
+        /* video or joystick implies events */
+        flags |= SDL_INIT_EVENTS;
+    }
+
 #if SDL_VIDEO_DRIVER_WINDOWS
 	if ((flags & (SDL_INIT_HAPTIC|SDL_INIT_JOYSTICK))) {
 		if (SDL_HelperWindowCreate() < 0) {
@@ -126,16 +133,6 @@ SDL_InitSubSystem(Uint32 flags)
 #if !SDL_TIMERS_DISABLED
     SDL_TicksInit();
 #endif
-
-    if ((flags & SDL_INIT_GAMECONTROLLER)) {
-        /* game controller implies joystick */
-        flags |= SDL_INIT_JOYSTICK;
-    }
-
-    if ((flags & (SDL_INIT_VIDEO|SDL_INIT_JOYSTICK))) {
-        /* video or joystick implies events */
-        flags |= SDL_INIT_EVENTS;
-    }
 
     /* Initialize the event subsystem */
     if ((flags & SDL_INIT_EVENTS)) {
@@ -443,6 +440,8 @@ SDL_GetPlatform()
     return "Windows";
 #elif __WINRT__
     return "WinRT";
+#elif __TVOS__
+    return "tvOS";
 #elif __IPHONEOS__
     return "iOS";
 #elif __PSP__
