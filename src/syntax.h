@@ -17,6 +17,14 @@ enum
 };
 }
 
+struct CommentEntry
+{
+    bool isStart;
+    bool isMultiLine;
+    uint32_t location;
+    uint32_t entries;
+};
+
 class ZepSyntax : public ZepComponent
 {
 public:
@@ -37,6 +45,7 @@ private:
 
 protected:
     ZepBuffer& m_buffer;
+    std::vector<CommentEntry> m_commentEntries;
     std::vector<uint32_t> m_syntax;       // TODO: Use gap buffer - not sure why this is a vector?
     std::future<void> m_syntaxResult;
     std::atomic<long> m_processedChar = {0};

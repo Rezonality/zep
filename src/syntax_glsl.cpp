@@ -97,6 +97,7 @@ void ZepSyntaxGlsl::UpdateSyntax()
         }
     }
 
+    itrEnd = buffer.find_first_of(itrEnd, buffer.end(), lineEnd.begin(), lineEnd.end());
 
     // Mark a region of the syntax buffer with the correct marker
     auto mark = [&](GapBuffer<utf8>::const_iterator itrA, GapBuffer<utf8>::const_iterator itrB, uint32_t type)
@@ -140,6 +141,10 @@ void ZepSyntaxGlsl::UpdateSyntax()
         {
             mark(itrFirst, itrLast, SyntaxType::Integer);
         }
+        else
+        {
+            mark(itrFirst, itrLast, SyntaxType::Normal);
+        }
 
         std::string commentStr = "/";
         auto itrComment = buffer.find_first_of(itrFirst, itrLast, commentStr.begin(), commentStr.end());
@@ -150,7 +155,8 @@ void ZepSyntaxGlsl::UpdateSyntax()
             {
                 if (*itrComment == '/')
                 {
-                    // Line comment
+                    itrLast = buffer.find_first_of(itrCommentStart, buffer.end(), lineEnd.begin(), lineEnd.end());
+                    mark(itrCommentStart, itrLast, SyntaxType::Comment);
                 }
             }
         }
