@@ -122,7 +122,7 @@ public:
     BufferLocation LocationFromOffsetByChars(const BufferLocation& location, long offset) const;
     BufferLocation EndLocation() const;
 
-    const GapBuffer<utf8>& GetText() const { return m_buffer; }
+    const GapBuffer<utf8>& GetText() const { return m_gapBuffer; }
     const std::vector<long> GetLineEnds() const { return m_lineEnds; }
     bool IsDirty() const { return m_dirty; }
 
@@ -141,7 +141,7 @@ private:
 
 private:
     bool m_dirty;                              // Is the text modified?
-    GapBuffer<utf8> m_buffer;                  // Storage for the text - a gap buffer for efficiency
+    GapBuffer<utf8> m_gapBuffer;                  // Storage for the text - a gap buffer for efficiency
     std::vector<long> m_lineEnds;              // End of each line
     ThreadPool m_threadPool;
     uint32_t m_flags;

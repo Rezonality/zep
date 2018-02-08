@@ -36,7 +36,9 @@ MainWindow::MainWindow()
     ZepBuffer* pBuffer = pWindow->GetEditor()->AddBuffer("shader.vert");
     pBuffer->SetText(shader.c_str());
 
-    setContentsMargins(2, 2, 2, 2);
+    setStyleSheet("background-color: darkBlue");
+
+    setContentsMargins(4, 4, 4, 4);
     setCentralWidget(pWindow);
 }
 

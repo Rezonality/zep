@@ -59,7 +59,7 @@ int main(int, char**)
     SDL_Window *window = SDL_CreateWindow("Zep Demo",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        1280, 720,
+        1024, 768,
         SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     SDL_GLContext glcontext = SDL_GL_CreateContext(window);
     gl3wInit();
@@ -121,7 +121,7 @@ int main(int, char**)
 
         ImGui_ImplSdlGL3_NewFrame(window);
 
-        ImGui::Begin("Zep", nullptr, ImVec2(500, 500));
+        ImGui::Begin("Zep", nullptr, ImVec2(1024, 768));
 
         ImGui::Text("CTRL+1 for Normal editing, CTRL+2 for VIM mode");
 

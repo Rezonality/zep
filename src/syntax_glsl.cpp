@@ -17,6 +17,7 @@ ZepSyntaxGlsl::ZepSyntaxGlsl(ZepBuffer& buffer)
     keywords.insert({ "#version", "core" });
     keywords.insert({ "sampler1D", "sampler2D", "sampler3D" });
     keywords.insert({ "pow", "sin", "cos", "mul", "abs", "floor", "ceil" });
+    keywords.insert({ "gl_position" });
 }
 
 ZepSyntaxGlsl::~ZepSyntaxGlsl()
