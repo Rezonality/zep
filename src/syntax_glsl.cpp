@@ -97,6 +97,12 @@ void ZepSyntaxGlsl::UpdateSyntax()
         }
     }
 
+    // Back to the previous line
+    while (itrCurrent > buffer.begin() &&
+        *itrCurrent != '\n')
+    {
+        itrCurrent--;
+    }
     itrEnd = buffer.find_first_of(itrEnd, buffer.end(), lineEnd.begin(), lineEnd.end());
 
     // Mark a region of the syntax buffer with the correct marker

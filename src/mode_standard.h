@@ -15,6 +15,7 @@ public:
     virtual void Enable() override;
     virtual void SetCurrentWindow(ZepWindow* pWindow) override;
 
+    virtual const char* Name() const override { return "Modeless"; }
 private:
     virtual void SwitchMode(EditorMode mode);
 };

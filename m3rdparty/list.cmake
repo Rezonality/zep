@@ -67,7 +67,7 @@ LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/m3rdparty/src/sdl2-build)
 ENDIF() # ImGui
 
 
-SOURCE_GROUP ("m3rdparty\\imgui" REGULAR_EXPRESSION "(imgui)+.*")
-SOURCE_GROUP ("m3rdparty\\glfw" REGULAR_EXPRESSION "(glfw)+.*")
+SOURCE_GROUP ("m3rdparty\\imgui" REGULAR_EXPRESSION "(imgui.cpp|imgui_)+.*")
+SOURCE_GROUP ("m3rdparty\\gl" REGULAR_EXPRESSION "(gl3w)+.*")
 
 CONFIGURE_FILE(${CMAKE_CURRENT_LIST_DIR}/cmake/config_shared.h.cmake ${CMAKE_BINARY_DIR}/config_shared.h)

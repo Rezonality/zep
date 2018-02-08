@@ -41,6 +41,7 @@ public:
     virtual void Enable() override;
     virtual void SetCurrentWindow(ZepWindow* pWindow) override;
 
+    virtual const char* Name() const override { return "Vim"; }
 private:
     void HandleInsert(uint32_t key);
     std::string GetCommandAndCount(std::string strCommand, int& count);

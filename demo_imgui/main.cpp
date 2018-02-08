@@ -123,6 +123,8 @@ int main(int, char**)
 
         ImGui::Begin("Zep", nullptr, ImVec2(500, 500));
 
+        ImGui::Text("CTRL+1 for Normal editing, CTRL+2 for VIM mode");
+
         // Display the editor inside this window
         spEditor->Display(toNVec2f(ImGui::GetCursorScreenPos()), toNVec2f(ImGui::GetContentRegionAvail()));
 

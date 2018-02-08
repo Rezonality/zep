@@ -5,6 +5,7 @@
 #include "window.h"
 #include "syntax.h"
 #include "buffer.h"
+#include "mode.h"
 
 #include "utils/stringutils.h"
 
@@ -330,7 +331,7 @@ void ZepWindow::PreDisplay(const DisplayRegion& region)
     if (m_pCurrentBuffer)
     {
         std::ostringstream str;
-        str << "NORMAL" << " : " << int(m_pCurrentBuffer->GetLineEnds().size()) << " Lines";
+        str << "(" << GetEditor().GetCurrentMode()->Name() << ") NORMAL" << " : " << int(m_pCurrentBuffer->GetLineEnds().size()) << " Lines";
         SetStatusText(str.str());
     }
 
