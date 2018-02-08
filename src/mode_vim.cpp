@@ -58,8 +58,6 @@
 // /Searching
 // visual-repeat (dot command should use last visual selection range)
 // 'R'/'r' overstrike
-// Standard Mode
-
 namespace Zep
 {
 

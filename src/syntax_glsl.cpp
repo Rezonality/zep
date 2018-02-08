@@ -70,9 +70,7 @@ void ZepSyntaxGlsl::Interrupt()
     m_stop = false;
 }
 
-
-// TODO: We can be more optimal about redoing syntax highlighting if we know we have done it before
-// and we have changed some text 'in the middle'.  When we get to a stable syntax state, we don't have to keep going
+// TODO: Multiline comments
 void ZepSyntaxGlsl::UpdateSyntax()
 {
     auto& buffer = m_buffer.GetText();
