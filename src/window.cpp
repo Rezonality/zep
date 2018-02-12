@@ -6,6 +6,7 @@
 #include "syntax.h"
 #include "buffer.h"
 #include "mode.h"
+#include "theme.h"
 
 #include "utils/stringutils.h"
 
@@ -565,12 +566,12 @@ bool ZepWindow::DisplayLine(const LineInfo& lineInfo, const DisplayRegion& regio
     for (auto ch = lineInfo.columnOffsets.x; ch < lineInfo.columnOffsets.y; ch++)
     {
         auto pSyntax = m_pCurrentBuffer->GetSyntax();
-        auto col = pSyntax != nullptr ? pSyntax->GetColor(ch) : 0xFFFFFFFF;
+        auto col = pSyntax != nullptr ? Theme::Instance().GetColor(pSyntax->GetSyntaxAt(ch)) : 0xFFFFFFFF;
         auto* pCh = &m_pCurrentBuffer->GetText()[ch];
         auto bufferLocation = DisplayToBuffer(NVec2i(ch - lineInfo.columnOffsets.x, lineInfo.screenLineNumber));
 
         // Visible white space
-        if (pSyntax && pSyntax->GetType(ch) == SyntaxType::Whitespace)
+        if (pSyntax && pSyntax->GetSyntaxAt(ch) == SyntaxType::Whitespace)
         {
             pCh = (const utf8*)whiteSpace.c_str();
         }
@@ -645,7 +646,7 @@ bool ZepWindow::DisplayLine(const LineInfo& lineInfo, const DisplayRegion& regio
         }
         else
         {
-            if (pSyntax && pSyntax->GetType(ch) == SyntaxType::Whitespace)
+            if (pSyntax && pSyntax->GetSyntaxAt(ch) == SyntaxType::Whitespace)
             {
                 auto centerChar = NVec2f(screenPosX + textSize.x / 2, lineInfo.screenPosYPx + textSize.y / 2);
                 m_display.DrawRectFilled(centerChar - NVec2f(1.0f, 1.0f), centerChar + NVec2f(1.0f, 1.0f), 0xFF524814);

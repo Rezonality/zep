@@ -25,6 +25,8 @@ src/mode_standard.cpp
 src/mode_standard.h
 src/mode_vim.cpp
 src/mode_vim.h
+src/theme.cpp
+src/theme.h
 src/list.cmake
 )
 

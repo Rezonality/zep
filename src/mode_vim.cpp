@@ -52,12 +52,6 @@
 // c[a]<count>w/e  Change word
 // ci})]"'
 
-// VIM TODO:
-// % Jump
-// f (find) / next, previous
-// /Searching
-// visual-repeat (dot command should use last visual selection range)
-// 'R'/'r' overstrike
 namespace Zep
 {
 
