@@ -56,7 +56,7 @@ INCLUDE_DIRECTORIES(
     ${SRC_INCLUDE}
     ${CMAKE_BINARY_DIR}
     ${APP_ZEP_INCLUDE}
-    .
+    ./
     ) 
 
 IF (BUILD_IMGUI)
