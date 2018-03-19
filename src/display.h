@@ -3,11 +3,11 @@
 #include "buffer.h"
 #include "window.h"
 
-class Timer;
 
 namespace Zep
 {
 
+class Timer;
 const float bottomBorder = 4.0f;
 const float textBorder = 4.0f;
 const float leftBorder = 30.0f;

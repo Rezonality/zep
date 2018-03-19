@@ -2,6 +2,8 @@
 
 #include <chrono>
 
+namespace Zep
+{
 Timer::Timer()
 {
     Restart();
@@ -30,4 +32,4 @@ void Timer::Restart()
 {
     m_startTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
-
+}

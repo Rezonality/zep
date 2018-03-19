@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+namespace Zep
+{
 enum class TimerSample
 {
     None,
@@ -22,3 +24,4 @@ public:
 private:
     int64_t m_startTime;
 };
+}
