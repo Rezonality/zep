@@ -77,8 +77,8 @@ IF (OPENGL_FOUND OR TARGET_PC)
 SET(DEMO_SOURCE_IMGUI demo_imgui/main.cpp)
 
 ADD_EXECUTABLE (${PROJECT_NAME} WIN32 
-    ${IMGUI_SOURCE}
     ${DEMO_SOURCE_IMGUI}
+	${IMGUI_SOURCE}
     ${M3RDPARTY_SOURCE}) # Win32 ignored on non-windows
 
 copy_existing_files(${PROJECT_NAME} m3rdparty/imgui/extra_fonts/ProggyClean.ttf ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
