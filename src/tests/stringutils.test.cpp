@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "src/utils/stringutils.h"
 
+using namespace Zep;
 TEST(StringUtils, CountUtf8)
 {
     ASSERT_EQ(StringUtils::CountUtf8BytesFromChar('c'), 1);
