@@ -401,7 +401,7 @@ bool ImOrient::Draw(const char* label)
 
 void ImOrient::DrawTriangles(ImDrawList* draw_list, const ImVec2& offset, const ImVector<ImVec2>& triProj, const ImVector<ImU32>& colLight, int numVertices, float cullDir)
 {
-    const ImVec2 uv = GImGui->FontTexUvWhitePixel;
+    const ImVec2 uv = ImGui::GetFontTexUvWhitePixel();
     assert(numVertices % 3 == 0);
     draw_list->PrimReserve(numVertices, numVertices); // num vert/indices 
     for (int ii = 0; ii < numVertices / 3; ii++)
