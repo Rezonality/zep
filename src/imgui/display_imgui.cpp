@@ -21,7 +21,13 @@ float ZepDisplay_ImGui::GetFontSize() const
 
 NVec2f ZepDisplay_ImGui::GetTextSize(const utf8* pBegin, const utf8* pEnd) const
 {
-    return toNVec2f(ImGui::CalcTextSize((const char*)pBegin, (const char*)pEnd));
+    // This is the code from ImGui internals; we can't call GetTextSize, because it doesn't return the correct 'advance' formula, which we
+    // need as we draw one character at a time...
+    ImFont* font = ImGui::GetFont();
+    const float font_size = ImGui::GetFontSize();
+    ImVec2 text_size = font->CalcTextSizeA(font_size, FLT_MAX, FLT_MAX, (const char*)pBegin, (const char*)pEnd, NULL);
+
+    return toNVec2f(text_size);
 }
 
 void ZepDisplay_ImGui::DrawChars(const NVec2f& pos, uint32_t col, const utf8* text_begin, const utf8* text_end) const
