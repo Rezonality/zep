@@ -80,6 +80,7 @@ In this document:
 
   - Mind the fact that some graphics drivers have texture size limitation.
   - Set io.Fonts.TexDesiredWidth to specify a texture width to minimize texture height (see comment in ImFontAtlas::Build function).
+  - Set io.Fonts.Flags |= ImFontAtlasFlags_NoPowerOfTwoHeight; to disable rounding the texture height to the next power of two.
   - You may reduce oversampling, e.g. config.OversampleH = 2 or 1.
   - Reduce glyphs ranges, consider calculating them based on your source data if this is possible.
 
@@ -111,7 +112,7 @@ In this document:
  Offset font vertically by altering the io.Font->DisplayOffset value:
 
    ImFont* font = io.Fonts->AddFontFromFileTTF("font.ttf", size_pixels);
-   font->DisplayOffset.y += 1;   // Render 1 pixel down
+   font->DisplayOffset.y = 1;   // Render 1 pixel down
 
 
 ---------------------------------------
@@ -120,9 +121,7 @@ In this document:
 
  Dear Imgui uses stb_truetype.h to rasterize fonts (with optional oversampling).
  This technique and implementation are not ideal for fonts rendered at _small sizes_, which may appear a little blurry.
- There is an implementation of the ImFontAtlas builder using FreeType that you can use:
-
-   https://github.com/ocornut/imgui_club
+ There is an implementation of the ImFontAtlas builder using FreeType that you can use in the misc/freetype/ folder.
 
  FreeType supports auto-hinting which tends to improve the readability of small fonts.
  Note that this code currently creates textures that are unoptimally too large (could be fixed with some work)

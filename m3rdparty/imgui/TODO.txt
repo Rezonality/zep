@@ -30,6 +30,7 @@ It's mostly a bunch of personal notes, probably incomplete. Feel free to query i
 !- scrolling: allow immediately effective change of scroll after Begin() if we haven't appended items yet.
  - scrolling/clipping: separator on the initial position of a window is not visible (cursorpos.y <= clippos.y). (2017-08-20: can't repro)
 
+ - drawdata: make it easy to clone (or swap?) a ImDrawData so user can easily save that data if they use threaded renderering.
  - drawlist: end-user probably can't call Clear() directly because we expect a texture to be pushed in the stack.
  - drawlist: maintaining bounding box per command would allow to merge draw command when clipping isn't relied on (typical non-scrolling window or non-overflowing column would merge with previous command).
  - drawlist: primtiives/helpers to manipulate vertices post submission, so e.g. a quad/rect can be resized to fit later submitted content, _without_ using the ChannelSplit api
@@ -136,8 +137,10 @@ It's mostly a bunch of personal notes, probably incomplete. Feel free to query i
  - drag float: added leeway on edge (e.g. a few invisible steps past the clamp limits)
 
  - combo: use clipper: make it easier to disable clipper with a single flag.
- - combo: option for BeginCombo to not return true when unchanged (#1182)
+ - combo: flag for BeginCombo to not return true when unchanged (#1182)
+ - combo: a way/helper to customize the combo preview (#1658)
  - combo/listbox: keyboard control. need InputText-like non-active focus + key handling. considering keyboard for custom listbox (pr #203)
+ - listbox: refactor and clean the begin/end api
  - listbox: multiple selection.
  - listbox: unselect option (#1208)
  - listbox: make it easier/more natural to implement range-select (need some sort of info/ref about the last clicked/focused item that user can translate to an index?) (wip stash)
@@ -157,6 +160,7 @@ It's mostly a bunch of personal notes, probably incomplete. Feel free to query i
  - tooltip: allow tooltips with timers? or general timer policy? (instaneous vs timed)
  
  - menus: calling BeginMenu() twice with a same name doesn't append as Begin() does for regular windows (#1207)
+ - menus: menu bars inside modals windows are acting weird.
  - statusbar: add a per-window status bar helper similar to what menubar does.
  - shortcuts: local-style shortcut api, e.g. parse "&Save"
  - shortcuts,menus: global-style shortcut api e.g. "Save (CTRL+S)" -> explicit flag for recursing into closed menu
@@ -205,13 +209,17 @@ It's mostly a bunch of personal notes, probably incomplete. Feel free to query i
  - filters: fuzzy matches (may use code at blog.forrestthewoods.com/4cffeed33fdb)
 
  - drag and drop: add demo. (#143, #479)
+ - drag and drop: allow using with other mouse buttons (where activeid won't be set). (#1637)
  - drag and drop: test with reordering nodes (in a list, or a tree node). (#143)
  - drag and drop: test integrating with os drag and drop.
  - node/graph editor (#306)
  - pie menus patterns (#434)
  - markup: simple markup language for color change? (#902)
 
- - font: better vertical centering (based e.g on height of lowercase 'x'?). currently Roboto-Medium size 16 px isn't currently centered.
+!- font: need handling of missing glyphs by not packing/rasterizing glyph 0 of a given font.
+ - font: MergeMode: flags to select overwriting or not.
+ - font: MergeMode: duplicate glyphs are stored in the atlas texture which is suboptimal.
+ - font: better vertical centering (based e.g on height of lowercase 'x'?). currently Roboto-Medium size 16 px isn't currently centered. (#1619)
  - font: free the Alpha buffer if user only requested RGBA.
 !- font: better CalcTextSizeA() API, at least for simple use cases. current one is horrible (perhaps have simple vs extended versions).
  - font: enforce monospace through ImFontConfig (for icons?) + create dual ImFont output from same input, reusing rasterized data but with different glyphs/AdvanceX
@@ -229,26 +237,33 @@ It's mostly a bunch of personal notes, probably incomplete. Feel free to query i
  - font: fix AddRemapChar() to work before font has been built.
  - font: (api breaking) removed "TTF" from symbol names. also because it now supports OTF.
 
-!- nav/keyboard: tooltip & combo boxes are messing up / not honoring keyboard tabbing.
- - nav: integrate navigation branch into master. (#787)
- - nav: integrate/design keyboard controls. 
- - nav: once tab should go through most/all widgets (in submission order?)
- - nav: currently cannot access menubar of a child window with Alt/menu key. 
+ - nav: SetItemDefaultFocus() level of priority, so widget like Selectable when inside a popup could claim a low-priority default focus on the first selected iem
+ - nav: allow input system to be be more tolerant of io.DeltaTime=0.0f
+ - nav: ESC on a flattened child
+ - nav: Left within a tree node block as a fallback (ImGuiTreeNodeFlags_NavLeftJumpsBackHere by default?)
+ - nav: menus: pressing left-right on a vertically clipped menu bar tends to jump to the collapse/close buttons.
+ - nav: menus: allow pressing Menu to leave a sub-menu.
+ - nav: simulate right-click or context activation? (SHIFT+F10)
+ - nav: tabs should go through most/all widgets (in submission order?).
+ - nav: when CTRL-Tab/windowing is active, the HoveredWindow detection doesn't take account of the window display re-ordering.
+ - nav: cannot access menubar of a flattened child window with Alt/menu key (not a very common use case..).
  - nav: esc/enter default behavior for popups, e.g. be able to mark an "ok" or "cancel" button that would get triggered by those keys.
+ - nav: when activating a button that changes label (without a static ID) or disappear, can we somehow automatically recover into a nearest highlight item?
  - focus: preserve ActiveId/focus stack state, e.g. when opening a menu and close it, previously selected InputText() focus gets restored (#622)
  - focus: SetKeyboardFocusHere() on with >= 0 offset could be done on same frame (else latch and modulate on beginning of next frame)
  - focus: unable to use SetKeyboardFocusHere() on clipped widgets. (#787)
+
+ - inputs: we need an explicit flag about whether the imgui window is focused, to be able to distinguish focused key releases vs alt-tabbing all release behaviors.
  - inputs: rework IO system to be able to pass actual ordered/timestamped events. use an event queue? (~#335, #71)
- - inputs: allow to pass explicit double-clicks if that's the only thing the user's backend can get them. (e.g. for windows by the CS_DBLCLKS style).
  - inputs: support track pad style scrolling & slider edit.
 
  - misc: idle refresh: expose cursor blink animation timer for backend to be able to lower framerate.
  - misc: make the ImGuiCond values linear (non-power-of-two). internal storage for ImGuiWindow can use integers to combine into flags (Why?)
  - misc: provide a way to compile out the entire implementation while providing a dummy API (e.g. #define IMGUI_DUMMY_IMPL)
  - misc: fix for compilation settings where stdcall isn't the default (e.g. vectorcall) (#1230)
- - remote: make a system like RemoteImGui first-class citizen/project (#75)
+ - misc: PushItemFlag(): add a flag to disable keyboard capture when used with mouse? (#1682)
 
- - natvis: more the imgui.natvis file in a better location. perhaps reorganize extra_fonts/? (#1569)
+ - remote: make a system like RemoteImGui first-class citizen/project (#75)
 
  - demo: add vertical separator demo
  - demo: add virtual scrolling example?

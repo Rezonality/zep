@@ -59,14 +59,6 @@ INCLUDE_DIRECTORIES(
     ./
     ) 
 
-IF (BUILD_IMGUI)
-    SET(ZEP_SOURCE ${ZEP_SOURCE} ${ZEP_SOURCE_IMGUI})
-ENDIF()
-
-IF (BUILD_QT)
-    SET(ZEP_SOURCE ${ZEP_SOURCE} ${ZEP_SOURCE_QT})
-ENDIF()
-
 # Create the library - No depenencies on anything else in this file
 ADD_LIBRARY(Zep STATIC ${ZEP_SOURCE} ${ZEP_INCLUDE})
 
@@ -77,8 +69,9 @@ IF (OPENGL_FOUND OR TARGET_PC)
 SET(DEMO_SOURCE_IMGUI demo_imgui/main.cpp)
 
 ADD_EXECUTABLE (${PROJECT_NAME} WIN32 
-    ${IMGUI_SOURCE}
     ${DEMO_SOURCE_IMGUI}
+	${ZEP_SOURCE_IMGUI}
+	${IMGUI_SOURCE}
     ${M3RDPARTY_SOURCE}) # Win32 ignored on non-windows
 
 copy_existing_files(${PROJECT_NAME} m3rdparty/imgui/extra_fonts/ProggyClean.ttf ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
