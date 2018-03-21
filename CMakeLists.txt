@@ -64,34 +64,34 @@ ADD_LIBRARY(Zep STATIC ${ZEP_SOURCE} ${ZEP_INCLUDE})
 
 # Create the ImGUI version of the app
 IF (BUILD_IMGUI)
+ADD_LIBRARY(ZepImGui STATIC ${ZEP_SOURCE_IMGUI})
+
 INCLUDE_DIRECTORIES(${ZEP_INCLUDE_IMGUI})
 IF (OPENGL_FOUND OR TARGET_PC)
 SET(DEMO_SOURCE_IMGUI demo_imgui/main.cpp)
 
 ADD_EXECUTABLE (${PROJECT_NAME} WIN32 
     ${DEMO_SOURCE_IMGUI}
-	${ZEP_SOURCE_IMGUI}
 	${IMGUI_SOURCE}
     ${M3RDPARTY_SOURCE}) # Win32 ignored on non-windows
 
-copy_existing_files(${PROJECT_NAME} m3rdparty/imgui/extra_fonts/ProggyClean.ttf ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
-TARGET_LINK_LIBRARIES (${PROJECT_NAME} Zep ${PLATFORM_LINKLIBS} ${SDL_LINKLIBS})
-IF (BUILD_QT)
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} Qt5::Core Qt5::Widgets Zep ${PLATFORM_LINKLIBS})
-ENDIF()
-ADD_DEPENDENCIES(${PROJECT_NAME} sdl2)
+copy_existing_files(${PROJECT_NAME} m3rdparty/imgui/misc/fonts/ProggyClean.ttf ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
+TARGET_LINK_LIBRARIES (${PROJECT_NAME} Zep ZepImGui ${PLATFORM_LINKLIBS} ${SDL_LINKLIBS})
+ADD_DEPENDENCIES(${PROJECT_NAME} sdl2 ZepImGui)
 ENDIF() # GL or PC
 ENDIF() # IMGUI
 
 # Create the Qt version of the app
 IF (BUILD_QT)
+ADD_LIBRARY(ZepQt STATIC ${ZEP_SOURCE_QT})
 SET(CMAKE_AUTOMOC ON)
 SET(RESOURCE_FOLDER "" )
 SET(RESOURCE_FILES "")
 INCLUDE(demo_qt/list.cmake)
 INCLUDE_DIRECTORIES(${ZEP_INCLUDE_QT})
-ADD_EXECUTABLE (${PROJECT_NAME}-qt WIN32 ${DEMO_SOURCE_QT} ${ZEP_SOURCE_QT} ${M3RDPARTY_SOURCE} ${RESOURCE_FILES}) # Win32 ignored on non-windows
-TARGET_LINK_LIBRARIES(${PROJECT_NAME}-qt Qt5::Core Qt5::Gui Qt5::Widgets Zep ${PLATFORM_LINKLIBS})
+ADD_EXECUTABLE (${PROJECT_NAME}-qt WIN32 ${DEMO_SOURCE_QT} ${M3RDPARTY_SOURCE} ${RESOURCE_FILES}) # Win32 ignored on non-windows
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}-qt Qt5::Core Qt5::Gui Qt5::Widgets Zep ZepQt ${PLATFORM_LINKLIBS})
+ADD_DEPENDENCIES(${PROJECT_NAME} sdl2 ZepQt)
 if(WIN32)
 message(INFO "Copying required Qt libraries and binaries to output directory....")
 # Run winddeployqt if it can be found, to ensure installed dependencies
