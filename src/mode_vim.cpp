@@ -1066,17 +1066,25 @@ std::string ZepMode_Vim::GetCommandAndCount(std::string strCommand, int& count)
 
     bool foundCount = false;
     count = 1;
-    if (!count1.empty())
+
+    try
     {
-        count = std::stoi(count1);
-        foundCount = true;
+        if (!count1.empty())
+        {
+            count = std::stoi(count1);
+            foundCount = true;
+        }
+        if (!count2.empty())
+        {
+            // When 2 counts are specified, they multiply!
+            // Such as 2d2d, which deletes 4 lines
+            count *= std::stoi(count2);
+            foundCount = true;
+        }
     }
-    if (!count2.empty())
+    catch (std::out_of_range&)
     {
-        // When 2 counts are specified, they multiply!
-        // Such as 2d2d, which deletes 4 lines
-        count *= std::stoi(count2);
-        foundCount = true;
+        // Ignore bad count
     }
 
     // Concatentate the parts of the command into a single command string
