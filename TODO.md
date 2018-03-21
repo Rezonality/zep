@@ -1,3 +1,6 @@
+### Bugs
+Delete everything; iterator bug.
+
 #### Window
 - Finish HSplit 
 
@@ -5,7 +8,6 @@
 - Finish cut/paste to OS buffer
 
 #### VIM Mode
-
 - % Jump to bracket matching
 - f (find) / next, previous
 - / Searching

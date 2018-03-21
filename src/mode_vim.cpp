@@ -941,7 +941,13 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
         if (op == CommandOperation::Delete ||
             op == CommandOperation::DeleteLines)
         {
+            beginRange = std::max(beginRange, BufferLocation{ 0 });
+            endRange = std::max(endRange, BufferLocation{ 0 });
             assert(beginRange <= endRange);
+            if (beginRange > endRange)
+            {
+                beginRange = endRange;
+            }
             std::string str = std::string(pBuffer->GetText().begin() + beginRange, pBuffer->GetText().begin() + endRange);
 
             // Delete commands fill up 1-9 registers

@@ -107,6 +107,10 @@ TEST_F(VimTest, DELETE)
     spMode->AddCommandText("vll");
     spMode->AddKeyPress(ExtKeys::DEL);
     ASSERT_STREQ(spBuffer->GetText().string().c_str(), "");
+    
+    spBuffer->SetText("H");
+    spMode->AddKeyPress(ExtKeys::DEL);
+    spMode->AddKeyPress(ExtKeys::DEL);
 }
 
 TEST_F(VimTest, ESCAPE)
