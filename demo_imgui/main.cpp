@@ -84,8 +84,7 @@ int main(int, char**)
     config.OversampleH = 3;
     config.OversampleV = 1;
     config.DstFont = ImGui::GetFont();
-    //config.GlyphExtraSpacing.x = 1.0f;
-    io.Fonts->AddFontFromFileTTF((std::string(SDL_GetBasePath()) + "/ProggyClean.ttf").c_str(), 13, &config, ranges);
+    io.Fonts->AddFontFromFileTTF((std::string(SDL_GetBasePath()) + "ProggyClean.ttf").c_str(), 13, &config, ranges);
 
     bool show_test_window = true;
     bool show_another_window = false;
