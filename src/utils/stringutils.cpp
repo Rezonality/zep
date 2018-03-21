@@ -6,13 +6,15 @@
 
 #include "stringutils.h"
 
+namespace Zep
+{
 namespace StringUtils
 {
 
 std::string toLower(const std::string& str)
 {
     std::string copy = str;
-    std::transform(copy.begin(),copy.end(),copy.begin(),::tolower);
+    std::transform(copy.begin(), copy.end(), copy.begin(), ::tolower);
     return copy;
 }
 
@@ -34,12 +36,12 @@ std::vector<std::string> Split(const std::string& text, const std::string& delim
     std::vector<std::string> tokens;
     std::size_t start = text.find_first_not_of(delims), end = 0;
 
-    while((end = text.find_first_of(delims, start)) != std::string::npos)
+    while ((end = text.find_first_of(delims, start)) != std::string::npos)
     {
         tokens.push_back(text.substr(start, end - start));
         start = text.find_first_not_of(delims, end);
     }
-    if(start != std::string::npos)
+    if (start != std::string::npos)
         tokens.push_back(text.substr(start));
 
     return tokens;
@@ -198,6 +200,7 @@ uint64_t murmur_hash_64(const void * key, uint32_t len, uint64_t seed)
     return h;
 }
 
+#pragma warning (disable : 4996)
 //https://stackoverflow.com/questions/4804298/how-to-convert-wstring-into-string
 std::string makeStr(const std::wstring& str)
 {
@@ -208,5 +211,7 @@ std::string makeStr(const std::wstring& str)
     std::string converted_str = converter.to_bytes(str);
     return converted_str;
 }
+#pragma warning (default : 4996)
 
+}
 }
