@@ -6,6 +6,7 @@
 #include "mode_vim.h"
 #include "mode_standard.h"
 #include "editor_imgui.h"
+#include "usb_hid_keys.h"
 
 namespace Zep
 {
@@ -96,12 +97,12 @@ void ZepEditor_ImGui::HandleInput()
     }
     else if (io.KeyCtrl)
     {
-        if (ImGui::IsKeyPressed('1'))
+        if (ImGui::IsKeyPressed(KEY_1))
         {
             SetMode(StandardMode);
             handled = true;
         }
-        else if (ImGui::IsKeyPressed('2'))
+        else if (ImGui::IsKeyPressed(KEY_2))
         {
             SetMode(VimMode);
             handled = true;
@@ -109,13 +110,20 @@ void ZepEditor_ImGui::HandleInput()
         else
         {
             GetCurrentMode()->SetCurrentWindow(m_spDisplay->GetCurrentWindow());
-            for (char ch = ' '; ch <= '~'; ch++)
+
+            for (int ch = KEY_A; ch <= KEY_Z; ch++)
             {
-                if (ImGui::IsKeyPressed(int(ch)))
+                if (ImGui::IsKeyPressed(ch))
                 {
-                    GetCurrentMode()->AddKeyPress(ch, mod);
+                    GetCurrentMode()->AddKeyPress((ch - KEY_A) + 'a', mod);
                     handled = true;
                 }
+            }
+
+            if (ImGui::IsKeyPressed(KEY_SPACE))
+            {
+                GetCurrentMode()->AddKeyPress(' ', mod);
+                handled = true;
             }
         }
     }
