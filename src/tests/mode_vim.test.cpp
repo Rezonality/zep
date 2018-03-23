@@ -223,12 +223,13 @@ COMMAND_TEST(delete_ciw_space_start, " one two three", "ciwabc", "abcone two thr
 COMMAND_TEST(delete_ciW_first, "one! two three", "ciWabc", "abc two three");
 
 // cw
-COMMAND_TEST(delete_cw, "one two three", "cwabc", "abctwo three");
-COMMAND_TEST(delete_cw_inside, "one two three", "lcwabc", "oabctwo three");
+COMMAND_TEST(delete_cw, "one two three", "cwabc", "abc two three");
+COMMAND_TEST(delete_cw_inside, "one two three", "lcwabc", "oabc two three");
 COMMAND_TEST(delete_cw_inside_2, "one two three", "llllllllcwabc", "one two abc");
+COMMAND_TEST(delete_c2w, "one two three", "c2w", " three");
 
 // cW
-COMMAND_TEST(delete_cW, "one two! three", "llllcWabc", "one abcthree");
+COMMAND_TEST(delete_cW, "one two! three", "llllcWabc", "one abc three");
 
 // paste
 COMMAND_TEST(paste_p_at_end_cr, "(one) two three\r\n", "vllllxlllllllllllljp", " two three\n(one)"); // Will replace \r

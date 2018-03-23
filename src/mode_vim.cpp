@@ -79,6 +79,16 @@ static BufferLocation WordMotion(const BufferBlock& block)
     }
 }
 
+// Find the end of the first word we are on, or the end of the space we are on.
+// TODO: Make all our motion helpers read like this!
+BufferLocation ToEndOfFirstWordOrSpace(const BufferBlock& block)
+{
+    if (block.spaceBefore)
+        return block.firstBlock;
+
+    return block.firstNonBlock;
+}
+
 BufferLocation WordEndMotion(const BufferBlock& block)
 {
     // If on a space, move to the first block
@@ -232,6 +242,22 @@ bool ZepMode_Vim::GetBlockOpRange(const std::string& op, EditorMode mode, Buffer
         auto block = pBuffer->GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Forward);
         beginRange = block.blockSearchPos;
         endRange = WordMotion(block);
+        cursorAfter = beginRange;
+    }
+    else if (op == "cw")
+    {
+        // Change word doesn't extend over the next space
+        auto block = pBuffer->GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Forward);
+        beginRange = block.blockSearchPos;
+        endRange = ToEndOfFirstWordOrSpace(block);
+        cursorAfter = beginRange;
+    }
+    else if (op == "cW")
+    {
+        // Change word doesn't extend over the next space
+        auto block = pBuffer->GetBlock(SearchType::Word, bufferCursor, SearchDirection::Forward);
+        beginRange = block.blockSearchPos;
+        endRange = ToEndOfFirstWordOrSpace(block);
         cursorAfter = beginRange;
     }
     else if (op == "W")
@@ -689,14 +715,14 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
         }
         else if (command == "cw")
         {
-            if (GetBlockOpRange("w", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("cw", mode, beginRange, endRange, cursorAfter))
             {
                 op = CommandOperation::Delete;
             }
         }
         else if (command == "cW")
         {
-            if (GetBlockOpRange("W", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("cW", mode, beginRange, endRange, cursorAfter))
             {
                 op = CommandOperation::Delete;
             }

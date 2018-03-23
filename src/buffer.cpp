@@ -16,7 +16,7 @@ inline bool IsWordChar(const char ch) { return std::isalnum(ch) || ch == '_'; }
 inline bool IsNonWordChar(const char ch) { return (!IsWordChar(ch) && !std::isspace(ch)); }
 inline bool IsWORDChar(const char ch) { return std::isgraph(ch); }
 inline bool IsNonWORDChar(const char ch) { return !IsWORDChar(ch) && !std::isspace(ch); }
-inline bool IsSpace(const char ch) { return std::isspace(ch); }
+inline bool IsSpace(const char ch) { return std::isblank(ch); }
 }
 
 namespace Zep
@@ -141,7 +141,7 @@ BufferBlock ZepBuffer::GetBlock(uint32_t searchType, BufferLocation start, Searc
     ret.spaceBetween = false;
 
     while ((itrCurrent != itrBegin) &&
-        std::isspace(*itrCurrent))
+        IsSpace(*itrCurrent))
     {
         itrCurrent -= inc;
     }
@@ -154,7 +154,7 @@ BufferBlock ZepBuffer::GetBlock(uint32_t searchType, BufferLocation start, Searc
     // Skip the initial spaces; they are not part of the block
     itrCurrent = m_gapBuffer.begin() + start;
     while (itrCurrent != itrEnd &&
-        (std::isspace(*itrCurrent)))
+        (IsSpace(*itrCurrent)))
     {
         ret.spaceBefore = true;
         itrCurrent += inc;
@@ -207,7 +207,7 @@ BufferBlock ZepBuffer::GetBlock(uint32_t searchType, BufferLocation start, Searc
 
     // Skip the next spaces; they are not part of the block
     while (itrCurrent != itrEnd &&
-        (std::isspace(*itrCurrent)))
+        (IsSpace(*itrCurrent)))
     {
         ret.spaceBetween = true;
         itrCurrent += inc;
