@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.2)
 
 option (BUILD_QT "Make a Qt Demo" OFF)
 option (BUILD_IMGUI "Make an imgui demo" ON)
+option (BUILD_IMGUI_APP "Make the test app" ON)
 
 set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -70,6 +71,7 @@ INCLUDE_DIRECTORIES(${ZEP_INCLUDE_IMGUI})
 IF (OPENGL_FOUND OR TARGET_PC)
 SET(DEMO_SOURCE_IMGUI demo_imgui/main.cpp)
 
+IF (BUILD_IMGUI_APP)
 ADD_EXECUTABLE (${PROJECT_NAME} WIN32 
     ${DEMO_SOURCE_IMGUI}
 	${IMGUI_SOURCE}
@@ -79,6 +81,7 @@ copy_existing_files(${PROJECT_NAME} m3rdparty/imgui/misc/fonts/ProggyClean.ttf $
 TARGET_LINK_LIBRARIES (${PROJECT_NAME} Zep ZepImGui ${PLATFORM_LINKLIBS} ${SDL_LINKLIBS})
 ADD_DEPENDENCIES(${PROJECT_NAME} sdl2 ZepImGui)
 ENDIF() # GL or PC
+ENDIF()
 ENDIF() # IMGUI
 
 # Create the Qt version of the app
@@ -103,7 +106,8 @@ ENDIF() # Build QT
 
 # Unit tests
 # Require SDL/IMgui build to work
-IF (BUILD_IMGUI)
+# Need to build app to build tests
+IF (BUILD_IMGUI_APP)
 SET(CMAKE_AUTOMOC OFF)
 INCLUDE(tests/list.cmake)
 enable_testing()
