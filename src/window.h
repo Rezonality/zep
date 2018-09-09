@@ -143,6 +143,7 @@ public:
     NVec2f bottomRightPx;                         // Limits of the screen position
     NVec2f cursorPosPx;                           // Cursor location
     bool wrap = true;                             // Wrap
+    bool tabs = false;                            // Show tabs
 
     // The buffer offset is where we are looking, but the cursor is only what you see on the screen
     CursorMode cursorMode = CursorMode::Normal;   // Type of cursor

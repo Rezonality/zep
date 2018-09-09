@@ -95,6 +95,14 @@ void ZepEditor_ImGui::HandleInput()
     {
         GetCurrentMode()->AddKeyPress(ExtKeys::DOWN, mod);
     }
+    else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_PageDown)))
+    {
+        GetCurrentMode()->AddKeyPress(ExtKeys::PAGEDOWN, mod);
+    }
+    else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_PageUp)))
+    {
+        GetCurrentMode()->AddKeyPress(ExtKeys::PAGEUP, mod);
+    }
     else if (io.KeyCtrl)
     {
         if (ImGui::IsKeyPressed(KEY_1))

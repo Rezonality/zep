@@ -24,7 +24,9 @@ struct ExtKeys
         TAB,
         DEL,
         HOME,
-        END
+        END,
+        PAGEDOWN,
+        PAGEUP
     };
 };
 
