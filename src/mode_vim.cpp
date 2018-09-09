@@ -30,6 +30,7 @@
 // 'jk' to insert mode 
 // gg Jump to end
 // G Jump to beginning
+// CTRL+F/B/D/U page and have page moves
 // 'J' join
 // D
 // dd,d$,x  Delete line, to end of line, chars
@@ -52,6 +53,9 @@
 // c[a]<count>w/e  Change word
 // ci})]"'
 
+// TODO: I think a better implementation of the block commands might be a set of simple quiries about what the cursor is currently over
+// and where the next thing is; a kind of state machine you can use to search for the next thing.  Not sure.  Certainly, the motions stuff
+// is tricky to get right (hence all the unit tests!).  They all have their particular behaviors which are annoying if not correctly matching vim.
 namespace Zep
 {
 
@@ -172,6 +176,13 @@ void ZepMode_Vim::SwitchMode(EditorMode mode)
     // Don't switch to invalid mode
     if (mode == EditorMode::None)
         return;
+
+    if (mode == EditorMode::Insert &&
+        m_pCurrentWindow &&
+        m_pCurrentWindow->GetCurrentBuffer()->IsViewOnly())
+    {
+        mode = EditorMode::Normal;
+    }
 
     m_currentMode = mode;
     switch (mode)
@@ -308,7 +319,8 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
 {
     auto cursor = m_pCurrentWindow->GetCursor();
     const LineInfo* pLineInfo = nullptr;
-    if (m_pCurrentWindow->visibleLines.size() > cursor.y)
+    long displayLineCount = long(m_pCurrentWindow->visibleLines.size());
+    if (displayLineCount > cursor.y)
     {
         pLineInfo = &m_pCurrentWindow->visibleLines[cursor.y];
     }
@@ -409,17 +421,47 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
         commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
+    else if ((command == "f" && (modifierKeys & ModifierKey::Ctrl)) || lastKey == ExtKeys::PAGEDOWN)
+    {
+        // Note: the vim spec says 'visible lines - 2' for a 'page'.
+        // We jump the max possible lines, which might hit the end of the text; this matches observed vim behavior
+        m_pCurrentWindow->MoveCursor(Zep::NVec2i(0, (m_pCurrentWindow->GetMaxDisplayLines() - 2) * count));
+        commandResult.flags |= CommandResultFlags::HandledCount;
+        return true;
+    }
+    else if((command == "d" && (modifierKeys & ModifierKey::Ctrl)) || lastKey == ExtKeys::PAGEDOWN)
+    {
+        // Note: the vim spec says 'half visible lines' for up/down
+        m_pCurrentWindow->MoveCursor(Zep::NVec2i(0, (displayLineCount / 2) * count));
+        commandResult.flags |= CommandResultFlags::HandledCount;
+        return true;
+    }
+    else if((command == "b" && (modifierKeys & ModifierKey::Ctrl)) || lastKey == ExtKeys::PAGEUP)
+    {
+        // Note: the vim spec says 'visible lines - 2' for a 'page'
+        m_pCurrentWindow->MoveCursor(Zep::NVec2i(0, -(m_pCurrentWindow->GetMaxDisplayLines() - 2) * count));
+        commandResult.flags |= CommandResultFlags::HandledCount;
+        return true;
+    }
+    else if((command == "u" && (modifierKeys & ModifierKey::Ctrl)) || lastKey == ExtKeys::PAGEUP)
+    {
+        m_pCurrentWindow->MoveCursor(Zep::NVec2i(0, -(displayLineCount / 2) * count));
+        commandResult.flags |= CommandResultFlags::HandledCount;
+        return true;
+    }
     else if (command == "G")
     {
         if (count != 1)
         {
             // Goto line
+            // TODO I don't think this will move beyond the displayed lines with a line count.
             m_pCurrentWindow->MoveCursorTo(pBuffer->GetLinePos(count, LineLocation::LineBegin));
             commandResult.flags |= CommandResultFlags::HandledCount;
         }
         else
         {
-            m_pCurrentWindow->MoveCursorTo(pBuffer->EndLocation());
+            // Move right to the end
+            m_pCurrentWindow->MoveCursor(Zep::NVec2i(Zep::MaxCursorMove, Zep::MaxCursorMove));
             commandResult.flags |= CommandResultFlags::HandledCount;
         }
         return true;
@@ -878,7 +920,11 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
     {
         if (command[0] == ':')
         {
-            if (command == ":reg")
+            if (GetEditor().Broadcast(std::make_shared<ZepMessage>(Msg_HandleCommand, command)))
+            {
+                return true;
+            }
+            else if (command == ":reg")
             {
                 std::ostringstream str;
                 str << "--- Registers ---" << '\n';
@@ -944,10 +990,10 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
                 }
                 return true;
             }
-            else if (!GetEditor().Broadcast(std::make_shared<ZepMessage>(Msg_HandleCommand, command)))
+            else
             {
                 m_pCurrentWindow->GetDisplay().SetCommandText("Not a command");
-                return true;
+                return false;
             }
 
             m_currentCommand.clear();
@@ -1139,13 +1185,18 @@ std::string ZepMode_Vim::GetCommandAndCount(std::string strCommand, int& count)
     return command;
 }
 
-void ZepMode_Vim::Enable()
+void ZepMode_Vim::Begin()
 {
     if (m_pCurrentWindow)
     {
         m_pCurrentWindow->SetCursorMode(CursorMode::Normal);
+        m_pCurrentWindow->GetDisplay().SetCommandText(m_currentCommand);
     }
     m_currentMode = EditorMode::Normal;
+    m_currentCommand.clear();
+    m_lastCommand.clear();
+    m_lastCount = 0;
+    m_pendingEscape = false;
 }
 
 void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
@@ -1282,6 +1333,8 @@ void ZepMode_Vim::HandleInsert(uint32_t key)
     case ExtKeys::LEFT:
     case ExtKeys::UP:
     case ExtKeys::DOWN:
+    case ExtKeys::PAGEUP:
+    case ExtKeys::PAGEDOWN:
         packCommand = true;
         break;
     default:

@@ -24,7 +24,9 @@ struct ExtKeys
         TAB,
         DEL,
         HOME,
-        END
+        END,
+        PAGEDOWN,
+        PAGEUP
     };
 };
 
@@ -58,11 +60,13 @@ public:
     virtual void AddCommandText(std::string strText);
     virtual void AddKeyPress(uint32_t key, uint32_t modifierKeys = ModifierKey::None) = 0;
     virtual const char* Name() const = 0;
-    virtual void Enable() = 0;
     virtual void Notify(std::shared_ptr<ZepMessage> message) override {}
     virtual void AddCommand(std::shared_ptr<ZepCommand> spCmd);
     virtual void SetCurrentWindow(ZepWindow* pWindow);
     virtual void UpdateVisualSelection();
+
+    // Called when we begin editing in this mode
+    virtual void Begin() = 0;
 
     virtual void Undo();
     virtual void Redo();

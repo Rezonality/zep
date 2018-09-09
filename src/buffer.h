@@ -125,6 +125,10 @@ public:
     const GapBuffer<utf8>& GetText() const { return m_gapBuffer; }
     const std::vector<long> GetLineEnds() const { return m_lineEnds; }
     bool IsDirty() const { return m_dirty; }
+    bool IsReadOnly() const { return m_readOnly; }
+    bool IsViewOnly() const { return m_viewOnly; }
+    void SetReadOnly(bool ro) { m_readOnly = ro; }
+    void SetViewOnly(bool ro) { m_viewOnly = ro; }
 
     void SetSyntax(std::shared_ptr<ZepSyntax> spSyntax) { m_spSyntax = spSyntax; }
     ZepSyntax* GetSyntax() const { return m_spSyntax.get(); }
@@ -141,6 +145,8 @@ private:
 
 private:
     bool m_dirty;                              // Is the text modified?
+    bool m_readOnly = false;                   // Is the text read only?
+    bool m_viewOnly = false;                   // Is the text not editable, only view?
     GapBuffer<utf8> m_gapBuffer;                  // Storage for the text - a gap buffer for efficiency
     std::vector<long> m_lineEnds;              // End of each line
     ThreadPool m_threadPool;

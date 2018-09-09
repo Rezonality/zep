@@ -67,7 +67,7 @@ void ZepMode_Standard::SetCurrentWindow(ZepWindow* pWindow)
     }
 }
 
-void ZepMode_Standard::Enable()
+void ZepMode_Standard::Begin()
 {
     SwitchMode(EditorMode::Insert);
 }

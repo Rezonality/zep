@@ -252,11 +252,14 @@ void ZepWindow::MoveCursor(LineLocation location)
     return MoveCursor(cursor - cursorCL, LineLocation::LineCRBegin);
 }
 
+// NOTE: This currently moves clamped _inside_ the display region.
+// TODO: Make this move within the rest of the whole buffer and ensure it doesn't break anything
 void ZepWindow::MoveCursorTo(const BufferLocation& location, LineLocation clampLocation)
 {
     MoveCursor(BufferToDisplay(location) - cursorCL, clampLocation);
 }
 
+// NOTE: In contrast to above, this will move any distance within the whole buffer, and scroll it appropriately
 void ZepWindow::MoveCursor(const NVec2i& distance, LineLocation clampLocation)
 {
     auto target = cursorCL + distance;
@@ -343,7 +346,6 @@ void ZepWindow::PreDisplay(const DisplayRegion& region)
     m_statusRegion.bottomRightPx = m_windowRegion.bottomRightPx;
     m_statusRegion.topLeftPx = m_windowRegion.bottomRightPx - NVec2f(windowSize.x, statusSize);
 
-    bool tabs = true;
     if (tabs)
     {
         m_tabRegion.topLeftPx = m_windowRegion.topLeftPx;
@@ -363,6 +365,9 @@ void ZepWindow::PreDisplay(const DisplayRegion& region)
     m_leftRegion.bottomRightPx = NVec2f(m_leftRegion.topLeftPx.x + leftBorder, m_textRegion.bottomRightPx.y);
 
     m_textRegion.topLeftPx.x += leftBorder + textBorder;
+
+    auto defaultLineSize = m_display.GetTextSize((Zep::utf8*)"A");
+    m_maxDisplayLines = (long)std::max(0.0f, std::floor((m_textRegion.bottomRightPx.y - m_textRegion.topLeftPx.y) / defaultLineSize.y));
 
     // Start at this displayed buffer line
     LineInfo lineInfo;
@@ -672,22 +677,21 @@ void ZepWindow::Display()
     auto activeWindow = (m_display.GetCurrentWindow() == this);
     cursorPosPx = m_windowRegion.topLeftPx;
  
-    // Left hand region, window side
-    //m_display.DrawLine(m_leftRegion.topLeftPx - NVec2f(1.0f, 0.0f), NVec2f(m_leftRegion.topLeftPx.x - 1.0f, m_leftRegion.bottomRightPx.y), 0x77FFFFFF, 1.0f);
-
-    // Tab region bottom
-    m_display.DrawRectFilled(m_tabRegion.BottomLeft() - NVec2f(0.0f, 2.0f), m_tabRegion.bottomRightPx, 0xFF888888);
-
-    NVec2f currentTab = m_tabRegion.topLeftPx;
-    for (auto& buffer : m_buffers)
+    if (tabs)
     {
-        auto tabColor = (buffer == m_pCurrentBuffer) ? 0xFF666666 : 0x11888888;
-        auto tabLength = m_display.GetTextSize((utf8*)buffer->GetName().c_str()).x + textBorder * 2;
-        m_display.DrawRectFilled(currentTab, currentTab + NVec2f(tabLength, m_tabRegion.Height()), tabColor);
-        
-        m_display.DrawChars(currentTab + NVec2f(textBorder, textBorder), 0xFFFFFFFF, (utf8*)buffer->GetName().c_str());
+        // Tab region bottom
+        m_display.DrawRectFilled(m_tabRegion.BottomLeft() - NVec2f(0.0f, 2.0f), m_tabRegion.bottomRightPx, 0xFF888888);
+        NVec2f currentTab = m_tabRegion.topLeftPx;
+        for (auto& buffer : m_buffers)
+        {
+            auto tabColor = (buffer == m_pCurrentBuffer) ? 0xFF666666 : 0x11888888;
+            auto tabLength = m_display.GetTextSize((utf8*)buffer->GetName().c_str()).x + textBorder * 2;
+            m_display.DrawRectFilled(currentTab, currentTab + NVec2f(tabLength, m_tabRegion.Height()), tabColor);
 
-        currentTab.x += tabLength + textBorder;
+            m_display.DrawChars(currentTab + NVec2f(textBorder, textBorder), 0xFFFFFFFF, (utf8*)buffer->GetName().c_str());
+
+            currentTab.x += tabLength + textBorder;
+        }
     }
 
     if (activeWindow)
