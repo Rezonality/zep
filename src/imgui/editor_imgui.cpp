@@ -7,6 +7,7 @@
 #include "mode_standard.h"
 #include "editor_imgui.h"
 #include "usb_hid_keys.h"
+#include "sdl.h"
 
 namespace Zep
 {
@@ -119,11 +120,11 @@ void ZepEditor_ImGui::HandleInput()
         {
             GetCurrentMode()->SetCurrentWindow(m_spDisplay->GetCurrentWindow());
 
-            for (int ch = 'a'; ch <= 'z'; ch++)
+            for (int ch = SDL_SCANCODE_A; ch <= SDL_SCANCODE_Z; ch++)
             {
                 if (ImGui::IsKeyPressed(ch))
                 {
-                    GetCurrentMode()->AddKeyPress(ch, mod);
+                    GetCurrentMode()->AddKeyPress(ch - SDL_SCANCODE_A + 'a', mod);
                     handled = true;
                 }
             }
