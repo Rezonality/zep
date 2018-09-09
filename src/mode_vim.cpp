@@ -423,8 +423,9 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
     }
     else if ((command == "f" && (modifierKeys & ModifierKey::Ctrl)) || lastKey == ExtKeys::PAGEDOWN)
     {
-        // Note: the vim spec says 'visible lines - 2' for a 'page'
-        m_pCurrentWindow->MoveCursor(Zep::NVec2i(0, (displayLineCount - 2) * count));
+        // Note: the vim spec says 'visible lines - 2' for a 'page'.
+        // We jump the max possible lines, which might hit the end of the text; this matches observed vim behavior
+        m_pCurrentWindow->MoveCursor(Zep::NVec2i(0, (m_pCurrentWindow->GetMaxDisplayLines() - 2) * count));
         commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
@@ -438,7 +439,7 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
     else if((command == "b" && (modifierKeys & ModifierKey::Ctrl)) || lastKey == ExtKeys::PAGEUP)
     {
         // Note: the vim spec says 'visible lines - 2' for a 'page'
-        m_pCurrentWindow->MoveCursor(Zep::NVec2i(0, -(displayLineCount - 2) * count));
+        m_pCurrentWindow->MoveCursor(Zep::NVec2i(0, -(m_pCurrentWindow->GetMaxDisplayLines() - 2) * count));
         commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }

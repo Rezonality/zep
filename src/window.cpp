@@ -366,6 +366,9 @@ void ZepWindow::PreDisplay(const DisplayRegion& region)
 
     m_textRegion.topLeftPx.x += leftBorder + textBorder;
 
+    auto defaultLineSize = m_display.GetTextSize((Zep::utf8*)"A");
+    m_maxDisplayLines = (long)std::max(0.0f, std::floor((m_textRegion.bottomRightPx.y - m_textRegion.topLeftPx.y) / defaultLineSize.y));
+
     // Start at this displayed buffer line
     LineInfo lineInfo;
     lineInfo.lastNonCROffset = -1;

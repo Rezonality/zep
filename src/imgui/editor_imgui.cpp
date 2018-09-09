@@ -119,11 +119,11 @@ void ZepEditor_ImGui::HandleInput()
         {
             GetCurrentMode()->SetCurrentWindow(m_spDisplay->GetCurrentWindow());
 
-            for (int ch = KEY_A; ch <= KEY_Z; ch++)
+            for (int ch = 'a'; ch <= 'z'; ch++)
             {
                 if (ImGui::IsKeyPressed(ch))
                 {
-                    GetCurrentMode()->AddKeyPress((ch - KEY_A) + 'a', mod);
+                    GetCurrentMode()->AddKeyPress(ch, mod);
                     handled = true;
                 }
             }

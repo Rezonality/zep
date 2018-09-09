@@ -1,53 +1,54 @@
 
+SET(ZEP_ROOT ${CMAKE_CURRENT_LIST_DIR}/../)
 SET(ZEP_SOURCE
-src/utils/timer.cpp
-src/utils/timer.h
-src/utils/stringutils.cpp
-src/utils/stringutils.h
-src/utils/threadutils.h
-src/editor.cpp
-src/editor.h
-src/buffer.cpp
-src/buffer.h
-src/commands.cpp
-src/commands.h
-src/display.cpp
-src/display.h
-src/window.cpp
-src/window.h
-src/syntax.cpp
-src/syntax.h
-src/syntax_glsl.cpp
-src/syntax_glsl.h
-src/mode.cpp
-src/mode.h
-src/mode_standard.cpp
-src/mode_standard.h
-src/mode_vim.cpp
-src/mode_vim.h
-src/theme.cpp
-src/theme.h
-src/list.cmake
+${ZEP_ROOT}/src/utils/timer.cpp
+${ZEP_ROOT}/src/utils/timer.h
+${ZEP_ROOT}/src/utils/stringutils.cpp
+${ZEP_ROOT}/src/utils/stringutils.h
+${ZEP_ROOT}/src/utils/threadutils.h
+${ZEP_ROOT}/src/editor.cpp
+${ZEP_ROOT}/src/editor.h
+${ZEP_ROOT}/src/buffer.cpp
+${ZEP_ROOT}/src/buffer.h
+${ZEP_ROOT}/src/commands.cpp
+${ZEP_ROOT}/src/commands.h
+${ZEP_ROOT}/src/display.cpp
+${ZEP_ROOT}/src/display.h
+${ZEP_ROOT}/src/window.cpp
+${ZEP_ROOT}/src/window.h
+${ZEP_ROOT}/src/syntax.cpp
+${ZEP_ROOT}/src/syntax.h
+${ZEP_ROOT}/src/syntax_glsl.cpp
+${ZEP_ROOT}/src/syntax_glsl.h
+${ZEP_ROOT}/src/mode.cpp
+${ZEP_ROOT}/src/mode.h
+${ZEP_ROOT}/src/mode_standard.cpp
+${ZEP_ROOT}/src/mode_standard.h
+${ZEP_ROOT}/src/mode_vim.cpp
+${ZEP_ROOT}/src/mode_vim.h
+${ZEP_ROOT}/src/theme.cpp
+${ZEP_ROOT}/src/theme.h
+${ZEP_ROOT}/src/list.cmake
 )
 
 LIST(APPEND SRC_INCLUDE src)
 
 IF (BUILD_QT)
 SET(ZEP_SOURCE_QT
-    src/qt/display_qt.cpp
-    src/qt/display_qt.h
-    src/qt/window_qt.cpp
-    src/qt/window_qt.h
+    ${ZEP_ROOT}/src/qt/display_qt.cpp
+    ${ZEP_ROOT}/src/qt/display_qt.h
+    ${ZEP_ROOT}/src/qt/window_qt.cpp
+    ${ZEP_ROOT}/src/qt/window_qt.h
     )
-SET(ZEP_INCLUDE_QT src/qt)
+SET(ZEP_INCLUDE_QT ${ZEP_ROOT}/src/qt)
 ENDIF()
 
 IF (BUILD_IMGUI)
 SET(ZEP_SOURCE_IMGUI
-    src/imgui/display_imgui.cpp
-    src/imgui/display_imgui.h
-    src/imgui/editor_imgui.cpp
-    src/imgui/editor_imgui.h)
-SET(ZEP_INCLUDE_IMGUI src/qt)
+    ${ZEP_ROOT}/src/imgui/display_imgui.cpp
+    ${ZEP_ROOT}/src/imgui/display_imgui.h
+    ${ZEP_ROOT}/src/imgui/editor_imgui.cpp
+    ${ZEP_ROOT}/src/imgui/editor_imgui.h)
+SET(ZEP_INCLUDE_IMGUI ${ZEP_ROOT}/src/qt)
 ENDIF()
 

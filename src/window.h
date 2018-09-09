@@ -131,8 +131,11 @@ public:
     void SetWindowFlags(uint32_t windowFlags) { m_windowFlags = windowFlags; }
     uint32_t GetWindowFlags() const { return m_windowFlags;  }
 
-    // TODO: Fix this; used to be a struct, now members
+    long GetMaxDisplayLines() const { return m_maxDisplayLines; }
+
 public:
+    // TODO: Fix this; used to be a struct, now members
+    // Should be private!
     ZepDisplay& m_display;                     // Display that owns this window
     DisplayRegion m_windowRegion;                 // region of the display we are showing on.
     DisplayRegion m_textRegion;                   // region of the display for text.
@@ -166,6 +169,9 @@ public:
     ZepBuffer* m_pCurrentBuffer = nullptr;
 
     uint32_t m_windowFlags = WindowFlags::None;
+
+    long m_maxDisplayLines = 0;
+
 private:
     NVec2i cursorCL;                              // Position of Cursor in line/column (display coords)
 };
