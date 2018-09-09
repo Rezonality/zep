@@ -33,9 +33,9 @@ void ZepMode::AddCommandText(std::string strText)
 void ZepMode::AddCommand(std::shared_ptr<ZepCommand> spCmd)
 {
     if (m_pCurrentWindow && 
-        m_pCurrentWindow->GetCurrentBuffer()->IsReadOnly())
+        m_pCurrentWindow->GetCurrentBuffer()->IsViewOnly())
     {
-        // Ignore commands on buffers because we are read only, 
+        // Ignore commands on buffers because we are view only, 
         // and all commands currently modify the buffer!
         return;
     }

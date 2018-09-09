@@ -179,7 +179,7 @@ void ZepMode_Vim::SwitchMode(EditorMode mode)
 
     if (mode == EditorMode::Insert &&
         m_pCurrentWindow &&
-        m_pCurrentWindow->GetCurrentBuffer()->IsReadOnly())
+        m_pCurrentWindow->GetCurrentBuffer()->IsViewOnly())
     {
         mode = EditorMode::Normal;
     }
