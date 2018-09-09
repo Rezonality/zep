@@ -16,7 +16,7 @@ inline bool IsWordChar(const char ch) { return std::isalnum(ch) || ch == '_'; }
 inline bool IsNonWordChar(const char ch) { return (!IsWordChar(ch) && !std::isspace(ch)); }
 inline bool IsWORDChar(const char ch) { return std::isgraph(ch); }
 inline bool IsNonWORDChar(const char ch) { return !IsWORDChar(ch) && !std::isspace(ch); }
-inline bool IsSpace(const char ch) { return std::isblank(ch); }
+inline bool IsSpace(const char ch) { return std::isspace(ch); }
 }
 
 namespace Zep

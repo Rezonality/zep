@@ -1185,13 +1185,18 @@ std::string ZepMode_Vim::GetCommandAndCount(std::string strCommand, int& count)
     return command;
 }
 
-void ZepMode_Vim::Enable()
+void ZepMode_Vim::Begin()
 {
     if (m_pCurrentWindow)
     {
         m_pCurrentWindow->SetCursorMode(CursorMode::Normal);
+        m_pCurrentWindow->GetDisplay().SetCommandText(m_currentCommand);
     }
     m_currentMode = EditorMode::Normal;
+    m_currentCommand.clear();
+    m_lastCommand.clear();
+    m_lastCount = 0;
+    m_pendingEscape = false;
 }
 
 void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)

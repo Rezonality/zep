@@ -38,7 +38,7 @@ public:
     ~ZepMode_Vim();
 
     virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
-    virtual void Enable() override;
+    virtual void Begin() override;
     virtual void SetCurrentWindow(ZepWindow* pWindow) override;
 
     virtual const char* Name() const override { return "Vim"; }
