@@ -4,7 +4,6 @@
 #include "mode.h"
 #include "window_qt.h"
 #include "display_qt.h"
-#include <Windows.h>
 namespace Zep
 {
 
