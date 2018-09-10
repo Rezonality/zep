@@ -4,7 +4,7 @@
 #include "mode.h"
 #include "window_qt.h"
 #include "display_qt.h"
-
+#include <Windows.h>
 namespace Zep
 {
 
@@ -67,18 +67,20 @@ void ZepWindow_Qt::keyPressEvent(QKeyEvent* ev)
     auto pMode = m_spEditor->GetCurrentMode();
     if (ev->modifiers() & Qt::ControlModifier)
     {
-        if (ev->key() & Qt::Key_1)
+        if (ev->key() == Qt::Key_1)
         {
             m_spEditor->SetMode(Zep::StandardMode);
         }
-        else if (ev->key() & Qt::Key_2)
+        else if (ev->key() == Qt::Key_2)
         {
             m_spEditor->SetMode(Zep::VimMode);
         }
         else
         {
-            pMode->SetCurrentWindow(m_spDisplay->GetCurrentWindow());
-            pMode->AddKeyPress(*ev->text().toUtf8().data(), ModifierKey::Ctrl);
+            if (ev->key() >= Qt::Key_A && ev->key() <= Qt::Key_Z)
+            {
+                pMode->AddKeyPress((ev->key() - Qt::Key_A) + 'a', ModifierKey::Ctrl);
+            }
         }
         update();
         return;
