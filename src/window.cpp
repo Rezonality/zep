@@ -1,5 +1,6 @@
 #include <sstream>
 #include <cctype>
+#include <cmath>
 
 #include "display.h"
 #include "window.h"
