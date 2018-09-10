@@ -16,7 +16,7 @@ anything missing will be added over time.
 Zep is ideally suited to embedding in a game engine, as an in-game editor, or anywhere you need a simple editor without a massive dependency 
 on something more substantial like NeoVim.  The core library is dependency free, small, and requires only a modern C++ compiler.
 The demos for Qt and ImGui require their additional packages, but the core library is easily built and cross platform.  The ImGui demo builds and runs on Windows, Linux and
-Mac OS.  The Qt demo builds on Windows, but will be fixed to compile on Linux too.
+Mac OS.
 
 Though I have limited time to work on Zep, I do try to move it forward.  Currently I hope it is functional/stable enough to be used.
 There are many unit tests for the Vim mode. 
@@ -87,16 +87,16 @@ You can follow the build buttons above to see build scripts, but the process is 
 
 ##### Install Packages  
 If you don't have them already, the following packages are required, depending on your system.  Note, that SDL is part of the build,
-and not installed seperately.  It is only used for the demo, not the core editor library or unit tests.
+and not installed seperately.  It is only used for the demo, not the core editor library or unit tests. Qt is required to build the Qt demo on linux.
 If you have compilation problems, you might need to investigate the compiler you are using.
 Ubuntu 16 & 17 both have a recent enough version for it to work.  On Ubuntu 14 I tend to upgrade to g++6
-Although Qt has not been built on linux/Mac, a savy user can probably figure out how to add the Qt components and build it.  Since this requires
-some effort to get the build servers working, it isn't done yet.  
+The Qt app builds on linux, but is not part of the travis setup yet.
 
 ###### Linux
 ```
 sudo apt install cmake  
 sudo apt install git  
+sudo apt install qt-default (for Qt support)
 ```
 
 ###### Mac
@@ -147,7 +147,7 @@ Type `CTest --verbose` in the build folder to run unit tests.
 
 Libraries
 -----------
-This sample uses SDL for the window setup, and ImGui for the rendering.
+This sample uses SDL for the window setup, and ImGui for the rendering, or Qt.
 
 [SDL2: Media/Window Layer](https://www.libsdl.org/download-2.0.php)  
 SDL2 is used to get a window on the screen in a cross platform way, and for OpenGL to generate a Context.
