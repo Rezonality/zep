@@ -2,11 +2,12 @@
 
 IF (BUILD_IMGUI)
 SET (IMGUI_SOURCE 
-    m3rdparty/imgui/examples/sdl_opengl3_example/imgui_impl_sdl_gl3.cpp
+    m3rdparty/imgui/examples/imgui_impl_sdl.cpp
+    m3rdparty/imgui/examples/imgui_impl_opengl3.cpp
     m3rdparty/imgui/examples/libs/gl3w/GL/gl3w.c
     m3rdparty/imgui/imgui_demo.cpp
+    m3rdparty/imgui/imgui_widgets.cpp
     m3rdparty/imgui/imgui_draw.cpp
-	m3rdparty/imgui/imgui_orient.cpp
     m3rdparty/imgui/imgui.cpp)
 
 SET (IMGUI_INCLUDE 
