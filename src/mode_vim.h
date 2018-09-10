@@ -24,6 +24,11 @@ enum
 };
 }
 
+struct VimSettings
+{
+    bool ShowNormalModeKeyStrokes = false;
+};
+
 struct CommandResult
 {
     uint32_t flags = CommandResultFlags::None;
@@ -58,6 +63,7 @@ private:
 
     bool m_pendingEscape = false;
     std::shared_ptr<Timer> m_spInsertEscapeTimer;
+    VimSettings m_settings;
 };
 
 } // Zep

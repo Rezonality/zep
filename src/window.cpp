@@ -266,6 +266,9 @@ void ZepWindow::MoveCursor(const NVec2i& distance, LineLocation clampLocation)
     auto target = cursorCL + distance;
 
     // TODO: Add helpers for these conditions
+    // TODO: This doesn't account for buffer lines that are multiple window lines: the result
+    // is that a scroll through the document will 'jump' multiline buffer lines.  Need to figure out the 'sub-line' of a buffer
+    // line and scroll to that.
     // Scroll the whole document up if we are near the top
     if (target.y < 4 && bufferCL.y > 0)
     {
