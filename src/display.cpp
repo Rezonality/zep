@@ -101,7 +101,6 @@ void ZepDisplay::AssignDefaultWindow()
         return;
     }
 
-       
     auto pBuffer = GetEditor().GetMRUBuffer();
     assert(pBuffer);
 

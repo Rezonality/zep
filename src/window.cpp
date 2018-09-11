@@ -490,7 +490,7 @@ void ZepWindow::PreDisplay(const DisplayRegion& region)
             visibleLines.push_back(lineInfo);
 
             // Next Line
-            lineInfo.screenPosYPx += m_display.GetFontSize();
+            lineInfo.screenPosYPx += defaultLineSize.y;
             lineInfo.screenLineNumber++;
             lineInfo.lineNumber++;
             lineInfo.lastNonCROffset = 0;
@@ -688,7 +688,7 @@ void ZepWindow::Display()
         NVec2f currentTab = m_tabRegion.topLeftPx;
         for (auto& buffer : m_buffers)
         {
-            auto tabColor = (buffer == m_pCurrentBuffer) ? 0xFF666666 : 0x11888888;
+            auto tabColor = (buffer == m_pCurrentBuffer) ? 0xFF666666 : 0x44888888;
             auto tabLength = m_display.GetTextSize((utf8*)buffer->GetName().c_str()).x + textBorder * 2;
             m_display.DrawRectFilled(currentTab, currentTab + NVec2f(tabLength, m_tabRegion.Height()), tabColor);
 
