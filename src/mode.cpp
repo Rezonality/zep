@@ -2,6 +2,8 @@
 #include "mode.h"
 #include "editor.h"
 #include "commands.h"
+#include "window.h"
+#include "tab_window.h"
 
 namespace Zep
 {
@@ -17,9 +19,9 @@ ZepMode::~ZepMode()
 
 }
 
-void ZepMode::SetCurrentWindow(ZepWindow* pDisplay)
+void ZepMode::SetCurrentWindow(ZepWindow* pView)
 {
-    m_pCurrentWindow = pDisplay;
+    m_pCurrentView = pView;
 }
 
 void ZepMode::AddCommandText(std::string strText)
@@ -32,8 +34,8 @@ void ZepMode::AddCommandText(std::string strText)
 
 void ZepMode::AddCommand(std::shared_ptr<ZepCommand> spCmd)
 {
-    if (m_pCurrentWindow && 
-        m_pCurrentWindow->GetCurrentBuffer()->IsViewOnly())
+    if (m_pCurrentView && 
+        m_pCurrentView->GetBuffer().IsViewOnly())
     {
         // Ignore commands on buffers because we are view only, 
         // and all commands currently modify the buffer!
@@ -107,14 +109,14 @@ void ZepMode::UpdateVisualSelection()
         // Update the visual range
         if (m_lineWise)
         {
-            auto pLineInfo = &m_pCurrentWindow->visibleLines[m_pCurrentWindow->GetCursor().y];
-            m_visualEnd = m_pCurrentWindow->GetCurrentBuffer()->GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd) - 1;
+            auto pLineInfo = &m_pCurrentView->visibleLines[m_pCurrentView->GetCursor().y];
+            m_visualEnd = m_pCurrentView->GetBuffer().GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd) - 1;
         }
         else
         {
-            m_visualEnd = m_pCurrentWindow->DisplayToBuffer();
+            m_visualEnd = m_pCurrentView->DisplayToBuffer();
         }
-        m_pCurrentWindow->SetSelectionRange(m_pCurrentWindow->BufferToDisplay(m_visualBegin), m_pCurrentWindow->BufferToDisplay(m_visualEnd));
+        m_pCurrentView->SetSelectionRange(m_pCurrentView->BufferToDisplay(m_visualBegin), m_pCurrentView->BufferToDisplay(m_visualEnd));
     }
 }
 }

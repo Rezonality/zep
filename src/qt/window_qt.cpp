@@ -3,7 +3,10 @@
 #include "editor.h"
 #include "mode.h"
 #include "window_qt.h"
+#include "tab_window.h"
 #include "display_qt.h"
+#include "display.h"
+
 namespace Zep
 {
 
@@ -42,13 +45,13 @@ void ZepWindow_Qt::paintEvent(QPaintEvent* pPaint)
 
     m_spDisplay->SetPainter(&painter);
 
-    m_spEditor->GetCurrentMode()->SetCurrentWindow(m_spDisplay->GetCurrentWindow());
-    auto pWindow = m_spDisplay->GetCurrentWindow();
-    if (pWindow)
+    m_spEditor->GetCurrentMode()->SetCurrentWindow(m_spDisplay->GetCurrentWindow()->GetCurrentWindow());
+    auto pTabWindow = m_spDisplay->GetCurrentWindow();
+    if (pTabWindow)
     {
-        if (pWindow->GetCurrentBuffer() == nullptr)
+        if (pTabWindow->GetCurrentBuffer() == nullptr)
         {
-            pWindow->SetCurrentBuffer(m_spEditor->GetBuffers()[0].get());
+            pTabWindow->SetCurrentBuffer(m_spEditor->GetBuffers()[0].get());
         }
     }
 
@@ -85,7 +88,7 @@ void ZepWindow_Qt::keyPressEvent(QKeyEvent* ev)
         return;
     }
 
-    m_spEditor->GetCurrentMode()->SetCurrentWindow(m_spDisplay->GetCurrentWindow());
+    m_spEditor->GetCurrentMode()->SetCurrentWindow(m_spDisplay->GetCurrentWindow()->GetCurrentWindow());
 
     if (ev->key() == Qt::Key_Tab)
     {

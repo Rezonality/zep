@@ -1,6 +1,7 @@
 #include "display.h"
 #include "syntax.h"
 #include "buffer.h"
+#include "tab_window.h"
 
 #include "utils/stringutils.h"
 #include "utils/timer.h"
@@ -12,6 +13,7 @@ namespace
 {
 const uint32_t Color_CursorNormal = 0xEEF35FBC;
 const uint32_t Color_CursorInsert = 0xFFFFFFFF;
+//const float TabSize = 20.0f;
 }
 
 ZepDisplay::ZepDisplay(ZepEditor& editor)
@@ -29,50 +31,50 @@ void ZepDisplay::ResetCursorTimer()
     m_spCursorTimer->Restart(); 
 }
 
-void ZepDisplay::SetCurrentWindow(ZepWindow* pWindow)
+void ZepDisplay::SetCurrentWindow(ZepTabWindow* pTabWindow)
 {
-    m_pCurrentWindow = pWindow;
+    m_pCurrentTabWindow = pTabWindow;
     PreDisplay();
 }
 
-ZepWindow* ZepDisplay::GetCurrentWindow() const
+ZepTabWindow* ZepDisplay::GetCurrentWindow() const
 {
-    return m_pCurrentWindow;
+    return m_pCurrentTabWindow;
 }
 
-ZepWindow* ZepDisplay::AddWindow()
+ZepTabWindow* ZepDisplay::AddWindow()
 {
-    auto spWindow = std::make_shared<ZepWindow>(*this);
+    auto spWindow = std::make_shared<ZepTabWindow>(*this);
     m_windows.insert(spWindow);
 
-    if (m_pCurrentWindow == nullptr)
+    if (m_pCurrentTabWindow == nullptr)
     {
-        m_pCurrentWindow = spWindow.get();
+        m_pCurrentTabWindow = spWindow.get();
     }
     PreDisplay();
     return spWindow.get();
 }
 
-void ZepDisplay::RemoveWindow(ZepWindow* pWindow)
+void ZepDisplay::RemoveWindow(ZepTabWindow* pTabWindow)
 {
     for (auto& pWin : m_windows)
     {
-        if (pWin.get() == pWindow)
+        if (pWin.get() == pTabWindow)
         {
-            if (m_pCurrentWindow == pWin.get())
+            if (m_pCurrentTabWindow == pWin.get())
             {
-                m_pCurrentWindow = nullptr;
+                m_pCurrentTabWindow = nullptr;
             }
             m_windows.erase(pWin);
             break;
         }
     }
 
-    if (m_pCurrentWindow == nullptr)
+    if (m_pCurrentTabWindow == nullptr)
     {
         if (!m_windows.empty())
         {
-            m_pCurrentWindow = m_windows.begin()->get();
+            m_pCurrentTabWindow = m_windows.begin()->get();
         }
     }
     PreDisplay();
@@ -96,7 +98,7 @@ void ZepDisplay::SetDisplaySize(const NVec2f& topLeft, const NVec2f& bottomRight
 
 void ZepDisplay::AssignDefaultWindow()
 {
-    if (m_pCurrentWindow != nullptr)
+    if (m_pCurrentTabWindow != nullptr)
     {
         return;
     }
@@ -104,16 +106,16 @@ void ZepDisplay::AssignDefaultWindow()
     auto pBuffer = GetEditor().GetMRUBuffer();
     assert(pBuffer);
 
-    ZepWindow* pWindow = nullptr;
+    ZepTabWindow* pTabWindow = nullptr;
     if (!m_windows.empty())
     {
-        pWindow = m_windows.begin()->get();
+        pTabWindow = m_windows.begin()->get();
     }
     else
     {
-        pWindow = AddWindow();
+        pTabWindow = AddWindow();
     }
-    pWindow->SetCurrentBuffer(pBuffer);
+    pTabWindow->SetCurrentBuffer(pBuffer);
 }
 
 // This function sets up the layout of everything on screen before drawing.
@@ -132,14 +134,25 @@ void ZepDisplay::PreDisplay()
     m_commandRegion.bottomRightPx = m_bottomRightPx;
     m_commandRegion.topLeftPx = m_commandRegion.bottomRightPx - NVec2f(displaySize.x, commandSize);
 
-    auto current = m_topLeftPx;
-    int i = 0;
-    for (auto& win : m_windows)
+    // Add tabs for extra windows
+    if (m_windows.size() > 1)
     {
-        auto topLeftPx = NVec2f((i * (displaySize.x / m_windows.size())) + m_topLeftPx.x, m_topLeftPx.y);
-        auto bottomRightPx = NVec2f(topLeftPx.x + (displaySize.x / m_windows.size()), m_commandRegion.topLeftPx.y);
-        win->PreDisplay(DisplayRegion{ topLeftPx, bottomRightPx });
-        i++;
+        m_tabRegion.topLeftPx = m_topLeftPx;
+        m_tabRegion.bottomRightPx = m_tabRegion.topLeftPx + NVec2f(displaySize.x, GetFontSize() + textBorder * 2);
+    }
+    else
+    {
+        // Empty
+        m_tabRegion.topLeftPx = m_topLeftPx;
+        m_tabRegion.bottomRightPx = m_topLeftPx + NVec2f(displaySize.x, 0.0f);
+    }
+
+    m_tabContentRegion.topLeftPx = m_tabRegion.bottomRightPx + NVec2f(-displaySize.x, 0.0f);
+    m_tabContentRegion.bottomRightPx = m_commandRegion.topLeftPx + NVec2f(displaySize.x, 0.0f);
+
+    if (m_pCurrentTabWindow)
+    {
+        m_pCurrentTabWindow->PreDisplay(m_tabContentRegion);
     }
 }
 
@@ -167,7 +180,7 @@ void ZepDisplay::Display()
     commandSpace = std::max(commandCount, 0l);
 
     // Background rect for status (airline)
-    DrawRectFilled(m_commandRegion.topLeftPx, m_commandRegion.bottomRightPx, 0xFF111111);
+    DrawRectFilled(m_commandRegion.topLeftPx, m_commandRegion.bottomRightPx, 0xFF333333);
 
     // Draw command text
     auto screenPosYPx = m_commandRegion.topLeftPx + NVec2f(0.0f, textBorder);
@@ -183,10 +196,31 @@ void ZepDisplay::Display()
         screenPosYPx.y += GetFontSize();
         screenPosYPx.x = m_commandRegion.topLeftPx.x;
     }
-
-    for (auto& win : m_windows)
+ 
+    if (m_windows.size() > 1)
     {
-        win->Display();
+        // Tab region 
+        // TODO Handle it when tabs are bigger than the available width!
+        DrawRectFilled(m_tabRegion.BottomLeft() - NVec2f(0.0f, 2.0f), m_tabRegion.bottomRightPx, 0xFF888888);
+        NVec2f currentTab = m_tabRegion.topLeftPx;
+        for (auto& window : m_windows)
+        {
+            // Show active buffer in tab as tab name
+            auto pBuffer = window->GetCurrentBuffer();
+            auto tabColor = (window.get() == m_pCurrentTabWindow) ? 0xFF666666 : 0x44888888;
+            auto tabLength = GetTextSize((utf8*)pBuffer->GetName().c_str()).x + textBorder * 2;
+            DrawRectFilled(currentTab, currentTab + NVec2f(tabLength, m_tabRegion.Height()), tabColor);
+
+            DrawChars(currentTab + NVec2f(textBorder, textBorder), 0xFFFFFFFF, (utf8*)pBuffer->GetName().c_str());
+
+            currentTab.x += tabLength + textBorder;
+        }
+    }
+
+    // Display the tab
+    if (m_pCurrentTabWindow)
+    {
+        m_pCurrentTabWindow->Display();
     }
 }
 

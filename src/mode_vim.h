@@ -20,7 +20,8 @@ namespace CommandResultFlags
 enum
 {
     None = 0,
-    HandledCount = (1 << 2) // Command implements the count, no need to recall it.
+    HandledCount = (1 << 2), // Command implements the count, no need to recall it.
+    NeedMoreChars
 };
 }
 
@@ -44,9 +45,10 @@ public:
 
     virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
     virtual void Begin() override;
-    virtual void SetCurrentWindow(ZepWindow* pWindow) override;
+    virtual void SetCurrentWindow(ZepWindow* pTabWindow) override;
 
     virtual const char* Name() const override { return "Vim"; }
+
 private:
     void HandleInsert(uint32_t key);
     std::string GetCommandAndCount(std::string strCommand, int& count);

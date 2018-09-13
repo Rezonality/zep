@@ -14,6 +14,8 @@ ${ZEP_ROOT}/src/commands.cpp
 ${ZEP_ROOT}/src/commands.h
 ${ZEP_ROOT}/src/display.cpp
 ${ZEP_ROOT}/src/display.h
+${ZEP_ROOT}/src/tab_window.cpp
+${ZEP_ROOT}/src/tab_window.h
 ${ZEP_ROOT}/src/window.cpp
 ${ZEP_ROOT}/src/window.h
 ${ZEP_ROOT}/src/syntax.cpp

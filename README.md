@@ -46,8 +46,10 @@ On top of the thin buffer layer, is a command layer for inserting and removing s
 and implements undo/redo functionality.
 
 ##### Window
-The window layer manages views onto buffers.  It helps with cursor operations, and enables multiple views of the same buffer.  Since selections
-are window specific, such things are done relative to windows, not buffers.
+The window layer manages views onto buffers.  It helps with cursor operations, and enables multiple views of the same or multiple buffers.  Since selections
+are window specific, such things are done relative to windows, not buffers. The ZepTabWindow is the window class.
+Most of the buffer/tab management is not done yet, but infrastruture is there to support it. Adding extra windows results in tabs appearing.
+Each window can switch to any of the buffers.  Splits are a work item.
 
 ##### Display
 A simple display layer is used to render buffers into a window.  It has a thin backend for drawing to the screen, requiring just a few simple
@@ -55,7 +57,6 @@ functions to draw & measure text, and draw rectangles and lines.  It is this lay
 example.  It took just an hour or so to add Qt support.  The rest of the display code is not rendering specific.  The display layer can manage
 simple layout of the editor; adding tabs, arranging split windows, showing the 'airline' like status bar, showing command mode operations such
 as ':reg' and ':ls', etc. 
-Most of the buffer/tab management is not done yet, but infrastruture is there to support it, and long with vsplit, etc.
 
 ##### Vim & Standard Modes
 Mode plugins provide the editing facility - currently that is Vim & Standard.

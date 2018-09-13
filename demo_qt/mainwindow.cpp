@@ -31,14 +31,14 @@ void main()
 
 MainWindow::MainWindow()
 {
-    auto* pWindow = new ZepWindow_Qt(this);
+    auto* pTabWindow = new ZepWindow_Qt(this);
 
-    ZepBuffer* pBuffer = pWindow->GetEditor()->AddBuffer("shader.vert");
+    ZepBuffer* pBuffer = pTabWindow->GetEditor()->AddBuffer("shader.vert");
     pBuffer->SetText(shader.c_str());
 
     setStyleSheet("background-color: darkBlue");
 
     setContentsMargins(4, 4, 4, 4);
-    setCentralWidget(pWindow);
+    setCentralWidget(pTabWindow);
 }
 

@@ -98,8 +98,8 @@ const std::deque<std::shared_ptr<ZepBuffer>>& ZepEditor::GetBuffers() const
 
 ZepBuffer* ZepEditor::AddBuffer(const std::string& str)
 {
-    auto spBuffer = std::make_shared<ZepBuffer>(*this, str);
-    m_buffers.push_front(spBuffer);
+    auto pBuffer = std::make_shared<ZepBuffer>(*this, str);
+    m_buffers.push_front(pBuffer);
 
     auto extOffset = str.find_last_of('.');
     if (extOffset != std::string::npos)
@@ -107,10 +107,10 @@ ZepBuffer* ZepEditor::AddBuffer(const std::string& str)
         auto itrFactory = m_mapSyntax.find(str.substr(extOffset + 1, str.size() - extOffset));
         if (itrFactory != m_mapSyntax.end())
         {
-            spBuffer->SetSyntax(itrFactory->second(spBuffer.get()));
+            pBuffer->SetSyntax(itrFactory->second(pBuffer.get()));
         }
     }
-    return spBuffer.get();
+    return pBuffer.get();
 }
 
 ZepBuffer* ZepEditor::GetMRUBuffer() const

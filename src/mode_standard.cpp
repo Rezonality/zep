@@ -1,5 +1,6 @@
 #include "utils/stringutils.h"
 #include "mode_standard.h"
+#include "window.h"
 #include "commands.h"
 
 // Note:
@@ -58,11 +59,11 @@ ZepMode_Standard::~ZepMode_Standard()
 
 }
 
-void ZepMode_Standard::SetCurrentWindow(ZepWindow* pWindow)
+void ZepMode_Standard::SetCurrentWindow(ZepWindow* pView)
 {
-    if (m_pCurrentWindow != pWindow)
+    if (m_pCurrentView != pView)
     {
-        ZepMode::SetCurrentWindow(pWindow);
+        ZepMode::SetCurrentWindow(pView);
         SwitchMode(EditorMode::Insert);
     }
 }
@@ -76,9 +77,9 @@ void ZepMode_Standard::SwitchMode(EditorMode mode)
 {
     assert(mode == EditorMode::Insert || mode == EditorMode::Visual);
     m_currentMode = mode;
-    if (m_pCurrentWindow)
+    if (m_pCurrentView)
     {
-        m_pCurrentWindow->SetCursorMode(mode == EditorMode::Insert ? CursorMode::Insert : CursorMode::Visual);
+        m_pCurrentView->SetCursorMode(mode == EditorMode::Insert ? CursorMode::Insert : CursorMode::Visual);
     }
 }
 
@@ -89,17 +90,17 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     bool copyRegion = false;
     bool pasteText = false;
     bool lineWise = false;
-    auto pBuffer = m_pCurrentWindow->GetCurrentBuffer();
-    BufferLocation startOffset = m_pCurrentWindow->DisplayToBuffer();
-    BufferLocation endOffset = pBuffer->LocationFromOffsetByChars(startOffset, long(ch.length()));
+    auto& buffer = m_pCurrentView->GetBuffer();
+    BufferLocation startOffset = m_pCurrentView->DisplayToBuffer();
+    BufferLocation endOffset = buffer.LocationFromOffsetByChars(startOffset, long(ch.length()));
     BufferLocation cursorAfter = endOffset;
 
-    const auto cursor = m_pCurrentWindow->GetCursor();
-    const auto bufferCursor = m_pCurrentWindow->DisplayToBuffer(cursor);
+    const auto cursor = m_pCurrentView->GetCursor();
+    const auto bufferCursor = m_pCurrentView->DisplayToBuffer(cursor);
     const LineInfo* pLineInfo = nullptr;
-    if (m_pCurrentWindow->visibleLines.size() > cursor.y)
+    if (m_pCurrentView->visibleLines.size() > cursor.y)
     {
-        pLineInfo = &m_pCurrentWindow->visibleLines[cursor.y];
+        pLineInfo = &m_pCurrentView->visibleLines[cursor.y];
     }
 
     enum class CommandOperation
@@ -130,8 +131,8 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         {
             lineWise = true;
             cursorAfter = startOffset;
-            startOffset = pBuffer->GetLinePos(pLineInfo->lineNumber, LineLocation::LineBegin);
-            endOffset = pBuffer->GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd);
+            startOffset = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineBegin);
+            endOffset = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd);
         }
     }
     else if (key == 'c' && (modifierKeys & ModifierKey::Ctrl))
@@ -147,8 +148,8 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         {
             lineWise = true;
             cursorAfter = startOffset;
-            startOffset = pBuffer->GetLinePos(pLineInfo->lineNumber, LineLocation::LineBegin);
-            endOffset = pBuffer->GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd);
+            startOffset = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineBegin);
+            endOffset = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd);
         }
     }
     else if (key == 'v' && (modifierKeys & ModifierKey::Ctrl))
@@ -157,7 +158,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         if (m_currentMode == EditorMode::Visual)
         {
             // Delete existing selection
-            auto cmd = std::make_shared<ZepCommand_DeleteRange>(*pBuffer,
+            auto cmd = std::make_shared<ZepCommand_DeleteRange>(buffer,
                 m_visualBegin,
                 m_visualEnd,
                 m_visualBegin
@@ -171,10 +172,10 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         auto pRegister = &GetEditor().GetRegister('"');
         if (!pRegister->text.empty())
         {
-            cursorAfter = pBuffer->LocationFromOffset(startOffset, long(StringUtils::Utf8Length(pRegister->text.c_str())) - 1);
+            cursorAfter = buffer.LocationFromOffset(startOffset, long(StringUtils::Utf8Length(pRegister->text.c_str())) - 1);
         
             // Simple insert
-            auto cmd = std::make_shared<ZepCommand_Insert>(*pBuffer,
+            auto cmd = std::make_shared<ZepCommand_Insert>(buffer,
                 startOffset,
                 pRegister->text,
                 cursorAfter
@@ -190,81 +191,81 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     {
         if (modifierKeys & ModifierKey::Ctrl)
         {
-            m_pCurrentWindow->MoveCursorTo(BufferLocation{ 0 });
+            m_pCurrentView->MoveCursorTo(BufferLocation{ 0 });
         }
         else
         {
-            auto pos = pBuffer->GetLinePos(pLineInfo->lineNumber, LineLocation::LineFirstGraphChar);
-            m_pCurrentWindow->MoveCursorTo(pos);
+            auto pos = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineFirstGraphChar);
+            m_pCurrentView->MoveCursorTo(pos);
         }
     }
     else if (key == ExtKeys::END)
     {
         if (modifierKeys & ModifierKey::Ctrl)
         {
-            m_pCurrentWindow->MoveCursorTo(pBuffer->EndLocation(), LineLocation::LineEnd);
+            m_pCurrentView->MoveCursorTo(buffer.EndLocation(), LineLocation::LineEnd);
         }
         else
         {
-            auto pos = pBuffer->GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd);
-            m_pCurrentWindow->MoveCursorTo(pos, LineLocation::LineEnd);
+            auto pos = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd);
+            m_pCurrentView->MoveCursorTo(pos, LineLocation::LineEnd);
         }
     }
     else if (key == ExtKeys::RIGHT)
     {
         if (modifierKeys & ModifierKey::Ctrl)
         {
-            auto block = pBuffer->GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Forward);
-            m_pCurrentWindow->MoveCursorTo(WordMotion(block), Zep::LineLocation::LineEnd);
+            auto block = buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Forward);
+            m_pCurrentView->MoveCursorTo(WordMotion(block), Zep::LineLocation::LineEnd);
         }
         else
         {
             if (cursor.x == pLineInfo->Length() - 1)
             {
-                m_pCurrentWindow->MoveCursor(Zep::NVec2i(-MaxCursorMove, 1), Zep::LineLocation::LineEnd);
+                m_pCurrentView->MoveCursor(Zep::NVec2i(-MaxCursorMove, 1), Zep::LineLocation::LineEnd);
             }
-            m_pCurrentWindow->MoveCursor(Zep::NVec2i(1, 0), Zep::LineLocation::LineEnd);
+            m_pCurrentView->MoveCursor(Zep::NVec2i(1, 0), Zep::LineLocation::LineEnd);
         }
     }
     else if (key == ExtKeys::LEFT)
     {
         if (modifierKeys & ModifierKey::Ctrl)
         {
-            auto block = pBuffer->GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Backward);
-            m_pCurrentWindow->MoveCursorTo(WordMotion(block));
+            auto block = buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Backward);
+            m_pCurrentView->MoveCursorTo(WordMotion(block));
         }
         else
         {
             if (cursor.x == 0)
             {
-                m_pCurrentWindow->MoveCursor(Zep::NVec2i(MaxCursorMove, -1), Zep::LineLocation::LineEnd);
+                m_pCurrentView->MoveCursor(Zep::NVec2i(MaxCursorMove, -1), Zep::LineLocation::LineEnd);
             }
             else
             {
-                m_pCurrentWindow->MoveCursor(Zep::NVec2i(-1, 0), Zep::LineLocation::LineEnd);
+                m_pCurrentView->MoveCursor(Zep::NVec2i(-1, 0), Zep::LineLocation::LineEnd);
             }
         }
     }
     else if (key == ExtKeys::UP)
     {
-        m_pCurrentWindow->MoveCursor(Zep::NVec2i(0, -1));
+        m_pCurrentView->MoveCursor(Zep::NVec2i(0, -1));
     }
     else if (key == ExtKeys::DOWN)
     {
-        m_pCurrentWindow->MoveCursor(Zep::NVec2i(0, 1));
+        m_pCurrentView->MoveCursor(Zep::NVec2i(0, 1));
     }
     else if (key == ExtKeys::RETURN)
     {
         ch = "\n";
         op = CommandOperation::Insert;
-        cursorAfter = pBuffer->LocationFromOffsetByChars(startOffset, long(ch.length()));
+        cursorAfter = buffer.LocationFromOffsetByChars(startOffset, long(ch.length()));
     }
     else if (key == ExtKeys::TAB)
     {
         // 4 Spaces, obviously :)
         ch = "    ";
         op = CommandOperation::Insert;
-        cursorAfter = pBuffer->LocationFromOffsetByChars(startOffset, long(ch.length()));
+        cursorAfter = buffer.LocationFromOffsetByChars(startOffset, long(ch.length()));
     }
     else if (key == ExtKeys::DEL)
     {
@@ -277,7 +278,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         }
         else
         {
-            endOffset = pBuffer->LocationFromOffsetByChars(startOffset, 1);
+            endOffset = buffer.LocationFromOffsetByChars(startOffset, 1);
             cursorAfter = startOffset;
         }
     }
@@ -293,7 +294,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         else
         {
             endOffset = startOffset;
-            startOffset = pBuffer->LocationFromOffsetByChars(startOffset, -1);
+            startOffset = buffer.LocationFromOffsetByChars(startOffset, -1);
             cursorAfter = startOffset;
         }
     }
@@ -324,7 +325,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
             m_currentMode = EditorMode::Visual;
             m_visualBegin = startOffset;
             m_visualEnd = startOffset;
-            m_pCurrentWindow->SetCursorMode(CursorMode::Visual);
+            m_pCurrentView->SetCursorMode(CursorMode::Visual);
         }
     }
     else
@@ -332,49 +333,49 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         if (op == CommandOperation::Insert)
         {
             m_currentMode = EditorMode::Insert;
-            m_pCurrentWindow->SetCursorMode(CursorMode::Insert);
+            m_pCurrentView->SetCursorMode(CursorMode::Insert);
         }
     }
 
     if (copyRegion)
     {
         // Grab it
-        std::string str = std::string(pBuffer->GetText().begin() + startOffset, pBuffer->GetText().begin() + endOffset);
+        std::string str = std::string(buffer.GetText().begin() + startOffset, buffer.GetText().begin() + endOffset);
         GetEditor().GetRegister('"').text = str;
         GetEditor().GetRegister('"').lineWise = lineWise;
         GetEditor().GetRegister('0').text = str;
         GetEditor().GetRegister('0').lineWise = lineWise;
         m_currentMode = EditorMode::Insert;
-        m_pCurrentWindow->SetCursorMode(CursorMode::Insert);
+        m_pCurrentView->SetCursorMode(CursorMode::Insert);
     }
 
     if (op == CommandOperation::Insert)
     {
         // Simple insert
-        auto cmd = std::make_shared<ZepCommand_Insert>(*pBuffer,
+        auto cmd = std::make_shared<ZepCommand_Insert>(buffer,
             startOffset,
             ch,
             cursorAfter
             );
         AddCommand(std::static_pointer_cast<ZepCommand>(cmd));
         m_currentMode = EditorMode::Insert;
-        m_pCurrentWindow->SetCursorMode(CursorMode::Insert);
+        m_pCurrentView->SetCursorMode(CursorMode::Insert);
     }
     else if (op == CommandOperation::Delete)
     {
 
         // Delete 
-        auto cmd = std::make_shared<ZepCommand_DeleteRange>(*pBuffer,
+        auto cmd = std::make_shared<ZepCommand_DeleteRange>(buffer,
             startOffset,
             endOffset,
             cursorAfter != -1 ? cursorAfter : startOffset
             );
         AddCommand(std::static_pointer_cast<ZepCommand>(cmd));
         m_currentMode = EditorMode::Insert;
-        m_pCurrentWindow->SetCursorMode(CursorMode::Insert);
+        m_pCurrentView->SetCursorMode(CursorMode::Insert);
     }
 
-    m_pCurrentWindow->GetDisplay().ResetCursorTimer();
+    m_pCurrentView->GetDisplay().ResetCursorTimer();
 
     UpdateVisualSelection();
 }

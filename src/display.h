@@ -1,21 +1,38 @@
 #pragma once
 
 #include "buffer.h"
-#include "window.h"
-
 
 namespace Zep
 {
 
+class ZepTabWindow;
 class Timer;
 const float bottomBorder = 4.0f;
 const float textBorder = 4.0f;
 const float leftBorder = 30.0f;
 
+struct DisplayRegion
+{
+    NVec2f topLeftPx;
+    NVec2f bottomRightPx;
+    NVec2f BottomLeft() const { return NVec2f(topLeftPx.x, bottomRightPx.y); }
+    NVec2f TopRight() const { return NVec2f(bottomRightPx.x, topLeftPx.y); }
+    float Height() const { return bottomRightPx.y - topLeftPx.y; }
+};
+
+// A region inside the text for selections
+struct Region
+{
+    NVec2i startCL;     // Display Line/Column
+    NVec2i endCL;
+    bool visible;
+    bool vertical;      // Not yet supported
+};
+
 class ZepDisplay : public ZepComponent
 {
 public:
-    using tWindows = std::set<std::shared_ptr<ZepWindow>>;
+    using tWindows = std::set<std::shared_ptr<ZepTabWindow>>;
 
     ZepDisplay(ZepEditor& editor);
     virtual ~ZepDisplay();
@@ -41,10 +58,10 @@ public:
     void AssignDefaultWindow();
 
     // Window management
-    void SetCurrentWindow(ZepWindow* pWindow);
-    ZepWindow* GetCurrentWindow() const;
-    ZepWindow* AddWindow();
-    void RemoveWindow(ZepWindow* pWindow);
+    void SetCurrentWindow(ZepTabWindow* pTabWindow);
+    ZepTabWindow* GetCurrentWindow() const;
+    ZepTabWindow* AddWindow();
+    void RemoveWindow(ZepTabWindow* pTabWindow);
     const tWindows& GetWindows() const;
 
     void RequestRefresh();
@@ -58,8 +75,9 @@ protected:
 
 protected:
     // TODO: A splitter manager
-    DisplayRegion m_windowRegion;
+    DisplayRegion m_tabContentRegion;
     DisplayRegion m_commandRegion;
+    DisplayRegion m_tabRegion;
 
     NVec2f m_topLeftPx;
     NVec2f m_bottomRightPx;
@@ -71,7 +89,7 @@ protected:
 
     // One window for now
     tWindows m_windows;
-    ZepWindow* m_pCurrentWindow = nullptr;
+    ZepTabWindow* m_pCurrentTabWindow = nullptr;
 
     std::vector<std::string> m_commandLines;        // Command information, shown under the buffer
 };
