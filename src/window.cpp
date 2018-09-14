@@ -465,7 +465,7 @@ bool ZepWindow::DisplayLine(const LineInfo& lineInfo, const DisplayRegion& regio
     static const auto whiteSpace = StringUtils::makeStr(std::wstring(L"\x00b7"));
     static const auto blankSpace = ' ';
 
-    auto activeWindow = (m_display.GetCurrentWindow()->GetCurrentWindow() == this);
+    auto activeWindow = (m_display.GetCurrentTabWindow()->GetCurrentWindow() == this);
 
     // Draw line numbers
     auto showLineNumber = [&]()
@@ -618,7 +618,7 @@ void ZepWindow::Display()
 {
     PreDisplay(m_bufferRegion);
 
-    auto activeWindow = (m_display.GetCurrentWindow()->GetCurrentWindow() == this);
+    auto activeWindow = (m_display.GetCurrentTabWindow()->GetCurrentWindow() == this);
     cursorPosPx = m_bufferRegion.topLeftPx;
 
     if (activeWindow)

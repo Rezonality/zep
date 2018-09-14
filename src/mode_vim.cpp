@@ -1,14 +1,13 @@
 #include <cctype>
 #include <sstream>
 
-#include "mode_vim.h"
+#include "buffer.h"
 #include "commands.h"
+#include "mode_vim.h"
+#include "tab_window.h"
 #include "utils/stringutils.h"
 #include "utils/timer.h"
-#include "tab_window.h"
 #include "window.h"
-#include "buffer.h"
-
 
 // Note:
 // This is a very basic implementation of the common Vim commands that I use: the bare minimum I can live with.
@@ -21,7 +20,7 @@
 
 // IMPLEMENTED VIM:
 // Command counts
-// hjkl Motions   
+// hjkl Motions
 // . dot command
 // TAB
 // w,W,e,E,ge,gE,b,B Word motions
@@ -31,7 +30,7 @@
 // Command status bar
 // Arrow keys
 // '$'
-// 'jk' to insert mode 
+// 'jk' to insert mode
 // gg Jump to end
 // G Jump to beginning
 // CTRL+F/B/D/U page and have page moves
@@ -63,7 +62,7 @@
 namespace Zep
 {
 
-// Given a searched block, find the next word 
+// Given a searched block, find the next word
 static BufferLocation WordMotion(const BufferBlock& block)
 {
     // If on a space, move to the first block
@@ -77,7 +76,7 @@ static BufferLocation WordMotion(const BufferBlock& block)
     }
     else
     {
-        // abc def  If on the 'd', jump to the 'a' 
+        // abc def  If on the 'd', jump to the 'a'
         if (block.blockSearchPos == (block.firstNonBlock - block.direction))
         {
             return block.secondNonBlock - block.direction;
@@ -149,6 +148,213 @@ std::pair<BufferLocation, BufferLocation> InnerWord(const BufferBlock& block)
     return std::make_pair(block.firstBlock, block.firstNonBlock);
 }
 
+CommandContext::CommandContext(const std::string& commandIn,
+    ZepMode_Vim& md,
+    uint32_t lastK,
+    uint32_t modifierK,
+    EditorMode editorMode)
+    : commandText(commandIn)
+    , owner(md)
+    , buffer(md.GetCurrentWindow()->GetBuffer())
+    , cursor(md.GetCurrentWindow()->GetCursor())
+    , bufferCursor(md.GetCurrentWindow()->DisplayToBuffer(cursor))
+    , lastKey(lastK)
+    , modifierKeys(modifierK)
+    , mode(editorMode)
+    , tempReg("", false)
+{
+    registers.push('"');
+    pRegister = &tempReg;
+
+    long displayLineCount = long(owner.GetCurrentWindow()->visibleLines.size());
+    if (displayLineCount > cursor.y)
+    {
+        pLineInfo = &owner.GetCurrentWindow()->visibleLines[cursor.y];
+    }
+
+    GetCommandAndCount();
+    GetCommandRegisters();
+}
+
+void CommandContext::UpdateRegisters()
+{
+    // Store in a register
+    if (registers.empty())
+        return;
+
+    if (op == CommandOperation::Delete || op == CommandOperation::DeleteLines)
+    {
+        beginRange = std::max(beginRange, BufferLocation{ 0 });
+        endRange = std::max(endRange, BufferLocation{ 0 });
+        assert(beginRange <= endRange);
+        if (beginRange > endRange)
+        {
+            beginRange = endRange;
+        }
+        std::string str = std::string(buffer.GetText().begin() + beginRange, buffer.GetText().begin() + endRange);
+
+        // Delete commands fill up 1-9 registers
+        if (command[0] == 'd' || command[0] == 'D')
+        {
+            for (int i = 9; i > 1; i--)
+            {
+                owner.GetEditor().SetRegister('0' + i, owner.GetEditor().GetRegister('0' + i - 1));
+            }
+            owner.GetEditor().SetRegister('1', Register(str, (op == CommandOperation::DeleteLines)));
+        }
+
+        // Fill up any other required registers
+        while (!registers.empty())
+        {
+            owner.GetEditor().SetRegister(registers.top(), Register(str, (op == CommandOperation::DeleteLines)));
+            registers.pop();
+        }
+    }
+    else if (op == CommandOperation::Copy || op == CommandOperation::CopyLines)
+    {
+        std::string str = std::string(buffer.GetText().begin() + beginRange, buffer.GetText().begin() + endRange);
+        while (!registers.empty())
+        {
+            // Capital letters append to registers instead of replacing them
+            if (registers.top() >= 'A' && registers.top() <= 'Z')
+            {
+                auto chlow = std::tolower(registers.top());
+                owner.GetEditor().GetRegister(chlow).text += str;
+                owner.GetEditor().GetRegister(chlow).lineWise = (op == CommandOperation::CopyLines);
+            }
+            else
+            {
+                owner.GetEditor().GetRegister(registers.top()).text = str;
+                owner.GetEditor().GetRegister(registers.top()).lineWise = (op == CommandOperation::CopyLines);
+            }
+            registers.pop();
+        }
+    }
+}
+
+// Parse the command into:
+// [count1] opA [count2] opB
+// And generate (count1 * count2), opAopB
+void CommandContext::GetCommandAndCount()
+{
+    std::string count1;
+    std::string command1;
+    std::string count2;
+    std::string command2;
+
+    auto itr = commandText.begin();
+    while (itr != commandText.end() && std::isdigit(*itr))
+    {
+        count1 += *itr;
+        itr++;
+    }
+
+    while (itr != commandText.end()
+        && std::isgraph(*itr) && !std::isdigit(*itr))
+    {
+        command1 += *itr;
+        itr++;
+    }
+
+    // If not a register target, then another count
+    if (command1[0] != '\"' && command1[0] != ':')
+    {
+        while (itr != commandText.end()
+            && std::isdigit(*itr))
+        {
+            count2 += *itr;
+            itr++;
+        }
+    }
+
+    while (itr != commandText.end()
+        && (std::isgraph(*itr) || *itr == ' '))
+    {
+        command2 += *itr;
+        itr++;
+    }
+
+    bool foundCount = false;
+    count = 1;
+
+    try
+    {
+        if (!count1.empty())
+        {
+            count = std::stoi(count1);
+            foundCount = true;
+        }
+        if (!count2.empty())
+        {
+            // When 2 counts are specified, they multiply!
+            // Such as 2d2d, which deletes 4 lines
+            count *= std::stoi(count2);
+            foundCount = true;
+        }
+    }
+    catch (std::out_of_range&)
+    {
+        // Ignore bad count
+    }
+
+    // Concatentate the parts of the command into a single command string
+    commandWithoutCount = command1 + command2;
+
+    // Short circuit - 0 is special, first on line.  Since we don't want to confuse it
+    // with a command count
+    if (count == 0)
+    {
+        count = 1;
+        commandWithoutCount = "0";
+    }
+
+    // The dot command is like the 'last' command that succeeded
+    if (commandWithoutCount == ".")
+    {
+        commandWithoutCount = owner.GetLastCommand();
+        count = foundCount ? count : owner.GetLastCount();
+    }
+}
+
+void CommandContext::GetCommandRegisters()
+{
+    // Store the register source
+    if (commandWithoutCount[0] == '"' && commandWithoutCount.size() > 2)
+    {
+        // Null register
+        if (commandWithoutCount[1] == '_')
+        {
+            std::stack<char> temp;
+            registers.swap(temp);
+        }
+        else
+        {
+            registers.push(commandWithoutCount[1]);
+            char reg = commandWithoutCount[1];
+
+            // Demote capitals to lower registers when pasting (all both)
+            if (reg >= 'A' && reg <= 'Z')
+            {
+                reg = std::tolower(reg);
+            }
+
+            if (owner.GetEditor().GetRegisters().find(std::string({ reg })) != owner.GetEditor().GetRegisters().end())
+            {
+                pRegister = &owner.GetEditor().GetRegister(reg);
+            }
+        }
+        command = commandWithoutCount.substr(2);
+    }
+    else
+    {
+        // Default register
+        if (pRegister->text.empty())
+        {
+            pRegister = &owner.GetEditor().GetRegister('"');
+        }
+        command = commandWithoutCount;
+    }
+}
 ZepMode_Vim::ZepMode_Vim(ZepEditor& editor)
     : ZepMode(editor)
 {
@@ -157,7 +363,6 @@ ZepMode_Vim::ZepMode_Vim(ZepEditor& editor)
 
 ZepMode_Vim::~ZepMode_Vim()
 {
-
 }
 
 void ZepMode_Vim::Init()
@@ -181,9 +386,7 @@ void ZepMode_Vim::SwitchMode(EditorMode mode)
     if (mode == EditorMode::None)
         return;
 
-    if (mode == EditorMode::Insert &&
-        m_pCurrentView &&
-        m_pCurrentView->GetBuffer().IsViewOnly())
+    if (mode == EditorMode::Insert && m_pCurrentWindow && m_pCurrentWindow->GetBuffer().IsViewOnly())
     {
         mode = EditorMode::Normal;
     }
@@ -192,16 +395,16 @@ void ZepMode_Vim::SwitchMode(EditorMode mode)
     switch (mode)
     {
     case EditorMode::Normal:
-        m_pCurrentView->SetCursorMode(CursorMode::Normal);
+        m_pCurrentWindow->SetCursorMode(CursorMode::Normal);
         ResetCommand();
         break;
     case EditorMode::Insert:
-        m_insertBegin = m_pCurrentView->DisplayToBuffer();
-        m_pCurrentView->SetCursorMode(CursorMode::Insert);
+        m_insertBegin = m_pCurrentWindow->DisplayToBuffer();
+        m_pCurrentWindow->SetCursorMode(CursorMode::Insert);
         m_pendingEscape = false;
         break;
     case EditorMode::Visual:
-        m_pCurrentView->SetCursorMode(CursorMode::Visual);
+        m_pCurrentWindow->SetCursorMode(CursorMode::Visual);
         ResetCommand();
         m_pendingEscape = false;
         break;
@@ -214,13 +417,13 @@ void ZepMode_Vim::SwitchMode(EditorMode mode)
 
 bool ZepMode_Vim::GetBlockOpRange(const std::string& op, EditorMode mode, BufferLocation& beginRange, BufferLocation& endRange, BufferLocation& cursorAfter) const
 {
-    auto& buffer = m_pCurrentView->GetBuffer();
-    const auto cursor = m_pCurrentView->GetCursor();
-    const auto bufferCursor = m_pCurrentView->DisplayToBuffer(cursor);
+    auto& buffer = m_pCurrentWindow->GetBuffer();
+    const auto cursor = m_pCurrentWindow->GetCursor();
+    const auto bufferCursor = m_pCurrentWindow->DisplayToBuffer(cursor);
     const LineInfo* pLineInfo = nullptr;
-    if (m_pCurrentView->visibleLines.size() > cursor.y)
+    if (m_pCurrentWindow->visibleLines.size() > cursor.y)
     {
-        pLineInfo = &m_pCurrentView->visibleLines[cursor.y];
+        pLineInfo = &m_pCurrentWindow->visibleLines[cursor.y];
     }
 
     beginRange = BufferLocation{ -1 };
@@ -319,290 +522,225 @@ bool ZepMode_Vim::GetBlockOpRange(const std::string& op, EditorMode mode, Buffer
     return beginRange != -1;
 }
 
-bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t modifierKeys, EditorMode mode, int count, CommandResult& commandResult)
+bool ZepMode_Vim::GetCommand(CommandContext& context)
 {
-    auto cursor = m_pCurrentView->GetCursor();
-    const LineInfo* pLineInfo = nullptr;
-    long displayLineCount = long(m_pCurrentView->visibleLines.size());
-    if (displayLineCount > cursor.y)
-    {
-        pLineInfo = &m_pCurrentView->visibleLines[cursor.y];
-    }
-    enum class CommandOperation
-    {
-        None,
-        Delete,
-        DeleteLines,
-        Insert,
-        Copy,
-        CopyLines
-    };
-
-    commandResult = CommandResult{};
-    BufferLocation beginRange{ -1 };
-    BufferLocation endRange{ -1 };
-    BufferLocation cursorAfter{ -1 };
-    std::stack<char> registers;
-    registers.push('"');
-    CommandOperation op = CommandOperation::None;
-    Register tempReg("", false);
-    const Register* pRegister = &tempReg;
-
-    auto& buffer = m_pCurrentView->GetBuffer();
-    const auto bufferCursor = m_pCurrentView->DisplayToBuffer(cursor);
-
-    // Store the register source
-    if (command[0] == '"' && command.size() > 2)
-    {
-        // Null register
-        if (command[1] == '_')
-        {
-            std::stack<char> temp;
-            registers.swap(temp);
-        }
-        else
-        {
-            registers.push(command[1]);
-            char reg = command[1];
-
-            // Demote capitals to lower registers when pasting (all both)
-            if (reg >= 'A' && reg <= 'Z')
-            {
-                reg = std::tolower(reg);
-            }
-
-            if (GetEditor().GetRegisters().find(std::string({ reg })) != GetEditor().GetRegisters().end())
-            {
-                pRegister = &GetEditor().GetRegister(reg);
-            }
-        }
-        command = command.substr(2);
-    }
-    else
-    {
-        // Default register
-        if (pRegister->text.empty())
-            pRegister = &GetEditor().GetRegister('"');
-    }
-
     // Motion
-    if (command == "$")
+    if (context.command == "$")
     {
-        m_pCurrentView->MoveCursorTo(buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineCRBegin));
+        m_pCurrentWindow->MoveCursorTo(context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineCRBegin));
         return true;
     }
-    else if (command == "0")
+    else if (context.command == "0")
     {
-        m_pCurrentView->MoveCursorTo(buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineBegin));
+        m_pCurrentWindow->MoveCursorTo(context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineBegin));
         return true;
     }
-    else if (command == "^")
+    else if (context.command == "^")
     {
-        m_pCurrentView->MoveCursorTo(buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineFirstGraphChar));
+        m_pCurrentWindow->MoveCursorTo(context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineFirstGraphChar));
         return true;
     }
-    else if (command == "j" || command == "+" || lastKey == ExtKeys::DOWN)
+    else if (context.command == "j" || context.command == "+" || context.lastKey == ExtKeys::DOWN)
     {
-        m_pCurrentView->MoveCursor(Zep::NVec2i(0, count));
-        commandResult.flags |= CommandResultFlags::HandledCount;
+        m_pCurrentWindow->MoveCursor(Zep::NVec2i(0, context.count));
+        context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
-    else if (command == "k" || command == "-" || lastKey == ExtKeys::UP)
+    else if (context.command == "k" || context.command == "-" || context.lastKey == ExtKeys::UP)
     {
-        m_pCurrentView->MoveCursor(Zep::NVec2i(0, -count));
-        commandResult.flags |= CommandResultFlags::HandledCount;
+        m_pCurrentWindow->MoveCursor(Zep::NVec2i(0, -context.count));
+        context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
-    else if (command == "l" || lastKey == ExtKeys::RIGHT)
+    else if (context.command == "l" || context.lastKey == ExtKeys::RIGHT)
     {
-        m_pCurrentView->MoveCursor(Zep::NVec2i(count, 0));
-        commandResult.flags |= CommandResultFlags::HandledCount;
+        m_pCurrentWindow->MoveCursor(Zep::NVec2i(context.count, 0));
+        context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
-    else if (command == "h" || lastKey == ExtKeys::LEFT)
+    else if (context.command == "h" || context.lastKey == ExtKeys::LEFT)
     {
-        m_pCurrentView->MoveCursor(Zep::NVec2i(-count, 0));
-        commandResult.flags |= CommandResultFlags::HandledCount;
+        m_pCurrentWindow->MoveCursor(Zep::NVec2i(-context.count, 0));
+        context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
-    else if ((command == "f" && (modifierKeys & ModifierKey::Ctrl)) || lastKey == ExtKeys::PAGEDOWN)
+    else if ((context.command == "f" && (context.modifierKeys & ModifierKey::Ctrl)) || context.lastKey == ExtKeys::PAGEDOWN)
     {
         // Note: the vim spec says 'visible lines - 2' for a 'page'.
         // We jump the max possible lines, which might hit the end of the text; this matches observed vim behavior
-        m_pCurrentView->MoveCursor(Zep::NVec2i(0, (m_pCurrentView->GetMaxDisplayLines() - 2) * count));
-        commandResult.flags |= CommandResultFlags::HandledCount;
+        m_pCurrentWindow->MoveCursor(Zep::NVec2i(0, (m_pCurrentWindow->GetMaxDisplayLines() - 2) * context.count));
+        context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
-    else if((command == "d" && (modifierKeys & ModifierKey::Ctrl)) || lastKey == ExtKeys::PAGEDOWN)
+    else if ((context.command == "d" && (context.modifierKeys & ModifierKey::Ctrl)) || context.lastKey == ExtKeys::PAGEDOWN)
     {
         // Note: the vim spec says 'half visible lines' for up/down
-        m_pCurrentView->MoveCursor(Zep::NVec2i(0, (displayLineCount / 2) * count));
-        commandResult.flags |= CommandResultFlags::HandledCount;
+        m_pCurrentWindow->MoveCursor(Zep::NVec2i(0, (context.displayLineCount / 2) * context.count));
+        context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
-    else if((command == "b" && (modifierKeys & ModifierKey::Ctrl)) || lastKey == ExtKeys::PAGEUP)
+    else if ((context.command == "b" && (context.modifierKeys & ModifierKey::Ctrl)) || context.lastKey == ExtKeys::PAGEUP)
     {
         // Note: the vim spec says 'visible lines - 2' for a 'page'
-        m_pCurrentView->MoveCursor(Zep::NVec2i(0, -(m_pCurrentView->GetMaxDisplayLines() - 2) * count));
-        commandResult.flags |= CommandResultFlags::HandledCount;
+        m_pCurrentWindow->MoveCursor(Zep::NVec2i(0, -(m_pCurrentWindow->GetMaxDisplayLines() - 2) * context.count));
+        context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
-    else if((command == "u" && (modifierKeys & ModifierKey::Ctrl)) || lastKey == ExtKeys::PAGEUP)
+    else if ((context.command == "u" && (context.modifierKeys & ModifierKey::Ctrl)) || context.lastKey == ExtKeys::PAGEUP)
     {
-        m_pCurrentView->MoveCursor(Zep::NVec2i(0, -(displayLineCount / 2) * count));
-        commandResult.flags |= CommandResultFlags::HandledCount;
+        m_pCurrentWindow->MoveCursor(Zep::NVec2i(0, -(context.displayLineCount / 2) * context.count));
+        context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
-    else if (command == "G")
+    else if (context.command == "G")
     {
-        if (count != 1)
+        if (context.count != 1)
         {
             // Goto line
             // TODO I don't think this will move beyond the displayed lines with a line count.
-            m_pCurrentView->MoveCursorTo(buffer.GetLinePos(count, LineLocation::LineBegin));
-            commandResult.flags |= CommandResultFlags::HandledCount;
+            m_pCurrentWindow->MoveCursorTo(context.buffer.GetLinePos(context.count, LineLocation::LineBegin));
+            context.commandResult.flags |= CommandResultFlags::HandledCount;
         }
         else
         {
             // Move right to the end
-            m_pCurrentView->MoveCursor(Zep::NVec2i(Zep::MaxCursorMove, Zep::MaxCursorMove));
-            commandResult.flags |= CommandResultFlags::HandledCount;
+            m_pCurrentWindow->MoveCursor(Zep::NVec2i(Zep::MaxCursorMove, Zep::MaxCursorMove));
+            context.commandResult.flags |= CommandResultFlags::HandledCount;
         }
         return true;
     }
-    else if (lastKey == ExtKeys::BACKSPACE)
+    else if (context.lastKey == ExtKeys::BACKSPACE)
     {
-        auto loc = bufferCursor;
+        auto loc = context.bufferCursor;
 
-        // Insert-mode command
-        if (mode == EditorMode::Insert)
+        // Insert-mode context.command
+        if (context.mode == EditorMode::Insert)
         {
             // In insert mode, we are 'on' the character after the one we want to delete
-            beginRange = buffer.LocationFromOffsetByChars(loc, -1);
-            endRange = buffer.LocationFromOffsetByChars(loc, 0);
-            cursorAfter = beginRange;
-            op = CommandOperation::Delete;
+            context.beginRange = context.buffer.LocationFromOffsetByChars(loc, -1);
+            context.endRange = context.buffer.LocationFromOffsetByChars(loc, 0);
+            context.cursorAfter = context.beginRange;
+            context.op = CommandOperation::Delete;
         }
         else
         {
             // Normal mode moves over the chars, and wraps
-            m_pCurrentView->MoveCursorTo(buffer.LocationFromOffsetByChars(loc, -1));
+            m_pCurrentWindow->MoveCursorTo(context.buffer.LocationFromOffsetByChars(loc, -1));
             return true;
         }
     }
-    else if (command == "w")
+    else if (context.command == "w")
     {
-        auto block = buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Forward);
-        m_pCurrentView->SetCursor(m_pCurrentView->BufferToDisplay(WordMotion(block)));
+        auto block = context.buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, context.bufferCursor, SearchDirection::Forward);
+        m_pCurrentWindow->SetCursor(m_pCurrentWindow->BufferToDisplay(WordMotion(block)));
         return true;
     }
-    else if (command == "W")
+    else if (context.command == "W")
     {
-        auto block = buffer.GetBlock(SearchType::Word, bufferCursor, SearchDirection::Forward);
-        m_pCurrentView->SetCursor(m_pCurrentView->BufferToDisplay(WordMotion(block)));
+        auto block = context.buffer.GetBlock(SearchType::Word, context.bufferCursor, SearchDirection::Forward);
+        m_pCurrentWindow->SetCursor(m_pCurrentWindow->BufferToDisplay(WordMotion(block)));
         return true;
     }
-    else if (command == "b")
+    else if (context.command == "b")
     {
-        auto block = buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Backward);
-        m_pCurrentView->SetCursor(m_pCurrentView->BufferToDisplay(WordMotion(block)));
+        auto block = context.buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, context.bufferCursor, SearchDirection::Backward);
+        m_pCurrentWindow->SetCursor(m_pCurrentWindow->BufferToDisplay(WordMotion(block)));
         return true;
     }
-    else if (command == "B")
+    else if (context.command == "B")
     {
-        auto block = buffer.GetBlock(SearchType::Word, bufferCursor, SearchDirection::Backward);
-        m_pCurrentView->SetCursor(m_pCurrentView->BufferToDisplay(WordMotion(block)));
+        auto block = context.buffer.GetBlock(SearchType::Word, context.bufferCursor, SearchDirection::Backward);
+        m_pCurrentWindow->SetCursor(m_pCurrentWindow->BufferToDisplay(WordMotion(block)));
         return true;
     }
-    else if (command == "e")
+    else if (context.command == "e")
     {
-        auto block = buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Forward);
-        m_pCurrentView->SetCursor(m_pCurrentView->BufferToDisplay(WordEndMotion(block)));
+        auto block = context.buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, context.bufferCursor, SearchDirection::Forward);
+        m_pCurrentWindow->SetCursor(m_pCurrentWindow->BufferToDisplay(WordEndMotion(block)));
         return true;
     }
-    else if (command == "E")
+    else if (context.command == "E")
     {
-        auto block = buffer.GetBlock(SearchType::Word, bufferCursor, SearchDirection::Forward);
-        m_pCurrentView->SetCursor(m_pCurrentView->BufferToDisplay(WordEndMotion(block)));
+        auto block = context.buffer.GetBlock(SearchType::Word, context.bufferCursor, SearchDirection::Forward);
+        m_pCurrentWindow->SetCursor(m_pCurrentWindow->BufferToDisplay(WordEndMotion(block)));
         return true;
     }
-    else if (command[0] == 'g')
+    else if (context.command[0] == 'g')
     {
-        if (command == "ge")
+        if (context.command == "g")
         {
-            auto block = buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Backward);
-            m_pCurrentView->SetCursor(m_pCurrentView->BufferToDisplay(WordEndMotion(block)));
+            context.commandResult.flags |= CommandResultFlags::NeedMoreChars;
         }
-        else if (command == "gE")
+        else if (context.command == "ge")
         {
-            auto block = buffer.GetBlock(SearchType::Word, bufferCursor, SearchDirection::Backward);
-            m_pCurrentView->SetCursor(m_pCurrentView->BufferToDisplay(WordEndMotion(block)));
+            auto block = context.buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, context.bufferCursor, SearchDirection::Backward);
+            m_pCurrentWindow->SetCursor(m_pCurrentWindow->BufferToDisplay(WordEndMotion(block)));
+            return true;
         }
-        else if (command == "gg")
+        else if (context.command == "gE")
         {
-            m_pCurrentView->MoveCursorTo(BufferLocation{ 0 });
+            auto block = context.buffer.GetBlock(SearchType::Word, context.bufferCursor, SearchDirection::Backward);
+            m_pCurrentWindow->SetCursor(m_pCurrentWindow->BufferToDisplay(WordEndMotion(block)));
+            return true;
         }
-        else
+        else if (context.command == "gg")
         {
-            return false;
+            m_pCurrentWindow->MoveCursorTo(BufferLocation{ 0 });
+            return true;
         }
-        return true;
     }
-    else if (command == "J")
+    else if (context.command == "J")
     {
         // Delete the CR (and thus join lines)
-        beginRange = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineCRBegin);
-        endRange = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd);
-        cursorAfter = bufferCursor;
-        op = CommandOperation::Delete;
+        context.beginRange = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineCRBegin);
+        context.endRange = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineEnd);
+        context.cursorAfter = context.bufferCursor;
+        context.op = CommandOperation::Delete;
     }
-    else if (command == "v" ||
-        command == "V")
+    else if (context.command == "v" || context.command == "V")
     {
         if (m_currentMode == EditorMode::Visual)
         {
-            commandResult.modeSwitch = EditorMode::Normal;
+            context.commandResult.modeSwitch = EditorMode::Normal;
         }
         else
         {
-            if (command == "V")
+            if (context.command == "V")
             {
-                m_visualBegin = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineBegin);
-                m_visualEnd = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd) - 1;
+                m_visualBegin = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineBegin);
+                m_visualEnd = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineEnd) - 1;
             }
             else
             {
-                m_visualBegin = bufferCursor;
+                m_visualBegin = context.bufferCursor;
                 m_visualEnd = m_visualBegin;
             }
-            commandResult.modeSwitch = EditorMode::Visual;
+            context.commandResult.modeSwitch = EditorMode::Visual;
         }
-        m_lineWise = command == "V" ? true : false;
+        m_lineWise = context.command == "V" ? true : false;
         return true;
     }
-    else if (command == "x" || lastKey == ExtKeys::DEL)
+    else if (context.command == "x" || context.lastKey == ExtKeys::DEL)
     {
-        auto loc = bufferCursor;
+        auto loc = context.bufferCursor;
 
         if (m_currentMode == EditorMode::Visual)
         {
-            beginRange = m_visualBegin;
-            endRange = buffer.LocationFromOffsetByChars(m_visualEnd, 1);
-            cursorAfter = m_visualBegin;
-            op = CommandOperation::Delete;
-            commandResult.modeSwitch = EditorMode::Normal;
+            context.beginRange = m_visualBegin;
+            context.endRange = context.buffer.LocationFromOffsetByChars(m_visualEnd, 1);
+            context.cursorAfter = m_visualBegin;
+            context.op = CommandOperation::Delete;
+            context.commandResult.modeSwitch = EditorMode::Normal;
         }
         else
         {
             // Don't allow x to delete beyond the end of the line
-            if (command != "x" ||
-                std::isgraph(buffer.GetText()[loc]) ||
-                std::isblank(buffer.GetText()[loc]))
+            if (context.command != "x" || std::isgraph(context.buffer.GetText()[loc]) || std::isblank(context.buffer.GetText()[loc]))
             {
-                beginRange = loc;
-                endRange = buffer.LocationFromOffsetByChars(loc, 1);
-                cursorAfter = loc;
-                op = CommandOperation::Delete;
+                context.beginRange = loc;
+                context.endRange = context.buffer.LocationFromOffsetByChars(loc, 1);
+                context.cursorAfter = loc;
+                context.op = CommandOperation::Delete;
             }
             else
             {
@@ -610,353 +748,348 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
             }
         }
     }
-    else if (command[0] == 'o')
+    else if (context.command[0] == 'o')
     {
-        beginRange = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd);
-        tempReg.text = "\n";
-        pRegister = &tempReg;
-        cursorAfter = beginRange;
-        op = CommandOperation::Insert;
-        commandResult.modeSwitch = EditorMode::Insert;
+        context.beginRange = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineEnd);
+        context.tempReg.text = "\n";
+        context.pRegister = &context.tempReg;
+        context.cursorAfter = context.beginRange;
+        context.op = CommandOperation::Insert;
+        context.commandResult.modeSwitch = EditorMode::Insert;
     }
-    else if (command[0] == 'O')
+    else if (context.command[0] == 'O')
     {
-        beginRange = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineBegin);
-        tempReg.text = "\n";
-        pRegister = &tempReg;
-        cursorAfter = beginRange;
-        op = CommandOperation::Insert;
-        commandResult.modeSwitch = EditorMode::Insert;
+        context.beginRange = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineBegin);
+        context.tempReg.text = "\n";
+        context.pRegister = &context.tempReg;
+        context.cursorAfter = context.beginRange;
+        context.op = CommandOperation::Insert;
+        context.commandResult.modeSwitch = EditorMode::Insert;
     }
-    else if (command[0] == 'd' ||
-        command == "D")
+    else if (context.command[0] == 'd' || context.command == "D")
     {
-        if (command == "d")
+        if (context.command == "d")
         {
             // Only in visual mode; delete selected block
-            if (GetBlockOpRange("visual", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("visual", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
-                commandResult.modeSwitch = EditorMode::Normal;
+                context.op = CommandOperation::Delete;
+                context.commandResult.modeSwitch = EditorMode::Normal;
             }
             else
             {
-                commandResult.flags |= CommandResultFlags::NeedMoreChars;
+                context.commandResult.flags |= CommandResultFlags::NeedMoreChars;
             }
         }
-        else if (command == "dd")
+        else if (context.command == "dd")
         {
-            if (GetBlockOpRange("line", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("line", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::DeleteLines;
-                commandResult.modeSwitch = EditorMode::Normal;
+                context.op = CommandOperation::DeleteLines;
+                context.commandResult.modeSwitch = EditorMode::Normal;
             }
         }
-        else if (command == "d$" ||
-            command == "D")
+        else if (context.command == "d$" || context.command == "D")
         {
-            if (GetBlockOpRange("$", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("$", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
+                context.op = CommandOperation::Delete;
             }
         }
-        else if (command == "dw")
+        else if (context.command == "dw")
         {
-            if (GetBlockOpRange("w", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("w", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
+                context.op = CommandOperation::Delete;
             }
         }
-        else if (command == "dW")
+        else if (context.command == "dW")
         {
-            if (GetBlockOpRange("W", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("W", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
+                context.op = CommandOperation::Delete;
             }
         }
-        else if (command == "da")
+        else if (context.command == "da")
         {
-            commandResult.flags |= CommandResultFlags::NeedMoreChars;
+            context.commandResult.flags |= CommandResultFlags::NeedMoreChars;
         }
-        else if (command == "daw")
+        else if (context.command == "daw")
         {
-            if (GetBlockOpRange("aw", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("aw", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
+                context.op = CommandOperation::Delete;
             }
         }
-        else if (command == "daW")
+        else if (context.command == "daW")
         {
-            if (GetBlockOpRange("aW", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("aW", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
+                context.op = CommandOperation::Delete;
             }
         }
-        else if (command == "di")
+        else if (context.command == "di")
         {
-            commandResult.flags |= CommandResultFlags::NeedMoreChars;
+            context.commandResult.flags |= CommandResultFlags::NeedMoreChars;
         }
-        else if (command == "diw")
+        else if (context.command == "diw")
         {
-            if (GetBlockOpRange("iw", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("iw", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
+                context.op = CommandOperation::Delete;
             }
         }
-        else if (command == "diW")
+        else if (context.command == "diW")
         {
-            if (GetBlockOpRange("iW", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("iW", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
+                context.op = CommandOperation::Delete;
             }
         }
     }
     // Substitute
-    else if ((command[0] == 's') ||
-        (command[0] == 'S'))
+    else if ((context.command[0] == 's') || (context.command[0] == 'S'))
     {
-        if (command == "S")
+        if (context.command == "S")
         {
-            if (pLineInfo)
+            if (context.pLineInfo)
             {
                 // Delete whole line and go to insert mode
-                beginRange = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineBegin);
-                endRange = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineCRBegin);
-                cursorAfter = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineFirstGraphChar);
-                op = CommandOperation::Delete;
+                context.beginRange = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineBegin);
+                context.endRange = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineCRBegin);
+                context.cursorAfter = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineFirstGraphChar);
+                context.op = CommandOperation::Delete;
             }
         }
-        else if (command == "s")
+        else if (context.command == "s")
         {
             // Only in visual mode; delete selected block and go to insert mode
-            if (GetBlockOpRange("visual", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("visual", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
+                context.op = CommandOperation::Delete;
             }
             // Just delete under cursor and insert
-            else if(GetBlockOpRange("cursor", mode, beginRange, endRange, cursorAfter))
+            else if (GetBlockOpRange("cursor", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
+                context.op = CommandOperation::Delete;
             }
         }
         else
         {
             return false;
         }
-        commandResult.modeSwitch = EditorMode::Insert;
+        context.commandResult.modeSwitch = EditorMode::Insert;
     }
-    else if (command[0] == 'C' ||
-        command[0] == 'c')
+    else if (context.command[0] == 'C' || context.command[0] == 'c')
     {
-        if (command == "c")
+        if (context.command == "c")
         {
             // Only in visual mode; delete selected block
-            if (GetBlockOpRange("visual", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("visual", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
+                context.op = CommandOperation::Delete;
             }
             else
             {
-                commandResult.flags |= CommandResultFlags::NeedMoreChars;
+                context.commandResult.flags |= CommandResultFlags::NeedMoreChars;
             }
         }
-        else if (command == "cc")
+        else if (context.command == "cc")
         {
-            if (GetBlockOpRange("line", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("line", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::DeleteLines;
+                context.op = CommandOperation::DeleteLines;
             }
         }
-        else if (command == "c$" ||
-            command == "C")
+        else if (context.command == "c$" || context.command == "C")
         {
-            if (GetBlockOpRange("$", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("$", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
+                context.op = CommandOperation::Delete;
             }
         }
-        else if (command == "cw")
+        else if (context.command == "cw")
         {
-            if (GetBlockOpRange("cw", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("cw", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
+                context.op = CommandOperation::Delete;
             }
         }
-        else if (command == "cW")
+        else if (context.command == "cW")
         {
-            if (GetBlockOpRange("cW", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("cW", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
+                context.op = CommandOperation::Delete;
             }
         }
-        else if (command == "ca")
+        else if (context.command == "ca")
         {
-            commandResult.flags |= CommandResultFlags::NeedMoreChars;
+            context.commandResult.flags |= CommandResultFlags::NeedMoreChars;
         }
-        else if (command == "caw")
+        else if (context.command == "caw")
         {
-            if (GetBlockOpRange("aw", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("aw", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
+                context.op = CommandOperation::Delete;
             }
         }
-        else if (command == "caW")
+        else if (context.command == "caW")
         {
-            if (GetBlockOpRange("aW", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("aW", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
+                context.op = CommandOperation::Delete;
             }
         }
-        else if (command == "ci")
+        else if (context.command == "ci")
         {
-            commandResult.flags |= CommandResultFlags::NeedMoreChars;
+            context.commandResult.flags |= CommandResultFlags::NeedMoreChars;
         }
-        else if (command == "ciw")
+        else if (context.command == "ciw")
         {
-            if (GetBlockOpRange("iw", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("iw", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
+                context.op = CommandOperation::Delete;
             }
         }
-        else if (command == "ciW")
+        else if (context.command == "ciW")
         {
-            if (GetBlockOpRange("iW", mode, beginRange, endRange, cursorAfter))
+            if (GetBlockOpRange("iW", context.mode, context.beginRange, context.endRange, context.cursorAfter))
             {
-                op = CommandOperation::Delete;
+                context.op = CommandOperation::Delete;
             }
         }
 
-        if (op != CommandOperation::None)
+        if (context.op != CommandOperation::None)
         {
-            commandResult.modeSwitch = EditorMode::Insert;
+            context.commandResult.modeSwitch = EditorMode::Insert;
         }
     }
-    else if (command == "p")
+    else if (context.command == "p")
     {
-        if (!pRegister->text.empty())
+        if (!context.pRegister->text.empty())
         {
-            if (pRegister->lineWise)
+            if (context.pRegister->lineWise)
             {
-                beginRange = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd);
-                cursorAfter = beginRange;
+                context.beginRange = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineEnd);
+                context.cursorAfter = context.beginRange;
             }
             else
             {
-                beginRange = buffer.LocationFromOffsetByChars(bufferCursor, 1);
-                cursorAfter = buffer.LocationFromOffset(beginRange, long(StringUtils::Utf8Length(pRegister->text.c_str())) - 1);
+                context.beginRange = context.buffer.LocationFromOffsetByChars(context.bufferCursor, 1);
+                context.cursorAfter = context.buffer.LocationFromOffset(context.beginRange, long(StringUtils::Utf8Length(context.pRegister->text.c_str())) - 1);
             }
-            op = CommandOperation::Insert;
+            context.op = CommandOperation::Insert;
         }
     }
-    else if (command == "P")
+    else if (context.command == "P")
     {
-        if (!pRegister->text.empty())
+        if (!context.pRegister->text.empty())
         {
-            if (pRegister->lineWise)
+            if (context.pRegister->lineWise)
             {
-                beginRange = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineBegin);
-                cursorAfter = beginRange;
+                context.beginRange = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineBegin);
+                context.cursorAfter = context.beginRange;
             }
             else
             {
-                beginRange = bufferCursor;
-                cursorAfter = buffer.LocationFromOffsetByChars(beginRange, long(StringUtils::Utf8Length(pRegister->text.c_str()) - 1));
+                context.beginRange = context.bufferCursor;
+                context.cursorAfter = context.buffer.LocationFromOffsetByChars(context.beginRange, long(StringUtils::Utf8Length(context.pRegister->text.c_str()) - 1));
             }
-            op = CommandOperation::Insert;
+            context.op = CommandOperation::Insert;
         }
     }
-    else if (command[0] == 'y')
+    else if (context.command[0] == 'y')
     {
-        if (mode == EditorMode::Visual)
+        if (context.mode == EditorMode::Visual)
         {
-            registers.push('0');
-            beginRange = m_visualBegin;
-            endRange = buffer.LocationFromOffsetByChars(m_visualEnd, 1);
-            cursorAfter = m_visualBegin;
-            commandResult.modeSwitch = EditorMode::Normal;
-            op = m_lineWise ? CommandOperation::CopyLines : CommandOperation::Copy;
+            context.registers.push('0');
+            context.beginRange = m_visualBegin;
+            context.endRange = context.buffer.LocationFromOffsetByChars(m_visualEnd, 1);
+            context.cursorAfter = m_visualBegin;
+            context.commandResult.modeSwitch = EditorMode::Normal;
+            context.op = m_lineWise ? CommandOperation::CopyLines : CommandOperation::Copy;
         }
-        else if (mode == EditorMode::Normal)
+        else if (context.mode == EditorMode::Normal)
         {
-            if (command == "y")
+            if (context.command == "y")
             {
-                commandResult.flags |= CommandResultFlags::NeedMoreChars;
+                context.commandResult.flags |= CommandResultFlags::NeedMoreChars;
             }
-            else if (command == "yy")
+            else if (context.command == "yy")
             {
-                if (pLineInfo)
+                if (context.pLineInfo)
                 {
                     // Copy the whole line, including the CR
-                    registers.push('0');
-                    beginRange = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineBegin);
-                    endRange = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd) + 1;
-                    op = CommandOperation::CopyLines;
+                    context.registers.push('0');
+                    context.beginRange = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineBegin);
+                    context.endRange = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineEnd) + 1;
+                    context.op = CommandOperation::CopyLines;
                 }
             }
         }
 
-        if (op == CommandOperation::None)
+        if (context.op == CommandOperation::None)
         {
             return false;
         }
     }
-    else if (command == "Y")
+    else if (context.command == "Y")
     {
-        if (pLineInfo)
+        if (context.pLineInfo)
         {
             // Copy the whole line, including the CR
-            registers.push('0');
-            beginRange = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineBegin);
-            endRange = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd);
-            op = CommandOperation::CopyLines;
-            commandResult.modeSwitch = EditorMode::Normal;
+            context.registers.push('0');
+            context.beginRange = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineBegin);
+            context.endRange = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineEnd);
+            context.op = CommandOperation::CopyLines;
+            context.commandResult.modeSwitch = EditorMode::Normal;
         }
     }
-    else if (command == "u")
+    else if (context.command == "u")
     {
         Undo();
         return true;
     }
-    else if (command == "r" && modifierKeys == ModifierKey::Ctrl)
+    else if (context.command == "r" && context.modifierKeys == ModifierKey::Ctrl)
     {
         Redo();
         return true;
     }
-    else if (command == "i")
+    else if (context.command == "i")
     {
-        commandResult.modeSwitch = EditorMode::Insert;
+        context.commandResult.modeSwitch = EditorMode::Insert;
         return true;
     }
-    else if (command == "a")
+    else if (context.command == "a")
     {
         // Cursor append
-        m_pCurrentView->MoveCursor(NVec2i(1, 0), LineLocation::LineCRBegin);
-        commandResult.modeSwitch = EditorMode::Insert;
+        m_pCurrentWindow->MoveCursor(NVec2i(1, 0), LineLocation::LineCRBegin);
+        context.commandResult.modeSwitch = EditorMode::Insert;
         return true;
     }
-    else if (command == "A")
+    else if (context.command == "A")
     {
         // Cursor append to end of line
-        m_pCurrentView->MoveCursor(LineLocation::LineCRBegin);
-        commandResult.modeSwitch = EditorMode::Insert;
+        m_pCurrentWindow->MoveCursor(LineLocation::LineCRBegin);
+        context.commandResult.modeSwitch = EditorMode::Insert;
         return true;
     }
-    else if (command == "I")
+    else if (context.command == "I")
     {
-        // Cursor Insert beginning char of line 
-        m_pCurrentView->MoveCursor(LineLocation::LineFirstGraphChar);
-        commandResult.modeSwitch = EditorMode::Insert;
+        // Cursor Insert beginning char of line
+        m_pCurrentWindow->MoveCursor(LineLocation::LineFirstGraphChar);
+        context.commandResult.modeSwitch = EditorMode::Insert;
         return true;
     }
-    else if (lastKey == ExtKeys::RETURN)
+    else if (context.lastKey == ExtKeys::RETURN)
     {
-        if (command[0] == ':')
+        if (context.command[0] == ':')
         {
-            if (GetEditor().Broadcast(std::make_shared<ZepMessage>(Msg_HandleCommand, command)))
+            if (GetEditor().Broadcast(std::make_shared<ZepMessage>(Msg_HandleCommand, context.command)))
             {
                 return true;
             }
-            else if (command == ":reg")
+            else if (context.command == ":reg")
             {
                 std::ostringstream str;
                 str << "--- Registers ---" << '\n';
@@ -969,13 +1102,13 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
                         str << "\"" << reg.first << "   " << displayText << '\n';
                     }
                 }
-                m_pCurrentView->GetDisplay().SetCommandText(str.str());
+                m_pCurrentWindow->GetDisplay().SetCommandText(str.str());
                 return true;
             }
-            else if (command == ":ls")
+            else if (context.command == ":ls")
             {
                 std::ostringstream str;
-                str << "--- Buffers ---" << '\n';
+                str << "--- context.buffers ---" << '\n';
                 int index = 0;
                 for (auto& buffer : GetEditor().GetBuffers())
                 {
@@ -983,7 +1116,7 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
                     {
                         std::string displayText = buffer->GetName();
                         displayText = StringUtils::ReplaceString(displayText, "\n", "^J");
-                        if (&m_pCurrentView->GetBuffer() == buffer.get())
+                        if (&m_pCurrentWindow->GetBuffer() == buffer.get())
                         {
                             str << "*";
                         }
@@ -994,12 +1127,12 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
                         str << index++ << " : " << displayText << '\n';
                     }
                 }
-                m_pCurrentView->GetDisplay().SetCommandText(str.str());
+                m_pCurrentWindow->GetDisplay().SetCommandText(str.str());
                 return true;
             }
-            else if (command.find(":bu") == 0)
+            else if (context.command.find(":bu") == 0)
             {
-                auto strTok = StringUtils::Split(command, " ");
+                auto strTok = StringUtils::Split(context.command, " ");
 
                 if (strTok.size() > 1)
                 {
@@ -1011,7 +1144,7 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
                         {
                             if (index == current)
                             {
-                                m_pCurrentView->GetTabWindow().SetCurrentBuffer(buffer.get());
+                                m_pCurrentWindow->GetTabWindow().SetCurrentBuffer(buffer.get());
                             }
                             current++;
                         }
@@ -1024,7 +1157,7 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
             }
             else
             {
-                m_pCurrentView->GetDisplay().SetCommandText("Not a command");
+                m_pCurrentWindow->GetDisplay().SetCommandText("Not a context.command");
                 return false;
             }
 
@@ -1039,91 +1172,34 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
         return false;
     }
 
-    // Store in a register
-    if (!registers.empty())
+    // Update the registers based on context state
+    context.UpdateRegisters();
+
+    // Setup command, if any
+    if (context.op == CommandOperation::Delete || context.op == CommandOperation::DeleteLines)
     {
-        if (op == CommandOperation::Delete ||
-            op == CommandOperation::DeleteLines)
-        {
-            beginRange = std::max(beginRange, BufferLocation{ 0 });
-            endRange = std::max(endRange, BufferLocation{ 0 });
-            assert(beginRange <= endRange);
-            if (beginRange > endRange)
-            {
-                beginRange = endRange;
-            }
-            std::string str = std::string(buffer.GetText().begin() + beginRange, buffer.GetText().begin() + endRange);
-
-            // Delete commands fill up 1-9 registers
-            if (command[0] == 'd' ||
-                command[0] == 'D')
-            {
-                for (int i = 9; i > 1; i--)
-                {
-                    GetEditor().SetRegister('0' + i, GetEditor().GetRegister('0' + i - 1));
-                }
-                GetEditor().SetRegister('1', Register(str, (op == CommandOperation::DeleteLines)));
-            }
-
-            // Fill up any other required registers
-            while (!registers.empty())
-            {
-                GetEditor().SetRegister(registers.top(), Register(str, (op == CommandOperation::DeleteLines)));
-                registers.pop();
-            }
-        }
-        else if (op == CommandOperation::Copy ||
-            op == CommandOperation::CopyLines)
-        {
-            std::string str = std::string(buffer.GetText().begin() + beginRange, buffer.GetText().begin() + endRange);
-            while (!registers.empty())
-            {
-                // Capital letters append to registers instead of replacing them
-                if (registers.top() >= 'A' && registers.top() <= 'Z')
-                {
-                    auto chlow = std::tolower(registers.top());
-                    GetEditor().GetRegister(chlow).text += str;
-                    GetEditor().GetRegister(chlow).lineWise = (op == CommandOperation::CopyLines);
-                }
-                else
-                {
-                    GetEditor().GetRegister(registers.top()).text = str;
-                    GetEditor().GetRegister(registers.top()).lineWise = (op == CommandOperation::CopyLines);
-                }
-                registers.pop();
-            }
-        }
-    }
-
-    // Handle command
-    if (op == CommandOperation::Delete ||
-        op == CommandOperation::DeleteLines)
-    {
-        auto cmd = std::make_shared<ZepCommand_DeleteRange>(buffer,
-            beginRange,
-            endRange,
-            cursorAfter != -1 ? cursorAfter : beginRange
-            );
-        commandResult.spCommand = std::static_pointer_cast<ZepCommand>(cmd);
+        auto cmd = std::make_shared<ZepCommand_DeleteRange>(context.buffer,
+            context.beginRange,
+            context.endRange,
+            context.cursorAfter != -1 ? context.cursorAfter : context.beginRange);
+        context.commandResult.spCommand = std::static_pointer_cast<ZepCommand>(cmd);
         return true;
     }
-    else if (op == CommandOperation::Insert && !pRegister->text.empty())
+    else if (context.op == CommandOperation::Insert && !context.pRegister->text.empty())
     {
-        auto cmd = std::make_shared<ZepCommand_Insert>(buffer,
-            beginRange,
-            pRegister->text,
-            cursorAfter
-            );
-        commandResult.spCommand = std::static_pointer_cast<ZepCommand>(cmd);
+        auto cmd = std::make_shared<ZepCommand_Insert>(context.buffer,
+            context.beginRange,
+            context.pRegister->text,
+            context.cursorAfter);
+        context.commandResult.spCommand = std::static_pointer_cast<ZepCommand>(cmd);
         return true;
     }
-    else if (op == CommandOperation::Copy ||
-        op == CommandOperation::CopyLines)
+    else if (context.op == CommandOperation::Copy || context.op == CommandOperation::CopyLines)
     {
         // Copy commands may move the cursor
-        if (cursorAfter != -1)
+        if (context.cursorAfter != -1)
         {
-            m_pCurrentView->SetCursor(m_pCurrentView->BufferToDisplay(cursorAfter));
+            m_pCurrentWindow->SetCursor(m_pCurrentWindow->BufferToDisplay(context.cursorAfter));
         }
         return true;
     }
@@ -1131,98 +1207,12 @@ bool ZepMode_Vim::GetCommand(std::string command, uint32_t lastKey, uint32_t mod
     return false;
 }
 
-// Parse the command into:
-// [count1] opA [count2] opB
-// And generate (count1 * count2), opAopB
-std::string ZepMode_Vim::GetCommandAndCount(std::string strCommand, int& count)
-{
-    std::string count1;
-    std::string command1;
-    std::string count2;
-    std::string command2;
-
-    auto itr = strCommand.begin();
-    while (itr != strCommand.end() && std::isdigit(*itr))
-    {
-        count1 += *itr;
-        itr++;
-    }
-
-    while (itr != strCommand.end()
-        && std::isgraph(*itr) && !std::isdigit(*itr))
-    {
-        command1 += *itr;
-        itr++;
-    }
-
-    // If not a register target, then another count
-    if (command1[0] != '\"' &&
-        command1[0] != ':')
-    {
-        while (itr != strCommand.end()
-            && std::isdigit(*itr))
-        {
-            count2 += *itr;
-            itr++;
-        }
-    }
-
-    while (itr != strCommand.end()
-        && (std::isgraph(*itr) || *itr == ' '))
-    {
-        command2 += *itr;
-        itr++;
-    }
-
-    bool foundCount = false;
-    count = 1;
-
-    try
-    {
-        if (!count1.empty())
-        {
-            count = std::stoi(count1);
-            foundCount = true;
-        }
-        if (!count2.empty())
-        {
-            // When 2 counts are specified, they multiply!
-            // Such as 2d2d, which deletes 4 lines
-            count *= std::stoi(count2);
-            foundCount = true;
-        }
-    }
-    catch (std::out_of_range&)
-    {
-        // Ignore bad count
-    }
-
-    // Concatentate the parts of the command into a single command string
-    std::string command = command1 + command2;
-
-    // Short circuit - 0 is special, first on line.  Since we don't want to confuse it 
-    // with a command count
-    if (count == 0)
-    {
-        count = 1;
-        return "0";
-    }
-
-    // The dot command is like the 'last' command that succeeded
-    if (command == ".")
-    {
-        command = m_lastCommand;
-        count = foundCount ? count : m_lastCount;
-    }
-    return command;
-}
-
 void ZepMode_Vim::Begin()
 {
-    if (m_pCurrentView)
+    if (m_pCurrentWindow)
     {
-        m_pCurrentView->SetCursorMode(CursorMode::Normal);
-        m_pCurrentView->GetDisplay().SetCommandText(m_currentCommand);
+        m_pCurrentWindow->SetCursorMode(CursorMode::Normal);
+        m_pCurrentWindow->GetDisplay().SetCommandText(m_currentCommand);
     }
     m_currentMode = EditorMode::Normal;
     m_currentCommand.clear();
@@ -1233,14 +1223,13 @@ void ZepMode_Vim::Begin()
 
 void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
 {
-    if (!m_pCurrentView)
+    if (!m_pCurrentWindow)
         return;
 
     // Reset command text - we will update it later
-    m_pCurrentView->GetDisplay().SetCommandText("");
+    m_pCurrentWindow->GetDisplay().SetCommandText("");
 
-    if (m_currentMode == EditorMode::Normal ||
-        m_currentMode == EditorMode::Visual)
+    if (m_currentMode == EditorMode::Normal || m_currentMode == EditorMode::Visual)
     {
         // Escape wins all
         if (key == ExtKeys::ESCAPE)
@@ -1255,21 +1244,18 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         // ... and show it in the command bar if desired
         if (m_currentCommand[0] == ':' || m_settings.ShowNormalModeKeyStrokes)
         {
-            m_pCurrentView->GetDisplay().SetCommandText(m_currentCommand);
+            m_pCurrentWindow->GetDisplay().SetCommandText(m_currentCommand);
         }
 
-        // Retrieve the vim command
-        int count;
-        std::string command = GetCommandAndCount(m_currentCommand, count);
+        CommandContext context(m_currentCommand, *this, key, modifierKeys, m_currentMode);
 
-        CommandResult commandResult;
-        if (GetCommand(command, key, modifierKeys, m_currentMode, count, commandResult))
+        if (GetCommand(context))
         {
             // Remember a new modification command and clear the last dot command string
-            if (commandResult.spCommand && key != '.')
+            if (context.commandResult.spCommand && key != '.')
             {
-                m_lastCommand = command;
-                m_lastCount = count;
+                m_lastCommand = context.command;
+                m_lastCount = context.count;
                 m_lastInsertString.clear();
             }
 
@@ -1278,46 +1264,49 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
             bool appendDotInsert = false;
 
             // Label group beginning
-            if (commandResult.spCommand)
+            if (context.commandResult.spCommand)
             {
-                if (key == '.' && !m_lastInsertString.empty() && commandResult.modeSwitch == EditorMode::Insert)
+                if (key == '.' && !m_lastInsertString.empty() && context.commandResult.modeSwitch == EditorMode::Insert)
                 {
                     appendDotInsert = true;
                 }
-                
-                if (appendDotInsert ||
-                    (count > 1 &&
-                    !(commandResult.flags & CommandResultFlags::HandledCount)))
+
+                if (appendDotInsert || (context.count > 1 && !(context.commandResult.flags & CommandResultFlags::HandledCount)))
                 {
-                    commandResult.spCommand->SetFlags(CommandFlags::GroupBoundary);
+                    context.commandResult.spCommand->SetFlags(CommandFlags::GroupBoundary);
                 }
-                AddCommand(commandResult.spCommand);
+                AddCommand(context.commandResult.spCommand);
             }
 
             // Next commands (for counts)
-            if (!(commandResult.flags & CommandResultFlags::HandledCount))
+            // Many command handlers do the right thing for counts; if they don't we basically interpret the command
+            // multiple times to implement it.
+            if (!(context.commandResult.flags & CommandResultFlags::HandledCount))
             {
-                for (int i = 1; i < count; i++)
+                for (int i = 1; i < context.count; i++)
                 {
-                    if (GetCommand(command, key, modifierKeys, m_currentMode, count, commandResult) &&
-                        commandResult.spCommand)
+                    // May immediate execute and not return a command...
+                    // Create a new 'inner' context for the next command, because we need to re-initialize the command
+                    // context for 'after' what just happened!
+                    CommandContext contextInner(m_currentCommand, *this, key, modifierKeys, m_currentMode);
+                    if (GetCommand(contextInner) && contextInner.commandResult.spCommand)
                     {
                         // Group counted
-                        if (i == (count - 1) && !appendDotInsert)
+                        if (i == (context.count - 1) && !appendDotInsert)
                         {
-                            commandResult.spCommand->SetFlags(CommandFlags::GroupBoundary);
+                            contextInner.commandResult.spCommand->SetFlags(CommandFlags::GroupBoundary);
                         }
 
                         // Actually queue/do command
-                        AddCommand(commandResult.spCommand);
+                        AddCommand(contextInner.commandResult.spCommand);
                     }
                 }
             }
 
             ResetCommand();
-            
+
             // A mode to switch to after the command is done
-            SwitchMode(commandResult.modeSwitch);
+            SwitchMode(context.commandResult.modeSwitch);
 
             // If used dot command, append the inserted text.  This is a little confusing.
             // TODO: Think of a cleaner way to express it
@@ -1325,10 +1314,10 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
             {
                 if (!m_lastInsertString.empty())
                 {
-                    auto cmd = std::make_shared<ZepCommand_Insert>(m_pCurrentView->GetBuffer(),
-                        m_pCurrentView->DisplayToBuffer(),
+                    auto cmd = std::make_shared<ZepCommand_Insert>(m_pCurrentWindow->GetBuffer(),
+                        m_pCurrentWindow->DisplayToBuffer(),
                         m_lastInsertString,
-                        m_pCurrentView->GetBuffer().LocationFromOffsetByChars(m_pCurrentView->DisplayToBuffer(), long(m_lastInsertString.size())));
+                        m_pCurrentWindow->GetBuffer().LocationFromOffsetByChars(m_pCurrentWindow->DisplayToBuffer(), long(m_lastInsertString.size())));
                     cmd->SetFlags(CommandFlags::GroupBoundary);
                     AddCommand(std::static_pointer_cast<ZepCommand>(cmd));
                 }
@@ -1340,17 +1329,23 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         }
         else
         {
+            if (!m_currentCommand.empty() && m_currentCommand.find_first_not_of("0123456789") == std::string::npos)
+            {
+                context.commandResult.flags |= CommandResultFlags::NeedMoreChars;
+            }
             // Handled, but no new command
-            if (m_currentCommand[0] != ':' && !(commandResult.flags & CommandResultFlags::NeedMoreChars))
+
+            // A better mechanism is required for clearing pending commands!
+            if (m_currentCommand[0] != ':' && m_currentCommand[0] != '"' && !(context.commandResult.flags & CommandResultFlags::NeedMoreChars))
             {
                 ResetCommand();
             }
         }
 
         // Make cursor visible right after command
-        if (m_pCurrentView)
+        if (m_pCurrentWindow)
         {
-            m_pCurrentView->GetDisplay().ResetCursorTimer();
+            m_pCurrentWindow->GetDisplay().ResetCursorTimer();
         }
     }
     else if (m_currentMode == EditorMode::Insert)
@@ -1362,9 +1357,9 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
 
 void ZepMode_Vim::HandleInsert(uint32_t key)
 {
-    auto cursor = m_pCurrentView->GetCursor();
+    auto cursor = m_pCurrentWindow->GetCursor();
 
-    // Operations outside of inserts will pack up the insert operation 
+    // Operations outside of inserts will pack up the insert operation
     // and start a new one
     bool packCommand = false;
     switch (key)
@@ -1396,8 +1391,8 @@ void ZepMode_Vim::HandleInsert(uint32_t key)
         m_pendingEscape = false;
     }
 
-    const auto bufferCursor = m_pCurrentView->DisplayToBuffer(cursor);
-    auto& buffer = m_pCurrentView->GetBuffer();
+    const auto bufferCursor = m_pCurrentWindow->DisplayToBuffer(cursor);
+    auto& buffer = m_pCurrentWindow->GetBuffer();
 
     // Escape back to normal mode
     if (packCommand)
@@ -1427,7 +1422,7 @@ void ZepMode_Vim::HandleInsert(uint32_t key)
             if (cursor.x != 0)
             {
                 auto finalCursor = buffer.LocationFromOffsetByChars(insertEnd, -1);
-                m_pCurrentView->MoveCursorTo(finalCursor);
+                m_pCurrentWindow->MoveCursorTo(finalCursor);
             }
 
             // Back to normal mode
@@ -1439,11 +1434,10 @@ void ZepMode_Vim::HandleInsert(uint32_t key)
             // For example, hitting Backspace
             // There is more work to do here to support keyboard combos in insert mode
             // (not that I can think of ones that I use!)
-            CommandResult res;
-            if (GetCommand("", key, 0, EditorMode::Insert, 1, res) &&
-                res.spCommand)
+            CommandContext context("", *this, key, 0, EditorMode::Insert);
+            if (GetCommand(context) && context.commandResult.spCommand)
             {
-                AddCommand(res.spCommand);
+                AddCommand(context.commandResult.spCommand);
             }
             SwitchMode(EditorMode::Insert);
         }
@@ -1480,23 +1474,22 @@ void ZepMode_Vim::HandleInsert(uint32_t key)
 
         // Insert back to normal mode should put the cursor on top of the last character typed.
         auto newCursor = buffer.LocationFromOffset(buf, long(ch.size()));
-        m_pCurrentView->MoveCursorTo(newCursor, LineLocation::LineCRBegin);
+        m_pCurrentWindow->MoveCursorTo(newCursor, LineLocation::LineCRBegin);
     }
 }
 
-void ZepMode_Vim::SetCurrentWindow(ZepWindow* pView)
+void ZepMode_Vim::SetCurrentWindow(ZepWindow* pWindow)
 {
-    ZepMode::SetCurrentWindow(pView);
+    ZepMode::SetCurrentWindow(pWindow);
 
     // If we thought it was an escape but it wasn't, put the 'j' back in!
     // TODO: Move to a more sensible place where we can check the time
-    if (m_pendingEscape &&
-        m_spInsertEscapeTimer->GetDelta() > .25f)
+    if (m_pendingEscape && m_spInsertEscapeTimer->GetDelta() > .25f)
     {
         m_pendingEscape = false;
-        auto buf = m_pCurrentView->DisplayToBuffer();
-        m_pCurrentView->GetBuffer().Insert(buf, "j");
-        m_pCurrentView->MoveCursor(NVec2i(1, 0), LineLocation::LineCRBegin);
+        auto buf = m_pCurrentWindow->DisplayToBuffer();
+        m_pCurrentWindow->GetBuffer().Insert(buf, "j");
+        m_pCurrentWindow->MoveCursor(NVec2i(1, 0), LineLocation::LineCRBegin);
     }
 }
-} // Zep
+} // namespace Zep

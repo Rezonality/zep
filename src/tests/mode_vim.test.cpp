@@ -31,17 +31,19 @@ public:
         spDisplay = std::make_shared<ZepDisplayNull>(*spEditor);
         spDisplay->SetDisplaySize(NVec2f(0.0f, 0.0f), NVec2f(1024.0f, 1024.0f));
 
-        pTabWindow = spDisplay->AddWindow();
+        pTabWindow = spDisplay->GetCurrentTabWindow();
         pTabWindow->AddBuffer(pBuffer);
-        spMode->SetCurrentWindow(pTabWindow->GetCurrentWindow());
-        pTabWindow->GetCurrentWindow()->SetCursor(NVec2i(0, 0));
+
         pWindow = pTabWindow->GetCurrentWindow();
+        spMode->SetCurrentWindow(pWindow);
+        
+        pWindow->SetCursor(NVec2i(0, 0));
     }
 
     ~VimTest()
     {
         pTabWindow->RemoveBuffer(pBuffer);
-        spDisplay->RemoveWindow(pTabWindow);
+        spDisplay->RemoveTabWindow(pTabWindow);
     }
 
 public:

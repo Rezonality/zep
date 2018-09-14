@@ -58,11 +58,11 @@ public:
     void AssignDefaultWindow();
 
     // Window management
-    void SetCurrentWindow(ZepTabWindow* pTabWindow);
-    ZepTabWindow* GetCurrentWindow() const;
-    ZepTabWindow* AddWindow();
-    void RemoveWindow(ZepTabWindow* pTabWindow);
-    const tWindows& GetWindows() const;
+    void SetCurrentTabWindow(ZepTabWindow* pTabWindow);
+    ZepTabWindow* GetCurrentTabWindow() const;
+    ZepTabWindow* AddTabWindow();
+    void RemoveTabWindow(ZepTabWindow* pTabWindow);
+    const tWindows& GetTabWindows() const;
 
     void RequestRefresh();
     bool RefreshRequired() const;

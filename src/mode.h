@@ -71,10 +71,13 @@ public:
 
     virtual void Undo();
     virtual void Redo();
+
+    virtual ZepWindow* GetCurrentWindow() { return m_pCurrentWindow; }
+
 protected:
     std::stack<std::shared_ptr<ZepCommand>> m_undoStack;
     std::stack<std::shared_ptr<ZepCommand>> m_redoStack;
-    ZepWindow* m_pCurrentView = nullptr;
+    ZepWindow* m_pCurrentWindow = nullptr;
     EditorMode m_currentMode;
     bool m_lineWise = false;
     BufferLocation m_insertBegin;

@@ -31,18 +31,18 @@ void ZepDisplay::ResetCursorTimer()
     m_spCursorTimer->Restart(); 
 }
 
-void ZepDisplay::SetCurrentWindow(ZepTabWindow* pTabWindow)
+void ZepDisplay::SetCurrentTabWindow(ZepTabWindow* pTabWindow)
 {
     m_pCurrentTabWindow = pTabWindow;
     PreDisplay();
 }
 
-ZepTabWindow* ZepDisplay::GetCurrentWindow() const
+ZepTabWindow* ZepDisplay::GetCurrentTabWindow() const
 {
     return m_pCurrentTabWindow;
 }
 
-ZepTabWindow* ZepDisplay::AddWindow()
+ZepTabWindow* ZepDisplay::AddTabWindow()
 {
     auto spWindow = std::make_shared<ZepTabWindow>(*this);
     m_windows.insert(spWindow);
@@ -55,7 +55,7 @@ ZepTabWindow* ZepDisplay::AddWindow()
     return spWindow.get();
 }
 
-void ZepDisplay::RemoveWindow(ZepTabWindow* pTabWindow)
+void ZepDisplay::RemoveTabWindow(ZepTabWindow* pTabWindow)
 {
     for (auto& pWin : m_windows)
     {
@@ -80,7 +80,7 @@ void ZepDisplay::RemoveWindow(ZepTabWindow* pTabWindow)
     PreDisplay();
 }
 
-const ZepDisplay::tWindows& ZepDisplay::GetWindows() const
+const ZepDisplay::tWindows& ZepDisplay::GetTabWindows() const
 {
     return m_windows;
 }
@@ -113,7 +113,7 @@ void ZepDisplay::AssignDefaultWindow()
     }
     else
     {
-        pTabWindow = AddWindow();
+        pTabWindow = AddTabWindow();
     }
     pTabWindow->SetCurrentBuffer(pBuffer);
 }
