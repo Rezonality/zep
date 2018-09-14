@@ -27,6 +27,8 @@ public:
     virtual void DrawRectFilled(const NVec2f& a, const NVec2f& b, uint32_t col = 0xFFFFFFFF) const override;
 private:
     QPainter* m_pPainter = nullptr;
+    int m_fontSize;
+    int m_fontOffset;
 };
 
 } // Zep

@@ -8,6 +8,7 @@
 #include "editor_imgui.h"
 #include "usb_hid_keys.h"
 #include "SDL.h"
+#include "tab_window.h"
 
 namespace Zep
 {
@@ -19,12 +20,12 @@ ZepEditor_ImGui::ZepEditor_ImGui()
 
 void ZepEditor_ImGui::Display(const NVec2f& pos, const NVec2f& size)
 {
-    auto pWindow = m_spDisplay->GetCurrentWindow();
-    if (pWindow)
+    auto pTabWindow = m_spDisplay->GetCurrentTabWindow();
+    if (pTabWindow)
     {
-        if (pWindow->GetCurrentBuffer() == nullptr)
+        if (pTabWindow->GetCurrentBuffer() == nullptr)
         {
-            pWindow->SetCurrentBuffer(GetBuffers()[0].get());
+            pTabWindow->SetCurrentBuffer(GetBuffers()[0].get());
         }
     }
 
@@ -118,7 +119,7 @@ void ZepEditor_ImGui::HandleInput()
         }
         else
         {
-            GetCurrentMode()->SetCurrentWindow(m_spDisplay->GetCurrentWindow());
+            GetCurrentMode()->SetCurrentWindow(m_spDisplay->GetCurrentTabWindow()->GetCurrentWindow());
 
             for (int ch = SDL_SCANCODE_A; ch <= SDL_SCANCODE_Z; ch++)
             {
@@ -137,7 +138,7 @@ void ZepEditor_ImGui::HandleInput()
         }
     }
 
-    GetCurrentMode()->SetCurrentWindow(m_spDisplay->GetCurrentWindow());
+    GetCurrentMode()->SetCurrentWindow(m_spDisplay->GetCurrentTabWindow()->GetCurrentWindow());
     if (!handled)
     {
         for (int n = 0; n < (sizeof(io.InputCharacters) / sizeof(*io.InputCharacters)) && io.InputCharacters[n]; n++)

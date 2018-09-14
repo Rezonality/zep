@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include "display.h"
+#include "tab_window.h"
 #include "window.h"
 #include "syntax.h"
 #include "buffer.h"
@@ -11,6 +12,7 @@
 
 #include "utils/stringutils.h"
 
+// A 'window' is like a Vim Tab
 namespace Zep
 {
 
@@ -18,62 +20,18 @@ namespace
 {
 const uint32_t Color_CursorNormal = 0xEEF35FBC;
 const uint32_t Color_CursorInsert = 0xFFFFFFFF;
-const float TabSize = 20.0f;
 }
 
-ZepWindow::ZepWindow(ZepDisplay& display)
+ZepWindow::ZepWindow(ZepTabWindow& window, ZepBuffer& buffer, ZepDisplay& display)
     : ZepComponent(display.GetEditor()),
-    m_display(display)
+    m_display(display),
+    m_window(window),
+    m_buffer(buffer)
 {
 }
 
 ZepWindow::~ZepWindow()
 {
-}
-
-void ZepWindow::SetCurrentBuffer(ZepBuffer* pBuffer)
-{
-    if (pBuffer)
-    {
-        m_buffers.insert(pBuffer);
-    }
-    m_pCurrentBuffer = pBuffer;
-}
-
-ZepBuffer* ZepWindow::GetCurrentBuffer() const
-{
-    return m_pCurrentBuffer;
-}
-
-void ZepWindow::AddBuffer(ZepBuffer* pBuffer)
-{
-    m_buffers.insert(pBuffer);
-    if (m_pCurrentBuffer == nullptr)
-    {
-        m_pCurrentBuffer = pBuffer;
-    }
-}
-
-void ZepWindow::RemoveBuffer(ZepBuffer* pBuffer)
-{
-    m_buffers.erase(pBuffer);
-    if (m_pCurrentBuffer == pBuffer)
-    {
-        if (!m_buffers.empty())
-        {
-            SetCurrentBuffer(*m_buffers.begin());
-        }
-        else
-        {
-            SetCurrentBuffer(nullptr);
-        }
-    }
-
-}
-
-const ZepWindow::tBuffers& ZepWindow::GetBuffers() const
-{
-    return m_buffers;
 }
 
 void ZepWindow::SetCursorMode(CursorMode mode)
@@ -88,7 +46,7 @@ void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
     {
         auto pMsg = std::static_pointer_cast<BufferMessage>(payload);
 
-        if (pMsg->pBuffer != m_pCurrentBuffer)
+        if (pMsg->pBuffer != &m_buffer)
         {
             return;
         }
@@ -100,10 +58,9 @@ void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
                 pMsg->type == BufferMessageType::TextAdded ||
                 pMsg->type == BufferMessageType::TextChanged)
             {
-                PreDisplay(m_windowRegion);
+                PreDisplay(m_bufferRegion);
 
-                if (pMsg->cursorAfter != -1 && 
-                    m_pCurrentBuffer == pMsg->pBuffer)
+                if (pMsg->cursorAfter != -1)
                 {
                     cursorCL = BufferToDisplay(pMsg->cursorAfter);
                 }
@@ -190,9 +147,9 @@ NVec2i ZepWindow::BufferToDisplay(const BufferLocation& loc) const
         return ret;
     }
 
-    auto location = m_pCurrentBuffer->Clamp(loc);
+    auto location = m_buffer.Clamp(loc);
 
-    auto line = m_pCurrentBuffer->LineFromOffset(location);
+    auto line = m_buffer.LineFromOffset(location);
 
     ret.x = -1;
     ret.y = -1;
@@ -231,22 +188,22 @@ void ZepWindow::MoveCursor(LineLocation location)
     switch (location)
     {
     case LineLocation::LineBegin:
-        buffer = m_pCurrentBuffer->GetLinePos(line, location);
+        buffer = m_buffer.GetLinePos(line, location);
         break;
     case LineLocation::LineEnd:
-        buffer = m_pCurrentBuffer->GetLinePos(line, location);
+        buffer = m_buffer.GetLinePos(line, location);
         break;
     case LineLocation::LineCRBegin:
-        buffer = m_pCurrentBuffer->GetLinePos(line, location);
+        buffer = m_buffer.GetLinePos(line, location);
         break;
     case LineLocation::LineFirstGraphChar:
-        buffer = m_pCurrentBuffer->GetLinePos(line, location);
+        buffer = m_buffer.GetLinePos(line, location);
         break;
     case LineLocation::LineLastGraphChar:
-        buffer = m_pCurrentBuffer->GetLinePos(line, location);
+        buffer = m_buffer.GetLinePos(line, location);
         break;
     case LineLocation::LineLastNonCR:
-        buffer = m_pCurrentBuffer->GetLinePos(line, location);
+        buffer = m_buffer.GetLinePos(line, location);
         break;
     }
     auto cursor = BufferToDisplay(buffer);
@@ -278,10 +235,10 @@ void ZepWindow::MoveCursor(const NVec2i& distance, LineLocation clampLocation)
     }
     // Scroll the whole document down if we are near the bottom
     else if ((target.y > long(visibleLines.size()) - 4) &&
-        m_pCurrentBuffer->GetLineCount() > bufferCL.y + visibleLines.size())
+        m_buffer.GetLineCount() > bufferCL.y + visibleLines.size())
     {
         bufferCL.y += distance.y;
-        bufferCL.y = std::min(long(m_pCurrentBuffer->GetLineCount() - visibleLines.size()), bufferCL.y);
+        bufferCL.y = std::min(long(m_buffer.GetLineCount() - visibleLines.size()), bufferCL.y);
         bufferCL.y = std::max(0l, bufferCL.y);
         target.y = cursorCL.y;
 
@@ -333,36 +290,22 @@ void ZepWindow::ClampCursorToDisplay()
 
 void ZepWindow::PreDisplay(const DisplayRegion& region)
 {
-    m_windowRegion = region;
+    m_bufferRegion = region;
 
     // ** Temporary, status
-    if (m_pCurrentBuffer)
-    {
-        std::ostringstream str;
-        str << "(" << GetEditor().GetCurrentMode()->Name() << ") NORMAL" << " : " << int(m_pCurrentBuffer->GetLineEnds().size()) << " Lines";
-        SetStatusText(str.str());
-    }
+    std::ostringstream str;
+    str << "(" << GetEditor().GetCurrentMode()->Name() << ") NORMAL" << " : " << int(m_buffer.GetLineEnds().size()) << " Lines";
+    SetStatusText(str.str());
 
     auto statusCount = statusLines.size();
-    const auto windowSize = m_windowRegion.bottomRightPx - m_windowRegion.topLeftPx;
-    const float statusSize = m_display.GetFontSize() * statusCount + textBorder * 2.0f;
+    const auto windowSize = m_bufferRegion.bottomRightPx - m_bufferRegion.topLeftPx;
+    const float statusSize = m_display.GetFontSize() * statusCount + textBorder * 2.0f; 
 
-    m_statusRegion.bottomRightPx = m_windowRegion.bottomRightPx;
-    m_statusRegion.topLeftPx = m_windowRegion.bottomRightPx - NVec2f(windowSize.x, statusSize);
-
-    if (tabs)
-    {
-        m_tabRegion.topLeftPx = m_windowRegion.topLeftPx;
-        m_tabRegion.bottomRightPx = m_tabRegion.topLeftPx + NVec2f(windowSize.x, m_display.GetFontSize() + textBorder * 2);
-    }
-    else
-    {
-        m_tabRegion.topLeftPx = m_windowRegion.topLeftPx;
-        m_tabRegion.bottomRightPx = m_windowRegion.topLeftPx + NVec2f(windowSize.x, 0.0f);
-    }
+    m_statusRegion.bottomRightPx = m_bufferRegion.bottomRightPx;
+    m_statusRegion.topLeftPx = m_bufferRegion.bottomRightPx - NVec2f(windowSize.x, statusSize);
 
     m_textRegion.bottomRightPx = m_statusRegion.topLeftPx + NVec2f(windowSize.x, 0.0f);
-    m_textRegion.topLeftPx = m_tabRegion.bottomRightPx - NVec2f(windowSize.x, 0.0f);
+    m_textRegion.topLeftPx = m_bufferRegion.topLeftPx;
 
     // Border, and move the text across a bit
     m_leftRegion.topLeftPx = m_textRegion.topLeftPx;
@@ -385,117 +328,114 @@ void ZepWindow::PreDisplay(const DisplayRegion& region)
     float screenPosX = m_textRegion.topLeftPx.y;
     visibleLines.clear();
 
-    if (m_pCurrentBuffer)
+    // Process every buffer line
+    for (;;)
     {
-        // Process every buffer line
-        for (;;)
+        // We haven't processed this line yet, so we can't display anything
+        // else
+        if (m_buffer.GetLineCount() <= lineInfo.lineNumber)
+            break;
+
+        NVec2i columnOffsets;
+        if (!m_buffer.GetLineOffsets(lineInfo.lineNumber, columnOffsets.x, columnOffsets.y))
+            break;
+
+        // Start this line at the current offset
+        lineInfo.columnOffsets.x = columnOffsets.x;
+        lineInfo.columnOffsets.y = columnOffsets.x;
+        lineInfo.lastGraphCharOffset = 0;
+
+        bool inEndLine = false;
+        bool finishedLines = false;
+
+        const auto& textBuffer = m_buffer.GetText();
+
+        // Walk from the start of the line to the end of the line (in buffer chars)
+        // Line:
+        // [beginoffset]ABCDEF\n[endoffset]
+        for (auto ch = columnOffsets.x; ch < columnOffsets.y; ch++)
         {
-            // We haven't processed this line yet, so we can't display anything
-            // else
-            if (m_pCurrentBuffer->GetLineCount() <= lineInfo.lineNumber)
-                break;
+            const utf8* pCh = &textBuffer[ch];
 
-            NVec2i columnOffsets;
-            if (!m_pCurrentBuffer->GetLineOffsets(lineInfo.lineNumber, columnOffsets.x, columnOffsets.y))
-                break;
-
-            // Start this line at the current offset
-            lineInfo.columnOffsets.x = columnOffsets.x;
-            lineInfo.columnOffsets.y = columnOffsets.x;
-            lineInfo.lastGraphCharOffset = 0;
-
-            bool inEndLine = false;
-            bool finishedLines = false;
-
-            const auto& textBuffer = m_pCurrentBuffer->GetText();
-
-            // Walk from the start of the line to the end of the line (in buffer chars)
-            // Line:
-            // [beginoffset]ABCDEF\n[endoffset]
-            for (auto ch = columnOffsets.x; ch < columnOffsets.y; ch++)
+            // Convenience for later
+            if (std::isgraph(*pCh))
             {
-                const utf8* pCh = &textBuffer[ch];
-
-                // Convenience for later
-                if (std::isgraph(*pCh))
+                if (lineInfo.firstGraphCharOffset == -1)
                 {
-                    if (lineInfo.firstGraphCharOffset == -1)
-                    {
-                        lineInfo.firstGraphCharOffset = ch;
-                    }
-                    lineInfo.lastGraphCharOffset = ch;
+                    lineInfo.firstGraphCharOffset = ch;
                 }
+                lineInfo.lastGraphCharOffset = ch;
+            }
 
-                // Shown only one char for end of line
-                if (*pCh == '\n' ||
-                    *pCh == 0)
+            // Shown only one char for end of line
+            if (*pCh == '\n' ||
+                *pCh == 0)
+            {
+                inEndLine = true;
+            }
+            else
+            {
+                lineInfo.lastNonCROffset = std::max(ch, 0l);
+            }
+
+            // TODO: Central UTF-8 helpers
+#define UTF8_CHAR_LEN( byte ) (( 0xE5000000 >> (( byte >> 3 ) & 0x1e )) & 3 ) + 1
+            const utf8* pEnd = pCh + UTF8_CHAR_LEN(*pCh);
+
+            auto textSize = m_display.GetTextSize(pCh, pEnd);
+
+            lineInfo.columnOffsets.y = ch;
+
+            // We walked off the end
+            if ((lineInfo.screenPosYPx + textSize.y) >= m_textRegion.bottomRightPx.y)
+            {
+                // No more lines
+                finishedLines = true;
+                break;
+            }
+
+            // Wrap
+            if (wrap)
+            {
+                if (((screenPosX + textSize.x) + textSize.x) >= (m_textRegion.bottomRightPx.x))
                 {
-                    inEndLine = true;
+                    // Remember the offset beyond the end of hte line
+                    visibleLines.push_back(lineInfo);
+
+                    // Now jump to the next 'screen line' for the rest of this 'buffer line'
+                    lineInfo.columnOffsets = NVec2i(ch, ch);
+                    lineInfo.lastNonCROffset = 0;
+                    lineInfo.firstGraphCharOffset = -1;
+                    lineInfo.lastGraphCharOffset = -1;
+                    lineInfo.screenLineNumber++;
+                    lineInfo.screenPosYPx += textSize.y;
+                    screenPosX = m_textRegion.topLeftPx.x;
                 }
                 else
                 {
-                    lineInfo.lastNonCROffset = std::max(ch, 0l);
-                }
-
-                // TODO: Central UTF-8 helpers
-#define UTF8_CHAR_LEN( byte ) (( 0xE5000000 >> (( byte >> 3 ) & 0x1e )) & 3 ) + 1
-                const utf8* pEnd = pCh + UTF8_CHAR_LEN(*pCh);
-
-                auto textSize = m_display.GetTextSize(pCh, pEnd);
-
-                lineInfo.columnOffsets.y = ch;
-
-                // We walked off the end
-                if ((lineInfo.screenPosYPx + textSize.y) >= m_textRegion.bottomRightPx.y)
-                {
-                    // No more lines
-                    finishedLines = true;
-                    break;
-                }
-
-                // Wrap
-                if (wrap)
-                {
-                    if (((screenPosX + textSize.x) + textSize.x) >= (m_textRegion.bottomRightPx.x))
-                    {
-                        // Remember the offset beyond the end of hte line
-                        visibleLines.push_back(lineInfo);
-
-                        // Now jump to the next 'screen line' for the rest of this 'buffer line'
-                        lineInfo.columnOffsets = NVec2i(ch, ch);
-                        lineInfo.lastNonCROffset = 0;
-                        lineInfo.firstGraphCharOffset = -1;
-                        lineInfo.lastGraphCharOffset = -1;
-                        lineInfo.screenLineNumber++;
-                        lineInfo.screenPosYPx += textSize.y;
-                        screenPosX = m_textRegion.topLeftPx.x;
-                    }
-                    else
-                    {
-                        screenPosX += textSize.x;
-                    }
+                    screenPosX += textSize.x;
                 }
             }
-
-            // We walked all the actual chars, and stopped at 1< than column.y
-            // So back to the correct line end offset here
-            lineInfo.columnOffsets.y++;
-
-            // Ignore this one
-            if (finishedLines)
-            {
-                break;
-            }
-
-            visibleLines.push_back(lineInfo);
-
-            // Next Line
-            lineInfo.screenPosYPx += m_display.GetFontSize();
-            lineInfo.screenLineNumber++;
-            lineInfo.lineNumber++;
-            lineInfo.lastNonCROffset = 0;
-            screenPosX = m_textRegion.topLeftPx.x;
         }
+
+        // We walked all the actual chars, and stopped at 1< than column.y
+        // So back to the correct line end offset here
+        lineInfo.columnOffsets.y++;
+
+        // Ignore this one
+        if (finishedLines)
+        {
+            break;
+        }
+
+        visibleLines.push_back(lineInfo);
+
+        // Next Line
+        lineInfo.screenPosYPx += defaultLineSize.y;
+        lineInfo.screenLineNumber++;
+        lineInfo.lineNumber++;
+        lineInfo.lastNonCROffset = 0;
+        screenPosX = m_textRegion.topLeftPx.x;
     }
 
     if (visibleLines.empty())
@@ -525,7 +465,7 @@ bool ZepWindow::DisplayLine(const LineInfo& lineInfo, const DisplayRegion& regio
     static const auto whiteSpace = StringUtils::makeStr(std::wstring(L"\x00b7"));
     static const auto blankSpace = ' ';
 
-    auto activeWindow = (m_display.GetCurrentWindow() == this);
+    auto activeWindow = (m_display.GetCurrentTabWindow()->GetCurrentWindow() == this);
 
     // Draw line numbers
     auto showLineNumber = [&]()
@@ -574,9 +514,9 @@ bool ZepWindow::DisplayLine(const LineInfo& lineInfo, const DisplayRegion& regio
     // Walk from the start of the line to the end of the line (in buffer chars)
     for (auto ch = lineInfo.columnOffsets.x; ch < lineInfo.columnOffsets.y; ch++)
     {
-        auto pSyntax = m_pCurrentBuffer->GetSyntax();
+        auto pSyntax = m_buffer.GetSyntax();
         auto col = pSyntax != nullptr ? Theme::Instance().GetColor(pSyntax->GetSyntaxAt(ch)) : 0xFFFFFFFF;
-        auto* pCh = &m_pCurrentBuffer->GetText()[ch];
+        auto* pCh = &m_buffer.GetText()[ch];
         auto bufferLocation = DisplayToBuffer(NVec2i(ch - lineInfo.columnOffsets.x, lineInfo.screenLineNumber));
 
         // Visible white space
@@ -676,27 +616,10 @@ bool ZepWindow::DisplayLine(const LineInfo& lineInfo, const DisplayRegion& regio
 
 void ZepWindow::Display()
 {
-    PreDisplay(m_windowRegion);
+    PreDisplay(m_bufferRegion);
 
-    auto activeWindow = (m_display.GetCurrentWindow() == this);
-    cursorPosPx = m_windowRegion.topLeftPx;
- 
-    if (tabs)
-    {
-        // Tab region bottom
-        m_display.DrawRectFilled(m_tabRegion.BottomLeft() - NVec2f(0.0f, 2.0f), m_tabRegion.bottomRightPx, 0xFF888888);
-        NVec2f currentTab = m_tabRegion.topLeftPx;
-        for (auto& buffer : m_buffers)
-        {
-            auto tabColor = (buffer == m_pCurrentBuffer) ? 0xFF666666 : 0x11888888;
-            auto tabLength = m_display.GetTextSize((utf8*)buffer->GetName().c_str()).x + textBorder * 2;
-            m_display.DrawRectFilled(currentTab, currentTab + NVec2f(tabLength, m_tabRegion.Height()), tabColor);
-
-            m_display.DrawChars(currentTab + NVec2f(textBorder, textBorder), 0xFFFFFFFF, (utf8*)buffer->GetName().c_str());
-
-            currentTab.x += tabLength + textBorder;
-        }
-    }
+    auto activeWindow = (m_display.GetCurrentTabWindow()->GetCurrentWindow() == this);
+    cursorPosPx = m_bufferRegion.topLeftPx;
 
     if (activeWindow)
     {

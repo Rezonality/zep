@@ -10,6 +10,10 @@ ZepDisplay_Qt::ZepDisplay_Qt(ZepEditor& editor)
     : TParent(editor)
 {
     qApp->setFont(QFont("Consolas", 9));
+    
+    QFontMetrics met(qApp->font());
+    m_fontSize = met.height();
+    m_fontOffset = met.ascent();
 }
 
 ZepDisplay_Qt::~ZepDisplay_Qt()
@@ -18,8 +22,7 @@ ZepDisplay_Qt::~ZepDisplay_Qt()
 
 float ZepDisplay_Qt::GetFontSize() const
 {
-    QFontMetrics met(qApp->font());
-    return met.height();
+    return m_fontSize;
 }
 
 NVec2f ZepDisplay_Qt::GetTextSize(const utf8* pBegin, const utf8* pEnd) const
@@ -42,7 +45,8 @@ void ZepDisplay_Qt::DrawChars(const NVec2f& pos, uint32_t col, const utf8* text_
     QPoint p0 = toQPoint(pos);
     uint32_t color = (qAlpha(col) << 24) | (qRed(col)) | (qGreen(col) << 8) | (qBlue(col) << 16);
     m_pPainter->setPen(QColor::fromRgba(color));
-    p0.setY(p0.y() + GetFontSize());
+    
+    p0.setY(p0.y() + m_fontOffset);
     m_pPainter->drawText(p0, QString::fromUtf8((char*)text_begin, text_end - text_begin));
 }
 

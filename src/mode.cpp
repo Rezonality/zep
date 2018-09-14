@@ -2,6 +2,8 @@
 #include "mode.h"
 #include "editor.h"
 #include "commands.h"
+#include "window.h"
+#include "tab_window.h"
 
 namespace Zep
 {
@@ -17,9 +19,9 @@ ZepMode::~ZepMode()
 
 }
 
-void ZepMode::SetCurrentWindow(ZepWindow* pDisplay)
+void ZepMode::SetCurrentWindow(ZepWindow* pWindow)
 {
-    m_pCurrentWindow = pDisplay;
+    m_pCurrentWindow = pWindow;
 }
 
 void ZepMode::AddCommandText(std::string strText)
@@ -33,7 +35,7 @@ void ZepMode::AddCommandText(std::string strText)
 void ZepMode::AddCommand(std::shared_ptr<ZepCommand> spCmd)
 {
     if (m_pCurrentWindow && 
-        m_pCurrentWindow->GetCurrentBuffer()->IsViewOnly())
+        m_pCurrentWindow->GetBuffer().IsViewOnly())
     {
         // Ignore commands on buffers because we are view only, 
         // and all commands currently modify the buffer!
@@ -108,7 +110,7 @@ void ZepMode::UpdateVisualSelection()
         if (m_lineWise)
         {
             auto pLineInfo = &m_pCurrentWindow->visibleLines[m_pCurrentWindow->GetCursor().y];
-            m_visualEnd = m_pCurrentWindow->GetCurrentBuffer()->GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd) - 1;
+            m_visualEnd = m_pCurrentWindow->GetBuffer().GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd) - 1;
         }
         else
         {

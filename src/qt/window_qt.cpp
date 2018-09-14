@@ -3,7 +3,9 @@
 #include "editor.h"
 #include "mode.h"
 #include "window_qt.h"
+#include "tab_window.h"
 #include "display_qt.h"
+#include "display.h"
 
 namespace Zep
 {
@@ -43,13 +45,13 @@ void ZepWindow_Qt::paintEvent(QPaintEvent* pPaint)
 
     m_spDisplay->SetPainter(&painter);
 
-    m_spEditor->GetCurrentMode()->SetCurrentWindow(m_spDisplay->GetCurrentWindow());
-    auto pWindow = m_spDisplay->GetCurrentWindow();
-    if (pWindow)
+    auto pTabWindow = m_spDisplay->GetCurrentTabWindow();
+    if (pTabWindow)
     {
-        if (pWindow->GetCurrentBuffer() == nullptr)
+        m_spEditor->GetCurrentMode()->SetCurrentWindow(pTabWindow->GetCurrentWindow());
+        if (pTabWindow->GetCurrentBuffer() == nullptr)
         {
-            pWindow->SetCurrentBuffer(m_spEditor->GetBuffers()[0].get());
+            pTabWindow->SetCurrentBuffer(m_spEditor->GetBuffers()[0].get());
         }
     }
 
@@ -67,24 +69,26 @@ void ZepWindow_Qt::keyPressEvent(QKeyEvent* ev)
     auto pMode = m_spEditor->GetCurrentMode();
     if (ev->modifiers() & Qt::ControlModifier)
     {
-        if (ev->key() & Qt::Key_1)
+        if (ev->key() == Qt::Key_1)
         {
             m_spEditor->SetMode(Zep::StandardMode);
         }
-        else if (ev->key() & Qt::Key_2)
+        else if (ev->key() == Qt::Key_2)
         {
             m_spEditor->SetMode(Zep::VimMode);
         }
         else
         {
-            pMode->SetCurrentWindow(m_spDisplay->GetCurrentWindow());
-            pMode->AddKeyPress(*ev->text().toUtf8().data(), ModifierKey::Ctrl);
+            if (ev->key() >= Qt::Key_A && ev->key() <= Qt::Key_Z)
+            {
+                pMode->AddKeyPress((ev->key() - Qt::Key_A) + 'a', ModifierKey::Ctrl);
+            }
         }
         update();
         return;
     }
 
-    m_spEditor->GetCurrentMode()->SetCurrentWindow(m_spDisplay->GetCurrentWindow());
+    m_spEditor->GetCurrentMode()->SetCurrentWindow(m_spDisplay->GetCurrentTabWindow()->GetCurrentWindow());
 
     if (ev->key() == Qt::Key_Tab)
     {
