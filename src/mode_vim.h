@@ -72,8 +72,7 @@ struct CommandContext
     ZepBuffer& buffer;
 
     // Cursor State
-    NVec2i cursor;
-    BufferLocation bufferCursor{ -1 };
+    BufferLocation bufferLocation{ -1 };
     BufferLocation cursorAfter{ -1 };
 
     // Register state
@@ -100,13 +99,13 @@ public:
 
     virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
     virtual void Begin() override;
-    virtual void SetCurrentWindow(ZepWindow* pTabWindow) override;
 
     virtual const char* Name() const override { return "Vim"; }
 
     const std::string& GetLastCommand() const { return m_lastCommand; }
     const int GetLastCount() const { return m_lastCount; }
 
+    virtual void PreDisplay() override;
 private:
     void HandleInsert(uint32_t key);
     bool GetBlockOpRange(const std::string& op, EditorMode mode, BufferLocation& beginRange, BufferLocation& endRange, BufferLocation& cursorAfter) const;

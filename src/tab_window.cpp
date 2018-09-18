@@ -1,4 +1,5 @@
 #include "buffer.h"
+#include "editor.h"
 #include "display.h"
 #include "tab_window.h"
 #include "window.h"
@@ -7,69 +8,48 @@
 namespace Zep
 {
 
-ZepTabWindow::ZepTabWindow(ZepDisplay& display)
-    : ZepComponent(display.GetEditor())
-    , m_display(display)
+ZepTabWindow::ZepTabWindow(ZepEditor& editor)
+    : ZepComponent(editor)
+    , m_editor(editor)
 {
 }
 
 ZepTabWindow::~ZepTabWindow()
 {
+    std::for_each(m_windows.begin(), m_windows.end(), [](ZepWindow* pWindow) { delete pWindow; });
 }
 
-void ZepTabWindow::SetCurrentBuffer(ZepBuffer* pBuffer)
+ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer)
 {
-    AddBuffer(pBuffer);
-    m_pCurrentBuffer = pBuffer;
-}
+    auto pWin = new ZepWindow(*this, pBuffer);
+    m_windows.push_back(pWin);
 
-ZepBuffer* ZepTabWindow::GetCurrentBuffer() const
-{
-    return m_pCurrentBuffer;
-}
-
-ZepWindow* ZepTabWindow::GetCurrentWindow() const
-{
-    auto itrFound = m_buffers.find(m_pCurrentBuffer);
-    if (itrFound == m_buffers.end())
+    if (m_pActiveWindow == nullptr)
     {
-        return nullptr;
+        m_pActiveWindow = pWin;
     }
-    return itrFound->second.get();
+    return pWin;
 }
 
-void ZepTabWindow::AddBuffer(ZepBuffer* pBuffer)
+void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
 {
-    auto itrFound = m_buffers.find(pBuffer);
-    if (itrFound == m_buffers.end())
-    {
-        m_buffers[pBuffer] = std::make_shared<ZepWindow>(*this, *pBuffer, m_display);
-    }
-    if (m_pCurrentBuffer == nullptr)
-    {
-        m_pCurrentBuffer = pBuffer;
-    }
-}
+    assert(pWindow);
+    if (!pWindow)
+        return;
 
-void ZepTabWindow::RemoveBuffer(ZepBuffer* pBuffer)
-{
-    m_buffers.erase(pBuffer);
-    if (m_pCurrentBuffer == pBuffer)
+    auto itrFound = std::find(m_windows.begin(), m_windows.end(), pWindow);
+    if (itrFound == m_windows.end())
     {
-        if (!m_buffers.empty())
-        {
-            SetCurrentBuffer(m_buffers.begin()->first);
-        }
-        else
-        {
-            SetCurrentBuffer(nullptr);
-        }
+        assert(!"Not found?");
+        return;
     }
-}
 
-const ZepTabWindow::tBuffers& ZepTabWindow::GetBuffers() const
-{
-    return m_buffers;
+    delete pWindow;
+    m_windows.erase(itrFound);
+    if (m_pActiveWindow == pWindow)
+    {
+        m_pActiveWindow = nullptr;
+    }
 }
 
 void ZepTabWindow::Notify(std::shared_ptr<ZepMessage> payload)
@@ -77,32 +57,24 @@ void ZepTabWindow::Notify(std::shared_ptr<ZepMessage> payload)
     // Nothing yet.
 }
 
-void ZepTabWindow::PreDisplay(const DisplayRegion& region)
+void ZepTabWindow::PreDisplay(ZepDisplay& display, const DisplayRegion& region)
 {
     m_windowRegion = region;
-
     m_buffersRegion = m_windowRegion;
 
-    /*
-    for (auto& buffer : m_buffers)
+    for(auto& pWin : m_windows)
     {
-        buffer.second->PreDisplay(m_buffersRegion);
-    }*/
-
-    // Just one buffer inside the window for now!
-    if (m_pCurrentBuffer)
-    {
-        m_buffers[m_pCurrentBuffer]->PreDisplay(m_buffersRegion);
+        pWin->PreDisplay(display, m_buffersRegion);
     }
 }
 
-void ZepTabWindow::Display()
+void ZepTabWindow::Display(ZepDisplay& display)
 {
-    PreDisplay(m_windowRegion);
+    PreDisplay(display, m_windowRegion);
     
-    if (m_pCurrentBuffer)
+    for(auto& pWin : m_windows)
     {
-        m_buffers[m_pCurrentBuffer]->Display();
+        pWin->Display(display);
     }
 }
 

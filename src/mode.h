@@ -63,7 +63,6 @@ public:
     virtual const char* Name() const = 0;
     virtual void Notify(std::shared_ptr<ZepMessage> message) override {}
     virtual void AddCommand(std::shared_ptr<ZepCommand> spCmd);
-    virtual void SetCurrentWindow(ZepWindow* pTabWindow);
     virtual void UpdateVisualSelection();
 
     // Called when we begin editing in this mode
@@ -72,12 +71,12 @@ public:
     virtual void Undo();
     virtual void Redo();
 
-    virtual ZepWindow* GetCurrentWindow() { return m_pCurrentWindow; }
+    virtual ZepWindow* GetCurrentWindow() const;
+    virtual void PreDisplay() {};
 
 protected:
     std::stack<std::shared_ptr<ZepCommand>> m_undoStack;
     std::stack<std::shared_ptr<ZepCommand>> m_redoStack;
-    ZepWindow* m_pCurrentWindow = nullptr;
     EditorMode m_currentMode;
     bool m_lineWise = false;
     BufferLocation m_insertBegin;

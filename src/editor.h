@@ -37,6 +37,10 @@ class ZepMode_Standard;
 class ZepEditor;
 class ZepDisplay;
 class ZepSyntax;
+class ZepTabWindow;
+class ZepWindow;
+
+class Timer;
 
 // Helper for 2D operations
 template<class T>
@@ -166,6 +170,25 @@ public:
     void Notify(std::shared_ptr<ZepMessage> message);
     uint32_t GetFlags() const { return m_flags; }
 
+    // Tab windows
+    using tTabWindows = std::vector<ZepTabWindow*>;
+    void SetCurrentTabWindow(ZepTabWindow* pTabWindow);
+    ZepTabWindow* GetActiveTabWindow() const;
+    ZepTabWindow* AddTabWindow();
+    void RemoveTabWindow(ZepTabWindow* pTabWindow);
+    const tTabWindows& GetTabWindows() const;
+
+    void ResetCursorTimer();
+    bool GetCursorBlinkState() const;
+
+    void RequestRefresh();
+    bool RefreshRequired() const;
+
+    void SetCommandText(const std::string& strCommand);
+
+    const std::vector<std::string>& GetCommandLines() { return m_commandLines; }
+
+    void UpdateWindowState();
 private:
     std::set<IZepClient*> m_notifyClients;
     mutable tRegisters m_registers;
@@ -175,13 +198,25 @@ private:
     std::map<std::string, tSyntaxFactory> m_mapSyntax;
     std::map<std::string, std::shared_ptr<ZepMode>> m_mapModes;
 
+    // Blinking cursor
+    std::shared_ptr<Timer> m_spCursorTimer;
+
     // Active mode
     ZepMode* m_pCurrentMode = nullptr;
+
+    // Tab windows
+    tTabWindows m_tabWindows;
+    ZepTabWindow* m_pActiveTabWindow = nullptr;
 
     // List of buffers that the editor is managing
     // May or may not be visible
     tBuffers m_buffers;
     uint32_t m_flags = 0;
+    
+    mutable bool m_bPendingRefresh = true;
+    mutable bool m_lastCursorBlink = false;
+
+    std::vector<std::string> m_commandLines;        // Command information, shown under the buffer
 };
 
 } // Zep

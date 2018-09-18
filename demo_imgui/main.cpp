@@ -167,7 +167,7 @@ int main(int, char**)
         {
             // Save battery by skipping display if not required.
             // This will check for cursor flash, for example, to keep that updated.
-            if (!spEditor->GetDisplay()->RefreshRequired())
+            if (!spEditor->RefreshRequired())
             {
                 continue;
             }
@@ -182,7 +182,7 @@ int main(int, char**)
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
 
-        ImGui::SetNextWindowSize(ImVec2(800, 600));
+        ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
 
         ImGui::Begin("Zep");
         ImGui::Text("CTRL+1 for Normal editing, CTRL+2 for VIM mode");

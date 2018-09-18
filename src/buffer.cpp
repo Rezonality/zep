@@ -504,7 +504,7 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
 // Need to update:
 // - m_lineEnds
 // - m_processedLine
-// - m_buffer (i.e remove chars)
+// - m_pBuffer (i.e remove chars)
 // We also need to inform clients before we change the buffer, and after we delete text with the range we removed.
 // This helps them to fix up their data structures without rebuilding.
 // Assumption: The buffer always is at least a single line/character of '0', representing file end.

@@ -31,19 +31,19 @@ public:
         spDisplay = std::make_shared<ZepDisplayNull>(*spEditor);
         spDisplay->SetDisplaySize(NVec2f(0.0f, 0.0f), NVec2f(1024.0f, 1024.0f));
 
-        pTabWindow = spDisplay->GetCurrentTabWindow();
-        pTabWindow->AddBuffer(pBuffer);
+        // Since the tests don't display anything, ensure that the window state is up to date  before running them; 
+        // this is usually done at display time, but some tests rely on window state/cursor limits being the same as if they 
+        // were displaying the data
+        spDisplay->Display();
 
-        pWindow = pTabWindow->GetCurrentWindow();
-        spMode->SetCurrentWindow(pWindow);
-        
-        pWindow->SetCursor(NVec2i(0, 0));
+        pTabWindow = spEditor->GetActiveTabWindow();
+        pWindow = spEditor->GetActiveTabWindow()->GetActiveWindow();
+
+        pWindow->SetBufferLocation(0);
     }
 
     ~VimTest()
     {
-        pTabWindow->RemoveBuffer(pBuffer);
-        spDisplay->RemoveTabWindow(pTabWindow);
     }
 
 public:
@@ -60,14 +60,14 @@ TEST_F(VimTest, CheckDisplaySucceeds)
     pBuffer->SetText("Some text to display\nThis is a test.");
     spDisplay->SetDisplaySize(NVec2f(0.0f, 0.0f), NVec2f(50.0f, 1024.0f));
     ASSERT_NO_FATAL_FAILURE(spDisplay->Display());
-    ASSERT_FALSE(pTabWindow->GetBuffers().empty());
+    ASSERT_FALSE(pTabWindow->GetWindows().empty());
 }
 
 TEST_F(VimTest, CheckDisplayWrap)
 {
     pBuffer->SetText("Some text to display\nThis is a test.");
     ASSERT_NO_FATAL_FAILURE(spDisplay->Display());
-    ASSERT_FALSE(pTabWindow->GetBuffers().empty());
+    ASSERT_FALSE(pTabWindow->GetWindows().empty());
 }
 // Given a sample text, a keystroke list and a target text, check the test returns the right thing
 #define COMMAND_TEST(name, source, command, target) \
@@ -87,8 +87,11 @@ TEST_F(VimTest, name)                              \
     ASSERT_STREQ(pBuffer->GetText().string().c_str(), target);     \
 };
 
+#define SET_TEXT(txt) { pBuffer->SetText(txt); spDisplay->Display(); }
+
 TEST_F(VimTest, UndoRedo)
 {
+    // The issue here is that setting the text _should_ update the buffer!
     pBuffer->SetText("Hello");
     spMode->AddCommandText("3x");
     spMode->Undo();
@@ -154,7 +157,7 @@ TEST_F(VimTest, BACKSPACE)
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
     ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hello");
-    ASSERT_EQ(pWindow->GetCursor().x, 0);
+    ASSERT_EQ(pWindow->GetBufferLocation(), 0);
 
     spMode->AddCommandText("lli");
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
@@ -303,8 +306,8 @@ TEST_F(VimTest, name)                               \
 {                                                   \
     pBuffer->SetText(source);                      \
     spMode->AddCommandText(command);                \
-    ASSERT_EQ(pWindow->GetCursor().x, xcoord);     \
-    ASSERT_EQ(pWindow->GetCursor().y, ycoord);     \
+    ASSERT_EQ(pWindow->BufferToDisplay().x, xcoord);     \
+    ASSERT_EQ(pWindow->BufferToDisplay().y, ycoord);     \
 };
 
 // Motions

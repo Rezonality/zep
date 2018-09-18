@@ -6,6 +6,7 @@ namespace Zep
 {
 
 class ZepDisplay_ImGui;
+class ZepTabWindow;
 class ZepEditor_ImGui : public ZepEditor
 {
 public:

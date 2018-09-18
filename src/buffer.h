@@ -46,32 +46,6 @@ const long InvalidOffset = -1;
 
 extern const char* Msg_Buffer;
 
-// Notification payload
-enum class BufferMessageType
-{
-    PreBufferChange = 0,
-    TextChanged,
-    TextDeleted,
-    TextAdded,
-};
-struct BufferMessage : public ZepMessage
-{
-    BufferMessage(ZepBuffer* pBuff, BufferMessageType messageType, const BufferLocation& startLoc, const BufferLocation& endLoc, const BufferLocation& cursor = BufferLocation{ -1 })
-        : ZepMessage(Msg_Buffer),
-        pBuffer(pBuff),
-        type(messageType),
-        startLocation(startLoc),
-        endLocation(endLoc),
-        cursorAfter(cursor)
-    {
-    }
-
-    ZepBuffer* pBuffer;
-    BufferMessageType type;
-    BufferLocation startLocation;
-    BufferLocation endLocation;
-    BufferLocation cursorAfter;
-};
 
 struct BufferBlock
 {
@@ -137,6 +111,9 @@ public:
 
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
+    BufferLocation GetBufferCursor() { return m_cursorLocation; }
+    void SetBufferCursor(BufferLocation loc) { m_cursorLocation = loc; }
+
 private:
     // Internal
     GapBuffer<utf8>::const_iterator SearchWord(uint32_t searchType, GapBuffer<utf8>::const_iterator itrBegin, GapBuffer<utf8>::const_iterator itrEnd, SearchDirection dir) const;
@@ -154,6 +131,37 @@ private:
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::string m_strName;
     bool m_bStrippedCR;
+    BufferLocation m_cursorLocation = InvalidOffset;            // Where the cursor should be in the buffer
 };
 
+// Notification payload
+enum class BufferMessageType
+{
+    PreBufferChange = 0,
+    TextChanged,
+    TextDeleted,
+    TextAdded,
+};
+struct BufferMessage : public ZepMessage
+{
+    BufferMessage(ZepBuffer* pBuff, BufferMessageType messageType, const BufferLocation& startLoc, const BufferLocation& endLoc, const BufferLocation& cursor = BufferLocation{ -1 })
+        : ZepMessage(Msg_Buffer),
+        pBuffer(pBuff),
+        type(messageType),
+        startLocation(startLoc),
+        endLocation(endLoc),
+        cursorAfter(cursor)
+    {
+        if (pBuff)
+        {
+            pBuff->SetBufferCursor(cursor);
+        }
+    }
+
+    ZepBuffer* pBuffer;
+    BufferMessageType type;
+    BufferLocation startLocation;
+    BufferLocation endLocation;
+    BufferLocation cursorAfter;
+};
 } // Zep

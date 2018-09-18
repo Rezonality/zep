@@ -5,6 +5,9 @@
 #include "mode_standard.h"
 #include "syntax_glsl.h"
 #include "syntax.h"
+#include "tab_window.h"
+#include "utils/timer.h"
+#include "utils/stringutils.h"
 
 namespace Zep
 {
@@ -27,13 +30,12 @@ ZepComponent::~ZepComponent()
 
 ZepEditor::ZepEditor(uint32_t flags)
     : m_flags(flags)
+    , m_spCursorTimer(new Timer())
 {
     RegisterMode(VimMode, std::make_shared<ZepMode_Vim>(*this));
     RegisterMode(StandardMode, std::make_shared<ZepMode_Standard>(*this));
     SetMode(VimMode);
 
-    AddBuffer("Scratch");
-    
     RegisterSyntaxFactory("vert", tSyntaxFactory([](ZepBuffer* pBuffer) 
     {
         return std::static_pointer_cast<ZepSyntax>(std::make_shared<ZepSyntaxGlsl>(*pBuffer)); 
@@ -43,6 +45,105 @@ ZepEditor::ZepEditor(uint32_t flags)
 ZepEditor::~ZepEditor()
 {
 
+}
+
+// At startup it's possible to be in a state where parts of the window framework are not yet in place.
+// That's OK: the editor will just be blank.  But this isn't a 'normal' state, and the user shouldn't be able to close the last window, etc.
+// without exiting the app - just like in Vim.
+void ZepEditor::UpdateWindowState()
+{
+    // If there is no active tab window, and we have one, set it.
+    if (!m_pActiveTabWindow)
+    {
+        if (!m_tabWindows.empty())
+        {
+            m_pActiveTabWindow = m_tabWindows.back();
+        }
+        else
+        {
+            m_pActiveTabWindow = AddTabWindow();
+        }
+    }
+
+    // If the tab window doesn't contain an active window, and there is one, set it
+    if (m_pActiveTabWindow && !m_pActiveTabWindow->GetActiveWindow())
+    {
+        if (!m_pActiveTabWindow->GetWindows().empty())
+        {
+            m_pActiveTabWindow->SetActiveWindow(m_pActiveTabWindow->GetWindows().back());
+        }
+        else
+        {
+            if (!m_buffers.empty())
+            {
+                m_pActiveTabWindow->AddWindow(m_buffers.back().get());
+            }
+            else
+            {
+                m_pActiveTabWindow->AddWindow(AddBuffer("[Empty]"));
+            }
+        }
+    }
+
+    if (m_pCurrentMode)
+    {
+        m_pCurrentMode->PreDisplay();
+    }
+}
+
+void ZepEditor::ResetCursorTimer()
+{ 
+    m_spCursorTimer->Restart(); 
+}
+
+void ZepEditor::SetCurrentTabWindow(ZepTabWindow* pTabWindow)
+{
+    m_pActiveTabWindow = pTabWindow;
+}
+
+ZepTabWindow* ZepEditor::GetActiveTabWindow() const
+{
+    return m_pActiveTabWindow;
+}
+
+ZepTabWindow* ZepEditor::AddTabWindow()
+{
+    auto pTabWindow = new ZepTabWindow(*this);
+    m_tabWindows.push_back(pTabWindow);
+
+    if (m_pActiveTabWindow == nullptr)
+    {
+        m_pActiveTabWindow = pTabWindow;
+    }
+
+    return pTabWindow;
+}
+
+void ZepEditor::RemoveTabWindow(ZepTabWindow* pTabWindow)
+{
+    assert(pTabWindow);
+    if (!pTabWindow)
+        return;
+
+    auto itrFound = std::find(m_tabWindows.begin(), m_tabWindows.end(), pTabWindow);
+    if (itrFound == m_tabWindows.end())
+    {
+        assert(!"Not found?");
+        return;
+    }
+
+
+    delete pTabWindow;
+    m_tabWindows.erase(itrFound);
+    if (m_pActiveTabWindow == pTabWindow)
+    {
+        m_pActiveTabWindow = nullptr;
+    }
+}
+
+const ZepEditor::tTabWindows& ZepEditor::GetTabWindows() const
+{
+    return m_tabWindows;
 }
 
 void ZepEditor::RegisterMode(const std::string& name, std::shared_ptr<ZepMode> spMode)
@@ -78,6 +179,9 @@ void ZepEditor::RegisterSyntaxFactory(const std::string& extension, tSyntaxFacto
 // Inform clients of an event in the buffer
 bool ZepEditor::Broadcast(std::shared_ptr<ZepMessage> message)
 {
+    // Better place for this?
+    ResetCursorTimer();
+
     Notify(message);
     if (message->handled)
         return true;
@@ -110,6 +214,10 @@ ZepBuffer* ZepEditor::AddBuffer(const std::string& str)
             pBuffer->SetSyntax(itrFactory->second(pBuffer.get()));
         }
     }
+
+    // Adding a buffer immediately updates the window state, in case this is the first one
+    UpdateWindowState();
+
     return pBuffer.get();
 }
 
@@ -157,6 +265,38 @@ const tRegisters& ZepEditor::GetRegisters() const
 
 void ZepEditor::Notify(std::shared_ptr<ZepMessage> message)
 {
+}
+
+void ZepEditor::SetCommandText(const std::string& strCommand)
+{
+    m_commandLines = StringUtils::SplitLines(strCommand);
+    if (m_commandLines.empty())
+    {
+        m_commandLines.push_back("");
+    }
+}
+
+void ZepEditor::RequestRefresh()
+{
+
+}
+
+bool ZepEditor::RefreshRequired() const
+{
+    if (m_bPendingRefresh ||
+        m_lastCursorBlink != GetCursorBlinkState())
+    {
+        m_bPendingRefresh = false;
+        return true;
+    }
+
+    return false;
+}
+
+bool ZepEditor::GetCursorBlinkState() const
+{
+    m_lastCursorBlink = (int(m_spCursorTimer->GetDelta() * 1.75f) & 1) ? true : false;
+    return m_lastCursorBlink;
 }
 
 } // namespace Zep

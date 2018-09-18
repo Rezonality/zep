@@ -54,16 +54,17 @@ enum
 class ZepSyntax;
 
 // Display state for a single pane of text.
+// Window shows a buffer, and is parented by a TabWindow 
+// The buffer can change, but the window must always have an active buffer
 // Editor operations such as select and change are local to a displayed pane
 class ZepWindow : public ZepComponent
 {
 public:
-    ZepWindow(ZepTabWindow& window, ZepBuffer& buffer, ZepDisplay& display);
+    ZepWindow(ZepTabWindow& window, ZepBuffer* buffer);
     virtual ~ZepWindow();
 
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
-    void PreDisplay(const DisplayRegion& region);
 
     void SetCursorMode(CursorMode mode);
     void SetSyntax(std::shared_ptr<ZepSyntax> syntax) { m_spSyntax = syntax; }
@@ -79,6 +80,7 @@ public:
 
     // Convert buffer to cursor offset
     NVec2i BufferToDisplay(const BufferLocation& location) const;
+    NVec2i BufferToDisplay() const;
     
     void ClampCursorToDisplay();
     long ClampVisibleLine(long line) const;
@@ -87,12 +89,13 @@ public:
     void SetSelectionRange(const NVec2i& start, const NVec2i& end);
     void SetStatusText(const std::string& strStatus);
 
-    const NVec2i& GetCursor() const { return cursorCL; }
-    void SetCursor(const NVec2i& cursor) { cursorCL = cursor;}
+    BufferLocation GetBufferLocation() const { return m_bufferLocation; }
+    void SetBufferLocation(BufferLocation loc) { m_bufferLocation = loc;}
 
-    ZepDisplay& GetDisplay() const { return m_display; }
-    ZepBuffer& GetBuffer() const { return m_buffer; }
+    ZepBuffer& GetBuffer() const { return *m_pBuffer; }
     ZepTabWindow& GetTabWindow() const { return m_window; }
+
+    void SetBuffer(ZepBuffer* pBuffer);
 
     struct WindowPass
     {
@@ -103,8 +106,10 @@ public:
             Max 
         };
     };
-    void Display();
-    bool DisplayLine(const LineInfo& lineInfo, const DisplayRegion& region, int displayPass);
+    
+    void PreDisplay(ZepDisplay& display, const DisplayRegion& region);
+    void Display(ZepDisplay& display);
+    bool DisplayLine(ZepDisplay& display, const LineInfo& lineInfo, const DisplayRegion& region, int displayPass);
 
     void SetWindowFlags(uint32_t windowFlags) { m_windowFlags = windowFlags; }
     uint32_t GetWindowFlags() const { return m_windowFlags;  }
@@ -114,7 +119,6 @@ public:
 public:
     // TODO: Fix this; used to be a struct, now members
     // Should be private!
-    ZepDisplay& m_display;                     // Display that owns this window
     DisplayRegion m_bufferRegion;                 // region of the display we are showing on.
     DisplayRegion m_textRegion;                   // region of the display for text.
     DisplayRegion m_statusRegion;                 // status text / airline
@@ -129,7 +133,9 @@ public:
     DisplayMode displayMode = DisplayMode::Vim;   // Vim editing mode
     long lastCursorC = 0;                         // The last cursor column
 
-    NVec2i bufferCL;                              // Offset of the displayed area into the text
+    long bufferLineOffset = 0;                    // Offset of the displayed area into the text
+    NVec2i cursorCL;                              // Position of Cursor in line/column (display coords)
+    BufferLocation m_bufferLocation{ 0 };            // Location in buffer coordinates
 
     Region selection;                             // Selection area
 
@@ -141,7 +147,7 @@ public:
 
     std::shared_ptr<ZepSyntax> m_spSyntax;
 
-    ZepBuffer& m_buffer;
+    ZepBuffer* m_pBuffer;
     ZepTabWindow& m_window;
 
     uint32_t m_windowFlags = WindowFlags::None;
@@ -149,7 +155,6 @@ public:
     long m_maxDisplayLines = 0;
 
 private:
-    NVec2i cursorCL;                              // Position of Cursor in line/column (display coords)
 };
 
 } // Zep
