@@ -65,14 +65,14 @@ struct CommandContext
     std::string commandText;
     std::string commandWithoutCount;
     std::string command;
-    const LineInfo* pLineInfo = nullptr;
+    //const LineInfo* pLineInfo = nullptr;
     long displayLineCount = 0;
     BufferLocation beginRange{ -1 };
     BufferLocation endRange{ -1 };
     ZepBuffer& buffer;
 
     // Cursor State
-    BufferLocation bufferLocation{ -1 };
+    BufferLocation bufferCursor{ -1 };
     BufferLocation cursorAfter{ -1 };
 
     // Register state

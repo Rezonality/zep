@@ -73,9 +73,9 @@ public:
     BufferLocation DisplayToBuffer() const;
     BufferLocation DisplayToBuffer(const NVec2i& display) const;
 
-    void MoveCursorTo(const BufferLocation& location, LineLocation clampLocation = LineLocation::LineLastNonCR);
-
+    void MoveCursor(BufferLocation location);
     void MoveCursor(LineLocation location);
+
     void MoveCursor(const NVec2i& distance, LineLocation clampLocation = LineLocation::LineLastNonCR);
 
     // Convert buffer to cursor offset

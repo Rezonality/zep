@@ -80,7 +80,7 @@ public:
         SearchDirection dir = SearchDirection::Forward,
         BufferLocation end = BufferLocation{ -1l }) const;
 
-    BufferLocation GetLinePos(long line, LineLocation location) const;
+    BufferLocation GetLinePos(BufferLocation bufferLocation, LineLocation lineLocation) const;
     bool GetLineOffsets(const long line, long& charStart, long& charEnd) const;
     BufferLocation Clamp(BufferLocation location) const;
 

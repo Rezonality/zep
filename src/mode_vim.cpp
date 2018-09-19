@@ -156,7 +156,7 @@ CommandContext::CommandContext(const std::string& commandIn,
     : commandText(commandIn)
     , owner(md)
     , buffer(md.GetCurrentWindow()->GetBuffer())
-    , bufferLocation(md.GetCurrentWindow()->GetBufferLocation())
+    , bufferCursor(md.GetCurrentWindow()->GetBufferLocation())
     , lastKey(lastK)
     , modifierKeys(modifierK)
     , mode(editorMode)
@@ -165,11 +165,12 @@ CommandContext::CommandContext(const std::string& commandIn,
     registers.push('"');
     pRegister = &tempReg;
 
-    long displayLineCount = long(owner.GetCurrentWindow()->visibleLines.size());
+    /*long displayLineCount = long(owner.GetCurrentWindow()->visibleLines.size());
     if (displayLineCount > cursor.y)
     {
         pLineInfo = &owner.GetCurrentWindow()->visibleLines[cursor.y];
     }
+    */
 
     GetCommandAndCount();
     GetCommandRegisters();
@@ -418,11 +419,14 @@ bool ZepMode_Vim::GetBlockOpRange(const std::string& op, EditorMode mode, Buffer
 {
     auto& buffer = GetCurrentWindow()->GetBuffer();
     const auto bufferCursor = GetCurrentWindow()->GetBufferLocation();
+
+    /*
     const LineInfo* pLineInfo = nullptr;
     if (GetCurrentWindow()->visibleLines.size() > cursor.y)
     {
         pLineInfo = &GetCurrentWindow()->visibleLines[cursor.y];
     }
+    */
 
     beginRange = BufferLocation{ -1 };
     if (op == "visual")
@@ -437,21 +441,15 @@ bool ZepMode_Vim::GetBlockOpRange(const std::string& op, EditorMode mode, Buffer
     else if (op == "line")
     {
         // Whole line
-        if (pLineInfo)
-        {
-            beginRange = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineBegin);
-            endRange = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd);
-            cursorAfter = beginRange;
-        }
+        beginRange = buffer.GetLinePos(bufferCursor, LineLocation::LineBegin);
+        endRange = buffer.GetLinePos(bufferCursor, LineLocation::LineEnd);
+        cursorAfter = beginRange;
     }
     else if (op == "$")
     {
-        if (pLineInfo)
-        {
-            beginRange = bufferCursor;
-            endRange = buffer.GetLinePos(pLineInfo->lineNumber, LineLocation::LineCRBegin);
-            cursorAfter = beginRange;
-        }
+        beginRange = bufferCursor;
+        endRange = buffer.GetLinePos(bufferCursor, LineLocation::LineCRBegin);
+        cursorAfter = beginRange;
     }
     else if (op == "w")
     {
@@ -530,12 +528,12 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     }
     else if (context.command == "0")
     {
-        GetCurrentWindow()->MoveCursorTo(context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineBegin));
+        GetCurrentWindow()->MoveCursor(LineLocation::LineBegin);
         return true;
     }
     else if (context.command == "^")
     {
-        GetCurrentWindow()->MoveCursorTo(context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineFirstGraphChar));
+        GetCurrentWindow()->MoveCursor(LineLocation::LineFirstGraphChar);
         return true;
     }
     else if (context.command == "j" || context.command == "+" || context.lastKey == ExtKeys::DOWN)
@@ -683,15 +681,15 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         }
         else if (context.command == "gg")
         {
-            GetCurrentWindow()->MoveCursorTo(BufferLocation{ 0 });
+            GetCurrentWindow()->MoveCursor(BufferLocation{ 0 });
             return true;
         }
     }
     else if (context.command == "J")
     {
         // Delete the CR (and thus join lines)
-        context.beginRange = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineCRBegin);
-        context.endRange = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineEnd);
+        context.beginRange = context.buffer.GetLinePos(context.bufferLocation, LineLocation::LineCRBegin);
+        context.endRange = context.buffer.GetLinePos(bufferCursor, LineLocation::LineEnd);
         context.cursorAfter = context.bufferLocation;
         context.op = CommandOperation::Delete;
     }
@@ -705,8 +703,8 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         {
             if (context.command == "V")
             {
-                m_visualBegin = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineBegin);
-                m_visualEnd = context.buffer.GetLinePos(context.pLineInfo->lineNumber, LineLocation::LineEnd) - 1;
+                m_visualBegin = context.buffer.GetLinePos(bufferCursor, LineLocation::LineBegin);
+                m_visualEnd = context.buffer.GetLinePos(bufferCursor, LineLocation::LineEnd) - 1;
             }
             else
             {

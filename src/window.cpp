@@ -204,12 +204,9 @@ void ZepWindow::MoveCursor(LineLocation location)
     }
 }
 
-// NOTE: This currently moves clamped _inside_ the display region.
-// TODO: Make this move within the rest of the whole buffer and ensure it doesn't break anything
-void ZepWindow::MoveCursorTo(const BufferLocation& location, LineLocation clampLocation)
+void ZepWindow::MoveCursor(BufferLocation location)
 {
-    m_bufferLocation = location;
-    MoveCursor(clampLocation);
+    m_bufferLocation = m_pBuffer->Clamp(location);
 }
 
 // NOTE: In contrast to above, this will move any distance within the whole buffer, and scroll it appropriately
