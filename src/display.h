@@ -22,8 +22,9 @@ struct DisplayRegion
 // A region inside the text for selections
 struct Region
 {
-    NVec2i startCL;     // Display Line/Column
-    NVec2i endCL;
+    // For vertical select, we will have a list of spans...
+    BufferLocation start;  
+    BufferLocation end;
     bool visible;
     bool vertical;      // Not yet supported
 };

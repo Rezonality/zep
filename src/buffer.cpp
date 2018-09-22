@@ -222,18 +222,25 @@ BufferBlock ZepBuffer::GetBlock(uint32_t searchType, BufferLocation start, Searc
     ret.secondBlock = LocationFromOffset(long(itrCurrent - m_gapBuffer.begin()));
 
     // Get to the end of the second non block
-    pCheck = GetBlockChecker(*itrCurrent);
-    while (itrCurrent != itrEnd && (pCheck(*itrCurrent)))
+    if (itrCurrent != itrEnd)
     {
-        itrCurrent += inc;
+        pCheck = GetBlockChecker(*itrCurrent);
+        while (itrCurrent != itrEnd && (pCheck(*itrCurrent)))
+        {
+            itrCurrent += inc;
+        }
+
+        ret.secondNonBlock = LocationFromOffset(long(itrCurrent - m_gapBuffer.begin()));
+
+        // If we couldn't walk further back, record that the offset was beyond!
+        if (itrCurrent < m_gapBuffer.end() && pCheck(*itrCurrent))
+        {
+            ret.secondNonBlock += inc;
+        }
     }
-
-    ret.secondNonBlock = LocationFromOffset(long(itrCurrent - m_gapBuffer.begin()));
-
-    // If we couldn't walk further back, record that the offset was beyond!
-    if (itrCurrent < m_gapBuffer.end() && pCheck(*itrCurrent))
+    else
     {
-        ret.secondNonBlock += inc;
+        ret.secondNonBlock = ret.secondBlock;
     }
 
     return ret;
@@ -340,9 +347,9 @@ void ZepBuffer::SetText(const std::string& text)
 
 BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation lineLocation) const
 {
-    auto ret = Clamp(bufferLocation);
+    bufferLocation = Clamp(bufferLocation);
     if (m_gapBuffer.empty())
-        return ret;
+        return bufferLocation;
 
     switch (lineLocation)
     {
@@ -357,26 +364,39 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
         {
             bufferLocation--;
         }
-        return Clamp(bufferLocation + 1);
+
+        if (m_gapBuffer[bufferLocation] == '\n')
+        {
+            bufferLocation++;
+        }
+
+        return Clamp(bufferLocation);
     }
     break;
 
     // The point just after the line end
-    case LineLocation::LineEnd:
+    case LineLocation::BeyondLineEnd:
     {
-        while (bufferLocation < m_gapBuffer.size()
-            && m_gapBuffer[bufferLocation] != '\n')
+        while (bufferLocation < m_gapBuffer.size() &&
+            m_gapBuffer[bufferLocation] != '\n' &&
+            m_gapBuffer[bufferLocation] != 0)
         {
             bufferLocation++;
         }
-        return Clamp(bufferLocation + 1);
+        
+        if (m_gapBuffer[bufferLocation] == '\n')
+        {
+            bufferLocation++;
+        }
+        return Clamp(bufferLocation);
     }
     break;
 
     case LineLocation::LineCRBegin:
     {
         while (bufferLocation < m_gapBuffer.size()
-            && m_gapBuffer[bufferLocation] != '\n')
+            && m_gapBuffer[bufferLocation] != '\n'
+            && m_gapBuffer[bufferLocation] != 0)
         {
             bufferLocation++;
         }
@@ -392,7 +412,10 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
         {
             bufferLocation--;
         }
-        bufferLocation++;
+        if (bufferLocation != 0)
+        {
+            bufferLocation++;
+        }
         if (bufferLocation >= m_gapBuffer.size())
         {
             return Clamp(bufferLocation);
@@ -410,7 +433,8 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
     case LineLocation::LineLastNonCR:
     {
         while (bufferLocation < m_gapBuffer.size()
-            && m_gapBuffer[bufferLocation] != '\n')
+            && m_gapBuffer[bufferLocation] != '\n' 
+            && m_gapBuffer[bufferLocation] != 0)
         {
             bufferLocation++;
         }
@@ -422,7 +446,8 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
     case LineLocation::LineLastGraphChar:
     {
         while (bufferLocation < m_gapBuffer.size()
-            && m_gapBuffer[bufferLocation] != '\n')
+            && m_gapBuffer[bufferLocation] != '\n'
+            && m_gapBuffer[bufferLocation] != 0)
         {
             bufferLocation++;
         }
@@ -438,7 +463,7 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
     break;
     }
 
-    return ret;
+    return bufferLocation;
 }
 
 bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str, const BufferLocation& cursorAfter)

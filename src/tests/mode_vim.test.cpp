@@ -39,7 +39,7 @@ public:
         pTabWindow = spEditor->GetActiveTabWindow();
         pWindow = spEditor->GetActiveTabWindow()->GetActiveWindow();
 
-        pWindow->SetBufferLocation(0);
+        pWindow->MoveCursor(0);
     }
 
     ~VimTest()
@@ -157,7 +157,7 @@ TEST_F(VimTest, BACKSPACE)
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
     ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hello");
-    ASSERT_EQ(pWindow->GetBufferLocation(), 0);
+    ASSERT_EQ(pWindow->GetBufferCursor(), 0);
 
     spMode->AddCommandText("lli");
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
@@ -325,7 +325,10 @@ CURSOR_TEST(motion_jdown_limit, "one\ntwo", "jjjjjjjjj", 0, 1);
 CURSOR_TEST(motion_jklh_find_center, "one\ntwo\nthree", "jjlk", 1, 1);
 
 CURSOR_TEST(motion_goto_endline, "one two", "$", 6, 0);
-CURSOR_TEST(motion_goto_enddoc, "one\ntwo", "G", 2, 1);
+CURSOR_TEST(motion_G_goto_enddoc, "one\ntwo", "G", 0, 1);
+
+CURSOR_TEST(motion_3G, "one\ntwo\nthree\nfour\n", "3G", 0, 3);
+
 CURSOR_TEST(motion_goto_begindoc, "one\ntwo", "lljgg", 0, 0);
 CURSOR_TEST(motion_goto_beginline, "one two", "lllll0", 0, 0);
 CURSOR_TEST(motion_goto_firstlinechar, "   one two", "^", 3, 0);
@@ -348,8 +351,6 @@ CURSOR_TEST(motion_E, "one! two three", "eelE", 7, 0);
 CURSOR_TEST(motion_ge, "one! two three", "wwwge", 7, 0);
 CURSOR_TEST(motion_gE, "one two!!!two", "llllllllllllgE", 2, 0);
 CURSOR_TEST(motion_ge_startspace, "one! two three", "wwjge", 3, 0);
-CURSOR_TEST(motion_3G, "one\ntwo\nthree\nfour\n", "3G", 0, 3);
-CURSOR_TEST(motion_G, "one\ntwo\nthree\nfour", "3G", 0, 3);
 
 CURSOR_TEST(motion_0, "one two", "llll0", 0, 0);
 CURSOR_TEST(motion_gg, "one two", "llllgg", 0, 0);

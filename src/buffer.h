@@ -37,7 +37,7 @@ enum class LineLocation
     LineLastGraphChar,  // Last non blank character
     LineLastNonCR,      // Last character before the carriage return
     LineBegin,          // Beginning of line
-    LineEnd,            // The line end of the buffer line (for wrapped lines).
+    BeyondLineEnd,            // The line end of the buffer line (for wrapped lines).
     LineCRBegin,        // The first carriage return character
 };
 
@@ -111,9 +111,6 @@ public:
 
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
-    BufferLocation GetBufferCursor() { return m_cursorLocation; }
-    void SetBufferCursor(BufferLocation loc) { m_cursorLocation = loc; }
-
 private:
     // Internal
     GapBuffer<utf8>::const_iterator SearchWord(uint32_t searchType, GapBuffer<utf8>::const_iterator itrBegin, GapBuffer<utf8>::const_iterator itrEnd, SearchDirection dir) const;
@@ -131,7 +128,6 @@ private:
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::string m_strName;
     bool m_bStrippedCR;
-    BufferLocation m_cursorLocation = InvalidOffset;            // Where the cursor should be in the buffer
 };
 
 // Notification payload
@@ -152,10 +148,6 @@ struct BufferMessage : public ZepMessage
         endLocation(endLoc),
         cursorAfter(cursor)
     {
-        if (pBuff)
-        {
-            pBuff->SetBufferCursor(cursor);
-        }
     }
 
     ZepBuffer* pBuffer;

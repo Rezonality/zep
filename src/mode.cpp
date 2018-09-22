@@ -50,6 +50,11 @@ void ZepMode::AddCommand(std::shared_ptr<ZepCommand> spCmd)
     // Can't redo anything beyond this point
     std::stack<std::shared_ptr<ZepCommand>> empty;
     m_redoStack.swap(empty);
+                
+    if (spCmd->GetCursorAfter() != -1)
+    {
+        GetCurrentWindow()->MoveCursor(spCmd->GetCursorAfter());
+    }
 }
 
 void ZepMode::Redo()
@@ -110,13 +115,13 @@ void ZepMode::UpdateVisualSelection()
         // Update the visual range
         if (m_lineWise)
         {
-            m_visualEnd = GetCurrentWindow()->GetBuffer().GetLinePos(GetCurrentWindow()->GetBufferLocation(), LineLocation::LineEnd) - 1;
+            m_visualEnd = GetCurrentWindow()->GetBuffer().GetLinePos(GetCurrentWindow()->GetBufferCursor(), LineLocation::BeyondLineEnd) - 1;
         }
         else
         {
-            m_visualEnd = GetCurrentWindow()->DisplayToBuffer();
+            m_visualEnd = GetCurrentWindow()->GetBufferCursor();
         }
-        GetCurrentWindow()->SetSelectionRange(GetCurrentWindow()->BufferToDisplay(m_visualBegin), GetCurrentWindow()->BufferToDisplay(m_visualEnd));
+        GetCurrentWindow()->SetSelectionRange(m_visualBegin, m_visualEnd);
     }
 }
 } // namespace Zep

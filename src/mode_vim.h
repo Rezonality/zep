@@ -85,6 +85,7 @@ struct CommandContext
     uint32_t modifierKeys = 0;
     EditorMode mode = EditorMode::None;
     int count = 1;
+    bool foundCount = false;
 
     // Output result
     CommandResult commandResult;

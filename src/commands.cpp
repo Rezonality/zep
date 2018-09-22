@@ -5,10 +5,9 @@ namespace Zep
 
 // Delete Range of chars
 ZepCommand_DeleteRange::ZepCommand_DeleteRange(ZepBuffer& buffer, const BufferLocation& start, const BufferLocation& end, const BufferLocation& cursorAfter)
-    : ZepCommand(buffer),
+    : ZepCommand(buffer, cursorAfter),
     m_startOffset(start),
-    m_endOffset(end),
-    m_cursorAfter(cursorAfter)
+    m_endOffset(end)
 {
     // We never allow deletion of the '0' at the end of the buffer
     if (buffer.GetText().empty())
@@ -41,10 +40,9 @@ void ZepCommand_DeleteRange::Undo()
 
 // Insert a string
 ZepCommand_Insert::ZepCommand_Insert(ZepBuffer& buffer, const BufferLocation& start, const std::string& str, const BufferLocation& cursorAfter)
-    : ZepCommand(buffer),
+    : ZepCommand(buffer, cursorAfter),
     m_startOffset(start),
-    m_strInsert(str),
-    m_cursorAfter(cursorAfter)
+    m_strInsert(str)
 {
     m_startOffset = buffer.Clamp(m_startOffset);
 }

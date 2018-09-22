@@ -17,8 +17,9 @@ enum
 class ZepCommand
 {
 public:
-    ZepCommand(ZepBuffer& mode) 
-    : m_buffer(mode)
+    ZepCommand(ZepBuffer& mode, BufferLocation cursorAfter = -1)
+        : m_buffer(mode),
+        m_cursorAfter(cursorAfter)
     {}
 
     virtual ~ZepCommand() {}
@@ -28,10 +29,12 @@ public:
 
     virtual void SetFlags(uint32_t flags) { m_flags = flags; }
     virtual uint32_t GetFlags() const { return m_flags; }
+    virtual BufferLocation GetCursorAfter() const { return m_cursorAfter; }
 
 protected:
     ZepBuffer& m_buffer;
     uint32_t m_flags = 0;
+    BufferLocation m_cursorAfter = -1;
 };
 
 class ZepCommand_DeleteRange : public ZepCommand
@@ -45,7 +48,6 @@ public:
 
     BufferLocation m_startOffset;
     BufferLocation m_endOffset;
-    BufferLocation m_cursorAfter;
 
     std::string m_deleted;
 };
@@ -63,7 +65,6 @@ public:
     std::string m_strInsert;
 
     BufferLocation m_endOffsetInserted;
-    BufferLocation m_cursorAfter;
 };
 
 } // Zep
