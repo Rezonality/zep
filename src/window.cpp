@@ -12,6 +12,7 @@
 
 #include "utils/stringutils.h"
 
+// TODO: VisibleLineRange update when buffer changes
 // A 'window' is like a Vim Tab
 namespace Zep
 {
@@ -62,12 +63,14 @@ void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
 
 NVec2i ZepWindow::ClampToVisible(NVec2i pos) const
 {
+    // Cursor 0,0 is top left of window
+    // Here we make the cursor land on a valid window character
     pos.y = std::max(0l, pos.y);
     pos.x = std::max(0l, pos.x);
-    if (!visibleLines.empty())
+    if (!windowLines.empty())
     {
-        pos.y = std::min(pos.y, long(visibleLines.size() - 1));
-        pos.x = std::min(pos.x, visibleLines[pos.y].lastNonCROffset - visibleLines[pos.y].columnOffsets.x);
+        pos.y = std::min(pos.y, VisibleLineCount() - 1);
+        pos.x = std::min(pos.x, GetCursorLineInfo(pos.y).lastNonCROffset - GetCursorLineInfo(pos.y).columnOffsets.x);
     }
     else
     {
@@ -92,17 +95,19 @@ NVec2i ZepWindow::BufferToDisplay(const BufferLocation& loc)
     }
 
     NVec2i ret(0, 0);
-    if (visibleLines.empty())
+    if (windowLines.empty())
     {
         return ret;
     }
 
-    for (auto& vis : visibleLines)
+    // This will clamp to the current display location
+    for (long windowLine = visibleLineRange.x; windowLine < visibleLineRange.y; windowLine++)
     {
+        auto& vis = windowLines[windowLine];
         if ((vis.columnOffsets.x <= loc) &&
             (vis.columnOffsets.y > loc))
         {
-            ret.y = vis.screenLineNumber;
+            ret.y = windowLine - visibleLineRange.x;
             ret.x = loc - vis.columnOffsets.x;
         }
     }
@@ -134,32 +139,58 @@ void ZepWindow::MoveCursorInsideLine(LineLocation location)
         break;
     }
 
-    cursorCL = BufferToDisplay();
-
-    // TODO: Adjust visible line
     m_pendingLineUpdate = true;
+    cursorCL = BufferToDisplay();
 }
 
-void ZepWindow::MoveCursor(BufferLocation location)
+void ZepWindow::MoveCursorTo(BufferLocation location)
 {
     m_bufferCursor = m_pBuffer->Clamp(location);
     
-    cursorCL = BufferToDisplay();
-
-    // TODO: Adjust visible line
     m_pendingLineUpdate = true;
+
+    cursorCL = BufferToDisplay();
 }
 
-// NOTE: In contrast to above, this will move any distance within the whole buffer, and scroll it appropriately
+// Not currently used
+std::pair<BufferLocation, BufferLocation> ZepWindow::GetVisibleBufferRange() const
+{
+    if (windowLines.empty())
+    {
+        return std::make_pair(BufferLocation(0), BufferLocation(0));
+    }
+    return std::make_pair(windowLines[visibleLineRange.x].columnOffsets.x, windowLines[visibleLineRange.y - 1].columnOffsets.y);
+}
+
 void ZepWindow::MoveCursorWindowRelative(const NVec2i& distance, LineLocation clampLocation)
 {
     cursorCL = BufferToDisplay();
 
     auto target = cursorCL + distance;
+
+    auto upperLimit = std::max(0l, (long)VisibleLineCount() - 4);
+
+    if (target.y < 4 && visibleLineRange.x > 0)
+    {
+        visibleLineRange.x += distance.y;
+        target.y = cursorCL.y;
+    }
+    else if (target.y > upperLimit &&
+        visibleLineRange.y < windowLines.size())
+    {
+        visibleLineRange.x += distance.y;
+        target.y = cursorCL.y;
+    }
+
+    visibleLineRange.x = std::max(0l, visibleLineRange.x);
+    visibleLineRange.x = std::min(visibleLineRange.x, long(windowLines.size()));
+
+    UpdateVisibleLineData();
+
     target = ClampToVisible(target);
 
     // TODO: Scrolling
-    auto& line = visibleLines[target.y];
+    auto& line = windowLines[target.y];
 
     // Snap to the new vertical column if necessary (see comment below)
     if (distance.x == 0)
@@ -174,37 +205,6 @@ void ZepWindow::MoveCursorWindowRelative(const NVec2i& distance, LineLocation cl
 
     cursorCL = ClampToVisible(target);
     m_bufferCursor = line.columnOffsets.x + target.x;
-
-    /*
-    // TODO: Add helpers for these conditions
-    // TODO: This doesn't account for buffer lines that are multiple window lines: the result
-    // is that a scroll through the document will 'jump' multiline buffer lines.  Need to figure out the 'sub-line' of a buffer
-    // line and scroll to that.
-    // Scroll the whole document up if we are near the top
-    if (target.y < 4 && visibleLineOffset > 0)
-    {
-        visibleLineOffset += distance.y;
-        visibleLineOffset = std::max(0l, visibleLineOffset);
-        target.y = cursorCL.y;
-    }
-    // Scroll the whole document down if we are near the bottom
-    else if ((target.y > long(visibleLines.size()) - 4) &&
-        m_pBuffer->GetLineCount() > visibleLineOffset + visibleLines.size())
-    {
-        visibleLineOffset += distance.y;
-        visibleLineOffset = std::min(long(m_pBuffer->GetLineCount() - visibleLines.size()), visibleLineOffset);
-        visibleLineOffset = std::max(0l, visibleLineOffset);
-        target.y = cursorCL.y;
-
-    }
-    */
-    //target.y = ClampVisibleLine(target.y);
-
-    //target = ClampVisibleColumn(target, clampLocation);
-
-    // Reset last column, so this is our new vertical center.
-    // All buffers let you start on a column, go to a shorter one, go to a longer one and 
-    // wind up at the same place.  That's what I'm doing here.
 
     GetEditor().ResetCursorTimer();
 }
@@ -224,21 +224,13 @@ void ZepWindow::SetBuffer(ZepBuffer* pBuffer)
 {
     assert(pBuffer);
     m_pBuffer = pBuffer;
+    m_pendingLineUpdate = true;
 }
 
 void ZepWindow::SetStatusText(const std::string& strText)
 {
     statusLines = StringUtils::SplitLines(strText);
 }
-
-/*
-void ZepWindow::ClampCursorToDisplay()
-{
-    // Always ensure the cursor is inside the display
-    //cursorCL.y = ClampVisibleLine(cursorCL.y);
-    //cursorCL = ClampVisibleColumn(cursorCL, cursorMode == CursorMode::Insert ? LineLocation::LineCRBegin : LineLocation::LineLastNonCR);
-}
-*/
 
 void ZepWindow::PreDisplay(ZepDisplay& display, const DisplayRegion& region)
 {
@@ -257,6 +249,7 @@ void ZepWindow::PreDisplay(ZepDisplay& display, const DisplayRegion& region)
     m_statusRegion.bottomRightPx = m_bufferRegion.bottomRightPx;
     m_statusRegion.topLeftPx = m_bufferRegion.bottomRightPx - NVec2f(windowSize.x, statusSize);
 
+    auto lastRegion = m_textRegion;
     m_textRegion.bottomRightPx = m_statusRegion.topLeftPx + NVec2f(windowSize.x, 0.0f);
     m_textRegion.topLeftPx = m_bufferRegion.topLeftPx;
 
@@ -267,28 +260,57 @@ void ZepWindow::PreDisplay(ZepDisplay& display, const DisplayRegion& region)
     m_textRegion.topLeftPx.x += leftBorder + textBorder;
 
     m_defaultLineSize = display.GetTextSize((Zep::utf8*)"A").y;
-    m_maxDisplayLines = (long)std::max(0.0f, std::floor((m_textRegion.bottomRightPx.y - m_textRegion.topLeftPx.y) / m_defaultLineSize));
 
-    UpdateVisibleLineData();
-    
-    // TODO: (1) Adjust visible to encompass buffer
-    //cursorCL = BufferToDisplay();
-    //ClampCursorToDisplay();
+    // If the text region changes, we need to layout the text again
+    if (lastRegion != m_textRegion)
+    {
+        UpdateVisibleLineData();
+    }
+    else
+    {
+        UpdateScreenLines();
+    }
+}
+
+void ZepWindow::UpdateScreenLines()
+{
+    // Update the Y coordinates of the visible lines
+    // And update the range of visible lines
+    auto posY = m_textRegion.topLeftPx.y;
+    auto screenLine = 0;
+    long visLine = visibleLineRange.x;
+    while (visLine < windowLines.size())
+    {
+        auto& lineInfo = windowLines[visLine++];
+        lineInfo.screenPosYPx = posY;
+        lineInfo.screenLineNumber = screenLine;
+
+        posY += m_defaultLineSize;
+        screenLine++;
+
+        if ((lineInfo.screenPosYPx + m_defaultLineSize) >= m_textRegion.bottomRightPx.y)
+        {
+            break;
+        }
+    }
+    visibleLineRange.y = visLine;
 }
 
 void ZepWindow::UpdateVisibleLineData()
 {
     m_pendingLineUpdate = false;
-    visibleLines.clear();
+    windowLines.clear();
 
-    // Start at this displayed buffer line
+    m_maxDisplayLines = (long)std::max(0.0f, std::floor((m_textRegion.bottomRightPx.y - m_textRegion.topLeftPx.y) / m_defaultLineSize));
+
+    // Collect all display lines.
+    // Lines before the first active line will have screen line number -1
     LineInfo lineInfo;
     lineInfo.lastNonCROffset = -1;
     lineInfo.bufferLineNumber = long(0);
-    lineInfo.screenLineNumber = 0;
-    lineInfo.screenPosYPx = m_textRegion.topLeftPx.y;
+    lineInfo.screenPosYPx = 0;
 
-    float screenPosX = m_textRegion.topLeftPx.y;
+    float screenPosX = m_textRegion.topLeftPx.x;
 
     BufferLocation loc = 0;
 
@@ -343,31 +365,17 @@ void ZepWindow::UpdateVisibleLineData()
 
             lineInfo.columnOffsets.y = ch;
 
-            // We walked off the end
-            if ((lineInfo.screenPosYPx + textSize.y) >= m_textRegion.bottomRightPx.y)
-            {
-                // No more lines
-                finishedLines = true;
-                break;
-            }
-
             // Wrap
             if (wrap)
             {
                 if (((screenPosX + textSize.x) + textSize.x) >= (m_textRegion.bottomRightPx.x))
                 {
                     // Remember the offset beyond the end of hte line
-                    visibleLines.push_back(lineInfo);
+                    windowLines.push_back(lineInfo);
 
                     // Now jump to the next 'screen line' for the rest of this 'buffer line'
                     lineInfo.columnOffsets = NVec2i(ch, ch);
                     lineInfo.lastNonCROffset = 0;
-                    lineInfo.screenLineNumber++;
-
-                    if (lineInfo.screenLineNumber >= visibleLineOffset)
-                    {
-                        lineInfo.screenPosYPx += textSize.y;
-                    }
                     screenPosX = m_textRegion.topLeftPx.x;
                 }
                 else
@@ -381,36 +389,35 @@ void ZepWindow::UpdateVisibleLineData()
         // So back to the correct line end offset here
         lineInfo.columnOffsets.y++;
 
-        // Ignore this one
-        if (finishedLines)
-        {
-            break;
-        }
+        // Remember this window line, and if not yet found all visible, record the last limit
+        windowLines.push_back(lineInfo);
 
-        visibleLines.push_back(lineInfo);
-
-        // Next Line
-        lineInfo.screenLineNumber++;
-        if (lineInfo.screenLineNumber >= visibleLineOffset)
-        {
-            lineInfo.screenPosYPx += m_defaultLineSize;
-        }
+        // Next time round
         lineInfo.bufferLineNumber++;
         lineInfo.lastNonCROffset = 0;
+
+        // Wrap to next line
         screenPosX = m_textRegion.topLeftPx.x;
     }
 
-    if (visibleLines.empty())
+    if (windowLines.empty())
     {
         LineInfo lineInfo;
         lineInfo.columnOffsets.x = 0;
         lineInfo.columnOffsets.y = 0;
         lineInfo.lastNonCROffset = 0;
         lineInfo.bufferLineNumber = 0;
-        lineInfo.screenLineNumber = 0;
-        lineInfo.screenPosYPx = m_textRegion.topLeftPx.y;
-        visibleLines.push_back(lineInfo);
+        windowLines.push_back(lineInfo);
     }
+    UpdateScreenLines();
+}
+
+const LineInfo& ZepWindow::GetCursorLineInfo(long y) const
+{
+    y = y + visibleLineRange.x;
+    y = std::max(0l, y);
+    y = std::min(y, long(windowLines.size() - 1));
+    return windowLines[y];
 }
 
 // TODO: This function draws one char at a time.  It could be more optimal at the expense of some 
@@ -428,7 +435,7 @@ bool ZepWindow::DisplayLine(ZepDisplay& display, const LineInfo& lineInfo, const
     // Draw line numbers
     auto showLineNumber = [&]()
     {
-        auto cursorBufferLine = visibleLines[cursorCL.y].bufferLineNumber;
+        auto cursorBufferLine = GetCursorLineInfo(cursorCL.y).bufferLineNumber;
         std::string strNum;
         if (displayMode == DisplayMode::Vim)
         {
@@ -584,7 +591,7 @@ void ZepWindow::Display(ZepDisplay& display)
         if (cursorMode == CursorMode::Normal ||
             cursorMode == CursorMode::Insert)
         {
-            auto& cursorLine = visibleLines[cursorCL.y];
+            auto& cursorLine = GetCursorLineInfo(cursorCL.y);
 
             // Cursor line 
             display.DrawRectFilled(NVec2f(m_textRegion.topLeftPx.x, cursorLine.screenPosYPx),
@@ -595,8 +602,9 @@ void ZepWindow::Display(ZepDisplay& display)
 
     for (int displayPass = 0; displayPass < WindowPass::Max; displayPass++)
     {
-        for (const auto& lineInfo : visibleLines)
+        for (long windowLine = visibleLineRange.x; windowLine < visibleLineRange.y; windowLine++)
         {
+            auto& lineInfo = windowLines[windowLine];
             if (!DisplayLine(display, lineInfo, m_textRegion, displayPass))
             {
                 break;

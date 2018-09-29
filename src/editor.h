@@ -58,6 +58,19 @@ struct NVec2
 
     T x;
     T y;
+
+    bool operator == (const NVec2<T>& rhs) const
+    {
+        if (x == rhs.x &&
+            y == rhs.y)
+            return true;
+        return false;
+    }
+
+    bool operator != (const NVec2<T>& rhs) const
+    {
+        return !(*this = rhs);
+    }
 };
 template<class T> inline NVec2<T> operator+ (const NVec2<T>& lhs, const NVec2<T>& rhs) { return NVec2<T>(lhs.x + rhs.x, lhs.y + rhs.y); }
 template<class T> inline NVec2<T> operator- (const NVec2<T>& lhs, const NVec2<T>& rhs) { return NVec2<T>(lhs.x - rhs.x, lhs.y - rhs.y); }

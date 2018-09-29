@@ -17,6 +17,15 @@ struct DisplayRegion
     NVec2f BottomLeft() const { return NVec2f(topLeftPx.x, bottomRightPx.y); }
     NVec2f TopRight() const { return NVec2f(bottomRightPx.x, topLeftPx.y); }
     float Height() const { return bottomRightPx.y - topLeftPx.y; }
+    bool operator == (const DisplayRegion& region) const
+    {
+        return (topLeftPx == region.topLeftPx) &&
+            (bottomRightPx == region.bottomRightPx);
+    }
+    bool operator != (const DisplayRegion& region) const
+    {
+        return !(*this == region);
+    }
 };
 
 // A region inside the text for selections

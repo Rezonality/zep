@@ -165,13 +165,6 @@ CommandContext::CommandContext(const std::string& commandIn,
     registers.push('"');
     pRegister = &tempReg;
 
-    /*long displayLineCount = long(owner.GetCurrentWindow()->visibleLines.size());
-    if (displayLineCount > cursor.y)
-    {
-        pLineInfo = &owner.GetCurrentWindow()->visibleLines[cursor.y];
-    }
-    */
-
     GetCommandAndCount();
     GetCommandRegisters();
 }
@@ -427,14 +420,6 @@ bool ZepMode_Vim::GetBlockOpRange(const std::string& op, EditorMode mode, Buffer
     auto& buffer = GetCurrentWindow()->GetBuffer();
     const auto bufferCursor = GetCurrentWindow()->GetBufferCursor();
 
-    /*
-    const LineInfo* pLineInfo = nullptr;
-    if (GetCurrentWindow()->visibleLines.size() > cursor.y)
-    {
-        pLineInfo = &GetCurrentWindow()->visibleLines[cursor.y];
-    }
-    */
-
     beginRange = BufferLocation{ -1 };
     if (op == "visual")
     {
@@ -558,14 +543,14 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     else if (context.command == "l" || context.lastKey == ExtKeys::RIGHT)
     {
         auto lineEnd = context.buffer.GetLinePos(context.bufferCursor, LineLocation::LineLastNonCR);
-        GetCurrentWindow()->MoveCursor(std::min(context.bufferCursor + context.count, lineEnd));
+        GetCurrentWindow()->MoveCursorTo(std::min(context.bufferCursor + context.count, lineEnd));
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
     else if (context.command == "h" || context.lastKey == ExtKeys::LEFT)
     {
         auto lineStart = context.buffer.GetLinePos(context.bufferCursor, LineLocation::LineBegin);
-        GetCurrentWindow()->MoveCursor(std::max(context.bufferCursor - context.count, lineStart));
+        GetCurrentWindow()->MoveCursorTo(std::max(context.bufferCursor - context.count, lineStart));
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
@@ -602,14 +587,14 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         if (context.foundCount)
         {
             // Goto line
-            GetCurrentWindow()->MoveCursorWindowRelative(NVec2i(0, context.count - (GetCurrentWindow()->visibleLineOffset + GetCurrentWindow()->cursorCL.y)));
+            GetCurrentWindow()->MoveCursorWindowRelative(NVec2i(0, context.count - GetCurrentWindow()->GetCursorLineInfo(GetCurrentWindow()->cursorCL.y).bufferLineNumber));
             context.commandResult.flags |= CommandResultFlags::HandledCount;
         }
         else
         {
             // Move right to the end
             auto lastLine = context.buffer.GetLinePos(MaxCursorMove, LineLocation::LineBegin);
-            GetCurrentWindow()->MoveCursor(lastLine);
+            GetCurrentWindow()->MoveCursorTo(lastLine);
             context.commandResult.flags |= CommandResultFlags::HandledCount;
         }
         return true;
@@ -630,44 +615,44 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         else
         {
             // Normal mode moves over the chars, and wraps
-            GetCurrentWindow()->MoveCursor(context.bufferCursor - 1);
+            GetCurrentWindow()->MoveCursorTo(context.bufferCursor - 1);
             return true;
         }
     }
     else if (context.command == "w")
     {
         auto block = context.buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, context.bufferCursor, SearchDirection::Forward);
-        GetCurrentWindow()->MoveCursor(WordMotion(block));
+        GetCurrentWindow()->MoveCursorTo(WordMotion(block));
         return true;
     }
     else if (context.command == "W")
     {
         auto block = context.buffer.GetBlock(SearchType::Word, context.bufferCursor, SearchDirection::Forward);
-        GetCurrentWindow()->MoveCursor(WordMotion(block));
+        GetCurrentWindow()->MoveCursorTo(WordMotion(block));
         return true;
     }
     else if (context.command == "b")
     {
         auto block = context.buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, context.bufferCursor, SearchDirection::Backward);
-        GetCurrentWindow()->MoveCursor(WordMotion(block));
+        GetCurrentWindow()->MoveCursorTo(WordMotion(block));
         return true;
     }
     else if (context.command == "B")
     {
         auto block = context.buffer.GetBlock(SearchType::Word, context.bufferCursor, SearchDirection::Backward);
-        GetCurrentWindow()->MoveCursor(WordMotion(block));
+        GetCurrentWindow()->MoveCursorTo(WordMotion(block));
         return true;
     }
     else if (context.command == "e")
     {
         auto block = context.buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, context.bufferCursor, SearchDirection::Forward);
-        GetCurrentWindow()->MoveCursor(WordEndMotion(block));
+        GetCurrentWindow()->MoveCursorTo(WordEndMotion(block));
         return true;
     }
     else if (context.command == "E")
     {
         auto block = context.buffer.GetBlock(SearchType::Word, context.bufferCursor, SearchDirection::Forward);
-        GetCurrentWindow()->MoveCursor(WordEndMotion(block));
+        GetCurrentWindow()->MoveCursorTo(WordEndMotion(block));
         return true;
     }
     else if (context.command[0] == 'g')
@@ -679,18 +664,18 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         else if (context.command == "ge")
         {
             auto block = context.buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, context.bufferCursor, SearchDirection::Backward);
-            GetCurrentWindow()->MoveCursor(WordEndMotion(block));
+            GetCurrentWindow()->MoveCursorTo(WordEndMotion(block));
             return true;
         }
         else if (context.command == "gE")
         {
             auto block = context.buffer.GetBlock(SearchType::Word, context.bufferCursor, SearchDirection::Backward);
-            GetCurrentWindow()->MoveCursor(WordEndMotion(block));
+            GetCurrentWindow()->MoveCursorTo(WordEndMotion(block));
             return true;
         }
         else if (context.command == "gg")
         {
-            GetCurrentWindow()->MoveCursor(BufferLocation{ 0 });
+            GetCurrentWindow()->MoveCursorTo(BufferLocation{ 0 });
             return true;
         }
     }
@@ -1059,7 +1044,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     else if (context.command == "a")
     {
         // Cursor append
-        GetCurrentWindow()->MoveCursor(context.bufferCursor + 1);
+        GetCurrentWindow()->MoveCursorTo(context.bufferCursor + 1);
         context.commandResult.modeSwitch = EditorMode::Insert;
         return true;
     }
@@ -1200,7 +1185,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         // Copy commands may move the m_bufferCursor
         if (context.cursorAfter != -1)
         {
-            GetCurrentWindow()->MoveCursor(context.cursorAfter);
+            GetCurrentWindow()->MoveCursorTo(context.cursorAfter);
         }
         return true;
     }
@@ -1421,7 +1406,7 @@ void ZepMode_Vim::HandleInsert(uint32_t key)
         {
             if (bufferCursor != 0)
             {
-                GetCurrentWindow()->MoveCursor(insertEnd - 1);
+                GetCurrentWindow()->MoveCursorTo(insertEnd - 1);
             }
 
             // Back to normal mode
@@ -1471,7 +1456,7 @@ void ZepMode_Vim::HandleInsert(uint32_t key)
         buffer.Insert(bufferCursor, ch);
 
         // Insert back to normal mode should put the m_bufferCursor on top of the last character typed.
-        GetCurrentWindow()->MoveCursor(bufferCursor + long(ch.size()));
+        GetCurrentWindow()->MoveCursorTo(bufferCursor + long(ch.size()));
     }
 }
 
@@ -1484,7 +1469,7 @@ void ZepMode_Vim::PreDisplay()
     {
         m_pendingEscape = false;
         GetCurrentWindow()->GetBuffer().Insert(GetCurrentWindow()->GetBufferCursor(), "j");
-        GetCurrentWindow()->MoveCursor(GetCurrentWindow()->GetBufferCursor() + 1);
+        GetCurrentWindow()->MoveCursorTo(GetCurrentWindow()->GetBufferCursor() + 1);
     }
 }
 } // namespace Zep

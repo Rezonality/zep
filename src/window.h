@@ -68,7 +68,7 @@ public:
     void SetCursorMode(CursorMode mode);
     void SetSyntax(std::shared_ptr<ZepSyntax> syntax) { m_spSyntax = syntax; }
 
-    void MoveCursor(BufferLocation location);
+    void MoveCursorTo(BufferLocation location);
     void MoveCursorInsideLine(LineLocation location);
 
     void MoveCursorWindowRelative(const NVec2i& distance, LineLocation clampLocation = LineLocation::LineLastNonCR);
@@ -86,6 +86,8 @@ public:
 
     ZepBuffer& GetBuffer() const { return *m_pBuffer; }
     ZepTabWindow& GetTabWindow() const { return m_window; }
+
+    std::pair<BufferLocation, BufferLocation> GetVisibleBufferRange() const;
 
     void SetBuffer(ZepBuffer* pBuffer);
 
@@ -109,6 +111,10 @@ public:
     long GetMaxDisplayLines() const { return m_maxDisplayLines; }
 
     void UpdateVisibleLineData();
+    void UpdateScreenLines();
+    long VisibleLineCount() const { return visibleLineRange.y - visibleLineRange.x; }
+    const LineInfo& GetCursorLineInfo(long y) const;
+    
 public:
     // TODO: Fix this; used to be a struct, now members
     // Should be private!
@@ -132,8 +138,9 @@ public:
 
     // Visual stuff
     std::vector<std::string> statusLines;         // Status information, shown under the buffer
-    long visibleLineOffset = 0;                    // Offset of the displayed area into the text
-    std::vector<LineInfo> visibleLines;           // Information about the currently displayed lines 
+
+    NVec2i visibleLineRange = { 0, 0 };          // Offset of the displayed area into the text
+    std::vector<LineInfo> windowLines;           // Information about the currently displayed lines 
     bool m_pendingLineUpdate = true;
 
     static const int CursorMax = std::numeric_limits<int>::max();

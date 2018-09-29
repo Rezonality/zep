@@ -87,13 +87,6 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     BufferLocation endOffset = buffer.LocationFromOffsetByChars(bufferCursor, long(ch.length()));
     BufferLocation cursorAfter = endOffset;
 
-/*    const LineInfo* pLineInfo = nullptr;
-    if (GetCurrentWindow()->visibleLines.size() > cursor.y)
-    {
-        pLineInfo = &GetCurrentWindow()->visibleLines[cursor.y];
-    }
-    */
-
     enum class CommandOperation
     {
         None,
@@ -182,24 +175,24 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     {
         if (modifierKeys & ModifierKey::Ctrl)
         {
-            GetCurrentWindow()->MoveCursor(BufferLocation{ 0 });
+            GetCurrentWindow()->MoveCursorTo(BufferLocation{ 0 });
         }
         else
         {
             auto pos = buffer.GetLinePos(bufferCursor, LineLocation::LineFirstGraphChar);
-            GetCurrentWindow()->MoveCursor(pos);
+            GetCurrentWindow()->MoveCursorTo(pos);
         }
     }
     else if (key == ExtKeys::END)
     {
         if (modifierKeys & ModifierKey::Ctrl)
         {
-            GetCurrentWindow()->MoveCursor(buffer.EndLocation());
+            GetCurrentWindow()->MoveCursorTo(buffer.EndLocation());
         }
         else
         {
             auto pos = buffer.GetLinePos(bufferCursor, LineLocation::BeyondLineEnd);
-            GetCurrentWindow()->MoveCursor(pos);
+            GetCurrentWindow()->MoveCursorTo(pos);
         }
     }
     else if (key == ExtKeys::RIGHT)
@@ -207,11 +200,11 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         if (modifierKeys & ModifierKey::Ctrl)
         {
             auto block = buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Forward);
-            GetCurrentWindow()->MoveCursor(WordMotion(block));
+            GetCurrentWindow()->MoveCursorTo(WordMotion(block));
         }
         else
         {
-            GetCurrentWindow()->MoveCursor(bufferCursor + 1);
+            GetCurrentWindow()->MoveCursorTo(bufferCursor + 1);
         }
     }
     else if (key == ExtKeys::LEFT)
@@ -219,11 +212,11 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         if (modifierKeys & ModifierKey::Ctrl)
         {
             auto block = buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Backward);
-            GetCurrentWindow()->MoveCursor(WordMotion(block));
+            GetCurrentWindow()->MoveCursorTo(WordMotion(block));
         }
         else
         {
-            GetCurrentWindow()->MoveCursor(bufferCursor - 1);
+            GetCurrentWindow()->MoveCursorTo(bufferCursor - 1);
        }
     }
     else if (key == ExtKeys::UP)

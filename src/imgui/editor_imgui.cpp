@@ -18,13 +18,6 @@ ZepEditor_ImGui::ZepEditor_ImGui()
     m_spDisplay = std::make_unique<ZepDisplay_ImGui>(*this);
 }
 
-/*
-void ZepEditor_ImGui::UpdateWindows()
-{
-
-}
-*/
-
 void ZepEditor_ImGui::Display(const NVec2f& pos, const NVec2f& size)
 {
     m_spDisplay->SetDisplaySize(pos, pos + size);
