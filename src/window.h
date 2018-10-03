@@ -115,6 +115,8 @@ public:
     long VisibleLineCount() const { return visibleLineRange.y - visibleLineRange.x; }
     const LineInfo& GetCursorLineInfo(long y) const;
     
+    void ScrollToCursor();
+
 public:
     // TODO: Fix this; used to be a struct, now members
     // Should be private!
@@ -131,8 +133,6 @@ public:
     CursorMode cursorMode = CursorMode::Normal;   // Type of cursor
     DisplayMode displayMode = DisplayMode::Vim;   // Vim editing mode
     long lastCursorC = 0;                         // The last cursor column
-
-    NVec2i cursorCL;                              // Position of Cursor in line/column (display coords)
 
     Region selection;                             // Selection area
 

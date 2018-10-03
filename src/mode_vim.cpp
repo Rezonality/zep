@@ -586,9 +586,14 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     {
         if (context.foundCount)
         {
-            // Goto line
-            GetCurrentWindow()->MoveCursorWindowRelative(NVec2i(0, context.count - GetCurrentWindow()->GetCursorLineInfo(GetCurrentWindow()->cursorCL.y).bufferLineNumber));
-            context.commandResult.flags |= CommandResultFlags::HandledCount;
+            auto cursor = GetCurrentWindow()->BufferToDisplay();
+            // TODO: This is incorrect; go to line in buffer
+            if (cursor.x != -1)
+            {
+                // Goto line
+                GetCurrentWindow()->MoveCursorWindowRelative(NVec2i(0, context.count - GetCurrentWindow()->GetCursorLineInfo(cursor.y).bufferLineNumber));
+                context.commandResult.flags |= CommandResultFlags::HandledCount;
+            }
         }
         else
         {
