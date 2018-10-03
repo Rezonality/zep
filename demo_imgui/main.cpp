@@ -31,6 +31,8 @@
 
 using namespace Zep;
 
+#include "src/tests/longtext.tt"
+
 const std::string shader = R"R(
 #version 330 core
 
@@ -143,7 +145,7 @@ int main(int, char**)
    
     // Add a shader
     ZepBuffer* pBuffer = spEditor->AddBuffer("shader.vert");
-    pBuffer->SetText(shader.c_str());
+    pBuffer->SetText(longTextSample.c_str());// shader.c_str());
 
     // Main loop
     bool done = false;

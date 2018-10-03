@@ -24,6 +24,7 @@ struct LineInfo
     long screenLineNumber = 0;                   // Line on the screen
 
     long Length() const { return columnOffsets.y - columnOffsets.x; }
+    bool BufferCursorInside(long offset) const { return offset >= columnOffsets.x && offset < columnOffsets.y; }
 };
 
 enum class CursorMode

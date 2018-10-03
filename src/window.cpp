@@ -181,7 +181,7 @@ void ZepWindow::ScrollToCursor()
 
     if (changed)
     {
-        visibleLineRange.x = std::min((long)VisibleLineCount(), visibleLineRange.x);
+        visibleLineRange.x = std::min((long)windowLines.size() -1, visibleLineRange.x);
         visibleLineRange.x = std::max(0l, (long)visibleLineRange.x);
     }
     UpdateScreenLines();
@@ -314,8 +314,6 @@ void ZepWindow::UpdateScreenLines()
 
         auto& lineInfo = windowLines[visLine++];
         lineInfo.screenPosYPx = posY;
-        lineInfo.screenLineNumber = screenLine;
-
         posY += m_defaultLineSize;
         screenLine++;
     }
@@ -466,7 +464,7 @@ bool ZepWindow::DisplayLine(ZepDisplay& display, const LineInfo& lineInfo, const
 
         auto cursorBufferLine = GetCursorLineInfo(cursorCL.y).bufferLineNumber;
         std::string strNum;
-        if (false)// &&j displayMode == DisplayMode::Vim)
+        if (displayMode == DisplayMode::Vim)
         {
             strNum = std::to_string(abs(lineInfo.bufferLineNumber - cursorBufferLine));
         }
@@ -482,7 +480,7 @@ bool ZepWindow::DisplayLine(ZepDisplay& display, const LineInfo& lineInfo, const
             0xFF222222);
 
         auto digitCol = 0xFF11FF11;
-        if (cursorCL.y == lineInfo.screenLineNumber)
+        if (lineInfo.BufferCursorInside(m_bufferCursor))
         {
             digitCol = Color_CursorNormal;
         }
@@ -555,7 +553,7 @@ bool ZepWindow::DisplayLine(ZepDisplay& display, const LineInfo& lineInfo, const
                     }
                 }
 
-                if (cursorCL.y == lineInfo.screenLineNumber)
+                if (lineInfo.BufferCursorInside(m_bufferCursor))
                 {
                     // Cursor
                     cursorPosPx = NVec2f(m_textRegion.topLeftPx.x + textSize.x * cursorCL.x, lineInfo.screenPosYPx);
