@@ -338,6 +338,7 @@ CURSOR_TEST(motion_w, "one! two three", "w", 3, 0);
 CURSOR_TEST(motion_w_space, "one two three", "lllw", 4, 0);
 CURSOR_TEST(motion_W, "one! two three", "W", 5, 0);
 CURSOR_TEST(motion_b, "one! two three", "wwb", 3, 0);
+CURSOR_TEST(motion_b_from_non_word, "one! two three", "wwbb", 0, 0);
 CURSOR_TEST(motion_b_endofword, "one! two three", "llb", 0, 0);
 CURSOR_TEST(motion_b_space, "one! two three", "eeelb", 5, 0);
 CURSOR_TEST(motion_B, "one! two three", "wwwB", 5, 0);

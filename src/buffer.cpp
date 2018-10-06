@@ -187,13 +187,46 @@ BufferLocation ZepBuffer::WordMotion(BufferLocation start, uint32_t searchType, 
     auto IsWord = searchType == SearchType::Word ? IsWordChar : IsWORDChar;
 
     MotionBegin(start, searchType, dir);
-    if (Skip(IsWord, start, dir))
+    
+    if (dir == SearchDirection::Forward)
     {
-        SkipNot(IsWord, start, dir);
+        if (Skip(IsWord, start, dir))
+        {
+            // Skipped a word, skip spaces then done
+            Skip(IsSpace, start, dir);
+        }
+        else
+        {
+            SkipNot(IsWord, start, dir);
+        }
     }
-    else
+    else // Backward
     {
-        SkipNot(IsWord, start, dir);
+        auto startSearch = start;
+
+        // Jump back to the beginning of a word if on it
+        if (Skip(IsWord, start, dir))
+        {
+            // If we weren't already on the first char of the word, then we have gone back a word!
+            if (startSearch != (start + 1))
+            {
+                SkipNot(IsWord, start, SearchDirection::Forward);
+                return start;
+            }
+        }
+        else
+        {
+            SkipNot(IsWord, start, dir);
+        }
+       
+        // Skip any spaces
+        Skip(IsSpace, start, dir);
+
+        // Go back to the beginning of the word
+        if (Skip(IsWord, start, dir))
+        {
+            SkipNot(IsWord, start, SearchDirection::Forward);
+        }
     }
     return start;
 }
