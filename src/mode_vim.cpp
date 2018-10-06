@@ -645,14 +645,14 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     }
     else if (context.command == "e")
     {
-        auto block = context.buffer.GetBlock(SearchType::Word | SearchType::WORD, context.bufferCursor, SearchDirection::Forward);
-        GetCurrentWindow()->MoveCursorTo(WordEndMotion(block));
+        auto target = context.buffer.EndWordMotion(context.bufferCursor, SearchType::Word, SearchDirection::Forward);
+        GetCurrentWindow()->MoveCursorTo(target);
         return true;
     }
     else if (context.command == "E")
     {
-        auto block = context.buffer.GetBlock(SearchType::WORD, context.bufferCursor, SearchDirection::Forward);
-        GetCurrentWindow()->MoveCursorTo(WordEndMotion(block));
+        auto target = context.buffer.EndWordMotion(context.bufferCursor, SearchType::WORD, SearchDirection::Forward);
+        GetCurrentWindow()->MoveCursorTo(target);
         return true;
     }
     else if (context.command[0] == 'g')

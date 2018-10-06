@@ -96,6 +96,7 @@ public:
     bool SkipNot(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const;
 
     BufferLocation WordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
+    BufferLocation EndWordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
     BufferLocation ChangeWordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
 
     bool Delete(const BufferLocation& startOffset, const BufferLocation& endOffset, const BufferLocation& cursorAfter = BufferLocation{ -1 });

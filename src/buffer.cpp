@@ -231,6 +231,47 @@ BufferLocation ZepBuffer::WordMotion(BufferLocation start, uint32_t searchType, 
     return start;
 }
 
+BufferLocation ZepBuffer::EndWordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const
+{
+    auto IsWord = searchType == SearchType::Word ? IsWordChar : IsWORDChar;
+
+    MotionBegin(start, searchType, dir);
+    
+    if (dir == SearchDirection::Forward)
+    {
+        auto startSearch = start;
+
+        // Skip to the end
+        if (Skip(IsWord, start, dir))
+        {
+            // We moved a bit, so we found the end of the current word
+            if (startSearch != start - 1)
+            {
+                SkipNot(IsWord, start, SearchDirection::Backward);
+                return start;
+            }
+        }
+        else
+        {
+            SkipNot(IsWord, start, dir);
+        }
+        
+        // Skip any spaces
+        Skip(IsSpace, start, dir);
+
+        // Go back to the beginning of the word
+        if (Skip(IsWord, start, dir))
+        {
+            SkipNot(IsWord, start, SearchDirection::Backward);
+        }
+    }
+    else // Backward
+    {
+        assert(!"No backwards end word code - where did you call it from?");
+    }
+    return start;
+}
+
 BufferLocation ZepBuffer::ChangeWordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const
 {
     // Change word is different to work skipping; it will change a string of spaces, for example.
