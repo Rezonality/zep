@@ -23,7 +23,7 @@
 // hjkl Motions
 // . dot command
 // TAB
-// w,W,e,E,ge,gE,b,B Word motions
+// w,W,e,E,ge,gE,b,B WORD motions
 // u,CTRL+r  Undo, Redo
 // i,I,a,A Insert mode (pending undo/redo fix)
 // DELETE/BACKSPACE in insert and normal mode; match vim
@@ -445,58 +445,53 @@ bool ZepMode_Vim::GetBlockOpRange(const std::string& op, EditorMode mode, Buffer
     }
     else if (op == "w")
     {
-        auto block = buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Forward);
-        beginRange = block.blockSearchPos;
-        endRange = WordMotion(block);
+        beginRange = bufferCursor;
+        endRange = buffer.WordMotion(bufferCursor, SearchType::Word, SearchDirection::Forward);
         cursorAfter = beginRange;
     }
     else if (op == "cw")
     {
         // Change word doesn't extend over the next space
-        auto block = buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Forward);
-        beginRange = block.blockSearchPos;
-        endRange = ToEndOfFirstWordOrSpace(block);
+        beginRange = bufferCursor;
+        endRange = buffer.ChangeWordMotion(bufferCursor, SearchType::Word, SearchDirection::Forward);
         cursorAfter = beginRange;
     }
     else if (op == "cW")
     {
-        // Change word doesn't extend over the next space
-        auto block = buffer.GetBlock(SearchType::Word, bufferCursor, SearchDirection::Forward);
-        beginRange = block.blockSearchPos;
-        endRange = ToEndOfFirstWordOrSpace(block);
+        beginRange = bufferCursor;
+        endRange = buffer.ChangeWordMotion(bufferCursor, SearchType::WORD, SearchDirection::Forward);
         cursorAfter = beginRange;
     }
     else if (op == "W")
     {
-        auto block = buffer.GetBlock(SearchType::Word, bufferCursor, SearchDirection::Forward);
-        beginRange = block.blockSearchPos;
-        endRange = WordMotion(block);
+        beginRange = bufferCursor;
+        endRange = buffer.WordMotion(bufferCursor, SearchType::WORD, SearchDirection::Forward);
         cursorAfter = beginRange;
     }
     else if (op == "aw")
     {
-        auto block = buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Forward);
+        auto block = buffer.GetBlock(SearchType::Word | SearchType::WORD, bufferCursor, SearchDirection::Forward);
         beginRange = Word(block).first;
         endRange = Word(block).second;
         cursorAfter = beginRange;
     }
     else if (op == "aW")
     {
-        auto block = buffer.GetBlock(SearchType::Word, bufferCursor, SearchDirection::Forward);
+        auto block = buffer.GetBlock(SearchType::WORD, bufferCursor, SearchDirection::Forward);
         beginRange = Word(block).first;
         endRange = Word(block).second;
         cursorAfter = beginRange;
     }
     else if (op == "iw")
     {
-        auto block = buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Forward);
+        auto block = buffer.GetBlock(SearchType::Word | SearchType::WORD, bufferCursor, SearchDirection::Forward);
         beginRange = InnerWord(block).first;
         endRange = InnerWord(block).second;
         cursorAfter = beginRange;
     }
     else if (op == "iW")
     {
-        auto block = buffer.GetBlock(SearchType::Word, bufferCursor, SearchDirection::Forward);
+        auto block = buffer.GetBlock(SearchType::WORD, bufferCursor, SearchDirection::Forward);
         beginRange = InnerWord(block).first;
         endRange = InnerWord(block).second;
         cursorAfter = beginRange;
@@ -626,37 +621,37 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     }
     else if (context.command == "w")
     {
-        auto block = context.buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, context.bufferCursor, SearchDirection::Forward);
+        auto block = context.buffer.GetBlock(SearchType::Word | SearchType::WORD, context.bufferCursor, SearchDirection::Forward);
         GetCurrentWindow()->MoveCursorTo(WordMotion(block));
         return true;
     }
     else if (context.command == "W")
     {
-        auto block = context.buffer.GetBlock(SearchType::Word, context.bufferCursor, SearchDirection::Forward);
+        auto block = context.buffer.GetBlock(SearchType::WORD, context.bufferCursor, SearchDirection::Forward);
         GetCurrentWindow()->MoveCursorTo(WordMotion(block));
         return true;
     }
     else if (context.command == "b")
     {
-        auto block = context.buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, context.bufferCursor, SearchDirection::Backward);
+        auto block = context.buffer.GetBlock(SearchType::Word | SearchType::WORD, context.bufferCursor, SearchDirection::Backward);
         GetCurrentWindow()->MoveCursorTo(WordMotion(block));
         return true;
     }
     else if (context.command == "B")
     {
-        auto block = context.buffer.GetBlock(SearchType::Word, context.bufferCursor, SearchDirection::Backward);
+        auto block = context.buffer.GetBlock(SearchType::WORD, context.bufferCursor, SearchDirection::Backward);
         GetCurrentWindow()->MoveCursorTo(WordMotion(block));
         return true;
     }
     else if (context.command == "e")
     {
-        auto block = context.buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, context.bufferCursor, SearchDirection::Forward);
+        auto block = context.buffer.GetBlock(SearchType::Word | SearchType::WORD, context.bufferCursor, SearchDirection::Forward);
         GetCurrentWindow()->MoveCursorTo(WordEndMotion(block));
         return true;
     }
     else if (context.command == "E")
     {
-        auto block = context.buffer.GetBlock(SearchType::Word, context.bufferCursor, SearchDirection::Forward);
+        auto block = context.buffer.GetBlock(SearchType::WORD, context.bufferCursor, SearchDirection::Forward);
         GetCurrentWindow()->MoveCursorTo(WordEndMotion(block));
         return true;
     }
@@ -668,13 +663,13 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         }
         else if (context.command == "ge")
         {
-            auto block = context.buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, context.bufferCursor, SearchDirection::Backward);
+            auto block = context.buffer.GetBlock(SearchType::Word | SearchType::WORD, context.bufferCursor, SearchDirection::Backward);
             GetCurrentWindow()->MoveCursorTo(WordEndMotion(block));
             return true;
         }
         else if (context.command == "gE")
         {
-            auto block = context.buffer.GetBlock(SearchType::Word, context.bufferCursor, SearchDirection::Backward);
+            auto block = context.buffer.GetBlock(SearchType::WORD, context.bufferCursor, SearchDirection::Backward);
             GetCurrentWindow()->MoveCursorTo(WordEndMotion(block));
             return true;
         }

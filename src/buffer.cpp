@@ -32,6 +32,8 @@ inline bool IsSpace(const char ch)
 {
     return std::isspace(ch);
 }
+using fnMatch = std::function<bool>(const char);
+
 } // namespace
 
 namespace Zep
@@ -115,6 +117,101 @@ BufferLocation ZepBuffer::Search(const std::string& str, BufferLocation start, S
     return BufferLocation{ 0 };
 }
 
+bool ZepBuffer::Valid(BufferLocation location) const
+{
+    if (location < 0 || location >= m_gapBuffer.size())
+    {
+        return false;
+    }
+    return true;
+}
+
+// Prepare for a motion
+bool ZepBuffer::MotionBegin(BufferLocation& start, uint32_t searchType, SearchDirection dir) const
+{
+    BufferLocation newStart = start;
+
+    // Clamp to sensible, begin
+    newStart = std::min(newStart, BufferLocation(m_gapBuffer.size() - 1));
+    newStart = std::max(0l, newStart);
+
+    bool change = newStart != start;
+    if (change)
+    {
+        start = newStart;
+        return true;
+    }
+    return start;
+}
+
+void ZepBuffer::Move(BufferLocation& loc, SearchDirection dir) const
+{
+    if (dir == SearchDirection::Backward)
+        loc--;
+    else
+        loc++;
+}
+
+bool ZepBuffer::Skip(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const
+{
+    if (!Valid(start))
+        return false;
+
+    bool moved = false;
+    while(Valid(start) &&
+        IsToken(m_gapBuffer[start]))
+    {
+        Move(start, dir);
+        moved = true;
+    }
+    return moved;
+}
+
+bool ZepBuffer::SkipNot(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const
+{
+    if (!Valid(start))
+        return false;
+
+    bool moved = false;
+    while(Valid(start) &&
+        !IsToken(m_gapBuffer[start]))
+    {
+        Move(start, dir);
+        moved = true;
+    }
+    return moved;
+}
+
+BufferLocation ZepBuffer::WordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const
+{
+    auto IsWord = searchType == SearchType::Word ? IsWordChar : IsWORDChar;
+
+    MotionBegin(start, searchType, dir);
+    if (Skip(IsWord, start, dir))
+    {
+        SkipNot(IsWord, start, dir);
+    }
+    else
+    {
+        SkipNot(IsWord, start, dir);
+    }
+    return start;
+}
+
+BufferLocation ZepBuffer::ChangeWordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const
+{
+    // Change word is different to work skipping; it will change a string of spaces, for example.
+    // Essentially it changes 'what you are over', based on the word rule
+    auto IsWord    = searchType == SearchType::Word ? IsWordChar : IsWORDChar;
+    MotionBegin(start, searchType, dir);
+    if (Skip(IsWord, start, dir))
+    {
+        return start;
+    }
+    SkipNot(IsWord, start, dir);
+    return start;
+}
+
 // Given a stream of ___AAA__BBB
 // We return markers for the start of the first block, beyond the first block, and the second
 // i.e. we 'find' AAA and BBB, and remember if there are spaces between them
@@ -135,7 +232,7 @@ BufferBlock ZepBuffer::GetBlock(uint32_t searchType, BufferLocation start, Searc
 
     auto pIsBlock = IsWORDChar;
     auto pIsNotBlock = IsNonWORDChar;
-    if (searchType & SearchType::AlphaNumeric)
+    if (searchType & SearchType::Word)
     {
         pIsBlock = IsWordChar;
         pIsNotBlock = IsNonWordChar;

@@ -25,7 +25,7 @@
 namespace Zep
 {
 
-// Word motion for standard mode
+// WORD motion for standard mode
 static BufferLocation WordMotion(const BufferBlock& block)
 {
     // If on a space, move to the first block
@@ -199,7 +199,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     {
         if (modifierKeys & ModifierKey::Ctrl)
         {
-            auto block = buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Forward);
+            auto block = buffer.GetBlock(SearchType::Word | SearchType::WORD, bufferCursor, SearchDirection::Forward);
             GetCurrentWindow()->MoveCursorTo(WordMotion(block));
         }
         else
@@ -211,7 +211,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     {
         if (modifierKeys & ModifierKey::Ctrl)
         {
-            auto block = buffer.GetBlock(SearchType::AlphaNumeric | SearchType::Word, bufferCursor, SearchDirection::Backward);
+            auto block = buffer.GetBlock(SearchType::Word | SearchType::WORD, bufferCursor, SearchDirection::Backward);
             GetCurrentWindow()->MoveCursorTo(WordMotion(block));
         }
         else

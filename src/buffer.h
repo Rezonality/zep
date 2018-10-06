@@ -24,10 +24,11 @@ namespace SearchType
 {
 enum : uint32_t
 {
-    Word = (1 << 0),
+    WORD = (1 << 0),
     Begin = (1 << 1),
     End = (1 << 2),
-    AlphaNumeric = (1 << 3)
+    Word = (1 << 3),
+    SingleLine = (1 << 4)
 };
 };
 
@@ -85,6 +86,17 @@ public:
     BufferLocation Clamp(BufferLocation location) const;
 
     ThreadPool& GetThreadPool() { return m_threadPool; }
+
+    using fnMatch = std::function<bool(const char)>;
+
+    void Move(BufferLocation& loc, SearchDirection dir) const;
+    bool Valid(BufferLocation locataion) const;
+    bool MotionBegin(BufferLocation& start, uint32_t searchType, SearchDirection dir) const;
+    bool Skip(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const;
+    bool SkipNot(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const;
+
+    BufferLocation WordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
+    BufferLocation ChangeWordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
 
     bool Delete(const BufferLocation& startOffset, const BufferLocation& endOffset, const BufferLocation& cursorAfter = BufferLocation{ -1 });
     bool Insert(const BufferLocation& startOffset, const std::string& str, const BufferLocation& cursorAfter = BufferLocation{ -1 });
