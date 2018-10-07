@@ -465,31 +465,37 @@ void ZepBuffer::SetText(const std::string& text)
     m_dirty = 0;
 }
 
+// TODO: These can be cleaner
 BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation lineLocation) const
 {
     bufferLocation = Clamp(bufferLocation);
     if (m_gapBuffer.empty())
         return bufferLocation;
 
+    // If we are on the CR, move back 1
+    if (m_gapBuffer[bufferLocation] == '\n' && bufferLocation != 0)
+    {
+        bufferLocation--;
+    }
+   
+    // Find the end of the previous line
+    while (bufferLocation > 0 &&
+        m_gapBuffer[bufferLocation] != '\n')
+    {
+        bufferLocation--;
+    }
+
+    // Step back to the start of the line
+    if (bufferLocation != 0)
+    {
+        bufferLocation++;
+    }
+
     switch (lineLocation)
     {
     default:
     case LineLocation::LineBegin:
     {
-        if (bufferLocation == 0)
-            return bufferLocation;
-        if (m_gapBuffer[bufferLocation] == '\n')
-            bufferLocation--;
-        while (bufferLocation > 0 && m_gapBuffer[bufferLocation] != '\n')
-        {
-            bufferLocation--;
-        }
-
-        if (m_gapBuffer[bufferLocation] == '\n')
-        {
-            bufferLocation++;
-        }
-
         return Clamp(bufferLocation);
     }
     break;
@@ -497,15 +503,13 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
     // The point just after the line end
     case LineLocation::BeyondLineEnd:
     {
-        while (bufferLocation < m_gapBuffer.size() && m_gapBuffer[bufferLocation] != '\n' && m_gapBuffer[bufferLocation] != 0)
+        while (bufferLocation < m_gapBuffer.size() &&
+            m_gapBuffer[bufferLocation] != '\n' &&
+            m_gapBuffer[bufferLocation] != 0)
         {
             bufferLocation++;
         }
-
-        if (m_gapBuffer[bufferLocation] == '\n')
-        {
-            bufferLocation++;
-        }
+        bufferLocation++;
         return Clamp(bufferLocation);
     }
     break;
@@ -524,22 +528,9 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
 
     case LineLocation::LineFirstGraphChar:
     {
-        if (m_gapBuffer[bufferLocation] == '\n')
-            bufferLocation--;
-        while (bufferLocation > 0 && m_gapBuffer[bufferLocation] != '\n')
-        {
-            bufferLocation--;
-        }
-        if (bufferLocation != 0)
-        {
-            bufferLocation++;
-        }
-        if (bufferLocation >= m_gapBuffer.size())
-        {
-            return Clamp(bufferLocation);
-        }
-
-        while (bufferLocation < m_gapBuffer.size() && !std::isgraph(m_gapBuffer[bufferLocation]))
+        while (bufferLocation < m_gapBuffer.size() &&
+            !std::isgraph(m_gapBuffer[bufferLocation]) &&
+            m_gapBuffer[bufferLocation] != '\n')
         {
             bufferLocation++;
         }
@@ -549,6 +540,8 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
 
     case LineLocation::LineLastNonCR:
     {
+        auto start = bufferLocation;
+
         while (bufferLocation < m_gapBuffer.size()
             && m_gapBuffer[bufferLocation] != '\n'
             && m_gapBuffer[bufferLocation] != 0)
@@ -556,7 +549,12 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
             bufferLocation++;
         }
 
-        return Clamp(bufferLocation - 1);
+        if (start != bufferLocation)
+        {
+            bufferLocation--;
+        }
+
+        return Clamp(bufferLocation);
     }
     break;
 
@@ -569,8 +567,9 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
             bufferLocation++;
         }
 
-        bufferLocation = Clamp(bufferLocation - 1);
-        while (bufferLocation > 0 && bufferLocation < m_gapBuffer.size() && !std::isgraph(m_gapBuffer[bufferLocation]))
+        while (bufferLocation > 0 && 
+            bufferLocation < m_gapBuffer.size() &&
+            !std::isgraph(m_gapBuffer[bufferLocation]))
         {
             bufferLocation--;
         }

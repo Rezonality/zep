@@ -436,13 +436,13 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     }
     else if (context.command == "j" || context.command == "+" || context.lastKey == ExtKeys::DOWN)
     {
-        GetCurrentWindow()->MoveCursorWindowRelative(Zep::NVec2i(0, context.count));
+        GetCurrentWindow()->MoveCursorWindowRelative(context.count);
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
     else if (context.command == "k" || context.command == "-" || context.lastKey == ExtKeys::UP)
     {
-        GetCurrentWindow()->MoveCursorWindowRelative(Zep::NVec2i(0, -context.count));
+        GetCurrentWindow()->MoveCursorWindowRelative(-context.count);
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
@@ -464,27 +464,27 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     {
         // Note: the vim spec says 'visible lines - 2' for a 'page'.
         // We jump the max possible lines, which might hit the end of the text; this matches observed vim behavior
-        GetCurrentWindow()->MoveCursorWindowRelative(Zep::NVec2i(0, (GetCurrentWindow()->GetMaxDisplayLines() - 2) * context.count));
+        GetCurrentWindow()->MoveCursorWindowRelative((GetCurrentWindow()->GetMaxDisplayLines() - 2) * context.count);
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
     else if ((context.command == "d" && (context.modifierKeys & ModifierKey::Ctrl)) || context.lastKey == ExtKeys::PAGEDOWN)
     {
         // Note: the vim spec says 'half visible lines' for up/down
-        GetCurrentWindow()->MoveCursorWindowRelative(Zep::NVec2i(0, (context.displayLineCount / 2) * context.count));
+        GetCurrentWindow()->MoveCursorWindowRelative((context.displayLineCount / 2) * context.count);
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
     else if ((context.command == "b" && (context.modifierKeys & ModifierKey::Ctrl)) || context.lastKey == ExtKeys::PAGEUP)
     {
         // Note: the vim spec says 'visible lines - 2' for a 'page'
-        GetCurrentWindow()->MoveCursorWindowRelative(Zep::NVec2i(0, -(GetCurrentWindow()->GetMaxDisplayLines() - 2) * context.count));
+        GetCurrentWindow()->MoveCursorWindowRelative(-(GetCurrentWindow()->GetMaxDisplayLines() - 2) * context.count);
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
     else if ((context.command == "u" && (context.modifierKeys & ModifierKey::Ctrl)) || context.lastKey == ExtKeys::PAGEUP)
     {
-        GetCurrentWindow()->MoveCursorWindowRelative(Zep::NVec2i(0, -(context.displayLineCount / 2) * context.count));
+        GetCurrentWindow()->MoveCursorWindowRelative(-(context.displayLineCount / 2) * context.count);
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
@@ -497,7 +497,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
             if (cursor.x != -1)
             {
                 // Goto line
-                GetCurrentWindow()->MoveCursorWindowRelative(NVec2i(0, context.count - GetCurrentWindow()->GetCursorLineInfo(cursor.y).bufferLineNumber));
+                GetCurrentWindow()->MoveCursorWindowRelative(context.count - GetCurrentWindow()->GetCursorLineInfo(cursor.y).bufferLineNumber);
                 context.commandResult.flags |= CommandResultFlags::HandledCount;
             }
         }

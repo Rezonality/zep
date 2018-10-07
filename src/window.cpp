@@ -150,6 +150,10 @@ void ZepWindow::MoveCursorTo(BufferLocation location)
 {
     m_bufferCursor = m_pBuffer->Clamp(location);
     m_pendingLineUpdate = true;
+   
+    auto displayCursor = BufferToDisplay();
+    auto& line = windowLines[displayCursor.y];
+    lastCursorC = displayCursor.x;
 }
 
 // Not currently used
@@ -205,36 +209,32 @@ void ZepWindow::ScrollToCursor()
     //visibleLineRange.x = std::min(visibleLineRange.x, long(windowLines.size()));
 }
 
-void ZepWindow::MoveCursorWindowRelative(const NVec2i& distance, LineLocation clampLocation)
+void ZepWindow::MoveCursorWindowRelative(int yDistance, LineLocation clampLocation)
 {
     auto cursorCL = BufferToDisplay();
     if (cursorCL.x == -1)
         return;
 
     // Find the screen line relative target
-    auto target = cursorCL + distance;
+    auto target = cursorCL + NVec2i(0, yDistance);
     target.y = std::max(0l, target.y);
     target.y = std::min(target.y, long(windowLines.size() - 1));
     
     auto& line = windowLines[target.y];
    
+    // Snap to the new vertical column if necessary (see comment below)
+    if (target.x < lastCursorC)
+        target.x = lastCursorC;
+
     // Update the master buffer cursor
     m_bufferCursor = line.columnOffsets.x + target.x;
-    GetEditor().ResetCursorTimer();
+  
+    // Ensure the current x offset didn't walk us off the line (column offset is 1 beyond, and there is a single \n before it)
+    // We are clamping to visible line here
+    m_bufferCursor = std::min(m_bufferCursor, line.columnOffsets.y - 2);
+    m_bufferCursor = std::max(m_bufferCursor, line.columnOffsets.x);
 
-    // Snap to the new vertical column if necessary (see comment below)
-    /*
-    if (distance.x == 0)
-    {
-        if (target.x < lastCursorC)
-            target.x = lastCursorC;
-    }
-    else
-    {
-        lastCursorC = target.x;
-    }
-    cursorCL = ClampToVisible(target);
-    */
+    GetEditor().ResetCursorTimer();
 }
 
 void ZepWindow::SetSelectionRange(BufferLocation start, BufferLocation end)

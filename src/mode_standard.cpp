@@ -197,11 +197,11 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     }
     else if (key == ExtKeys::UP)
     {
-        GetCurrentWindow()->MoveCursorWindowRelative(Zep::NVec2i(0, -1));
+        GetCurrentWindow()->MoveCursorWindowRelative(-1);
     }
     else if (key == ExtKeys::DOWN)
     {
-        GetCurrentWindow()->MoveCursorWindowRelative(Zep::NVec2i(0, 1));
+        GetCurrentWindow()->MoveCursorWindowRelative(1);
     }
     else if (key == ExtKeys::RETURN)
     {

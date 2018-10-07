@@ -72,7 +72,7 @@ public:
     void MoveCursorTo(BufferLocation location);
     void MoveCursorInsideLine(LineLocation location);
 
-    void MoveCursorWindowRelative(const NVec2i& distance, LineLocation clampLocation = LineLocation::LineLastNonCR);
+    void MoveCursorWindowRelative(int yDistance, LineLocation clampLocation = LineLocation::LineLastNonCR);
 
     // Convert buffer to cursor offset
     NVec2i BufferToDisplay(const BufferLocation& location);
