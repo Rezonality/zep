@@ -1310,6 +1310,9 @@ void ZepMode_Vim::HandleInsert(uint32_t key)
             // Leave cusor at the end
             auto cmd = std::make_shared<ZepCommand_Insert>(buffer, m_insertBegin, strInserted, insertEnd);
             AddCommand(std::static_pointer_cast<ZepCommand>(cmd));
+
+            // Complete the insert on the last inserted character (otherwise, we end on the same place we started)
+            insertEnd--;
         }
 
         // Finished escaping
@@ -1317,7 +1320,7 @@ void ZepMode_Vim::HandleInsert(uint32_t key)
         {
             if (bufferCursor != 0)
             {
-                GetCurrentWindow()->MoveCursorTo(insertEnd - 1);
+                GetCurrentWindow()->MoveCursorTo(insertEnd);
             }
 
             // Back to normal mode

@@ -220,6 +220,7 @@ COMMAND_TEST(delete_caW_inside_string, "(one) two three", "lllllcaWabc", "(one)a
 COMMAND_TEST(delete_caW_2, "one two three", "2caWabc", "abcthree");
 
 // ciw
+COMMAND_TEST(delete_ciw_on_newline, "one\n\nthree", "jciwtwo", "one\ntwo\nthree");
 COMMAND_TEST(delete_ciw_first, "one two three", "ciwabc", "abc two three");
 COMMAND_TEST(delete_ciw_start_space, "one two three", "lllciwabc", "oneabctwo three");
 COMMAND_TEST(delete_ciw_inner_spaces, "one    two three", "lllllciwabc", "oneabctwo three");

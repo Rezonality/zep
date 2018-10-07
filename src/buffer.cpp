@@ -16,21 +16,21 @@ inline bool IsWordChar(const char ch)
 {
     return std::isalnum(ch) || ch == '_';
 }
-inline bool IsWordOrSpaceChar(const char ch)
+inline bool IsWordOrSepChar(const char ch)
 {
-    return std::isalnum(ch) || ch == '_' || ch == ' ';
+    return std::isalnum(ch) || ch == '_' || ch == ' ' || ch == '\n' || ch == 0;
 }
 inline bool IsWORDChar(const char ch)
 {
     return std::isgraph(ch);
 }
-inline bool IsWORDOrSpaceChar(const char ch)
+inline bool IsWORDOrSepChar(const char ch)
 {
-    return std::isgraph(ch) || ch == ' ';
+    return std::isgraph(ch) || ch == ' ' || ch == '\n' || ch == 0;
 }
 inline bool IsSpace(const char ch)
 {
-    return std::isspace(ch);
+    return ch == ' ';
 }
 using fnMatch = std::function<bool>(const char);
 
@@ -222,7 +222,7 @@ BufferRange ZepBuffer::AWordMotion(BufferLocation start, uint32_t searchType) co
 
 BufferRange ZepBuffer::InnerWordMotion(BufferLocation start, uint32_t searchType) const
 {
-    auto IsWordOrSpace = searchType == SearchType::Word ? IsWordOrSpaceChar : IsWORDOrSpaceChar;
+    auto IsWordOrSpace = searchType == SearchType::Word ? IsWordOrSepChar : IsWORDOrSepChar;
     auto IsWord = searchType == SearchType::Word ? IsWordChar : IsWORDChar;
     MotionBegin(start, searchType, SearchDirection::Forward);
 
