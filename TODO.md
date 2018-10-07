@@ -1,8 +1,5 @@
 ### Bugs
-Delete everything; iterator bug. ?
-
-##### VIM
-Can't motion up through empty lines if in the middle of the next one - works backwards down the line first. (k)  This is the cursor x snap thing 
+Delete everything; iterator bug. ?How to repro
 
 #### Window
 - Finish HSplit 
