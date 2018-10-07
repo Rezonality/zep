@@ -1,5 +1,9 @@
 ### Bugs
-Delete everything; iterator bug.
+Delete everything; iterator bug. ?
+
+##### VIM
+CIW, no edit, jk leaves cursor moved at beginning of line if starting the command at the beginning
+Can't motion up through empty lines if in the middle of the next one - works backwards down the line first. (k)  This is the cursor x snap thing 
 
 #### Window
 - Finish HSplit 

@@ -43,28 +43,11 @@ enum class LineLocation
 };
 
 using BufferLocation = long;
+using BufferRange = std::pair<BufferLocation, BufferLocation>;
+
 const long InvalidOffset = -1;
 
 extern const char* Msg_Buffer;
-
-
-struct BufferBlock
-{
-    // White space before the block
-    bool spaceBefore;
-    bool spaceBetween;
-    bool startOnBlock;
-    int direction;
-    BufferLocation spaceBeforeStart;
-    BufferLocation firstBlock;
-    BufferLocation firstNonBlock;
-    BufferLocation secondBlock;
-    BufferLocation secondNonBlock;
-
-    // Start search location
-    BufferLocation blockSearchPos;
-
-};
 
 
 class ZepBuffer : public ZepComponent
@@ -73,8 +56,6 @@ public:
     ZepBuffer(ZepEditor& editor, const std::string& strName);
     virtual ~ZepBuffer();
     void SetText(const std::string& strText);
-
-    BufferBlock GetBlock(uint32_t searchType, BufferLocation start, SearchDirection dir) const;
 
     BufferLocation Search(const std::string& str,
         BufferLocation start,
@@ -98,6 +79,8 @@ public:
     BufferLocation WordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
     BufferLocation EndWordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
     BufferLocation ChangeWordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
+    BufferRange AWordMotion(BufferLocation start, uint32_t searchType) const;
+    BufferRange InnerWordMotion(BufferLocation start, uint32_t searchType) const;
 
     bool Delete(const BufferLocation& startOffset, const BufferLocation& endOffset, const BufferLocation& cursorAfter = BufferLocation{ -1 });
     bool Insert(const BufferLocation& startOffset, const std::string& str, const BufferLocation& cursorAfter = BufferLocation{ -1 });

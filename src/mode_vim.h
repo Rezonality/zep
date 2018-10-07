@@ -109,7 +109,7 @@ public:
     virtual void PreDisplay() override;
 private:
     void HandleInsert(uint32_t key);
-    bool GetBlockOpRange(const std::string& op, EditorMode mode, BufferLocation& beginRange, BufferLocation& endRange, BufferLocation& cursorAfter) const;
+    bool GetOperationRange(const std::string& op, EditorMode mode, BufferLocation& beginRange, BufferLocation& endRange, BufferLocation& cursorAfter) const;
     void SwitchMode(EditorMode mode);
     void ResetCommand();
     void Init();

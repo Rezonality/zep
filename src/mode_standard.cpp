@@ -25,30 +25,6 @@
 namespace Zep
 {
 
-// WORD motion for standard mode
-static BufferLocation WordMotion(const BufferBlock& block)
-{
-    // If on a space, move to the first block
-    // Otherwise, we are on a word, and need to move to the second block
-    if (block.direction == 1)
-    {
-        if (block.spaceBefore)
-            return block.firstBlock;
-        else
-            return block.secondBlock;
-    }
-    else
-    {
-        // abc def  If on the 'd', jump to the 'a' 
-        if (block.blockSearchPos == (block.firstNonBlock - block.direction))
-        {
-            return block.secondNonBlock - block.direction;
-        }
-        // Otherwise, beginning of current word
-        return block.firstNonBlock - block.direction;
-    }
-}
-
 ZepMode_Standard::ZepMode_Standard(ZepEditor& editor)
     : ZepMode(editor)
 {
@@ -199,8 +175,8 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     {
         if (modifierKeys & ModifierKey::Ctrl)
         {
-            auto block = buffer.GetBlock(SearchType::Word | SearchType::WORD, bufferCursor, SearchDirection::Forward);
-            GetCurrentWindow()->MoveCursorTo(WordMotion(block));
+            auto target = buffer.WordMotion(bufferCursor, SearchType::Word, SearchDirection::Forward);
+            GetCurrentWindow()->MoveCursorTo(target);
         }
         else
         {
@@ -211,8 +187,8 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     {
         if (modifierKeys & ModifierKey::Ctrl)
         {
-            auto block = buffer.GetBlock(SearchType::Word | SearchType::WORD, bufferCursor, SearchDirection::Backward);
-            GetCurrentWindow()->MoveCursorTo(WordMotion(block));
+            auto target = buffer.WordMotion(bufferCursor, SearchType::Word, SearchDirection::Backward);
+            GetCurrentWindow()->MoveCursorTo(target);
         }
         else
         {

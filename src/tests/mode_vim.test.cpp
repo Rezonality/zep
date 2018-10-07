@@ -224,6 +224,8 @@ COMMAND_TEST(delete_ciw_first, "one two three", "ciwabc", "abc two three");
 COMMAND_TEST(delete_ciw_start_space, "one two three", "lllciwabc", "oneabctwo three");
 COMMAND_TEST(delete_ciw_inner_spaces, "one    two three", "lllllciwabc", "oneabctwo three");
 COMMAND_TEST(delete_ciw_inside_string, "one two three", "lciwabc", "abc two three");
+
+COMMAND_TEST(delete_ciw_single_non_word, "one = two", "llllciw2", "one 2 two");
 COMMAND_TEST(delete_ciw_2, "one two three", "2ciwabc", "abctwo three");
 COMMAND_TEST(delete_ciw_space_start, " one two three", "ciwabc", "abcone two three");
 

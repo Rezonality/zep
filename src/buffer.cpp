@@ -16,17 +16,17 @@ inline bool IsWordChar(const char ch)
 {
     return std::isalnum(ch) || ch == '_';
 }
-inline bool IsNonWordChar(const char ch)
+inline bool IsWordOrSpaceChar(const char ch)
 {
-    return (!IsWordChar(ch) && !std::isspace(ch));
+    return std::isalnum(ch) || ch == '_' || ch == ' ';
 }
 inline bool IsWORDChar(const char ch)
 {
     return std::isgraph(ch);
 }
-inline bool IsNonWORDChar(const char ch)
+inline bool IsWORDOrSpaceChar(const char ch)
 {
-    return !IsWORDChar(ch) && !std::isspace(ch);
+    return std::isgraph(ch) || ch == ' ';
 }
 inline bool IsSpace(const char ch)
 {
@@ -158,8 +158,7 @@ bool ZepBuffer::Skip(fnMatch IsToken, BufferLocation& start, SearchDirection dir
         return false;
 
     bool moved = false;
-    while(Valid(start) &&
-        IsToken(m_gapBuffer[start]))
+    while (Valid(start) && IsToken(m_gapBuffer[start]))
     {
         Move(start, dir);
         moved = true;
@@ -173,8 +172,7 @@ bool ZepBuffer::SkipNot(fnMatch IsToken, BufferLocation& start, SearchDirection 
         return false;
 
     bool moved = false;
-    while(Valid(start) &&
-        !IsToken(m_gapBuffer[start]))
+    while (Valid(start) && !IsToken(m_gapBuffer[start]))
     {
         Move(start, dir);
         moved = true;
@@ -182,12 +180,85 @@ bool ZepBuffer::SkipNot(fnMatch IsToken, BufferLocation& start, SearchDirection 
     return moved;
 }
 
+// This is the vim-like 'caw' rule; The motions and behaviour are based on how vim behaves.
+// This is still quite complex behavior for this particular motion.  I'm open to better ways to express it!
+BufferRange ZepBuffer::AWordMotion(BufferLocation start, uint32_t searchType) const
+{
+    auto IsWord = searchType == SearchType::Word ? IsWordChar : IsWORDChar;
+
+    BufferRange r;
+    r.first = start;
+
+    MotionBegin(start, searchType, SearchDirection::Forward);
+
+    // Already on a word; find the limits, and include the space
+    if (Skip(IsWord, start, SearchDirection::Backward))
+    {
+        start += 1;
+        r.first = start;
+        Skip(IsWord, start, SearchDirection::Forward);
+        Skip(IsSpace, start, SearchDirection::Forward);
+        r.second = start;
+    }
+    // ... or skip space
+    else if (Skip(IsSpace, start, SearchDirection::Forward))
+    {
+        Skip(IsWord, start, SearchDirection::Forward);
+        r.second = start;
+    }
+    // On a non-word, find the beginning, remove including following spaces
+    else if (SkipNot(IsWord, start, SearchDirection::Backward))
+    {
+        Skip(IsSpace, start, SearchDirection::Forward);
+        start += 1;
+        r.first = start;
+        SkipNot(IsWord, start, SearchDirection::Forward);
+        Skip(IsSpace, start, SearchDirection::Forward);
+        r.second = start;
+    }
+
+    return r;
+}
+
+BufferRange ZepBuffer::InnerWordMotion(BufferLocation start, uint32_t searchType) const
+{
+    auto IsWordOrSpace = searchType == SearchType::Word ? IsWordOrSpaceChar : IsWORDOrSpaceChar;
+    auto IsWord = searchType == SearchType::Word ? IsWordChar : IsWORDChar;
+    MotionBegin(start, searchType, SearchDirection::Forward);
+
+    BufferRange r;
+
+    if (SkipNot(IsWordOrSpace, start, SearchDirection::Forward))
+    {
+        r.second = start;
+        start--;
+        SkipNot(IsWordOrSpace, start, SearchDirection::Backward);
+        r.first = start + 1;
+    }
+    else if (Skip(IsSpace, start, SearchDirection::Forward))
+    {
+        r.second = start;
+        start--;
+        Skip(IsSpace, start, SearchDirection::Backward);
+        r.first = start + 1;
+    }
+    else
+    {
+        Skip(IsWord, start, SearchDirection::Forward);
+        r.second = start;
+        start--;
+        Skip(IsWord, start, SearchDirection::Backward);
+        r.first = start + 1;
+    }
+    return r;
+}
+
 BufferLocation ZepBuffer::WordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const
 {
     auto IsWord = searchType == SearchType::Word ? IsWordChar : IsWORDChar;
 
     MotionBegin(start, searchType, dir);
-    
+
     if (dir == SearchDirection::Forward)
     {
         if (Skip(IsWord, start, dir))
@@ -218,7 +289,7 @@ BufferLocation ZepBuffer::WordMotion(BufferLocation start, uint32_t searchType, 
         {
             SkipNot(IsWord, start, dir);
         }
-       
+
         // Skip any spaces
         Skip(IsSpace, start, dir);
 
@@ -236,7 +307,7 @@ BufferLocation ZepBuffer::EndWordMotion(BufferLocation start, uint32_t searchTyp
     auto IsWord = searchType == SearchType::Word ? IsWordChar : IsWORDChar;
 
     MotionBegin(start, searchType, dir);
-    
+
     if (dir == SearchDirection::Forward)
     {
         auto startSearch = start;
@@ -255,7 +326,7 @@ BufferLocation ZepBuffer::EndWordMotion(BufferLocation start, uint32_t searchTyp
         {
             SkipNot(IsWord, start, dir);
         }
-        
+
         // Skip any spaces
         Skip(IsSpace, start, dir);
 
@@ -267,7 +338,16 @@ BufferLocation ZepBuffer::EndWordMotion(BufferLocation start, uint32_t searchTyp
     }
     else // Backward
     {
-        assert(!"No backwards end word code - where did you call it from?");
+        // Note this is the same as the Next word code, in 'forward' mode
+        if (Skip(IsWord, start, dir))
+        {
+            // Skipped a word, skip spaces then done
+            Skip(IsSpace, start, dir);
+        }
+        else
+        {
+            SkipNot(IsWord, start, dir);
+        }
     }
     return start;
 }
@@ -276,7 +356,7 @@ BufferLocation ZepBuffer::ChangeWordMotion(BufferLocation start, uint32_t search
 {
     // Change word is different to work skipping; it will change a string of spaces, for example.
     // Essentially it changes 'what you are over', based on the word rule
-    auto IsWord    = searchType == SearchType::Word ? IsWordChar : IsWORDChar;
+    auto IsWord = searchType == SearchType::Word ? IsWordChar : IsWORDChar;
     MotionBegin(start, searchType, dir);
     if (Skip(IsWord, start, dir))
     {
@@ -284,137 +364,6 @@ BufferLocation ZepBuffer::ChangeWordMotion(BufferLocation start, uint32_t search
     }
     SkipNot(IsWord, start, dir);
     return start;
-}
-
-// Given a stream of ___AAA__BBB
-// We return markers for the start of the first block, beyond the first block, and the second
-// i.e. we 'find' AAA and BBB, and remember if there are spaces between them
-// This enables us to implement various block motions
-BufferBlock ZepBuffer::GetBlock(uint32_t searchType, BufferLocation start, SearchDirection dir) const
-{
-    BufferBlock ret;
-    ret.blockSearchPos = start;
-
-    BufferLocation end;
-    BufferLocation begin;
-    end = BufferLocation{ long(m_gapBuffer.size()) };
-    begin = BufferLocation{ 0 };
-
-    auto itrBegin = m_gapBuffer.begin() + begin;
-    auto itrEnd = m_gapBuffer.begin() + end;
-    auto itrCurrent = m_gapBuffer.begin() + start;
-
-    auto pIsBlock = IsWORDChar;
-    auto pIsNotBlock = IsNonWORDChar;
-    if (searchType & SearchType::Word)
-    {
-        pIsBlock = IsWordChar;
-        pIsNotBlock = IsNonWordChar;
-    }
-
-    // Set the search pos
-    ret.blockSearchPos = LocationFromOffset(long(itrCurrent - m_gapBuffer.begin()));
-
-    auto inc = (dir == SearchDirection::Forward) ? 1 : -1;
-    if (inc == -1)
-    {
-        std::swap(itrBegin, itrEnd);
-    }
-    ret.direction = inc;
-
-    ret.spaceBefore = false;
-    ret.spaceBetween = false;
-
-    while ((itrCurrent != itrBegin) && IsSpace(*itrCurrent))
-    {
-        itrCurrent -= inc;
-    }
-    if (itrCurrent != itrBegin)
-    {
-        itrCurrent += inc;
-    }
-    ret.spaceBeforeStart = LocationFromOffset(long(itrCurrent - m_gapBuffer.begin()));
-
-    // Skip the initial spaces; they are not part of the block
-    itrCurrent = m_gapBuffer.begin() + start;
-    while (itrCurrent != itrEnd && (IsSpace(*itrCurrent)))
-    {
-        ret.spaceBefore = true;
-        itrCurrent += inc;
-    }
-
-    auto GetBlockChecker = [&](const char ch) {
-        if (pIsBlock(ch))
-            return pIsBlock;
-        else
-            return pIsNotBlock;
-    };
-
-    // Find the right start block type
-    auto pCheck = GetBlockChecker(*itrCurrent);
-    ret.startOnBlock = (pCheck == pIsBlock) ? true : false;
-
-    // Walk backwards to the start of the block
-    while (itrCurrent != itrBegin && (pCheck(*itrCurrent)))
-    {
-        itrCurrent -= inc;
-    }
-    if (itrCurrent < m_gapBuffer.end() && !pCheck(*itrCurrent)) // Note this also handles where we couldn't walk back any further
-    {
-        itrCurrent += inc;
-    }
-
-    // Record start
-    ret.firstBlock = LocationFromOffset(long(itrCurrent - m_gapBuffer.begin()));
-
-    // Walk forwards to the end of the block
-    while (itrCurrent != itrEnd && (pCheck(*itrCurrent)))
-    {
-        itrCurrent += inc;
-    }
-
-    // Record end
-    ret.firstNonBlock = LocationFromOffset(long(itrCurrent - m_gapBuffer.begin()));
-
-    // If we couldn't walk further back, record that the offset was beyond!
-    // This is only for backward motions
-    if (itrCurrent < m_gapBuffer.end() && pCheck(*itrCurrent))
-    {
-        ret.firstNonBlock += inc;
-    }
-
-    // Skip the next spaces; they are not part of the block
-    while (itrCurrent != itrEnd && (IsSpace(*itrCurrent)))
-    {
-        ret.spaceBetween = true;
-        itrCurrent += inc;
-    }
-
-    ret.secondBlock = LocationFromOffset(long(itrCurrent - m_gapBuffer.begin()));
-
-    // Get to the end of the second non block
-    if (itrCurrent != itrEnd)
-    {
-        pCheck = GetBlockChecker(*itrCurrent);
-        while (itrCurrent != itrEnd && (pCheck(*itrCurrent)))
-        {
-            itrCurrent += inc;
-        }
-
-        ret.secondNonBlock = LocationFromOffset(long(itrCurrent - m_gapBuffer.begin()));
-
-        // If we couldn't walk further back, record that the offset was beyond!
-        if (itrCurrent < m_gapBuffer.end() && pCheck(*itrCurrent))
-        {
-            ret.secondNonBlock += inc;
-        }
-    }
-    else
-    {
-        ret.secondNonBlock = ret.secondBlock;
-    }
-
-    return ret;
 }
 
 void ZepBuffer::ProcessInput(const std::string& text)
@@ -548,13 +497,11 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
     // The point just after the line end
     case LineLocation::BeyondLineEnd:
     {
-        while (bufferLocation < m_gapBuffer.size() &&
-            m_gapBuffer[bufferLocation] != '\n' &&
-            m_gapBuffer[bufferLocation] != 0)
+        while (bufferLocation < m_gapBuffer.size() && m_gapBuffer[bufferLocation] != '\n' && m_gapBuffer[bufferLocation] != 0)
         {
             bufferLocation++;
         }
-        
+
         if (m_gapBuffer[bufferLocation] == '\n')
         {
             bufferLocation++;
@@ -591,9 +538,8 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
         {
             return Clamp(bufferLocation);
         }
-        
-        while (bufferLocation < m_gapBuffer.size() &&
-            !std::isgraph(m_gapBuffer[bufferLocation]))
+
+        while (bufferLocation < m_gapBuffer.size() && !std::isgraph(m_gapBuffer[bufferLocation]))
         {
             bufferLocation++;
         }
@@ -604,7 +550,7 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
     case LineLocation::LineLastNonCR:
     {
         while (bufferLocation < m_gapBuffer.size()
-            && m_gapBuffer[bufferLocation] != '\n' 
+            && m_gapBuffer[bufferLocation] != '\n'
             && m_gapBuffer[bufferLocation] != 0)
         {
             bufferLocation++;
@@ -624,8 +570,7 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
         }
 
         bufferLocation = Clamp(bufferLocation - 1);
-        while (bufferLocation > 0 && bufferLocation < m_gapBuffer.size() &&
-            !std::isgraph(m_gapBuffer[bufferLocation]))
+        while (bufferLocation > 0 && bufferLocation < m_gapBuffer.size() && !std::isgraph(m_gapBuffer[bufferLocation]))
         {
             bufferLocation--;
         }
