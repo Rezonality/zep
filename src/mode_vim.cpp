@@ -1055,6 +1055,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
             else
             {
                 GetEditor().SetCommandText("Not a command");
+                m_currentCommand.clear();
                 return false;
             }
 
