@@ -152,7 +152,7 @@ public:
     ZepDisplay* m_pDisplay;
     ZepTabWindow& m_window;
 
-    uint32_t m_windowFlags = WindowFlags::ShowCR | WindowFlags::ShowWhiteSpace;
+    uint32_t m_windowFlags = WindowFlags::ShowWhiteSpace;
 
     long m_maxDisplayLines = 0;
     float m_defaultLineSize = 0;

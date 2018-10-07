@@ -390,6 +390,13 @@ void ZepBuffer::ProcessInput(const std::string& text)
             {
                 m_bStrippedCR = true;
             }
+            else if (ch == '\t')
+            {
+                m_gapBuffer.push_back(' ');
+                m_gapBuffer.push_back(' ');
+                m_gapBuffer.push_back(' ');
+                m_gapBuffer.push_back(' ');
+            }
             else
             {
                 m_gapBuffer.push_back(ch);

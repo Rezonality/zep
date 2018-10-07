@@ -189,24 +189,10 @@ void ZepWindow::ScrollToCursor()
         visibleLineRange.x = std::max(0l, (long)visibleLineRange.x);
     }
     UpdateScreenLines();
+
+#if DEBUG_LINES
     GetEditor().SetCommandText(std::string("Line Range: ") + std::to_string(visibleLineRange.x) + ", " + std::to_string(visibleLineRange.y) + ", cursor: " + std::to_string(cursor.y));
-
-    //if (cursorCL.y
-    /*
-    if (target.y < 4 && visibleLineRange.x > 0)
-    {
-        visibleLineRange.x += distance.y;
-    }
-    else if (target.y > upperLimit &&
-        visibleLineRange.y < windowLines.size())
-    {
-        visibleLineRange.x += distance.y;
-    }
-    */
-
-    // Clamp to window lines
-    //visibleLineRange.x = std::max(0l, visibleLineRange.x);
-    //visibleLineRange.x = std::min(visibleLineRange.x, long(windowLines.size()));
+#endif
 }
 
 void ZepWindow::MoveCursorWindowRelative(int yDistance, LineLocation clampLocation)
@@ -555,29 +541,32 @@ bool ZepWindow::DisplayLine(ZepDisplay& display, const LineInfo& lineInfo, const
 
                 if (lineInfo.BufferCursorInside(m_bufferCursor))
                 {
-                    // Cursor
-                    cursorPosPx = NVec2f(m_textRegion.topLeftPx.x + textSize.x * cursorCL.x, lineInfo.screenPosYPx);
-                    auto cursorBlink = GetEditor().GetCursorBlinkState();
-                    if (!cursorBlink)
+                    if (m_bufferCursor == ch)
                     {
-                        switch (cursorMode)
+                        // Cursor
+                        cursorPosPx = NVec2f(m_textRegion.topLeftPx.x + textSize.x * cursorCL.x, lineInfo.screenPosYPx);
+                        auto cursorBlink = GetEditor().GetCursorBlinkState();
+                        if (!cursorBlink)
                         {
-                        default:
-                        case CursorMode::Hidden:
+                            switch (cursorMode)
+                            {
+                            default:
+                            case CursorMode::Hidden:
+                                break;
+
+                            case CursorMode::Insert:
+                            {
+                                display.DrawRectFilled(NVec2f(cursorPosPx.x - 1, cursorPosPx.y), NVec2f(cursorPosPx.x, cursorPosPx.y + textSize.y), 0xEEFFFFFF);
+                            }
                             break;
 
-                        case CursorMode::Insert:
-                        {
-                            display.DrawRectFilled(NVec2f(cursorPosPx.x - 1, cursorPosPx.y), NVec2f(cursorPosPx.x, cursorPosPx.y + textSize.y), 0xEEFFFFFF);
-                        }
-                        break;
-
-                        case CursorMode::Normal:
-                        case CursorMode::Visual:
-                        {
-                            display.DrawRectFilled(cursorPosPx, NVec2f(cursorPosPx.x + textSize.x, cursorPosPx.y + textSize.y), Color_CursorNormal);
-                        }
-                        break;
+                            case CursorMode::Normal:
+                            case CursorMode::Visual:
+                            {
+                                display.DrawRectFilled(cursorPosPx, NVec2f(cursorPosPx.x + textSize.x, cursorPosPx.y + textSize.y), Color_CursorNormal);
+                            }
+                            break;
+                            }
                         }
                     }
                 }

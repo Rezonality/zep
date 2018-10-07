@@ -170,6 +170,15 @@ void ZepSyntax::UpdateSyntax()
         // Ensure we found a token
         assert(itrLast >= itrFirst);
 
+        // Mark whitespace
+        for (auto& itr = itrCurrent; itr < itrFirst; itr++)
+        {
+            if (*itr == ' ')
+            {
+                mark(itr, itr + 1, SyntaxType::Whitespace);
+            }
+        }
+
         // Do I need to make a string here?
         auto token = std::string(itrFirst, itrLast);
         if (keywords.find(token) != keywords.end())
