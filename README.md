@@ -7,7 +7,7 @@
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/cmaughan/zep/blob/master/LICENSE)
 
 Zep is a simple embeddable editor, with a rendering agnostic design and optional Vim mode.  Out of the box it can draw to a Qt Widget
-or an an ImGui window.  A simple threaded syntax highlighting engine is provided, and can easily be extended. 
+or an an ImGui window - useful for embedding in a game engine.  A simple threaded syntax highlighting engine is provided, and can easily be extended. 
 
 Zep supports the standard editing keystrokes you'll find in most editors, along with a reasonable subset of modal Vim editing, as an option.
 Zep is not meant to replace Vim.  I don't have a lifetime spare to write that, but it has most of the functionality I use day to day, and 
@@ -23,7 +23,8 @@ There are many unit tests for the Vim mode.
 
 This project started mainly as an experiment, and a learning exercise.  I like the idea of a programmer building programmer tools; as carpenters
 used to build toolboxes as part of their internship.
-Pull requests are appreciated and encouraged ;)
+Pull requests are appreciated and encouraged ;) 
+Note: Zep currently ignores tabs and converts them to spaces, and converts \r\n to \n.  It is opinionated in that way(!) It also doesn't play nice with utf8 yet.
 
 Screenshot
 ----------
@@ -32,6 +33,9 @@ Using the ImGui Renderer:
 
 Using the Qt Renderer:
 ![Qt](screenshots/sample-qt.png)
+
+Embedded in a Game Engine:
+![Embedded](screenshots/embedded.png)
 
 Design
 ------
@@ -48,8 +52,7 @@ and implements undo/redo functionality.
 ##### Window
 The window layer manages views onto buffers.  It helps with cursor operations, and enables multiple views of the same or multiple buffers.  Since selections
 are window specific, such things are done relative to windows, not buffers. The ZepTabWindow is the window class.
-Most of the buffer/tab management is not done yet, but infrastruture is there to support it. Adding extra windows results in tabs appearing.
-Each window can switch to any of the buffers.  Splits are a work item.
+Most of the buffer/tab management is architected, but not yet enabled.  Support for Tabs and Splits is planned
 
 ##### Display
 A simple display layer is used to render buffers into a window.  It has a thin backend for drawing to the screen, requiring just a few simple
