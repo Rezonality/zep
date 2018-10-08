@@ -24,10 +24,11 @@ namespace SearchType
 {
 enum : uint32_t
 {
-    Word = (1 << 0),
+    WORD = (1 << 0),
     Begin = (1 << 1),
     End = (1 << 2),
-    AlphaNumeric = (1 << 3)
+    Word = (1 << 3),
+    SingleLine = (1 << 4)
 };
 };
 
@@ -37,59 +38,16 @@ enum class LineLocation
     LineLastGraphChar,  // Last non blank character
     LineLastNonCR,      // Last character before the carriage return
     LineBegin,          // Beginning of line
-    LineEnd,            // The line end of the buffer line (for wrapped lines).
+    BeyondLineEnd,            // The line end of the buffer line (for wrapped lines).
     LineCRBegin,        // The first carriage return character
 };
 
 using BufferLocation = long;
+using BufferRange = std::pair<BufferLocation, BufferLocation>;
+
 const long InvalidOffset = -1;
 
 extern const char* Msg_Buffer;
-
-// Notification payload
-enum class BufferMessageType
-{
-    PreBufferChange = 0,
-    TextChanged,
-    TextDeleted,
-    TextAdded,
-};
-struct BufferMessage : public ZepMessage
-{
-    BufferMessage(ZepBuffer* pBuff, BufferMessageType messageType, const BufferLocation& startLoc, const BufferLocation& endLoc, const BufferLocation& cursor = BufferLocation{ -1 })
-        : ZepMessage(Msg_Buffer),
-        pBuffer(pBuff),
-        type(messageType),
-        startLocation(startLoc),
-        endLocation(endLoc),
-        cursorAfter(cursor)
-    {
-    }
-
-    ZepBuffer* pBuffer;
-    BufferMessageType type;
-    BufferLocation startLocation;
-    BufferLocation endLocation;
-    BufferLocation cursorAfter;
-};
-
-struct BufferBlock
-{
-    // White space before the block
-    bool spaceBefore;
-    bool spaceBetween;
-    bool startOnBlock;
-    int direction;
-    BufferLocation spaceBeforeStart;
-    BufferLocation firstBlock;
-    BufferLocation firstNonBlock;
-    BufferLocation secondBlock;
-    BufferLocation secondNonBlock;
-
-    // Start search location
-    BufferLocation blockSearchPos;
-
-};
 
 
 class ZepBuffer : public ZepComponent
@@ -99,18 +57,30 @@ public:
     virtual ~ZepBuffer();
     void SetText(const std::string& strText);
 
-    BufferBlock GetBlock(uint32_t searchType, BufferLocation start, SearchDirection dir) const;
-
     BufferLocation Search(const std::string& str,
         BufferLocation start,
         SearchDirection dir = SearchDirection::Forward,
         BufferLocation end = BufferLocation{ -1l }) const;
 
-    BufferLocation GetLinePos(long line, LineLocation location) const;
+    BufferLocation GetLinePos(BufferLocation bufferLocation, LineLocation lineLocation) const;
     bool GetLineOffsets(const long line, long& charStart, long& charEnd) const;
     BufferLocation Clamp(BufferLocation location) const;
 
     ThreadPool& GetThreadPool() { return m_threadPool; }
+
+    using fnMatch = std::function<bool(const char)>;
+
+    void Move(BufferLocation& loc, SearchDirection dir) const;
+    bool Valid(BufferLocation locataion) const;
+    bool MotionBegin(BufferLocation& start, uint32_t searchType, SearchDirection dir) const;
+    bool Skip(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const;
+    bool SkipNot(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const;
+
+    BufferLocation WordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
+    BufferLocation EndWordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
+    BufferLocation ChangeWordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
+    BufferRange AWordMotion(BufferLocation start, uint32_t searchType) const;
+    BufferRange InnerWordMotion(BufferLocation start, uint32_t searchType) const;
 
     bool Delete(const BufferLocation& startOffset, const BufferLocation& endOffset, const BufferLocation& cursorAfter = BufferLocation{ -1 });
     bool Insert(const BufferLocation& startOffset, const std::string& str, const BufferLocation& cursorAfter = BufferLocation{ -1 });
@@ -156,4 +126,30 @@ private:
     bool m_bStrippedCR;
 };
 
+// Notification payload
+enum class BufferMessageType
+{
+    PreBufferChange = 0,
+    TextChanged,
+    TextDeleted,
+    TextAdded,
+};
+struct BufferMessage : public ZepMessage
+{
+    BufferMessage(ZepBuffer* pBuff, BufferMessageType messageType, const BufferLocation& startLoc, const BufferLocation& endLoc, const BufferLocation& cursor = BufferLocation{ -1 })
+        : ZepMessage(Msg_Buffer),
+        pBuffer(pBuff),
+        type(messageType),
+        startLocation(startLoc),
+        endLocation(endLoc),
+        cursorAfter(cursor)
+    {
+    }
+
+    ZepBuffer* pBuffer;
+    BufferMessageType type;
+    BufferLocation startLocation;
+    BufferLocation endLocation;
+    BufferLocation cursorAfter;
+};
 } // Zep

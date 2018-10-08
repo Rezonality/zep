@@ -1,6 +1,7 @@
 #pragma once
 
 #include "buffer.h"
+#include <deque>
 
 namespace Zep
 {
@@ -13,33 +14,31 @@ class ZepWindow;
 class ZepTabWindow : public ZepComponent
 {
 public:
-    using tBuffers = std::map<ZepBuffer*, std::shared_ptr<ZepWindow>>;
 
-    ZepTabWindow(ZepDisplay& display);
+    ZepTabWindow(ZepEditor& editor);
     virtual ~ZepTabWindow();
 
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
-    void PreDisplay(const DisplayRegion& region);
 
-    ZepWindow* GetCurrentWindow() const;
+    ZepWindow* AddWindow(ZepBuffer* pBuffer);
+    void RemoveWindow(ZepWindow* pWindow);
+    void SetActiveWindow(ZepWindow* pBuffer) { m_pActiveWindow = pBuffer; }
+    ZepWindow* GetActiveWindow() const { return m_pActiveWindow; }
+    
+    using tWindows = std::vector<ZepWindow*>;
+    const tWindows& GetWindows() const { return m_windows; }
 
-    void SetCurrentBuffer(ZepBuffer* pBuffer);
-    ZepBuffer* GetCurrentBuffer() const;
-    void AddBuffer(ZepBuffer* pBuffer);
-    void RemoveBuffer(ZepBuffer* pBuffer);
-    const tBuffers& GetBuffers() const;
-
-    ZepDisplay& GetDisplay() const { return m_display; }
-    void Display();
+    void PreDisplay(ZepDisplay& display, const DisplayRegion& region);
+    void Display(ZepDisplay& display);
 
 private:
-    ZepDisplay& m_display;                     // Display that owns this window
+    ZepEditor& m_editor;                            // Editor that owns this window
     DisplayRegion m_windowRegion;                 // region of the display we are showing on.
     DisplayRegion m_buffersRegion;                   // region of the display for text.
 
-    tBuffers m_buffers;
-    ZepBuffer* m_pCurrentBuffer = nullptr;
+    tWindows m_windows;
+    ZepWindow* m_pActiveWindow = nullptr;
 };
 
 } // Zep

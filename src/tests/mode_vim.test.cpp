@@ -31,19 +31,19 @@ public:
         spDisplay = std::make_shared<ZepDisplayNull>(*spEditor);
         spDisplay->SetDisplaySize(NVec2f(0.0f, 0.0f), NVec2f(1024.0f, 1024.0f));
 
-        pTabWindow = spDisplay->GetCurrentTabWindow();
-        pTabWindow->AddBuffer(pBuffer);
+        // Since the tests don't display anything, ensure that the window state is up to date  before running them; 
+        // this is usually done at display time, but some tests rely on window state/cursor limits being the same as if they 
+        // were displaying the data
+        spDisplay->Display();
 
-        pWindow = pTabWindow->GetCurrentWindow();
-        spMode->SetCurrentWindow(pWindow);
-        
-        pWindow->SetCursor(NVec2i(0, 0));
+        pTabWindow = spEditor->GetActiveTabWindow();
+        pWindow = spEditor->GetActiveTabWindow()->GetActiveWindow();
+
+        pWindow->MoveCursorTo(0);
     }
 
     ~VimTest()
     {
-        pTabWindow->RemoveBuffer(pBuffer);
-        spDisplay->RemoveTabWindow(pTabWindow);
     }
 
 public:
@@ -60,14 +60,14 @@ TEST_F(VimTest, CheckDisplaySucceeds)
     pBuffer->SetText("Some text to display\nThis is a test.");
     spDisplay->SetDisplaySize(NVec2f(0.0f, 0.0f), NVec2f(50.0f, 1024.0f));
     ASSERT_NO_FATAL_FAILURE(spDisplay->Display());
-    ASSERT_FALSE(pTabWindow->GetBuffers().empty());
+    ASSERT_FALSE(pTabWindow->GetWindows().empty());
 }
 
 TEST_F(VimTest, CheckDisplayWrap)
 {
     pBuffer->SetText("Some text to display\nThis is a test.");
     ASSERT_NO_FATAL_FAILURE(spDisplay->Display());
-    ASSERT_FALSE(pTabWindow->GetBuffers().empty());
+    ASSERT_FALSE(pTabWindow->GetWindows().empty());
 }
 // Given a sample text, a keystroke list and a target text, check the test returns the right thing
 #define COMMAND_TEST(name, source, command, target) \
@@ -87,8 +87,11 @@ TEST_F(VimTest, name)                              \
     ASSERT_STREQ(pBuffer->GetText().string().c_str(), target);     \
 };
 
+#define SET_TEXT(txt) { pBuffer->SetText(txt); spDisplay->Display(); }
+
 TEST_F(VimTest, UndoRedo)
 {
+    // The issue here is that setting the text _should_ update the buffer!
     pBuffer->SetText("Hello");
     spMode->AddCommandText("3x");
     spMode->Undo();
@@ -154,7 +157,7 @@ TEST_F(VimTest, BACKSPACE)
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
     ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hello");
-    ASSERT_EQ(pWindow->GetCursor().x, 0);
+    ASSERT_EQ(pWindow->GetBufferCursor(), 0);
 
     spMode->AddCommandText("lli");
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
@@ -217,10 +220,13 @@ COMMAND_TEST(delete_caW_inside_string, "(one) two three", "lllllcaWabc", "(one)a
 COMMAND_TEST(delete_caW_2, "one two three", "2caWabc", "abcthree");
 
 // ciw
+COMMAND_TEST(delete_ciw_on_newline, "one\n\nthree", "jciwtwo", "one\ntwo\nthree");
 COMMAND_TEST(delete_ciw_first, "one two three", "ciwabc", "abc two three");
 COMMAND_TEST(delete_ciw_start_space, "one two three", "lllciwabc", "oneabctwo three");
 COMMAND_TEST(delete_ciw_inner_spaces, "one    two three", "lllllciwabc", "oneabctwo three");
 COMMAND_TEST(delete_ciw_inside_string, "one two three", "lciwabc", "abc two three");
+
+COMMAND_TEST(delete_ciw_single_non_word, "one = two", "llllciw2", "one 2 two");
 COMMAND_TEST(delete_ciw_2, "one two three", "2ciwabc", "abctwo three");
 COMMAND_TEST(delete_ciw_space_start, " one two three", "ciwabc", "abcone two three");
 
@@ -303,8 +309,8 @@ TEST_F(VimTest, name)                               \
 {                                                   \
     pBuffer->SetText(source);                      \
     spMode->AddCommandText(command);                \
-    ASSERT_EQ(pWindow->GetCursor().x, xcoord);     \
-    ASSERT_EQ(pWindow->GetCursor().y, ycoord);     \
+    ASSERT_EQ(pWindow->BufferToDisplay().x, xcoord);     \
+    ASSERT_EQ(pWindow->BufferToDisplay().y, ycoord);     \
 };
 
 // Motions
@@ -322,7 +328,10 @@ CURSOR_TEST(motion_jdown_limit, "one\ntwo", "jjjjjjjjj", 0, 1);
 CURSOR_TEST(motion_jklh_find_center, "one\ntwo\nthree", "jjlk", 1, 1);
 
 CURSOR_TEST(motion_goto_endline, "one two", "$", 6, 0);
-CURSOR_TEST(motion_goto_enddoc, "one\ntwo", "G", 2, 1);
+CURSOR_TEST(motion_G_goto_enddoc, "one\ntwo", "G", 0, 1);
+
+CURSOR_TEST(motion_3G, "one\ntwo\nthree\nfour\n", "3G", 0, 3);
+
 CURSOR_TEST(motion_goto_begindoc, "one\ntwo", "lljgg", 0, 0);
 CURSOR_TEST(motion_goto_beginline, "one two", "lllll0", 0, 0);
 CURSOR_TEST(motion_goto_firstlinechar, "   one two", "^", 3, 0);
@@ -332,6 +341,7 @@ CURSOR_TEST(motion_w, "one! two three", "w", 3, 0);
 CURSOR_TEST(motion_w_space, "one two three", "lllw", 4, 0);
 CURSOR_TEST(motion_W, "one! two three", "W", 5, 0);
 CURSOR_TEST(motion_b, "one! two three", "wwb", 3, 0);
+CURSOR_TEST(motion_b_from_non_word, "one! two three", "wwbb", 0, 0);
 CURSOR_TEST(motion_b_endofword, "one! two three", "llb", 0, 0);
 CURSOR_TEST(motion_b_space, "one! two three", "eeelb", 5, 0);
 CURSOR_TEST(motion_B, "one! two three", "wwwB", 5, 0);
@@ -345,8 +355,6 @@ CURSOR_TEST(motion_E, "one! two three", "eelE", 7, 0);
 CURSOR_TEST(motion_ge, "one! two three", "wwwge", 7, 0);
 CURSOR_TEST(motion_gE, "one two!!!two", "llllllllllllgE", 2, 0);
 CURSOR_TEST(motion_ge_startspace, "one! two three", "wwjge", 3, 0);
-CURSOR_TEST(motion_3G, "one\ntwo\nthree\nfour\n", "3G", 0, 3);
-CURSOR_TEST(motion_G, "one\ntwo\nthree\nfour", "3G", 0, 3);
 
 CURSOR_TEST(motion_0, "one two", "llll0", 0, 0);
 CURSOR_TEST(motion_gg, "one two", "llllgg", 0, 0);

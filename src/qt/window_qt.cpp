@@ -31,7 +31,7 @@ ZepWindow_Qt::~ZepWindow_Qt()
 
 void ZepWindow_Qt::OnTimer()
 {
-    if (m_spDisplay->RefreshRequired())
+    if (m_spEditor->RefreshRequired())
     {
         update();
     }
@@ -44,16 +44,6 @@ void ZepWindow_Qt::paintEvent(QPaintEvent* pPaint)
     painter.fillRect(rect(), QColor::fromRgbF(.1f, .1f, .1f, 1.0f));
 
     m_spDisplay->SetPainter(&painter);
-
-    auto pTabWindow = m_spDisplay->GetCurrentTabWindow();
-    if (pTabWindow)
-    {
-        m_spEditor->GetCurrentMode()->SetCurrentWindow(pTabWindow->GetCurrentWindow());
-        if (pTabWindow->GetCurrentBuffer() == nullptr)
-        {
-            pTabWindow->SetCurrentBuffer(m_spEditor->GetBuffers()[0].get());
-        }
-    }
 
     m_spDisplay->SetDisplaySize(NVec2f(painter.viewport().left(), painter.viewport().top()),
         NVec2f(painter.viewport().width(), painter.viewport().height()));
@@ -87,8 +77,6 @@ void ZepWindow_Qt::keyPressEvent(QKeyEvent* ev)
         update();
         return;
     }
-
-    m_spEditor->GetCurrentMode()->SetCurrentWindow(m_spDisplay->GetCurrentTabWindow()->GetCurrentWindow());
 
     if (ev->key() == Qt::Key_Tab)
     {

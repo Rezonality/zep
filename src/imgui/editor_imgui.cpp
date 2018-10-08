@@ -20,15 +20,6 @@ ZepEditor_ImGui::ZepEditor_ImGui()
 
 void ZepEditor_ImGui::Display(const NVec2f& pos, const NVec2f& size)
 {
-    auto pTabWindow = m_spDisplay->GetCurrentTabWindow();
-    if (pTabWindow)
-    {
-        if (pTabWindow->GetCurrentBuffer() == nullptr)
-        {
-            pTabWindow->SetCurrentBuffer(GetBuffers()[0].get());
-        }
-    }
-
     m_spDisplay->SetDisplaySize(pos, pos + size);
     m_spDisplay->Display();
 
@@ -119,8 +110,6 @@ void ZepEditor_ImGui::HandleInput()
         }
         else
         {
-            GetCurrentMode()->SetCurrentWindow(m_spDisplay->GetCurrentTabWindow()->GetCurrentWindow());
-
             for (int ch = SDL_SCANCODE_A; ch <= SDL_SCANCODE_Z; ch++)
             {
                 if (ImGui::IsKeyPressed(ch))
@@ -138,7 +127,6 @@ void ZepEditor_ImGui::HandleInput()
         }
     }
 
-    GetCurrentMode()->SetCurrentWindow(m_spDisplay->GetCurrentTabWindow()->GetCurrentWindow());
     if (!handled)
     {
         for (int n = 0; n < (sizeof(io.InputCharacters) / sizeof(*io.InputCharacters)) && io.InputCharacters[n]; n++)

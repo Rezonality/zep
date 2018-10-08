@@ -1,27 +1,30 @@
-#include "buffer.h"
 #include "mode.h"
-#include "editor.h"
+#include "buffer.h"
 #include "commands.h"
-#include "window.h"
+#include "editor.h"
 #include "tab_window.h"
+#include "window.h"
 
 namespace Zep
 {
 
 ZepMode::ZepMode(ZepEditor& editor)
-    : ZepComponent(editor),
-    m_currentMode(EditorMode::Normal)
+    : ZepComponent(editor)
+    , m_currentMode(EditorMode::Normal)
 {
 }
 
 ZepMode::~ZepMode()
 {
-
 }
 
-void ZepMode::SetCurrentWindow(ZepWindow* pWindow)
+ZepWindow* ZepMode::GetCurrentWindow() const
 {
-    m_pCurrentWindow = pWindow;
+    if (GetEditor().GetActiveTabWindow())
+    {
+        return GetEditor().GetActiveTabWindow()->GetActiveWindow();
+    }
+    return nullptr;
 }
 
 void ZepMode::AddCommandText(std::string strText)
@@ -34,10 +37,9 @@ void ZepMode::AddCommandText(std::string strText)
 
 void ZepMode::AddCommand(std::shared_ptr<ZepCommand> spCmd)
 {
-    if (m_pCurrentWindow && 
-        m_pCurrentWindow->GetBuffer().IsViewOnly())
+    if (GetCurrentWindow() && GetCurrentWindow()->GetBuffer().IsViewOnly())
     {
-        // Ignore commands on buffers because we are view only, 
+        // Ignore commands on buffers because we are view only,
         // and all commands currently modify the buffer!
         return;
     }
@@ -48,12 +50,17 @@ void ZepMode::AddCommand(std::shared_ptr<ZepCommand> spCmd)
     // Can't redo anything beyond this point
     std::stack<std::shared_ptr<ZepCommand>> empty;
     m_redoStack.swap(empty);
+                
+    if (spCmd->GetCursorAfter() != -1)
+    {
+        GetCurrentWindow()->MoveCursorTo(spCmd->GetCursorAfter());
+    }
 }
 
 void ZepMode::Redo()
 {
     bool inGroup = false;
-    do 
+    do
     {
         if (!m_redoStack.empty())
         {
@@ -97,8 +104,7 @@ void ZepMode::Undo()
         {
             break;
         }
-    } 
-    while (inGroup);
+    } while (inGroup);
 }
 
 void ZepMode::UpdateVisualSelection()
@@ -109,15 +115,13 @@ void ZepMode::UpdateVisualSelection()
         // Update the visual range
         if (m_lineWise)
         {
-            auto pLineInfo = &m_pCurrentWindow->visibleLines[m_pCurrentWindow->GetCursor().y];
-            m_visualEnd = m_pCurrentWindow->GetBuffer().GetLinePos(pLineInfo->lineNumber, LineLocation::LineEnd) - 1;
+            m_visualEnd = GetCurrentWindow()->GetBuffer().GetLinePos(GetCurrentWindow()->GetBufferCursor(), LineLocation::BeyondLineEnd) - 1;
         }
         else
         {
-            m_visualEnd = m_pCurrentWindow->DisplayToBuffer();
+            m_visualEnd = GetCurrentWindow()->GetBufferCursor();
         }
-        m_pCurrentWindow->SetSelectionRange(m_pCurrentWindow->BufferToDisplay(m_visualBegin), m_pCurrentWindow->BufferToDisplay(m_visualEnd));
+        GetCurrentWindow()->SetSelectionRange(m_visualBegin, m_visualEnd);
     }
 }
-}
-
+} // namespace Zep

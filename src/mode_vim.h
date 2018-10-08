@@ -65,14 +65,13 @@ struct CommandContext
     std::string commandText;
     std::string commandWithoutCount;
     std::string command;
-    const LineInfo* pLineInfo = nullptr;
+    //const LineInfo* pLineInfo = nullptr;
     long displayLineCount = 0;
     BufferLocation beginRange{ -1 };
     BufferLocation endRange{ -1 };
     ZepBuffer& buffer;
 
     // Cursor State
-    NVec2i cursor;
     BufferLocation bufferCursor{ -1 };
     BufferLocation cursorAfter{ -1 };
 
@@ -86,6 +85,7 @@ struct CommandContext
     uint32_t modifierKeys = 0;
     EditorMode mode = EditorMode::None;
     int count = 1;
+    bool foundCount = false;
 
     // Output result
     CommandResult commandResult;
@@ -100,16 +100,16 @@ public:
 
     virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
     virtual void Begin() override;
-    virtual void SetCurrentWindow(ZepWindow* pTabWindow) override;
 
     virtual const char* Name() const override { return "Vim"; }
 
     const std::string& GetLastCommand() const { return m_lastCommand; }
     const int GetLastCount() const { return m_lastCount; }
 
+    virtual void PreDisplay() override;
 private:
     void HandleInsert(uint32_t key);
-    bool GetBlockOpRange(const std::string& op, EditorMode mode, BufferLocation& beginRange, BufferLocation& endRange, BufferLocation& cursorAfter) const;
+    bool GetOperationRange(const std::string& op, EditorMode mode, BufferLocation& beginRange, BufferLocation& endRange, BufferLocation& cursorAfter) const;
     void SwitchMode(EditorMode mode);
     void ResetCommand();
     void Init();

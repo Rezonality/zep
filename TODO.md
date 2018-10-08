@@ -1,5 +1,5 @@
 ### Bugs
-Delete everything; iterator bug.
+Delete everything; iterator bug. ?How to repro
 
 #### Window
 - Finish HSplit 

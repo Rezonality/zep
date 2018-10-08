@@ -31,6 +31,8 @@
 
 using namespace Zep;
 
+#include "src/tests/longtext.tt"
+
 const std::string shader = R"R(
 #version 330 core
 
@@ -143,7 +145,7 @@ int main(int, char**)
    
     // Add a shader
     ZepBuffer* pBuffer = spEditor->AddBuffer("shader.vert");
-    pBuffer->SetText(shader.c_str());
+    pBuffer->SetText(longTextSample.c_str());// shader.c_str());
 
     // Main loop
     bool done = false;
@@ -155,7 +157,7 @@ int main(int, char**)
         // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
         // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
         SDL_Event event;
-        if (SDL_PollEvent(&event))
+        if (SDL_WaitEventTimeout(&event, 10))
         {
             ImGui_ImplSDL2_ProcessEvent(&event);
             if (event.type == SDL_QUIT)
@@ -167,7 +169,7 @@ int main(int, char**)
         {
             // Save battery by skipping display if not required.
             // This will check for cursor flash, for example, to keep that updated.
-            if (!spEditor->GetDisplay()->RefreshRequired())
+            if (!spEditor->RefreshRequired())
             {
                 continue;
             }
@@ -182,7 +184,7 @@ int main(int, char**)
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
 
-        ImGui::SetNextWindowSize(ImVec2(800, 600));
+        ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
 
         ImGui::Begin("Zep");
         ImGui::Text("CTRL+1 for Normal editing, CTRL+2 for VIM mode");

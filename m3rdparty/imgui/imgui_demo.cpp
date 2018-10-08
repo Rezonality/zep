@@ -2126,7 +2126,7 @@ void ImGui::ShowDemoWindow(bool* p_open)
             ImGui::TreePop();
         }
 
-        // Word wrapping
+        // WORD wrapping
         if (ImGui::TreeNode("Word-wrapping"))
         {
             ImGui::Columns(2, "word-wrapping");
