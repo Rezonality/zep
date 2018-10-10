@@ -1,35 +1,47 @@
 #include <string>
 #include <QKeyEvent>
+#include <QApplication>
 #include "editor.h"
 #include "mode.h"
-#include "window_qt.h"
+#include "zepwidget_qt.h"
 #include "tab_window.h"
-#include "display_qt.h"
-#include "display.h"
+#include "zepdisplay_qt.h"
 
 namespace Zep
 {
 
-ZepWindow_Qt::ZepWindow_Qt(QWidget* pParent)
+ZepWidget_Qt::ZepWidget_Qt(QWidget* pParent)
     : QWidget(pParent)
 {
     m_spEditor = std::make_unique<ZepEditor>();
+    m_spEditor->RegisterCallback(this);
+
     m_spDisplay = std::make_unique<ZepDisplay_Qt>(*m_spEditor.get());
     setFocusPolicy(Qt::FocusPolicy::StrongFocus);
 
     m_refreshTimer.setInterval(250);
     m_refreshTimer.setSingleShot(false);
     m_refreshTimer.start();
-    connect(&m_refreshTimer, &QTimer::timeout, this, &ZepWindow_Qt::OnTimer);
+    connect(&m_refreshTimer, &QTimer::timeout, this, &ZepWidget_Qt::OnTimer);
 }
 
-ZepWindow_Qt::~ZepWindow_Qt()
+ZepWidget_Qt::~ZepWidget_Qt()
 {
+    m_spEditor->UnRegisterCallback(this);
+
     m_spDisplay.reset();
     m_spEditor.reset();
 }
 
-void ZepWindow_Qt::OnTimer()
+void ZepWidget_Qt::Notify(std::shared_ptr<ZepMessage> message)
+{
+    if (message->messageId == Msg_Quit)
+    {
+        qApp->quit();
+    }
+}
+
+void ZepWidget_Qt::OnTimer()
 {
     if (m_spEditor->RefreshRequired())
     {
@@ -37,7 +49,7 @@ void ZepWindow_Qt::OnTimer()
     }
 }
 
-void ZepWindow_Qt::paintEvent(QPaintEvent* pPaint)
+void ZepWidget_Qt::paintEvent(QPaintEvent* pPaint)
 {
     QPainter painter(this);
     painter.setRenderHint(QPainter::RenderHint::Antialiasing, true);
@@ -53,7 +65,7 @@ void ZepWindow_Qt::paintEvent(QPaintEvent* pPaint)
     m_spDisplay->SetPainter(nullptr);
 }
 
-void ZepWindow_Qt::keyPressEvent(QKeyEvent* ev)
+void ZepWidget_Qt::keyPressEvent(QKeyEvent* ev)
 {
     uint32_t mod = 0;
     auto pMode = m_spEditor->GetCurrentMode();

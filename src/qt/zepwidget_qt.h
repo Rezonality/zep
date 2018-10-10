@@ -8,17 +8,20 @@ namespace Zep
 {
 
 class ZepDisplay_Qt;
-class ZepWindow_Qt : public QWidget
+class ZepWidget_Qt : public QWidget, public IZepComponent
 {
 public:
-    ZepWindow_Qt(QWidget* pParent);
-    virtual ~ZepWindow_Qt();
+    ZepWidget_Qt(QWidget* pParent);
+    virtual ~ZepWidget_Qt();
 
     void paintEvent(QPaintEvent* pPaint) override;
     void keyPressEvent(QKeyEvent* ev) override;
 
-    ZepEditor* GetEditor() const { return m_spEditor.get(); }
     ZepDisplay_Qt* GetDisplay() const { return m_spDisplay.get(); }
+
+    // IZepComponent
+    virtual ZepEditor& GetEditor() const override { return *m_spEditor; }
+    virtual void Notify(std::shared_ptr<ZepMessage> message);
 
 private slots:
     void OnTimer();

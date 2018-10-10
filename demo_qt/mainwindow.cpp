@@ -1,8 +1,9 @@
 #include "mainwindow.h"
 #include <QPainter>
+#include <QCommandLineParser>
 
 #include "buffer.h"
-#include "window_qt.h"
+#include "zepwidget_qt.h"
 
 
 using namespace Zep;
@@ -31,14 +32,31 @@ void main()
 
 MainWindow::MainWindow()
 {
-    auto* pTabWindow = new ZepWindow_Qt(this);
 
-    ZepBuffer* pBuffer = pTabWindow->GetEditor()->AddBuffer("shader.vert");
-    pBuffer->SetText(shader.c_str());
+    QCommandLineParser parser;
+    parser.setApplicationDescription("Test helper");
+    parser.addHelpOption();
+    parser.addVersionOption();
+    parser.addPositionalArgument("file", QCoreApplication::translate("file", "file to load."));
+
+    parser.process(*qApp);
+
+    auto* pWidget = new ZepWidget_Qt(this);
+
+    const QStringList args = parser.positionalArguments();
+    if (args.size() > 0)
+    {
+        pWidget->GetEditor().InitWithFileOrDir(args[0].toStdString());
+    }
+    else
+    {
+        ZepBuffer* pBuffer = pWidget->GetEditor().AddBuffer("shader.vert");
+        pBuffer->SetText(shader.c_str());
+    }
 
     setStyleSheet("background-color: darkBlue");
 
     setContentsMargins(4, 4, 4, 4);
-    setCentralWidget(pTabWindow);
+    setCentralWidget(pWidget);
 }
 

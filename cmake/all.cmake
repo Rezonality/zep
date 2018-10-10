@@ -26,6 +26,7 @@ endif()
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     message(STATUS "TARGET_PC")
     set(TARGET_PC 1)
+	set(PROJECT_CPP_FILESYSTEM 1)
     include(${PROJECT_SOURCE_DIR}/cmake/pc.cmake)
 endif()
 

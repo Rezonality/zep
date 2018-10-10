@@ -1002,6 +1002,13 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
                 auto pTab = GetEditor().AddTabWindow();
                 pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer());
             }
+            else if (context.command[1] == 'q')
+            {
+                if (context.command == ":q")
+                {
+                    GetEditor().GetActiveTabWindow()->CloseActiveWindow();
+                }
+            }
             else if (context.command == ":ls")
             {
                 std::ostringstream str;

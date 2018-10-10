@@ -88,9 +88,10 @@ using NVec2i = NVec2<long>;
 
 using utf8 = uint8_t;
 
+extern const char* Msg_HandleCommand;
+extern const char* Msg_Quit;
 extern const char* Msg_GetClipBoard;
 extern const char* Msg_SetClipBoard;
-extern const char* Msg_HandleCommand;
 
 class ZepMessage
 {
@@ -105,13 +106,13 @@ public:
     bool handled = false;       // If the message was handled
 };
 
-struct IZepClient
+struct IZepComponent
 {
     virtual void Notify(std::shared_ptr<ZepMessage> message) = 0;
     virtual ZepEditor& GetEditor() const = 0;
 };
 
-class ZepComponent : public IZepClient
+class ZepComponent : public IZepComponent
 {
 public:
     ZepComponent(ZepEditor& editor);
@@ -157,6 +158,10 @@ public:
     ZepEditor(uint32_t flags = 0);
     ~ZepEditor();
 
+    void Quit();
+
+    void InitWithFileOrDir(const std::string& str);
+
     ZepMode* GetCurrentMode() const;
 
     void RegisterMode(const std::string& name, std::shared_ptr<ZepMode> spMode);
@@ -165,8 +170,8 @@ public:
 
     void RegisterSyntaxFactory(const std::string& extension, tSyntaxFactory factory);
     bool Broadcast(std::shared_ptr<ZepMessage> payload);
-    void RegisterCallback(IZepClient* pClient) { m_notifyClients.insert(pClient); }
-    void UnRegisterCallback(IZepClient* pClient) { m_notifyClients.erase(pClient); }
+    void RegisterCallback(IZepComponent* pClient) { m_notifyClients.insert(pClient); }
+    void UnRegisterCallback(IZepComponent* pClient) { m_notifyClients.erase(pClient); }
 
     const tBuffers& GetBuffers() const;
     ZepBuffer* AddBuffer(const std::string& str);
@@ -203,7 +208,7 @@ public:
 
     void UpdateWindowState();
 private:
-    std::set<IZepClient*> m_notifyClients;
+    std::set<IZepComponent*> m_notifyClients;
     mutable tRegisters m_registers;
     
     std::shared_ptr<ZepMode_Vim> m_spVimMode;

@@ -4,6 +4,8 @@ SET(ZEP_SOURCE
 ${ZEP_ROOT}/src/utils/timer.cpp
 ${ZEP_ROOT}/src/utils/timer.h
 ${ZEP_ROOT}/src/utils/stringutils.cpp
+${ZEP_ROOT}/src/utils/file.cpp
+${ZEP_ROOT}/src/utils/file.h
 ${ZEP_ROOT}/src/utils/stringutils.h
 ${ZEP_ROOT}/src/utils/threadutils.h
 ${ZEP_ROOT}/src/editor.cpp
@@ -37,10 +39,10 @@ LIST(APPEND SRC_INCLUDE src)
 
 IF (BUILD_QT)
 SET(ZEP_SOURCE_QT
-    ${ZEP_ROOT}/src/qt/display_qt.cpp
-    ${ZEP_ROOT}/src/qt/display_qt.h
-    ${ZEP_ROOT}/src/qt/window_qt.cpp
-    ${ZEP_ROOT}/src/qt/window_qt.h
+    ${ZEP_ROOT}/src/qt/zepdisplay_qt.cpp
+    ${ZEP_ROOT}/src/qt/zepdisplay_qt.h
+    ${ZEP_ROOT}/src/qt/zepwidget_qt.cpp
+    ${ZEP_ROOT}/src/qt/zepwidget_qt.h
     )
 SET(ZEP_INCLUDE_QT ${ZEP_ROOT}/src/qt)
 ENDIF()

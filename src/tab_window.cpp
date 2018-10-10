@@ -31,6 +31,14 @@ ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer)
     return pWin;
 }
 
+void ZepTabWindow::CloseActiveWindow()
+{
+    if (m_pActiveWindow)
+    {
+        RemoveWindow(m_pActiveWindow);
+    }
+}
+
 void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
 {
     assert(pWindow);
@@ -46,9 +54,19 @@ void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
 
     delete pWindow;
     m_windows.erase(itrFound);
-    if (m_pActiveWindow == pWindow)
+
+    if (m_windows.empty())
     {
         m_pActiveWindow = nullptr;
+        GetEditor().RemoveTabWindow(this);
+    }
+    else
+    {
+        if (m_pActiveWindow == pWindow)
+        {
+            // TODO: Active window ordering - remember the last active and switch to it when this one is closed
+            m_pActiveWindow = m_windows[m_windows.size() - 1];
+        }
     }
 }
 

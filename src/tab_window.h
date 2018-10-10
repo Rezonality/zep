@@ -25,6 +25,7 @@ public:
     void RemoveWindow(ZepWindow* pWindow);
     void SetActiveWindow(ZepWindow* pBuffer) { m_pActiveWindow = pBuffer; }
     ZepWindow* GetActiveWindow() const { return m_pActiveWindow; }
+    void CloseActiveWindow();
     
     using tWindows = std::vector<ZepWindow*>;
     const tWindows& GetWindows() const { return m_windows; }

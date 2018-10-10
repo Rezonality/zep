@@ -8,12 +8,14 @@
 #include "tab_window.h"
 #include "utils/timer.h"
 #include "utils/stringutils.h"
+#include "utils/file.h"
 
 namespace Zep
 {
 
-const char* Msg_GetClipBoard = "GetClipboard";
-const char* Msg_SetClipBoard = "SetClipboard";
+const char* Msg_Quit = "Quit";
+const char* Msg_GetClipBoard = "GetClipBoard";
+const char* Msg_SetClipBoard = "SetClipBoard";
 const char* Msg_HandleCommand = "HandleCommand";
 
 ZepComponent::ZepComponent(ZepEditor& editor)
@@ -45,6 +47,23 @@ ZepEditor::ZepEditor(uint32_t flags)
 ZepEditor::~ZepEditor()
 {
 
+}
+
+void ZepEditor::InitWithFileOrDir(const std::string& str)
+{
+    fs::path startPath(str);
+    if (fs::is_directory(startPath))
+    {
+    }
+    else if (fs::exists(startPath))
+    {
+        auto read = file_read(startPath);
+        if (!read.empty())
+        {
+            ZepBuffer* pBuffer = AddBuffer(startPath.filename().string());
+            pBuffer->SetText(read);
+        }
+    }
 }
 
 // At startup it's possible to be in a state where parts of the window framework are not yet in place.
@@ -119,6 +138,11 @@ ZepTabWindow* ZepEditor::AddTabWindow()
     return pTabWindow;
 }
 
+void ZepEditor::Quit()
+{
+    Broadcast(std::make_shared<ZepMessage>(Msg_Quit, "Quit"));
+}
+
 void ZepEditor::RemoveTabWindow(ZepTabWindow* pTabWindow)
 {
     assert(pTabWindow);
@@ -135,9 +159,18 @@ void ZepEditor::RemoveTabWindow(ZepTabWindow* pTabWindow)
 
     delete pTabWindow;
     m_tabWindows.erase(itrFound);
-    if (m_pActiveTabWindow == pTabWindow)
+
+    if (m_tabWindows.empty())
     {
         m_pActiveTabWindow = nullptr;
+        Quit();
+    }
+    else
+    {
+        if (m_pActiveTabWindow == pTabWindow)
+        {
+            m_pActiveTabWindow = m_tabWindows[m_tabWindows.size() - 1];
+        }
     }
 }
 
@@ -212,6 +245,14 @@ ZepBuffer* ZepEditor::AddBuffer(const std::string& str)
         if (itrFactory != m_mapSyntax.end())
         {
             pBuffer->SetSyntax(itrFactory->second(pBuffer.get()));
+        }
+        else
+        {
+            // For now, the first syntax file is the default
+            if (!m_mapSyntax.empty())
+            {
+                pBuffer->SetSyntax(m_mapSyntax.begin()->second(pBuffer.get()));
+            }
         }
     }
 

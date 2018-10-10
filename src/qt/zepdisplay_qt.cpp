@@ -1,4 +1,4 @@
-#include "display_qt.h"
+#include "zepdisplay_qt.h"
 #include <qapplication.h>
 
 // This is an ImGui specific renderer for Zep.  Simple interface for drawing chars, rects, lines.

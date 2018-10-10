@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <SDL.h>
 
+#include <m3rdparty/tclap/include/tclap/CmdLine.h>
+
 // About OpenGL function loaders: modern OpenGL doesn't have a standard header file and requires individual function pointers to be loaded manually. 
 // Helper libraries are often used for this purpose! Here we are supporting a few common ones: gl3w, glew, glad.
 // You may use another loader/header of your choice (glext, glLoadGen, etc.), or chose to manually implement your own.
@@ -55,8 +57,91 @@ void main()
 }
 )R";
 
-int main(int, char**)
+std::string startupFile;
+
+bool ReadCommandLine(int argc, char** argv, int& exitCode)
 {
+    try
+    {
+        TCLAP::CmdLine cmd("Zep", ' ', "0.1");
+        TCLAP::UnlabeledValueArg<std::string> fileArg( "file", "filename", false, "", "string"  );
+        cmd.setExceptionHandling(false);
+        cmd.ignoreUnmatched(false);
+
+        cmd.add(fileArg);
+        if (argc != 0)
+        {
+            cmd.parse(argc, argv);
+            startupFile = fileArg.getValue();
+       }
+        exitCode = 0;
+    }
+    catch (TCLAP::ArgException& e) // catch any exceptions
+    {
+        // Report argument exceptions to the message box
+        std::ostringstream strError;
+        strError << e.argId() << " : " << e.error();
+        //UIManager::Instance().AddMessage(MessageType::Error | MessageType::System, strError.str());
+        exitCode = 1;
+        return false;
+    }
+    catch (TCLAP::ExitException& e)
+    {
+        // Allow PC app to continue, and ignore exit due to help/version
+        // This avoids the danger that the user passed --help on the command line and wondered why the app just exited
+        exitCode = e.getExitStatus();
+        return true;
+    }
+    return true;
+}
+
+// A helper struct to init the editor and handle callbacks
+struct ZepContainer : public IZepComponent
+{
+    ZepContainer(const std::string& startupFile)
+    {
+        spEditor = std::make_unique<ZepEditor_ImGui>();
+        spEditor->RegisterCallback(this);
+        spEditor->InitWithFileOrDir(startupFile);
+
+        // Add a shader, as a default when no file - for the demo
+        if (spEditor->GetBuffers().size() == 0)
+        {
+            ZepBuffer* pBuffer = spEditor->AddBuffer("shader.vert");
+            pBuffer->SetText(shader.c_str());
+        }
+    }
+
+    ZepContainer()
+    {
+        spEditor->UnRegisterCallback(this);
+    }
+
+    // Inherited via IZepComponent
+    virtual void Notify(std::shared_ptr<ZepMessage> message) override
+    {
+        if (message->messageId == Msg_Quit)
+        {
+            quit = true;
+        }
+    }
+
+    virtual ZepEditor& GetEditor() const override
+    {
+        return *spEditor;
+    }
+
+    bool quit = false;
+    std::unique_ptr<ZepEditor_ImGui> spEditor;
+};
+
+int main(int argc, char** argv)
+{
+    int code;
+    ReadCommandLine(argc, argv, code);
+    if (code != 0)
+        return code;
+
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER) != 0)
     {
@@ -140,16 +225,11 @@ int main(int, char**)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // ** Zep specific code
-    // Create an editor
-    auto spEditor = std::make_unique<ZepEditor_ImGui>();
-   
-    // Add a shader
-    ZepBuffer* pBuffer = spEditor->AddBuffer("shader.vert");
-    pBuffer->SetText(longTextSample.c_str());// shader.c_str());
+    ZepContainer zep(startupFile);
 
     // Main loop
     bool done = false;
-    while (!done)
+    while (!done && !zep.quit)
     {
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
@@ -169,7 +249,7 @@ int main(int, char**)
         {
             // Save battery by skipping display if not required.
             // This will check for cursor flash, for example, to keep that updated.
-            if (!spEditor->RefreshRequired())
+            if (!zep.spEditor->RefreshRequired())
             {
                 continue;
             }
@@ -201,7 +281,7 @@ int main(int, char**)
         ImGui::PopStyleVar(4);
 
         // Display the editor inside this window
-        spEditor->Display(toNVec2f(ImGui::GetCursorScreenPos()), toNVec2f(ImGui::GetContentRegionAvail()));
+        zep.spEditor->Display(toNVec2f(ImGui::GetCursorScreenPos()), toNVec2f(ImGui::GetContentRegionAvail()));
 
         ImGui::End();
 
