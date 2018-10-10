@@ -630,7 +630,11 @@ public:
         assert(first <= last);
         T* pVal = find_first_of(GetGaplessPtr(first.p), GetGaplessPtr(last.p), s_first, s_last);
         assert(GetGaplessPtr(first.p) <= pVal);
-        return const_iterator(*this, GetGaplessOffset(pVal));
+        auto itr = const_iterator(*this, GetGaplessOffset(pVal));
+        // Return invalid if we walked to end without finding
+        if (itr == last)
+            itr = end();
+        return itr;
     }
 
     template<class ForwardIt>
@@ -638,7 +642,11 @@ public:
                           ForwardIt s_first, ForwardIt s_last) const
     {
         T* pVal = find_first_not_of(GetGaplessPtr(first.p), GetGaplessPtr(last.p), s_first, s_last);
-        return const_iterator(*this, GetGaplessOffset(pVal));
+        auto itr = const_iterator(*this, GetGaplessOffset(pVal));
+        // Return invalid if we walked to end without finding
+        if (itr == last)
+            itr = end();
+        return itr;
     }
 
     template<class ForwardIt>
@@ -648,7 +656,11 @@ public:
         assert(first <= last);
         T* pVal = find_first_of(GetGaplessPtr(first.p), GetGaplessPtr(last.p), s_first, s_last);
         assert(GetGaplessPtr(first.p) <= pVal);
-        return iterator(*this, GetGaplessOffset(pVal));
+        auto itr =iterator(*this, GetGaplessOffset(pVal));
+        // Return invalid if we walked to end without finding
+        if (itr == last)
+            itr = end();
+        return itr;
     }
 
     template<class ForwardIt>
@@ -656,7 +668,11 @@ public:
                           ForwardIt s_first, ForwardIt s_last)
     {
         T* pVal = find_first_not_of(GetGaplessPtr(first.p), GetGaplessPtr(last.p), s_first, s_last);
-        return iterator(*this, GetGaplessOffset(pVal));
+        auto itr = iterator(*this, GetGaplessOffset(pVal));
+        // Return invalid if we walked to end without finding
+        if (itr == last)
+            itr = end();
+        return itr;
     }
 
 private:
