@@ -480,23 +480,20 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
         return bufferLocation;
 
     // If we are on the CR, move back 1
-    if (m_gapBuffer[bufferLocation] == '\n' && bufferLocation != 0)
+    if (m_gapBuffer[bufferLocation] == '\n')
     {
         bufferLocation--;
     }
-   
+
     // Find the end of the previous line
-    while (bufferLocation > 0 &&
+    while (bufferLocation >= 0 &&
         m_gapBuffer[bufferLocation] != '\n')
     {
         bufferLocation--;
     }
 
     // Step back to the start of the line
-    if (bufferLocation != 0)
-    {
-        bufferLocation++;
-    }
+    bufferLocation++;
 
     switch (lineLocation)
     {
