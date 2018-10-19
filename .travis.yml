@@ -26,12 +26,12 @@ linux-clang: &linux-clang
         
 osx-gcc: &osx-gcc
   os: osx
-  osx_image: xcode8.2
+  osx_image: xcode10
   compiler: gcc
 
 osx-clang: &osx-clang
   os: osx
-  osx_image: xcode8.2
+  osx_image: xcode10
   compiler: clang gcc
 
 matrix:
