@@ -176,6 +176,7 @@ public:
     const tBuffers& GetBuffers() const;
     ZepBuffer* AddBuffer(const std::string& str);
     ZepBuffer* GetMRUBuffer() const;
+    void SaveBuffer(ZepBuffer& buffer);
 
     void SetRegister(const std::string& reg, const Register& val);
     void SetRegister(const char reg, const Register& val);

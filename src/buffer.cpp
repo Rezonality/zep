@@ -4,6 +4,7 @@
 
 #include "buffer.h"
 #include "utils/stringutils.h"
+#include "utils/file.h"
 
 #include <algorithm>
 #include <regex>
@@ -449,6 +450,41 @@ void ZepBuffer::LockRead()
         m_lineCountResult.get();
     }
 }*/
+
+// Basic load suppot; read a file if it's present, but keep
+// the file path in case you want to write later
+void ZepBuffer::Load(const fs::path& path)
+{
+    m_filePath = path;
+    
+    auto read = file_read(path);
+    if (!read.empty())
+    {
+        SetText(read);
+    }
+}
+
+bool ZepBuffer::Save()
+{
+    auto str = GetText().string();
+
+    // Put back /r/n if necessary while writing the file
+    // At the moment, Zep removes /r/n and just uses /n while modifying text.
+    // It replaces the /r on files that had it afterwards
+    if (m_bStrippedCR)
+    {
+        // TODO: faster way to replace newlilnes
+        StringUtils::ReplaceStringInPlace(str, "\n", "\r\n");
+    }
+
+    // Write
+    return file_write(m_filePath, &str[0], str.size());
+}
+
+fs::path ZepBuffer::GetFilePath() const
+{
+    return m_filePath;
+}
 
 // Replace the buffer buffer with the text
 void ZepBuffer::SetText(const std::string& text)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <utils/file.h>
 #include "editor.h"
 
 #include <shared_mutex>
@@ -56,6 +57,10 @@ public:
     ZepBuffer(ZepEditor& editor, const std::string& strName);
     virtual ~ZepBuffer();
     void SetText(const std::string& strText);
+    void Load(const fs::path& path);
+    bool Save();
+
+    fs::path GetFilePath() const;
 
     BufferLocation Search(const std::string& str,
         BufferLocation start,
@@ -124,6 +129,7 @@ private:
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::string m_strName;
     bool m_bStrippedCR;
+    fs::path m_filePath;
 };
 
 // Notification payload

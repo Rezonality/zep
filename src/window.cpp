@@ -12,8 +12,7 @@
 
 #include "utils/stringutils.h"
 
-// TODO: VisibleLineRange update when buffer changes
-// A 'window' is like a Vim Tab
+// A 'window' is like a vim window; i.e. a region inside a tab
 namespace Zep
 {
 
@@ -168,11 +167,13 @@ std::pair<BufferLocation, BufferLocation> ZepWindow::GetVisibleBufferRange() con
 
 void ZepWindow::ScrollToCursor()
 {
-    auto upperLimit = std::max(0l, (long)VisibleLineCount() - 4);
-
     auto cursor = BufferToDisplay();
     bool changed = false;
-    if (cursor.y >= visibleLineRange.y)
+
+    // Handle the case where there is no need to scroll, since the visible lines are inside
+    // The current screen rectangle.
+    if (cursor.y >= visibleLineRange.y &&
+        m_linesFillScreen)
     {
         visibleLineRange.x = cursor.y - VisibleLineCount() + 1;
         changed = true;
@@ -285,6 +286,8 @@ void ZepWindow::PreDisplay(ZepDisplay& display, const DisplayRegion& region)
 
 void ZepWindow::UpdateScreenLines()
 {
+    m_linesFillScreen = false;
+
     // Update the Y coordinates of the visible lines
     // And update the range of visible lines
     auto posY = m_textRegion.topLeftPx.y;
@@ -295,6 +298,7 @@ void ZepWindow::UpdateScreenLines()
         // Outside of screen space
         if ((posY + m_defaultLineSize) >= m_textRegion.bottomRightPx.y)
         {
+            m_linesFillScreen = true;
             break;
         }
 

@@ -49,20 +49,34 @@ ZepEditor::~ZepEditor()
 
 }
 
+void ZepEditor::SaveBuffer(ZepBuffer& buffer)
+{
+    // TODO: 
+    // - What if the buffer has no associated file?  Prompt for one.
+    // - Report locked file situations, etc.
+    // - We don't check for outside modification yet either, meaning this could overwrite
+    std::ostringstream strText;
+    if (!buffer.Save())
+    {
+        strText << "Failed to save: " << buffer.GetFilePath().string();
+    }
+    else
+    {
+        strText << "Wrote " << buffer.GetFilePath().string() << ", " << buffer.GetText().size() << " bytes";
+    }
+    SetCommandText(strText.str());
+}
+
 void ZepEditor::InitWithFileOrDir(const std::string& str)
 {
     fs::path startPath(str);
     if (fs::is_directory(startPath))
     {
     }
-    else if (fs::exists(startPath))
+    else
     {
-        auto read = file_read(startPath);
-        if (!read.empty())
-        {
-            ZepBuffer* pBuffer = AddBuffer(startPath.filename().string());
-            pBuffer->SetText(read);
-        }
+        ZepBuffer* pBuffer = AddBuffer(startPath.filename().string());
+        pBuffer->Load(startPath);
     }
 }
 

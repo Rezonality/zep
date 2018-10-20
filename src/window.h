@@ -143,6 +143,7 @@ public:
     NVec2i visibleLineRange = { 0, 0 };          // Offset of the displayed area into the text
     std::vector<LineInfo> windowLines;           // Information about the currently displayed lines 
     bool m_pendingLineUpdate = true;
+    bool m_linesFillScreen = false;
 
     static const int CursorMax = std::numeric_limits<int>::max();
 

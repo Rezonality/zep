@@ -31,6 +31,7 @@ inline size_t Utf8Length(const char* s)
 }
 
 std::string ReplaceString(std::string subject, const std::string& search, const std::string& replace);
+void ReplaceStringInPlace(std::string& subject, const std::string& search, const std::string& replace);
 std::vector<std::string> Split(const std::string& text, const std::string& delims);
 std::vector<std::string> SplitLines(const std::string& text);
 

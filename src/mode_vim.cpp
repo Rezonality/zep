@@ -1002,6 +1002,10 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
                 auto pTab = GetEditor().AddTabWindow();
                 pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer());
             }
+            else if (context.command == ":w")
+            {
+                GetEditor().SaveBuffer(context.buffer);
+            }
             else if (context.command[1] == 'q')
             {
                 if (context.command == ":q")
