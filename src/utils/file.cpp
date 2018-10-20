@@ -76,7 +76,7 @@ fs::path file_get_relative_path(fs::path from, fs::path to)
     return finalPath;
 }
 
-#if TARGET_PC
+/*#if TARGET_PC
 fs::path file_get_documents_path()
 {
     PWSTR path;
@@ -90,6 +90,7 @@ fs::path file_get_documents_path()
     return fs::path();
 }
 #endif
+*/
 /*
 
 std::vector<fs::path> file_gather_files(const fs::path& root)

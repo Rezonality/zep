@@ -1,5 +1,7 @@
 #pragma once
 
+#include "config_shared.h"
+
 #if TARGET_MAC == 1
 namespace fs
 {
