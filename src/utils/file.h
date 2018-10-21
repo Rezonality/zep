@@ -6,6 +6,8 @@
 
 #if TARGET_MAC == 1
 
+#include <fstream>
+#include <iostream>
 #include <sys/stat.h>
 #include <sys/types.h>
 
