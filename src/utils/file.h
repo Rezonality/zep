@@ -1,10 +1,18 @@
 #pragma once
 
 #include "config_shared.h"
+#include "utils/stringutils.h"
+#include <vector>
 
 #if TARGET_MAC == 1
+
+#include <sys/stat.h>
+#include <sys/types.h>
+
 namespace fs
 {
+
+using namespace Zep;
 
 // NOTE:
 // This is a very simple implementation of the <filesystem> functionality in CPP 14/17.
