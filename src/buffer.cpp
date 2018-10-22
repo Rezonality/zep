@@ -478,7 +478,7 @@ bool ZepBuffer::Save()
     }
 
     // Write
-    return file_write(m_filePath, &str[0], str.size());
+    return Zep::file_write(m_filePath, &str[0], str.size());
 }
 
 fs::path ZepBuffer::GetFilePath() const

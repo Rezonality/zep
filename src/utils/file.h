@@ -10,11 +10,12 @@
 #include <iostream>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <chrono>
 
 namespace fs
 {
 
-using namespace Zep;
+//using namespace Zep;
 
 // NOTE:
 // This is a very simple implementation of the <filesystem> functionality in CPP 14/17.
@@ -65,9 +66,9 @@ public:
 
     bool is_relative() const
     {
-	return !is_absolute();
+        return !is_absolute();
     }
-    
+
     bool is_absolute() const
     {
         return false;
@@ -136,7 +137,7 @@ public:
     path operator / (const path& rhs) const
     {
         std::string temp = m_strPath;
-        StringUtils::RTrim(temp, "\\/");
+        Zep::StringUtils::RTrim(temp, "\\/");
         return path(temp + "/" + rhs.string());
     }
 
@@ -149,11 +150,11 @@ public:
 
     std::vector<std::string>::const_iterator begin()
     {
-        std::string can = StringUtils::ReplaceString(m_strPath, "\\", "/");
-        m_components = StringUtils::Split(can, "/");
+        std::string can = Zep::StringUtils::ReplaceString(m_strPath, "\\", "/");
+        m_components = Zep::StringUtils::Split(can, "/");
         return m_components.begin();
     }
-    
+
     std::vector<std::string>::const_iterator end()
     {
         return m_components.end();
@@ -175,7 +176,7 @@ inline bool exists(const path& path)
 
 inline path canonical(const path& input)
 {
-    return path(StringUtils::ReplaceString(input.string(), "\\", "/"));
+    return path(Zep::StringUtils::ReplaceString(input.string(), "\\", "/"));
 }
 
 inline path absolute(const path& input)
@@ -183,7 +184,7 @@ inline path absolute(const path& input)
     // Read the comments at the top of this file; this is certainly incorrect, and doesn't handle ../
     // It is sufficient for what we need though
     auto p = canonical(input);
-    auto strAbs = StringUtils::ReplaceString(p.string(), "/.", "");
+    auto strAbs = Zep::StringUtils::ReplaceString(p.string(), "/.", "");
     return path(strAbs);
 }
 
@@ -247,22 +248,22 @@ inline bool makePath(const std::string& path)
     {
     case ENOENT:
         // parent didn't exist, try to create it
-        {
-            auto pos = path.find_last_of('/');
-            if (pos == std::string::npos)
+    {
+        auto pos = path.find_last_of('/');
+        if (pos == std::string::npos)
 #if defined(_WIN32)
-                pos = path.find_last_of('\\');
-            if (pos == std::string::npos)
+            pos = path.find_last_of('\\');
+        if (pos == std::string::npos)
 #endif
-                return false;
-            if (!makePath( path.substr(0, pos) ))
-                return false;
-        }
-        // now, try to create again
+            return false;
+        if (!makePath(path.substr(0, pos)))
+            return false;
+    }
+    // now, try to create again
 #if defined(_WIN32)
-        return 0 == _mkdir(path.c_str());
+    return 0 == _mkdir(path.c_str());
 #else 
-        return 0 == mkdir(path.c_str(), mode);
+    return 0 == mkdir(path.c_str(), mode);
 #endif
 
     case EEXIST:
@@ -300,6 +301,7 @@ inline bool is_directory(const path& source)
     }
     return false;
 }
+} // fs namespace
 
 #else
 #include <experimental/filesystem>
