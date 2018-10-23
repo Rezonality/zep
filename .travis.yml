@@ -18,11 +18,10 @@ linux-clang: &linux-clang
   addons:
     apt:
       sources:
-          - ubuntu-toolchain-r-test
+		  - llvm-toolchain-trusty-5.0
       packages:
-        - clang-3.8
+        - clang-5.0
         - cmake
-        - g++-7
         
 osx-gcc: &osx-gcc
   os: osx
@@ -41,9 +40,9 @@ matrix:
     - <<: *linux-gcc
       env: BUILD_TYPE=Release TEST_TARGET=test CMAKE_C_COMPILER=gcc-7 CMAKE_CXX_COMPILER=g++-7
     - <<: *linux-clang
-      env: BUILD_TYPE=Debug TEST_TARGET=test CMAKE_C_COMPILER=clang-3.8 CMAKE_CXX_COMPILER=clang++-3.8
+      env: BUILD_TYPE=Debug TEST_TARGET=test CMAKE_C_COMPILER=clang-5.0 CMAKE_CXX_COMPILER=clang++-5.0
     - <<: *linux-clang
-      env: BUILD_TYPE=Release TEST_TARGET=test CMAKE_C_COMPILER=clang-3.8 CMAKE_CXX_COMPILER=clang++-3.8
+      env: BUILD_TYPE=Release TEST_TARGET=test CMAKE_C_COMPILER=clang-5.0 CMAKE_CXX_COMPILER=clang++-5.0
     - <<: *linux-gcc
       env: BUILD_TYPE=Coverage TEST_TARGET=gen-cov CMAKE_C_COMPILER=gcc-7 CMAKE_CXX_COMPILER=g++-7 GCOV=gcov-7
     - <<: *linux-gcc
