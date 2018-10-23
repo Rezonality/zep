@@ -5,8 +5,8 @@
 MESSAGE(STATUS "G++.cmake")
 
 set(CMAKE_CXX_FLAGS "" )
-set(CMAKE_CXX_FLAGS_DEBUG "-D_DEBUG -ggdb -O0")
-set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3")
+set(CMAKE_CXX_FLAGS_DEBUG "-D_DEBUG -ggdb -O0 -std=c++17")
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -std=c++17")
 
 if("${CMAKE_GENERATOR}" STREQUAL "Ninja")
   # Ninja redirects build output and prints it only on error

@@ -9,7 +9,7 @@ linux-gcc: &linux-gcc
       sources:
         - ubuntu-toolchain-r-test
       packages:
-        - g++-6
+        - g++-7
         - cmake
         
 linux-clang: &linux-clang
@@ -22,7 +22,7 @@ linux-clang: &linux-clang
       packages:
         - clang-3.8
         - cmake
-        - g++-6
+        - g++-7
         
 osx-gcc: &osx-gcc
   os: osx
