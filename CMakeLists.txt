@@ -5,6 +5,8 @@ option (BUILD_IMGUI "Make an imgui demo" ON)
 option (BUILD_IMGUI_APP "Make the test app" ON)
 
 set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD_REQUIRED ON)
+
 set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 PROJECT (ZepDemo)
