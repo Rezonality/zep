@@ -70,6 +70,8 @@ void ZepEditor::SaveBuffer(ZepBuffer& buffer)
 void ZepEditor::InitWithFileOrDir(const std::string& str)
 {
     fs::path startPath(str);
+
+    // TODO
     if (fs::is_directory(startPath))
     {
     }
@@ -252,8 +254,7 @@ ZepBuffer* ZepEditor::AddBuffer(const std::string& str)
     auto pBuffer = std::make_shared<ZepBuffer>(*this, str);
     m_buffers.push_front(pBuffer);
 
-    auto extOffset = str.find_last_of('.');
-    if (extOffset != std::string::npos)
+    if (auto extOffset = str.find_last_of('.'); extOffset != std::string::npos)
     {
         auto itrFactory = m_mapSyntax.find(str.substr(extOffset + 1, str.size() - extOffset));
         if (itrFactory != m_mapSyntax.end())

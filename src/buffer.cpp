@@ -471,9 +471,11 @@ bool ZepBuffer::Save()
     // Put back /r/n if necessary while writing the file
     // At the moment, Zep removes /r/n and just uses /n while modifying text.
     // It replaces the /r on files that had it afterwards
+    // Alternatively we could manage them 'in place', but that would make parsing more complex.
+    // And then what do you do if there are 2 different styles in the file.
     if (m_bStrippedCR)
     {
-        // TODO: faster way to replace newlilnes
+        // TODO: faster way to replace newlines
         StringUtils::ReplaceStringInPlace(str, "\n", "\r\n");
     }
 
