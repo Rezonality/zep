@@ -18,7 +18,7 @@ linux-clang: &linux-clang
   addons:
     apt:
       sources:
-        - llvm-toolchain-trusty-5.0
+        - llvm-toolchain-trusty-7.0
         - ubuntu-toolchain-r-test
       packages:
         - clang-6.0
