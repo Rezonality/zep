@@ -20,6 +20,8 @@ ${ZEP_ROOT}/src/tab_window.cpp
 ${ZEP_ROOT}/src/tab_window.h
 ${ZEP_ROOT}/src/window.cpp
 ${ZEP_ROOT}/src/window.h
+${ZEP_ROOT}/src/window_base.cpp
+${ZEP_ROOT}/src/window_base.h
 ${ZEP_ROOT}/src/syntax.cpp
 ${ZEP_ROOT}/src/syntax.h
 ${ZEP_ROOT}/src/syntax_glsl.cpp

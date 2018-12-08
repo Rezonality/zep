@@ -50,6 +50,8 @@ const long InvalidOffset = -1;
 
 extern const char* Msg_Buffer;
 
+// A really big cursor move; which will likely clamp
+static const long MaxCursorMove = long(0xFFFFFFF);
 
 class ZepBuffer : public ZepComponent
 {
