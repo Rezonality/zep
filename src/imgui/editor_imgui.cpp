@@ -1,29 +1,21 @@
-#include <string>
-#include <imgui.h>
-#include "editor.h"
-#include "display_imgui.h"
-#include "syntax_glsl.h"
-#include "mode_vim.h"
-#include "mode_standard.h"
 #include "editor_imgui.h"
-#include "usb_hid_keys.h"
 #include "SDL.h"
+#include "display_imgui.h"
+#include "editor.h"
+#include "mode_standard.h"
+#include "mode_vim.h"
+#include "syntax_glsl.h"
 #include "tab_window.h"
+#include "usb_hid_keys.h"
+#include <imgui.h>
+#include <string>
 
 namespace Zep
 {
 
 ZepEditor_ImGui::ZepEditor_ImGui()
+    : ZepEditor(new ZepDisplay_ImGui())
 {
-    m_spDisplay = std::make_unique<ZepDisplay_ImGui>(*this);
-}
-
-void ZepEditor_ImGui::Display(const NVec2f& pos, const NVec2f& size)
-{
-    m_spDisplay->SetDisplaySize(pos, pos + size);
-    m_spDisplay->Display();
-
-    HandleInput();
 }
 
 void ZepEditor_ImGui::HandleInput()
@@ -34,7 +26,7 @@ void ZepEditor_ImGui::HandleInput()
     bool handled = false;
 
     uint32_t mod = 0;
-    
+
     if (io.KeyCtrl)
     {
         mod |= ModifierKey::Ctrl;
@@ -134,7 +126,6 @@ void ZepEditor_ImGui::HandleInput()
             GetCurrentMode()->AddKeyPress(io.InputCharacters[n], mod);
         }
     }
-
 }
 
-} // Zep
+} // namespace Zep

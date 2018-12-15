@@ -75,24 +75,22 @@ void ZepTabWindow::Notify(std::shared_ptr<ZepMessage> payload)
     // Nothing yet.
 }
 
-void ZepTabWindow::PreDisplay(ZepDisplay& display, const DisplayRegion& region)
+void ZepTabWindow::SetDisplayRegion(const DisplayRegion& region)
 {
     m_windowRegion = region;
     m_buffersRegion = m_windowRegion;
 
     for(auto& pWin : m_windows)
     {
-        pWin->PreDisplay(display, m_buffersRegion);
+        pWin->SetDisplayRegion(m_buffersRegion);
     }
 }
 
-void ZepTabWindow::Display(ZepDisplay& display)
+void ZepTabWindow::Display()
 {
-    PreDisplay(display, m_windowRegion);
-    
     for(auto& pWin : m_windows)
     {
-        pWin->Display(display);
+        pWin->Display();
     }
 }
 

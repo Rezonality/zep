@@ -6,8 +6,7 @@
 namespace Zep
 {
 
-ZepDisplay_Qt::ZepDisplay_Qt(ZepEditor& editor)
-    : TParent(editor)
+ZepDisplay_Qt::ZepDisplay_Qt()
 {
     qApp->setFont(QFont("Consolas", 9));
     

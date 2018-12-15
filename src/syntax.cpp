@@ -41,6 +41,8 @@ void ZepSyntax::Interrupt()
 
 void ZepSyntax::QueueUpdateSyntax(BufferLocation startLocation, BufferLocation endLocation)
 {
+    assert(startLocation >= 0);
+    assert(endLocation >= startLocation);
     // Record the max location the syntax is valid up to.  This will 
     // ensure that multiple calls to restart the thread keep track of where to start
     // This means a small edit at the end of a big file, followed by a small edit at the top

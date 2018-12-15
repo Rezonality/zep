@@ -4,22 +4,22 @@
 // (GL3W is a helper library to access OpenGL functions since there is no standard header to access modern OpenGL functions easily. Alternatives are GLEW, Glad, etc.)
 
 #include "imgui.h"
-#include "examples/imgui_impl_sdl.h"
 #include "examples/imgui_impl_opengl3.h"
-#include <stdio.h>
+#include "examples/imgui_impl_sdl.h"
 #include <SDL.h>
+#include <stdio.h>
 
 #include <m3rdparty/tclap/include/tclap/CmdLine.h>
 
-// About OpenGL function loaders: modern OpenGL doesn't have a standard header file and requires individual function pointers to be loaded manually. 
+// About OpenGL function loaders: modern OpenGL doesn't have a standard header file and requires individual function pointers to be loaded manually.
 // Helper libraries are often used for this purpose! Here we are supporting a few common ones: gl3w, glew, glad.
 // You may use another loader/header of your choice (glext, glLoadGen, etc.), or chose to manually implement your own.
 #if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
-#include <GL/gl3w.h>    // Initialize with gl3wInit()
+#include <GL/gl3w.h> // Initialize with gl3wInit()
 #elif defined(IMGUI_IMPL_OPENGL_LOADER_GLEW)
-#include <GL/glew.h>    // Initialize with glewInit()
+#include <GL/glew.h> // Initialize with glewInit()
 #elif defined(IMGUI_IMPL_OPENGL_LOADER_GLAD)
-#include <glad/glad.h>  // Initialize with gladLoadGL()
+#include <glad/glad.h> // Initialize with gladLoadGL()
 #else
 #include IMGUI_IMPL_OPENGL_LOADER_CUSTOM
 #endif
@@ -28,8 +28,8 @@
 
 #undef max
 
-#include "src/imgui/editor_imgui.h"
 #include "src/imgui/display_imgui.h"
+#include "src/imgui/editor_imgui.h"
 
 using namespace Zep;
 
@@ -64,7 +64,7 @@ bool ReadCommandLine(int argc, char** argv, int& exitCode)
     try
     {
         TCLAP::CmdLine cmd("Zep", ' ', "0.1");
-        TCLAP::UnlabeledValueArg<std::string> fileArg( "file", "filename", false, "", "string"  );
+        TCLAP::UnlabeledValueArg<std::string> fileArg("file", "filename", false, "", "string");
         cmd.setExceptionHandling(false);
         cmd.ignoreUnmatched(false);
 
@@ -73,7 +73,7 @@ bool ReadCommandLine(int argc, char** argv, int& exitCode)
         {
             cmd.parse(argc, argv);
             startupFile = fileArg.getValue();
-       }
+        }
         exitCode = 0;
     }
     catch (TCLAP::ArgException& e) // catch any exceptions
@@ -99,8 +99,8 @@ bool ReadCommandLine(int argc, char** argv, int& exitCode)
 struct ZepContainer : public IZepComponent
 {
     ZepContainer(const std::string& startupFile)
+       : spEditor(std::make_unique<ZepEditor_ImGui>())
     {
-        spEditor = std::make_unique<ZepEditor_ImGui>();
         spEditor->RegisterCallback(this);
         spEditor->InitWithFileOrDir(startupFile);
 
@@ -143,7 +143,7 @@ int main(int argc, char** argv)
         return code;
 
     // Setup SDL
-    if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER) != 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
     {
         printf("Error: %s\n", SDL_GetError());
         return -1;
@@ -172,7 +172,7 @@ int main(int argc, char** argv)
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
-    SDL_Window* window = SDL_CreateWindow("Zep", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE);
+    SDL_Window* window = SDL_CreateWindow("Zep", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     SDL_GL_SetSwapInterval(1); // Enable vsync
 
@@ -193,7 +193,8 @@ int main(int argc, char** argv)
     // Setup Dear ImGui binding
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 
     ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
@@ -204,8 +205,8 @@ int main(int argc, char** argv)
     //ImGui::StyleColorsClassic();
 
     // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them. 
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple. 
+    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
+    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
     // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
     // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
     // - Read 'misc/fonts/README.txt' for more instructions and details.
@@ -260,7 +261,6 @@ int main(int argc, char** argv)
         ImGui_ImplSDL2_NewFrame(window);
         ImGui::NewFrame();
 
-
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
@@ -280,9 +280,12 @@ int main(int argc, char** argv)
 #endif
         ImGui::PopStyleVar(4);
 
-        // Display the editor inside this window
-        zep.spEditor->Display(toNVec2f(ImGui::GetCursorScreenPos()), toNVec2f(ImGui::GetContentRegionAvail()));
+        // TODO: Change only when necessray
+        zep.spEditor->SetDisplayRegion(toNVec2f(ImGui::GetCursorScreenPos()), toNVec2f(ImGui::GetContentRegionAvail()));
 
+        // Display the editor inside this window
+        zep.spEditor->Display();
+        zep.spEditor->HandleInput();
         ImGui::End();
 
         // Rendering

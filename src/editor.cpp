@@ -1,15 +1,18 @@
 #include "editor.h"
 #include "buffer.h"
 #include "display.h"
-#include "mode_vim.h"
 #include "mode_standard.h"
-#include "syntax_glsl.h"
+#include "mode_vim.h"
 #include "syntax.h"
+#include "syntax_glsl.h"
 #include "tab_window.h"
-#include "utils/timer.h"
-#include "utils/stringutils.h"
 #include "utils/file.h"
+#include "utils/stringutils.h"
+#include "utils/timer.h"
+#include "utils/logger.h"
+#include "window.h"
 
+structlog LOGCFG = { true, DEBUG };
 namespace Zep
 {
 
@@ -29,40 +32,41 @@ ZepComponent::~ZepComponent()
     m_editor.UnRegisterCallback(this);
 }
 
-
-ZepEditor::ZepEditor(uint32_t flags)
+ZepEditor::ZepEditor(IZepDisplay* pDisplay, uint32_t flags)
     : m_flags(flags)
     , m_spCursorTimer(new Timer())
+    , m_pDisplay(pDisplay)
 {
+    assert(m_pDisplay != nullptr);
     RegisterMode(VimMode, std::make_shared<ZepMode_Vim>(*this));
     RegisterMode(StandardMode, std::make_shared<ZepMode_Standard>(*this));
     SetMode(VimMode);
 
-    RegisterSyntaxFactory("vert", tSyntaxFactory([](ZepBuffer* pBuffer) 
-    {
-        return std::static_pointer_cast<ZepSyntax>(std::make_shared<ZepSyntaxGlsl>(*pBuffer)); 
+    RegisterSyntaxFactory("vert", tSyntaxFactory([](ZepBuffer* pBuffer) {
+        return std::static_pointer_cast<ZepSyntax>(std::make_shared<ZepSyntaxGlsl>(*pBuffer));
     }));
 }
 
 ZepEditor::~ZepEditor()
 {
-
+    delete m_pDisplay;
 }
 
 void ZepEditor::SaveBuffer(ZepBuffer& buffer)
 {
-    // TODO: 
+    // TODO:
     // - What if the buffer has no associated file?  Prompt for one.
     // - Report locked file situations, etc.
     // - We don't check for outside modification yet either, meaning this could overwrite
     std::ostringstream strText;
-    if (!buffer.Save())
+    int64_t size;
+    if (!buffer.Save(size))
     {
         strText << "Failed to save: " << buffer.GetFilePath().string();
     }
     else
     {
-        strText << "Wrote " << buffer.GetFilePath().string() << ", " << buffer.GetText().size() << " bytes";
+        strText << "Wrote " << buffer.GetFilePath().string() << ", " << size << " bytes";
     }
     SetCommandText(strText.str());
 }
@@ -127,8 +131,8 @@ void ZepEditor::UpdateWindowState()
 }
 
 void ZepEditor::ResetCursorTimer()
-{ 
-    m_spCursorTimer->Restart(); 
+{
+    m_spCursorTimer->Restart();
 }
 
 void ZepEditor::SetCurrentTabWindow(ZepTabWindow* pTabWindow)
@@ -171,7 +175,6 @@ void ZepEditor::RemoveTabWindow(ZepTabWindow* pTabWindow)
         assert(!"Not found?");
         return;
     }
-
 
     delete pTabWindow;
     m_tabWindows.erase(itrFound);
@@ -330,17 +333,16 @@ void ZepEditor::SetCommandText(const std::string& strCommand)
     {
         m_commandLines.push_back("");
     }
+    m_bRegionsChanged = true;
 }
 
 void ZepEditor::RequestRefresh()
 {
-
 }
 
 bool ZepEditor::RefreshRequired() const
 {
-    if (m_bPendingRefresh ||
-        m_lastCursorBlink != GetCursorBlinkState())
+    if (m_bPendingRefresh || m_lastCursorBlink != GetCursorBlinkState())
     {
         m_bPendingRefresh = false;
         return true;
@@ -353,6 +355,109 @@ bool ZepEditor::GetCursorBlinkState() const
 {
     m_lastCursorBlink = (int(m_spCursorTimer->GetDelta() * 1.75f) & 1) ? true : false;
     return m_lastCursorBlink;
+}
+
+void ZepEditor::SetDisplayRegion(const NVec2f& topLeft, const NVec2f& bottomRight)
+{
+    m_topLeftPx = topLeft;
+    m_bottomRightPx = bottomRight;
+    UpdateSize();
+}
+
+void ZepEditor::UpdateSize()
+{
+    auto commandCount = GetCommandLines().size();
+    const float commandSize = m_pDisplay->GetFontSize() * commandCount + textBorder * 2.0f;
+    auto displaySize = m_bottomRightPx - m_topLeftPx;
+
+    // Regions
+    // TODO: A simple splitter manager to make calculating/moving these easier
+    m_commandRegion.bottomRightPx = m_bottomRightPx;
+    m_commandRegion.topLeftPx = m_commandRegion.bottomRightPx - NVec2f(displaySize.x, commandSize);
+
+    // Add tabs for extra windows
+    if (GetTabWindows().size() > 1)
+    {
+        m_tabRegion.topLeftPx = m_topLeftPx;
+        m_tabRegion.bottomRightPx = m_tabRegion.topLeftPx + NVec2f(displaySize.x, m_pDisplay->GetFontSize() + textBorder * 2);
+    }
+    else
+    {
+        // Empty
+        m_tabRegion.topLeftPx = m_topLeftPx;
+        m_tabRegion.bottomRightPx = m_topLeftPx + NVec2f(displaySize.x, 0.0f);
+    }
+
+    m_tabContentRegion.topLeftPx = m_tabRegion.bottomRightPx + NVec2f(-displaySize.x, 0.0f);
+    m_tabContentRegion.bottomRightPx = m_commandRegion.topLeftPx + NVec2f(displaySize.x, 0.0f);
+
+    GetActiveTabWindow()->SetDisplayRegion(m_tabContentRegion);
+}
+
+void ZepEditor::Display()
+{
+    if (m_bRegionsChanged)
+    {
+        m_bRegionsChanged = false;
+        UpdateSize();
+    }
+    // Ensure window state is good ??
+    UpdateWindowState();
+
+    // Always 1 command line
+    auto& commandLines = GetCommandLines();
+
+    long commandCount = long(commandLines.size());
+    const float commandSize = m_pDisplay->GetFontSize() * commandCount + textBorder * 2.0f;
+
+    auto displaySize = m_bottomRightPx - m_topLeftPx;
+
+    auto commandSpace = commandCount;
+    commandSpace = std::max(commandCount, 0l);
+
+    // Background rect for status (airline)
+    m_pDisplay->DrawRectFilled(m_commandRegion.topLeftPx, m_commandRegion.bottomRightPx, 0xFF333333);
+
+    // Draw command text
+    auto screenPosYPx = m_commandRegion.topLeftPx + NVec2f(0.0f, textBorder);
+    for (int i = 0; i < commandSpace; i++)
+    {
+        auto textSize = m_pDisplay->GetTextSize((const utf8*)commandLines[i].c_str(),
+            (const utf8*)commandLines[i].c_str() + commandLines[i].size());
+
+        m_pDisplay->DrawChars(screenPosYPx,
+            0xFFFFFFFF,
+            (const utf8*)commandLines[i].c_str());
+
+        screenPosYPx.y += m_pDisplay->GetFontSize();
+        screenPosYPx.x = m_commandRegion.topLeftPx.x;
+    }
+
+    if (GetTabWindows().size() > 1)
+    {
+        // Tab region
+        // TODO Handle it when tabs are bigger than the available width!
+        m_pDisplay->DrawRectFilled(m_tabRegion.BottomLeft() - NVec2f(0.0f, 2.0f), m_tabRegion.bottomRightPx, 0xFF888888);
+        NVec2f currentTab = m_tabRegion.topLeftPx;
+        for (auto& window : GetTabWindows())
+        {
+            // Show active buffer in tab as tab name
+            auto& buffer = window->GetActiveWindow()->GetBuffer();
+            auto tabColor = (window == GetActiveTabWindow()) ? 0xFF666666 : 0x44888888;
+            auto tabLength = m_pDisplay->GetTextSize((utf8*)buffer.GetName().c_str()).x + textBorder * 2;
+            m_pDisplay->DrawRectFilled(currentTab, currentTab + NVec2f(tabLength, m_tabRegion.Height()), tabColor);
+
+            m_pDisplay->DrawChars(currentTab + NVec2f(textBorder, textBorder), 0xFFFFFFFF, (utf8*)buffer.GetName().c_str());
+
+            currentTab.x += tabLength + textBorder;
+        }
+    }
+
+    // Display the tab
+    if (GetActiveTabWindow())
+    {
+        GetActiveTabWindow()->Display();
+    }
 }
 
 } // namespace Zep

@@ -1,12 +1,12 @@
 #include "m3rdparty.h"
-#include <gtest/gtest.h>
-#include "src/editor.h"
-#include "src/mode_vim.h"
 #include "src/buffer.h"
 #include "src/display.h"
+#include "src/editor.h"
+#include "src/mode_vim.h"
 #include "src/syntax_glsl.h"
 #include "src/tab_window.h"
 #include "src/window.h"
+#include <gtest/gtest.h>
 
 using namespace Zep;
 class VimTest : public testing::Test
@@ -15,7 +15,8 @@ public:
     VimTest()
     {
         // Disable threads for consistent tests, at the expense of not catching thread errors!
-        spEditor = std::make_shared<ZepEditor>(ZepEditorFlags::DisableThreads);
+        // TODO : Fix/understand test failures with threading
+        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZepEditorFlags::DisableThreads);
         spMode = std::make_shared<ZepMode_Vim>(*spEditor);
         pBuffer = spEditor->AddBuffer("Test Buffer");
 
@@ -24,22 +25,22 @@ public:
         auto spSyntax = std::make_shared<ZepSyntaxGlsl>(*pBuffer);
         pBuffer->SetSyntax(std::static_pointer_cast<ZepSyntax>(spSyntax));
 
-        // Some vim commands depend on the shape of the view onto the buffer.  For example, 
-        // moving 'down' might depend on word wrapping, etc. as to where in the buffer you actually land.
-        // This is the reason for the difference between a 'Window' and a 'Buffer' (as well as that you can
-        // have multiple windows onto a buffer)
-        spDisplay = std::make_shared<ZepDisplayNull>(*spEditor);
-        spDisplay->SetDisplaySize(NVec2f(0.0f, 0.0f), NVec2f(1024.0f, 1024.0f));
-
-        // Since the tests don't display anything, ensure that the window state is up to date  before running them; 
-        // this is usually done at display time, but some tests rely on window state/cursor limits being the same as if they 
-        // were displaying the data
-        spDisplay->Display();
-
         pTabWindow = spEditor->GetActiveTabWindow();
         pWindow = spEditor->GetActiveTabWindow()->GetActiveWindow();
 
-        pWindow->MoveCursorTo(0);
+        // Setup editor with a default size so that text doesn't wrap and confuse the tests!
+        spEditor->SetDisplayRegion(NVec2f(0.0f, 0.0f), NVec2f(1024.0f, 1024.0f));
+
+        pWindow->SetBufferCursor(0);
+
+        //Quicker testing
+        //COMMAND_TEST(delete_cw, "one two three", "cwabc", "abc two three");
+        //COMMAND_TEST(delete_ciw_on_newline, "one\n\nthree", "jciwtwo", "one\ntwo\nthree");
+        /*pBuffer->SetText("one\n\nthree");
+        spEditor->Display(*spDisplay);
+        spMode->AddCommandText("jciwtwo");               
+        assert(pBuffer->GetText().string() == "abc two three");
+        */
     }
 
     ~VimTest()
@@ -48,7 +49,6 @@ public:
 
 public:
     std::shared_ptr<ZepEditor> spEditor;
-    std::shared_ptr<ZepDisplayNull> spDisplay;
     ZepBuffer* pBuffer;
     ZepWindow* pWindow;
     ZepTabWindow* pTabWindow;
@@ -58,36 +58,34 @@ public:
 TEST_F(VimTest, CheckDisplaySucceeds)
 {
     pBuffer->SetText("Some text to display\nThis is a test.");
-    spDisplay->SetDisplaySize(NVec2f(0.0f, 0.0f), NVec2f(50.0f, 1024.0f));
-    ASSERT_NO_FATAL_FAILURE(spDisplay->Display());
+    spEditor->SetDisplayRegion(NVec2f(0.0f, 0.0f), NVec2f(1024.0f, 1024.0f));
+    ASSERT_NO_FATAL_FAILURE(spEditor->Display());
     ASSERT_FALSE(pTabWindow->GetWindows().empty());
 }
 
 TEST_F(VimTest, CheckDisplayWrap)
 {
     pBuffer->SetText("Some text to display\nThis is a test.");
-    ASSERT_NO_FATAL_FAILURE(spDisplay->Display());
+    ASSERT_NO_FATAL_FAILURE(spEditor->Display());
     ASSERT_FALSE(pTabWindow->GetWindows().empty());
 }
 // Given a sample text, a keystroke list and a target text, check the test returns the right thing
-#define COMMAND_TEST(name, source, command, target) \
-TEST_F(VimTest, name)                              \
-{                                                   \
-    pBuffer->SetText(source);                      \
-    spMode->AddCommandText(command);                \
-    ASSERT_STREQ(pBuffer->GetText().string().c_str(), target);     \
-};
+#define COMMAND_TEST(name, source, command, target)                \
+    TEST_F(VimTest, name)                                          \
+    {                                                              \
+        pBuffer->SetText(source);                                  \
+        spMode->AddCommandText(command);                           \
+        ASSERT_STREQ(pBuffer->GetText().string().c_str(), target); \
+    };
 
-#define COMMAND_TEST_RET(name, source, command, target) \
-TEST_F(VimTest, name)                              \
-{                                                   \
-    pBuffer->SetText(source);                      \
-    spMode->AddCommandText(command);                \
-    spMode->AddKeyPress(ExtKeys::RETURN);        \
-    ASSERT_STREQ(pBuffer->GetText().string().c_str(), target);     \
-};
-
-#define SET_TEXT(txt) { pBuffer->SetText(txt); spDisplay->Display(); }
+#define COMMAND_TEST_RET(name, source, command, target)            \
+    TEST_F(VimTest, name)                                          \
+    {                                                              \
+        pBuffer->SetText(source);                                  \
+        spMode->AddCommandText(command);                           \
+        spMode->AddKeyPress(ExtKeys::RETURN);                      \
+        ASSERT_STREQ(pBuffer->GetText().string().c_str(), target); \
+    };
 
 TEST_F(VimTest, UndoRedo)
 {
@@ -115,7 +113,7 @@ TEST_F(VimTest, DELETE)
     spMode->AddCommandText("vll");
     spMode->AddKeyPress(ExtKeys::DEL);
     ASSERT_STREQ(pBuffer->GetText().string().c_str(), "");
-    
+
     pBuffer->SetText("H");
     spMode->AddKeyPress(ExtKeys::DEL);
     spMode->AddKeyPress(ExtKeys::DEL);
@@ -220,6 +218,8 @@ COMMAND_TEST(delete_caW_inside_string, "(one) two three", "lllllcaWabc", "(one)a
 COMMAND_TEST(delete_caW_2, "one two three", "2caWabc", "abcthree");
 
 // ciw
+// CM: This is the whole issue right here.  The display needs to update or the 'j' to move down a line is invalid
+// And then the ciw will also change the display;... Shouldn't have to run a display pass to update the visible line buffer.
 COMMAND_TEST(delete_ciw_on_newline, "one\n\nthree", "jciwtwo", "one\ntwo\nthree");
 COMMAND_TEST(delete_ciw_first, "one two three", "ciwabc", "abc two three");
 COMMAND_TEST(delete_ciw_start_space, "one two three", "lllciwabc", "oneabctwo three");
@@ -249,8 +249,8 @@ COMMAND_TEST(paste_p_at_end_cr, "(one) two three\r\n", "vllllxlllllllllllljp", "
 COMMAND_TEST(paste_p_at_end, "(one) two three", "vllllxllllllllllllp", " two three(one)");
 COMMAND_TEST(paste_P_at_end, "(one) two three", "vllllxllllllllllllP", " two thre(one)e");
 COMMAND_TEST(paste_P_middle, "(one) two three", "llllllvlylp", "(one) twtwo three");
-COMMAND_TEST(paste_p_linewise, "(one)\ntwo\n", "Vyjp", "(one)\ntwo\n(one)\n"); 
-COMMAND_TEST(paste_P_linewise, "(one)\ntwo\n", "VyjP", "(one)\n(one)\ntwo\n"); 
+COMMAND_TEST(paste_p_linewise, "(one)\ntwo\n", "Vyjp", "(one)\ntwo\n(one)\n");
+COMMAND_TEST(paste_P_linewise, "(one)\ntwo\n", "VyjP", "(one)\n(one)\ntwo\n");
 
 COMMAND_TEST(copy_to_register_and_paste, "(one)", "vll\"ryllllll\"rp", "(one)(on");
 COMMAND_TEST(copy_to_register_and_append_paste, "(one)", "vll\"rylllv\"Ry\"Rp", "(one(one)");
@@ -305,13 +305,13 @@ COMMAND_TEST(visual_switch_v, "one", "lvlv", "one");
 COMMAND_TEST(visual_switch_V, "one", "lVlV", "one");
 
 #define CURSOR_TEST(name, source, command, xcoord, ycoord) \
-TEST_F(VimTest, name)                               \
-{                                                   \
-    pBuffer->SetText(source);                      \
-    spMode->AddCommandText(command);                \
-    ASSERT_EQ(pWindow->BufferToDisplay().x, xcoord);     \
-    ASSERT_EQ(pWindow->BufferToDisplay().y, ycoord);     \
-};
+    TEST_F(VimTest, name)                                  \
+    {                                                      \
+        pBuffer->SetText(source);                          \
+        spMode->AddCommandText(command);                   \
+        ASSERT_EQ(pWindow->BufferToDisplay().x, xcoord);   \
+        ASSERT_EQ(pWindow->BufferToDisplay().y, ycoord);   \
+    };
 
 // Motions
 CURSOR_TEST(motion_lright, "one", "ll", 2, 0);
@@ -326,16 +326,13 @@ CURSOR_TEST(motion_kup_lright, "one\ntwo", "jkl", 1, 0);
 CURSOR_TEST(motion_kup_limit, "one\ntwo", "kkkkkkkk", 0, 0);
 CURSOR_TEST(motion_jdown_limit, "one\ntwo", "jjjjjjjjj", 0, 1);
 CURSOR_TEST(motion_jklh_find_center, "one\ntwo\nthree", "jjlk", 1, 1);
-
 CURSOR_TEST(motion_goto_endline, "one two", "$", 6, 0);
 CURSOR_TEST(motion_G_goto_enddoc, "one\ntwo", "G", 0, 1);
-
-CURSOR_TEST(motion_3G, "one\ntwo\nthree\nfour\n", "3G", 0, 3);
-
+CURSOR_TEST(motion_3G, "one\ntwo\nthree\nfour\n", "3G", 0, 2); // Note: Goto line3, offset 2!
+CURSOR_TEST(motion_0G, "one\ntwo\nthree\nfour\n", "0G", 0, 4); // Note: 0 means go to last line 
 CURSOR_TEST(motion_goto_begindoc, "one\ntwo", "lljgg", 0, 0);
 CURSOR_TEST(motion_goto_beginline, "one two", "lllll0", 0, 0);
 CURSOR_TEST(motion_goto_firstlinechar, "   one two", "^", 3, 0);
-
 CURSOR_TEST(motion_2w, "one two three", "2w", 8, 0);
 CURSOR_TEST(motion_w, "one! two three", "w", 3, 0);
 CURSOR_TEST(motion_w_space, "one two three", "lllw", 4, 0);
@@ -347,7 +344,6 @@ CURSOR_TEST(motion_b_space, "one! two three", "eeelb", 5, 0);
 CURSOR_TEST(motion_B, "one! two three", "wwwB", 5, 0);
 CURSOR_TEST(motion_B_frombegin, "one! two three", "wwB", 0, 0);
 CURSOR_TEST(motion_B_fromspace, "one! two three", "wwjB", 0, 0);
-
 CURSOR_TEST(motion_e, "one! two three", "eee", 7, 0);
 CURSOR_TEST(motion_e_jump_space, "one! two three", "elle", 7, 0);
 CURSOR_TEST(motion_e_space, "one two three", "llle", 6, 0);
@@ -355,7 +351,6 @@ CURSOR_TEST(motion_E, "one! two three", "eelE", 7, 0);
 CURSOR_TEST(motion_ge, "one! two three", "wwwge", 7, 0);
 CURSOR_TEST(motion_gE, "one two!!!two", "llllllllllllgE", 2, 0);
 CURSOR_TEST(motion_ge_startspace, "one! two three", "wwjge", 3, 0);
-
 CURSOR_TEST(motion_0, "one two", "llll0", 0, 0);
 CURSOR_TEST(motion_gg, "one two", "llllgg", 0, 0);
 CURSOR_TEST(motion_dollar, "one two", "ll$", 6, 0);

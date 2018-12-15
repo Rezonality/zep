@@ -14,10 +14,9 @@ public:
     ZepWidget_Qt(QWidget* pParent);
     virtual ~ZepWidget_Qt();
 
+    void resizeEvent(QResizeEvent* pResize) override;
     void paintEvent(QPaintEvent* pPaint) override;
     void keyPressEvent(QKeyEvent* ev) override;
-
-    ZepDisplay_Qt* GetDisplay() const { return m_spDisplay.get(); }
 
     // IZepComponent
     virtual ZepEditor& GetEditor() const override { return *m_spEditor; }
@@ -27,7 +26,6 @@ private slots:
     void OnTimer();
 
 private:
-    std::unique_ptr<ZepDisplay_Qt> m_spDisplay;
     std::unique_ptr<ZepEditor> m_spEditor;
     QTimer m_refreshTimer;
 };

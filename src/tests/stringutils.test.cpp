@@ -23,6 +23,13 @@ TEST(StringUtils, ReplaceString)
     ASSERT_STREQ(StringUtils::ReplaceString(strTest, "this", "a").c_str(), "I will replace a word");
 }
 
+TEST(StringUtils, ReplaceStringInPlace)
+{
+    std::string strTest("I will replace this word");
+    StringUtils::ReplaceStringInPlace(strTest, "this", "a");
+    ASSERT_STREQ(strTest.c_str(), "I will replace a word");
+}
+
 TEST(StringUtils, Split)
 {
     std::string strTest("A word on one linexAnd another");

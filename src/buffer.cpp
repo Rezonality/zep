@@ -3,11 +3,13 @@
 #include <cstdlib>
 
 #include "buffer.h"
-#include "utils/stringutils.h"
 #include "utils/file.h"
+#include "utils/stringutils.h"
 
 #include <algorithm>
 #include <regex>
+
+#include "utils/logger.h"
 
 namespace
 {
@@ -57,6 +59,24 @@ void ZepBuffer::Notify(std::shared_ptr<ZepMessage> message)
 {
 }
 
+long ZepBuffer::GetBufferColumn(BufferLocation location) const
+{
+    auto lineStart = GetLinePos(location, LineLocation::LineBegin);
+    return location - lineStart;
+}
+
+long ZepBuffer::GetBufferLine(BufferLocation location) const
+{
+    auto itrLine = std::lower_bound(m_lineEnds.begin(), m_lineEnds.end(), location);
+    if (itrLine != m_lineEnds.end() && location >= *itrLine)
+    {
+        itrLine++;
+    }
+    long line = long(itrLine - m_lineEnds.begin());
+    line = std::min(std::max(0l, line), long(m_lineEnds.size() - 1));
+    return line;
+}
+
 BufferLocation ZepBuffer::LocationFromOffsetByChars(const BufferLocation& location, long offset) const
 {
     // Walk and find.
@@ -94,18 +114,6 @@ BufferLocation ZepBuffer::LocationFromOffsetByChars(const BufferLocation& locati
 BufferLocation ZepBuffer::LocationFromOffset(const BufferLocation& location, long offset) const
 {
     return LocationFromOffset(location + offset);
-}
-
-long ZepBuffer::LineFromOffset(long offset) const
-{
-    auto itrLine = std::lower_bound(m_lineEnds.begin(), m_lineEnds.end(), offset);
-    if (itrLine != m_lineEnds.end() && offset >= *itrLine)
-    {
-        itrLine++;
-    }
-    long line = long(itrLine - m_lineEnds.begin());
-    line = std::min(std::max(0l, line), long(m_lineEnds.size() - 1));
-    return line;
 }
 
 BufferLocation ZepBuffer::LocationFromOffset(long offset) const
@@ -375,10 +383,10 @@ void ZepBuffer::ProcessInput(const std::string& text)
     m_gapBuffer.clear();
     m_lineEnds.clear();
 
-    m_bStrippedCR = false;
-
+    m_fileFlags = 0;
     if (text.empty())
     {
+        m_fileFlags |= FileFlags::TerminatedWithZero;
         m_gapBuffer.push_back(0);
     }
     else
@@ -389,7 +397,7 @@ void ZepBuffer::ProcessInput(const std::string& text)
         {
             if (ch == '\r')
             {
-                m_bStrippedCR = true;
+                m_fileFlags |= FileFlags::StrippedCR;
             }
             else if (ch == '\t')
             {
@@ -411,10 +419,12 @@ void ZepBuffer::ProcessInput(const std::string& text)
 
     if (m_gapBuffer[m_gapBuffer.size() - 1] != 0)
     {
+        m_fileFlags |= FileFlags::TerminatedWithZero;
         m_gapBuffer.push_back(0);
     }
 
     m_lineEnds.push_back(long(m_gapBuffer.size()));
+    LOG(DEBUG) << m_gapBuffer.string();
 }
 
 BufferLocation ZepBuffer::Clamp(BufferLocation in) const
@@ -456,7 +466,7 @@ void ZepBuffer::LockRead()
 void ZepBuffer::Load(const fs::path& path)
 {
     m_filePath = path;
-    
+
     auto read = file_read(path);
     if (!read.empty())
     {
@@ -464,7 +474,7 @@ void ZepBuffer::Load(const fs::path& path)
     }
 }
 
-bool ZepBuffer::Save()
+bool ZepBuffer::Save(int64_t& size)
 {
     auto str = GetText().string();
 
@@ -473,14 +483,25 @@ bool ZepBuffer::Save()
     // It replaces the /r on files that had it afterwards
     // Alternatively we could manage them 'in place', but that would make parsing more complex.
     // And then what do you do if there are 2 different styles in the file.
-    if (m_bStrippedCR)
+    if (m_fileFlags & FileFlags::StrippedCR)
     {
         // TODO: faster way to replace newlines
         StringUtils::ReplaceStringInPlace(str, "\n", "\r\n");
     }
 
-    // Write
-    return Zep::file_write(m_filePath, &str[0], str.size());
+    // Remove the appended 0 if necessary
+    size = (int64_t)str.size();
+    if (m_fileFlags & FileFlags::TerminatedWithZero)
+    {
+        size--;
+    }
+    
+    if (size <= 0)
+    {
+        return true;
+    }
+
+    return Zep::file_write(m_filePath, &str[0], size);
 }
 
 fs::path ZepBuffer::GetFilePath() const
@@ -524,8 +545,7 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
     }
 
     // Find the end of the previous line
-    while (bufferLocation >= 0 &&
-        m_gapBuffer[bufferLocation] != '\n')
+    while (bufferLocation >= 0 && m_gapBuffer[bufferLocation] != '\n')
     {
         bufferLocation--;
     }
@@ -545,9 +565,7 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
     // The point just after the line end
     case LineLocation::BeyondLineEnd:
     {
-        while (bufferLocation < m_gapBuffer.size() &&
-            m_gapBuffer[bufferLocation] != '\n' &&
-            m_gapBuffer[bufferLocation] != 0)
+        while (bufferLocation < m_gapBuffer.size() && m_gapBuffer[bufferLocation] != '\n' && m_gapBuffer[bufferLocation] != 0)
         {
             bufferLocation++;
         }
@@ -570,9 +588,7 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
 
     case LineLocation::LineFirstGraphChar:
     {
-        while (bufferLocation < m_gapBuffer.size() &&
-            !std::isgraph(m_gapBuffer[bufferLocation]) &&
-            m_gapBuffer[bufferLocation] != '\n')
+        while (bufferLocation < m_gapBuffer.size() && !std::isgraph(m_gapBuffer[bufferLocation]) && m_gapBuffer[bufferLocation] != '\n')
         {
             bufferLocation++;
         }
@@ -609,9 +625,7 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
             bufferLocation++;
         }
 
-        while (bufferLocation > 0 && 
-            bufferLocation < m_gapBuffer.size() &&
-            !std::isgraph(m_gapBuffer[bufferLocation]))
+        while (bufferLocation > 0 && bufferLocation < m_gapBuffer.size() && !std::isgraph(m_gapBuffer[bufferLocation]))
         {
             bufferLocation--;
         }
@@ -647,6 +661,7 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
     auto itrBegin = str.begin();
     auto itr = str.begin();
 
+    // Make a list of lines to 'insert'
     std::vector<long> lines;
     std::string lineEndSymbols("\n");
     while (itr != itrEnd)
@@ -683,6 +698,9 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
 
     // This is the range we added (not valid any more in the buffer)
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextAdded, startOffset, changeRange, cursorAfter));
+
+    LOG(DEBUG) << m_gapBuffer.string();
+
     return true;
 }
 

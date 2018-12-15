@@ -1,10 +1,10 @@
 #pragma once
 
-#include <utils/file.h>
 #include "editor.h"
+#include <utils/file.h>
 
-#include <shared_mutex>
 #include <set>
+#include <shared_mutex>
 
 #include "gap_buffer.h"
 #if !(TARGET_PC)
@@ -33,14 +33,23 @@ enum : uint32_t
 };
 };
 
+namespace FileFlags
+{
+enum : uint32_t
+{
+    StrippedCR = (1 << 0),
+    TerminatedWithZero = (1 << 1)
+};
+};
+
 enum class LineLocation
 {
     LineFirstGraphChar, // First non blank character
-    LineLastGraphChar,  // Last non blank character
-    LineLastNonCR,      // Last character before the carriage return
-    LineBegin,          // Beginning of line
-    BeyondLineEnd,            // The line end of the buffer line (for wrapped lines).
-    LineCRBegin,        // The first carriage return character
+    LineLastGraphChar, // Last non blank character
+    LineLastNonCR, // Last character before the carriage return
+    LineBegin, // Beginning of line
+    BeyondLineEnd, // The line end of the buffer line (for wrapped lines).
+    LineCRBegin, // The first carriage return character
 };
 
 using BufferLocation = long;
@@ -60,7 +69,7 @@ public:
     virtual ~ZepBuffer();
     void SetText(const std::string& strText);
     void Load(const fs::path& path);
-    bool Save();
+    bool Save(int64_t& size);
 
     fs::path GetFilePath() const;
 
@@ -72,8 +81,12 @@ public:
     BufferLocation GetLinePos(BufferLocation bufferLocation, LineLocation lineLocation) const;
     bool GetLineOffsets(const long line, long& charStart, long& charEnd) const;
     BufferLocation Clamp(BufferLocation location) const;
+    long GetBufferColumn(BufferLocation location) const;
 
-    ThreadPool& GetThreadPool() { return m_threadPool; }
+    ThreadPool& GetThreadPool()
+    {
+        return m_threadPool;
+    }
 
     using fnMatch = std::function<bool(const char)>;
 
@@ -92,25 +105,58 @@ public:
     bool Delete(const BufferLocation& startOffset, const BufferLocation& endOffset, const BufferLocation& cursorAfter = BufferLocation{ -1 });
     bool Insert(const BufferLocation& startOffset, const std::string& str, const BufferLocation& cursorAfter = BufferLocation{ -1 });
 
-    long GetLineCount() const { return long(m_lineEnds.size()); }
-    long LineFromOffset(long offset) const;
+    long GetLineCount() const
+    {
+        return long(m_lineEnds.size());
+    }
+    long GetBufferLine(BufferLocation offset) const;
     BufferLocation LocationFromOffset(const BufferLocation& location, long offset) const;
     BufferLocation LocationFromOffset(long offset) const;
     BufferLocation LocationFromOffsetByChars(const BufferLocation& location, long offset) const;
     BufferLocation EndLocation() const;
 
-    const GapBuffer<utf8>& GetText() const { return m_gapBuffer; }
-    const std::vector<long> GetLineEnds() const { return m_lineEnds; }
-    bool IsDirty() const { return m_dirty; }
-    bool IsReadOnly() const { return m_readOnly; }
-    bool IsViewOnly() const { return m_viewOnly; }
-    void SetReadOnly(bool ro) { m_readOnly = ro; }
-    void SetViewOnly(bool ro) { m_viewOnly = ro; }
+    const GapBuffer<utf8>& GetText() const
+    {
+        return m_gapBuffer;
+    }
+    const std::vector<long> GetLineEnds() const
+    {
+        return m_lineEnds;
+    }
+    bool IsDirty() const
+    {
+        return m_dirty;
+    }
+    bool IsReadOnly() const
+    {
+        return m_readOnly;
+    }
+    bool IsViewOnly() const
+    {
+        return m_viewOnly;
+    }
+    void SetReadOnly(bool ro)
+    {
+        m_readOnly = ro;
+    }
+    void SetViewOnly(bool ro)
+    {
+        m_viewOnly = ro;
+    }
 
-    void SetSyntax(std::shared_ptr<ZepSyntax> spSyntax) { m_spSyntax = spSyntax; }
-    ZepSyntax* GetSyntax() const { return m_spSyntax.get(); }
+    void SetSyntax(std::shared_ptr<ZepSyntax> spSyntax)
+    {
+        m_spSyntax = spSyntax;
+    }
+    ZepSyntax* GetSyntax() const
+    {
+        return m_spSyntax.get();
+    }
 
-    const std::string& GetName() const { return m_strName; }
+    const std::string& GetName() const
+    {
+        return m_strName;
+    }
 
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
@@ -121,16 +167,16 @@ private:
     void ProcessInput(const std::string& str);
 
 private:
-    bool m_dirty;                              // Is the text modified?
-    bool m_readOnly = false;                   // Is the text read only?
-    bool m_viewOnly = false;                   // Is the text not editable, only view?
-    GapBuffer<utf8> m_gapBuffer;                  // Storage for the text - a gap buffer for efficiency
-    std::vector<long> m_lineEnds;              // End of each line
+    bool m_dirty; // Is the text modified?
+    bool m_readOnly = false; // Is the text read only?
+    bool m_viewOnly = false; // Is the text not editable, only view?
+    GapBuffer<utf8> m_gapBuffer; // Storage for the text - a gap buffer for efficiency
+    std::vector<long> m_lineEnds; // End of each line
     ThreadPool m_threadPool;
     uint32_t m_flags;
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::string m_strName;
-    bool m_bStrippedCR;
+    uint32_t m_fileFlags;
     fs::path m_filePath;
 };
 
@@ -145,12 +191,12 @@ enum class BufferMessageType
 struct BufferMessage : public ZepMessage
 {
     BufferMessage(ZepBuffer* pBuff, BufferMessageType messageType, const BufferLocation& startLoc, const BufferLocation& endLoc, const BufferLocation& cursor = BufferLocation{ -1 })
-        : ZepMessage(Msg_Buffer),
-        pBuffer(pBuff),
-        type(messageType),
-        startLocation(startLoc),
-        endLocation(endLoc),
-        cursorAfter(cursor)
+        : ZepMessage(Msg_Buffer)
+        , pBuffer(pBuff)
+        , type(messageType)
+        , startLocation(startLoc)
+        , endLocation(endLoc)
+        , cursorAfter(cursor)
     {
     }
 
@@ -160,4 +206,4 @@ struct BufferMessage : public ZepMessage
     BufferLocation endLocation;
     BufferLocation cursorAfter;
 };
-} // Zep
+} // namespace Zep

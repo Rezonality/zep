@@ -13,10 +13,9 @@ namespace Zep
 ZepWidget_Qt::ZepWidget_Qt(QWidget* pParent)
     : QWidget(pParent)
 {
-    m_spEditor = std::make_unique<ZepEditor>();
+    m_spEditor = std::make_unique<ZepEditor>(new ZepDisplay_Qt());
     m_spEditor->RegisterCallback(this);
 
-    m_spDisplay = std::make_unique<ZepDisplay_Qt>(*m_spEditor.get());
     setFocusPolicy(Qt::FocusPolicy::StrongFocus);
 
     m_refreshTimer.setInterval(250);
@@ -29,7 +28,6 @@ ZepWidget_Qt::~ZepWidget_Qt()
 {
     m_spEditor->UnRegisterCallback(this);
 
-    m_spDisplay.reset();
     m_spEditor.reset();
 }
 
@@ -49,20 +47,22 @@ void ZepWidget_Qt::OnTimer()
     }
 }
 
+void ZepWidget_Qt::resizeEvent(QResizeEvent* pResize)
+{
+    m_spEditor->SetDisplayRegion(NVec2f(0.0f, 0.0f), NVec2f(pResize->size().width(), pResize->size().height()));
+}
+
 void ZepWidget_Qt::paintEvent(QPaintEvent* pPaint)
 {
     QPainter painter(this);
     painter.setRenderHint(QPainter::RenderHint::Antialiasing, true);
     painter.fillRect(rect(), QColor::fromRgbF(.1f, .1f, .1f, 1.0f));
 
-    m_spDisplay->SetPainter(&painter);
+    ((ZepDisplay_Qt&)m_spEditor->GetDisplay()).SetPainter(&painter);
 
-    m_spDisplay->SetDisplaySize(NVec2f(painter.viewport().left(), painter.viewport().top()),
-        NVec2f(painter.viewport().width(), painter.viewport().height()));
+    m_spEditor->Display();
 
-    m_spDisplay->Display();
-
-    m_spDisplay->SetPainter(nullptr);
+    ((ZepDisplay_Qt&)m_spEditor->GetDisplay()).SetPainter(nullptr);
 }
 
 void ZepWidget_Qt::keyPressEvent(QKeyEvent* ev)

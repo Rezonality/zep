@@ -35,10 +35,11 @@ class ZepMode;
 class ZepMode_Vim;
 class ZepMode_Standard;
 class ZepEditor;
-class ZepDisplay;
 class ZepSyntax;
 class ZepTabWindow;
 class ZepWindow;
+
+struct IZepDisplay;
 
 class Timer;
 
@@ -151,11 +152,33 @@ enum
 static const char* VimMode = "vim";
 static const char* StandardMode = "standard";
 
+const float bottomBorder = 4.0f;
+const float textBorder = 4.0f;
+const float leftBorder = 30.0f;
+
+struct DisplayRegion
+{
+    NVec2f topLeftPx;
+    NVec2f bottomRightPx;
+    NVec2f BottomLeft() const { return NVec2f(topLeftPx.x, bottomRightPx.y); }
+    NVec2f TopRight() const { return NVec2f(bottomRightPx.x, topLeftPx.y); }
+    float Height() const { return bottomRightPx.y - topLeftPx.y; }
+    float Width() const { return bottomRightPx.x - topLeftPx.x; }
+    bool operator == (const DisplayRegion& region) const
+    {
+        return (topLeftPx == region.topLeftPx) &&
+            (bottomRightPx == region.bottomRightPx);
+    }
+    bool operator != (const DisplayRegion& region) const
+    {
+        return !(*this == region);
+    }
+};
+
 class ZepEditor
 {
 public:
-
-    ZepEditor(uint32_t flags = 0);
+    ZepEditor(IZepDisplay* pDisplay, uint32_t flags = 0);
     ~ZepEditor();
 
     void Quit();
@@ -163,6 +186,7 @@ public:
     void InitWithFileOrDir(const std::string& str);
 
     ZepMode* GetCurrentMode() const;
+    void Display();
 
     void RegisterMode(const std::string& name, std::shared_ptr<ZepMode> spMode);
     void SetMode(const std::string& mode);
@@ -208,7 +232,15 @@ public:
     const std::vector<std::string>& GetCommandLines() { return m_commandLines; }
 
     void UpdateWindowState();
+
+    // Setup the display size for the editor
+    void SetDisplayRegion(const NVec2f& topLeft, const NVec2f& bottomRight);
+    void UpdateSize();
+
+    IZepDisplay& GetDisplay() const { return *m_pDisplay; }
+
 private:
+    IZepDisplay* m_pDisplay;
     std::set<IZepComponent*> m_notifyClients;
     mutable tRegisters m_registers;
     
@@ -236,6 +268,13 @@ private:
     mutable bool m_lastCursorBlink = false;
 
     std::vector<std::string> m_commandLines;        // Command information, shown under the buffer
+
+    DisplayRegion m_tabContentRegion;
+    DisplayRegion m_commandRegion;
+    DisplayRegion m_tabRegion;
+    NVec2f m_topLeftPx;
+    NVec2f m_bottomRightPx;
+    bool m_bRegionsChanged = false;
 };
 
 } // Zep

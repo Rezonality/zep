@@ -5,15 +5,6 @@
 namespace Zep
 {
 
-ZepDisplay_ImGui::ZepDisplay_ImGui(ZepEditor& editor)
-    : TParent(editor)
-{
-}
-
-ZepDisplay_ImGui::~ZepDisplay_ImGui()
-{
-}
-
 float ZepDisplay_ImGui::GetFontSize() const
 {
     return ImGui::GetFontSize();

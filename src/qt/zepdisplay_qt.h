@@ -10,11 +10,11 @@ namespace Zep
 inline NVec2f toNVec2f(const QPoint& im) { return NVec2f(im.x(), im.y()); }
 inline QPoint toQPoint(const NVec2f& im) { return QPoint(im.x, im.y); }
 
-class ZepDisplay_Qt : public ZepDisplay
+class ZepDisplay_Qt : public IZepDisplay
 {
 public:
-    using TParent = ZepDisplay;
-    ZepDisplay_Qt(ZepEditor& editor);
+    using TParent = IZepDisplay;
+    ZepDisplay_Qt();
     ~ZepDisplay_Qt();
 
     void SetPainter(QPainter* pPainter) { m_pPainter = pPainter; }

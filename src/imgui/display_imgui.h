@@ -10,13 +10,9 @@ namespace Zep
 inline NVec2f toNVec2f(const ImVec2& im) { return NVec2f(im.x, im.y); }
 inline ImVec2 toImVec2(const NVec2f& im) { return ImVec2(im.x, im.y); }
 
-class ZepDisplay_ImGui : public ZepDisplay
+class ZepDisplay_ImGui : public IZepDisplay
 {
 public:
-    using TParent = ZepDisplay;
-    ZepDisplay_ImGui(ZepEditor& editor);
-    ~ZepDisplay_ImGui();
-
     // ImGui specific display methods
     virtual NVec2f GetTextSize(const utf8* pBegin, const utf8* pEnd = nullptr) const override;
     virtual float GetFontSize() const override;

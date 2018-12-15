@@ -151,24 +151,24 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     {
         if (modifierKeys & ModifierKey::Ctrl)
         {
-            GetCurrentWindow()->MoveCursorTo(BufferLocation{ 0 });
+            GetCurrentWindow()->SetBufferCursor(BufferLocation{ 0 });
         }
         else
         {
             auto pos = buffer.GetLinePos(bufferCursor, LineLocation::LineFirstGraphChar);
-            GetCurrentWindow()->MoveCursorTo(pos);
+            GetCurrentWindow()->SetBufferCursor(pos);
         }
     }
     else if (key == ExtKeys::END)
     {
         if (modifierKeys & ModifierKey::Ctrl)
         {
-            GetCurrentWindow()->MoveCursorTo(buffer.EndLocation());
+            GetCurrentWindow()->SetBufferCursor(buffer.EndLocation());
         }
         else
         {
             auto pos = buffer.GetLinePos(bufferCursor, LineLocation::BeyondLineEnd);
-            GetCurrentWindow()->MoveCursorTo(pos);
+            GetCurrentWindow()->SetBufferCursor(pos);
         }
     }
     else if (key == ExtKeys::RIGHT)
@@ -176,11 +176,11 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         if (modifierKeys & ModifierKey::Ctrl)
         {
             auto target = buffer.WordMotion(bufferCursor, SearchType::Word, SearchDirection::Forward);
-            GetCurrentWindow()->MoveCursorTo(target);
+            GetCurrentWindow()->SetBufferCursor(target);
         }
         else
         {
-            GetCurrentWindow()->MoveCursorTo(bufferCursor + 1);
+            GetCurrentWindow()->SetBufferCursor(bufferCursor + 1);
         }
     }
     else if (key == ExtKeys::LEFT)
@@ -188,20 +188,20 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         if (modifierKeys & ModifierKey::Ctrl)
         {
             auto target = buffer.WordMotion(bufferCursor, SearchType::Word, SearchDirection::Backward);
-            GetCurrentWindow()->MoveCursorTo(target);
+            GetCurrentWindow()->SetBufferCursor(target);
         }
         else
         {
-            GetCurrentWindow()->MoveCursorTo(bufferCursor - 1);
+            GetCurrentWindow()->SetBufferCursor(bufferCursor - 1);
        }
     }
     else if (key == ExtKeys::UP)
     {
-        GetCurrentWindow()->MoveCursorWindowRelative(-1);
+        GetCurrentWindow()->MoveCursorY(-1);
     }
     else if (key == ExtKeys::DOWN)
     {
-        GetCurrentWindow()->MoveCursorWindowRelative(1);
+        GetCurrentWindow()->MoveCursorY(1);
     }
     else if (key == ExtKeys::RETURN)
     {
