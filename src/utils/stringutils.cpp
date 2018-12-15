@@ -3,6 +3,7 @@
 #include <cassert>
 #include <codecvt>
 #include <locale>
+#include <sstream>
 
 #include "stringutils.h"
 
