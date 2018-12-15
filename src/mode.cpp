@@ -53,7 +53,7 @@ void ZepMode::AddCommand(std::shared_ptr<ZepCommand> spCmd)
                 
     if (spCmd->GetCursorAfter() != -1)
     {
-        GetCurrentWindow()->MoveCursorTo(spCmd->GetCursorAfter());
+        GetCurrentWindow()->SetBufferCursor(spCmd->GetCursorAfter());
     }
 }
 

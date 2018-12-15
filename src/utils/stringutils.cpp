@@ -30,6 +30,16 @@ std::string ReplaceString(std::string subject, const std::string& search,
     return subject;
 }
 
+void ReplaceStringInPlace(std::string& subject, const std::string& search,
+    const std::string& replace)
+{
+    size_t pos = 0;
+    while ((pos = subject.find(search, pos)) != std::string::npos) {
+        subject.replace(pos, search.length(), replace);
+        pos += replace.length();
+    }
+}
+
 // String split with multiple delims
 // https://stackoverflow.com/a/7408245/18942
 std::vector<std::string> Split(const std::string& text, const std::string& delims)

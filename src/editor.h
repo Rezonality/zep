@@ -35,10 +35,11 @@ class ZepMode;
 class ZepMode_Vim;
 class ZepMode_Standard;
 class ZepEditor;
-class ZepDisplay;
 class ZepSyntax;
 class ZepTabWindow;
 class ZepWindow;
+
+struct IZepDisplay;
 
 class Timer;
 
@@ -88,9 +89,10 @@ using NVec2i = NVec2<long>;
 
 using utf8 = uint8_t;
 
+extern const char* Msg_HandleCommand;
+extern const char* Msg_Quit;
 extern const char* Msg_GetClipBoard;
 extern const char* Msg_SetClipBoard;
-extern const char* Msg_HandleCommand;
 
 class ZepMessage
 {
@@ -105,13 +107,13 @@ public:
     bool handled = false;       // If the message was handled
 };
 
-struct IZepClient
+struct IZepComponent
 {
     virtual void Notify(std::shared_ptr<ZepMessage> message) = 0;
     virtual ZepEditor& GetEditor() const = 0;
 };
 
-class ZepComponent : public IZepClient
+class ZepComponent : public IZepComponent
 {
 public:
     ZepComponent(ZepEditor& editor);
@@ -150,14 +152,41 @@ enum
 static const char* VimMode = "vim";
 static const char* StandardMode = "standard";
 
+const float bottomBorder = 4.0f;
+const float textBorder = 4.0f;
+const float leftBorder = 30.0f;
+
+struct DisplayRegion
+{
+    NVec2f topLeftPx;
+    NVec2f bottomRightPx;
+    NVec2f BottomLeft() const { return NVec2f(topLeftPx.x, bottomRightPx.y); }
+    NVec2f TopRight() const { return NVec2f(bottomRightPx.x, topLeftPx.y); }
+    float Height() const { return bottomRightPx.y - topLeftPx.y; }
+    float Width() const { return bottomRightPx.x - topLeftPx.x; }
+    bool operator == (const DisplayRegion& region) const
+    {
+        return (topLeftPx == region.topLeftPx) &&
+            (bottomRightPx == region.bottomRightPx);
+    }
+    bool operator != (const DisplayRegion& region) const
+    {
+        return !(*this == region);
+    }
+};
+
 class ZepEditor
 {
 public:
-
-    ZepEditor(uint32_t flags = 0);
+    ZepEditor(IZepDisplay* pDisplay, uint32_t flags = 0);
     ~ZepEditor();
 
+    void Quit();
+
+    void InitWithFileOrDir(const std::string& str);
+
     ZepMode* GetCurrentMode() const;
+    void Display();
 
     void RegisterMode(const std::string& name, std::shared_ptr<ZepMode> spMode);
     void SetMode(const std::string& mode);
@@ -165,12 +194,13 @@ public:
 
     void RegisterSyntaxFactory(const std::string& extension, tSyntaxFactory factory);
     bool Broadcast(std::shared_ptr<ZepMessage> payload);
-    void RegisterCallback(IZepClient* pClient) { m_notifyClients.insert(pClient); }
-    void UnRegisterCallback(IZepClient* pClient) { m_notifyClients.erase(pClient); }
+    void RegisterCallback(IZepComponent* pClient) { m_notifyClients.insert(pClient); }
+    void UnRegisterCallback(IZepComponent* pClient) { m_notifyClients.erase(pClient); }
 
     const tBuffers& GetBuffers() const;
     ZepBuffer* AddBuffer(const std::string& str);
     ZepBuffer* GetMRUBuffer() const;
+    void SaveBuffer(ZepBuffer& buffer);
 
     void SetRegister(const std::string& reg, const Register& val);
     void SetRegister(const char reg, const Register& val);
@@ -202,8 +232,16 @@ public:
     const std::vector<std::string>& GetCommandLines() { return m_commandLines; }
 
     void UpdateWindowState();
+
+    // Setup the display size for the editor
+    void SetDisplayRegion(const NVec2f& topLeft, const NVec2f& bottomRight);
+    void UpdateSize();
+
+    IZepDisplay& GetDisplay() const { return *m_pDisplay; }
+
 private:
-    std::set<IZepClient*> m_notifyClients;
+    IZepDisplay* m_pDisplay;
+    std::set<IZepComponent*> m_notifyClients;
     mutable tRegisters m_registers;
     
     std::shared_ptr<ZepMode_Vim> m_spVimMode;
@@ -230,6 +268,13 @@ private:
     mutable bool m_lastCursorBlink = false;
 
     std::vector<std::string> m_commandLines;        // Command information, shown under the buffer
+
+    DisplayRegion m_tabContentRegion;
+    DisplayRegion m_commandRegion;
+    DisplayRegion m_tabRegion;
+    NVec2f m_topLeftPx;
+    NVec2f m_bottomRightPx;
+    bool m_bRegionsChanged = false;
 };
 
 } // Zep

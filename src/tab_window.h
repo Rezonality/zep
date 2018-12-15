@@ -6,8 +6,9 @@
 namespace Zep
 {
 
-class ZepDisplay;
 class ZepWindow;
+
+struct IZepDisplay;
 
 // Display state for a single pane of text.
 // Editor operations such as select and change are local to a displayed pane
@@ -25,12 +26,14 @@ public:
     void RemoveWindow(ZepWindow* pWindow);
     void SetActiveWindow(ZepWindow* pBuffer) { m_pActiveWindow = pBuffer; }
     ZepWindow* GetActiveWindow() const { return m_pActiveWindow; }
+    void CloseActiveWindow();
     
     using tWindows = std::vector<ZepWindow*>;
     const tWindows& GetWindows() const { return m_windows; }
 
-    void PreDisplay(ZepDisplay& display, const DisplayRegion& region);
-    void Display(ZepDisplay& display);
+    void SetDisplayRegion(const DisplayRegion& region);
+
+    void Display();
 
 private:
     ZepEditor& m_editor;                            // Editor that owns this window

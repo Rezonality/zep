@@ -31,6 +31,14 @@ ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer)
     return pWin;
 }
 
+void ZepTabWindow::CloseActiveWindow()
+{
+    if (m_pActiveWindow)
+    {
+        RemoveWindow(m_pActiveWindow);
+    }
+}
+
 void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
 {
     assert(pWindow);
@@ -46,9 +54,19 @@ void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
 
     delete pWindow;
     m_windows.erase(itrFound);
-    if (m_pActiveWindow == pWindow)
+
+    if (m_windows.empty())
     {
         m_pActiveWindow = nullptr;
+        GetEditor().RemoveTabWindow(this);
+    }
+    else
+    {
+        if (m_pActiveWindow == pWindow)
+        {
+            // TODO: Active window ordering - remember the last active and switch to it when this one is closed
+            m_pActiveWindow = m_windows[m_windows.size() - 1];
+        }
     }
 }
 
@@ -57,24 +75,22 @@ void ZepTabWindow::Notify(std::shared_ptr<ZepMessage> payload)
     // Nothing yet.
 }
 
-void ZepTabWindow::PreDisplay(ZepDisplay& display, const DisplayRegion& region)
+void ZepTabWindow::SetDisplayRegion(const DisplayRegion& region)
 {
     m_windowRegion = region;
     m_buffersRegion = m_windowRegion;
 
     for(auto& pWin : m_windows)
     {
-        pWin->PreDisplay(display, m_buffersRegion);
+        pWin->SetDisplayRegion(m_buffersRegion);
     }
 }
 
-void ZepTabWindow::Display(ZepDisplay& display)
+void ZepTabWindow::Display()
 {
-    PreDisplay(display, m_windowRegion);
-    
     for(auto& pWin : m_windows)
     {
-        pWin->Display(display);
+        pWin->Display();
     }
 }
 

@@ -19,6 +19,9 @@ LIST(APPEND M3RDPARTY_INCLUDE
     m3rdparty/imgui
     m3rdparty/imgui/examples/libs/gl3w
     )
+
+#LIST(APPEND M3RDPARTY_SRC)
+
 ENDIF()
 
 LIST(APPEND M3RDPARTY_INCLUDE
@@ -44,6 +47,7 @@ ExternalProject_Add(
 LIST(APPEND M3RDPARTY_INCLUDE
     m3rdparty/sdl/include
     m3rdparty/sdl
+	m3rdparty/tclap/include
     )
 
 IF (TARGET_PC)
