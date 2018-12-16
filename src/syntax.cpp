@@ -116,6 +116,8 @@ void ZepSyntax::UpdateSyntax()
 
     assert(std::distance(itrCurrent, itrEnd) < int(m_syntax.size()));
 
+    assert(m_syntax.size() == buffer.size());
+
     std::string delim(" \t.\n;(){}=");
     std::string lineEnd("\n");
 
