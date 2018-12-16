@@ -24,9 +24,9 @@ struct LineInfo
 {
     NVec2i columnOffsets; // Begin/end range of the text buffer for this line, as always end is one beyond the end.
     long lastNonCROffset = InvalidOffset; // The last char that is visible on the line (i.e. not CR/LF)
-    float screenPosYPx; // Current position on Screen
+    float bufferPosYPx; // Position in the buffer in pixels, if the screen was as big as the buffer.
     long bufferLineNumber = 0; // Line in the original buffer, not the screen line
-    long screenLineNumber = 0; // Line on the screen
+    int lineIndex;
 
     std::vector<CharInfo> charInfo;
 
@@ -98,7 +98,6 @@ public:
 
     long GetMaxDisplayLines();
 
-    void ScrollToCursor();
     void SetSelectionRange(BufferLocation start, BufferLocation end);
 
     ZepBuffer& GetBuffer() const;
@@ -119,7 +118,11 @@ private:
     };
 
 private:
-    void CheckVisibleLines();
+    void CheckLineSpans();
+    void ScrollToCursor();
+    void UpdateVisibleLineRange();
+    bool IsInsideTextRegion(NVec2i pos) const;
+
     const LineInfo& GetCursorLineInfo(long y);
 
     NVec2i BufferToDisplay(const BufferLocation& location);
@@ -142,9 +145,9 @@ private:
     // Visual stuff
     std::vector<std::string> m_statusLines; // Status information, shown under the buffer
 
+    float m_bufferOffsetYPx = 0;
     NVec2i m_visibleLineRange = { 0, 0 }; // Offset of the displayed area into the text
     std::vector<LineInfo> m_windowLines; // Information about the currently displayed lines
-    bool m_linesFillScreen = false;
 
     ZepTabWindow& m_tabWindow;
 
