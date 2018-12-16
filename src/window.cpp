@@ -11,6 +11,7 @@
 #include "window.h"
 
 #include "utils/stringutils.h"
+#include "utils/logger.h"
 
 // A 'window' is like a vim window; i.e. a region inside a tab
 namespace Zep
@@ -103,6 +104,8 @@ void ZepWindow::SetDisplayRegion(const DisplayRegion& region)
     m_textRegion.topLeftPx.x += leftBorder + textBorder;
 
     m_defaultLineSize = GetEditor().GetDisplay().GetTextSize((Zep::utf8*)"A").y;
+
+    m_bufferOffsetYPx = 0;
 }
 
 void ZepWindow::ScrollToCursor()
@@ -111,6 +114,7 @@ void ZepWindow::ScrollToCursor()
     
     auto two_lines = (GetEditor().GetDisplay().GetFontSize() * 2);
     auto& cursorLine = GetCursorLineInfo(BufferToDisplay().y);
+
     if (m_bufferOffsetYPx > (cursorLine.bufferPosYPx - two_lines))
     {
         m_bufferOffsetYPx -= (m_bufferOffsetYPx - (cursorLine.bufferPosYPx - two_lines));
@@ -272,19 +276,20 @@ void ZepWindow::UpdateVisibleLineRange()
         {
             continue;
         }
+        
+        if ((windowLine.bufferPosYPx - m_bufferOffsetYPx) >= m_textRegion.bottomRightPx.y)
+        {
+            break;
+        }
 
         m_visibleLineRange.x = std::min(m_visibleLineRange.x, long(line));
         m_visibleLineRange.y = long(line);
         
-        if ((windowLine.bufferPosYPx - m_bufferOffsetYPx) > m_textRegion.bottomRightPx.y)
-        {
-            break;
-        }
     }
     m_visibleLineRange.y++;
 
-#if DEBUG_LINES
-    GetEditor().SetCommandText(std::string("Line Range: ") + std::to_string(visibleLineRange.x) + ", " + std::to_string(visibleLineRange.y) + ", cursor: " + std::to_string(cursor.y));
+#if _DEBUG
+    LOG(DEBUG) << "Line Range: " << std::to_string(m_visibleLineRange.x) + ", " + std::to_string(m_visibleLineRange.y);
 #endif
 }
 
