@@ -97,6 +97,7 @@ public:
     void ToggleFlag(uint32_t flag);
 
     long GetMaxDisplayLines();
+    long GetNumDisplayedLines();
 
     void SetSelectionRange(BufferLocation start, BufferLocation end);
 

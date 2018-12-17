@@ -474,7 +474,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     else if ((context.command == "d" && (context.modifierKeys & ModifierKey::Ctrl)) || context.lastKey == ExtKeys::PAGEDOWN)
     {
         // Note: the vim spec says 'half visible lines' for up/down
-        GetCurrentWindow()->MoveCursorY((context.displayLineCount / 2) * context.count);
+        GetCurrentWindow()->MoveCursorY((GetCurrentWindow()->GetNumDisplayedLines() / 2) * context.count);
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
@@ -487,7 +487,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     }
     else if ((context.command == "u" && (context.modifierKeys & ModifierKey::Ctrl)) || context.lastKey == ExtKeys::PAGEUP)
     {
-        GetCurrentWindow()->MoveCursorY(-(context.displayLineCount / 2) * context.count);
+        GetCurrentWindow()->MoveCursorY(-(GetCurrentWindow()->GetNumDisplayedLines() / 2) * context.count);
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }

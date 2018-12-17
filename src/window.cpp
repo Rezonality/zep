@@ -158,6 +158,12 @@ void ZepWindow::CheckLineSpans()
 
     BufferLocation loc = 0;
 
+    // For now, we are compromising on ASCII; so don't query font size each time
+    // The performance of the editor currently comes down to this function
+    // It can be improved by incrementally updating the line spans, potentially threading, etc.
+    // but it isn't necessary yet.
+    auto textSize = GetEditor().GetDisplay().GetTextSize((Zep::utf8*)"A");
+
     // Process every buffer line
     for (;;)
     {
@@ -213,7 +219,7 @@ void ZepWindow::CheckLineSpans()
             // factor it out.
             // Line length calculation for display in a window shouldn't need the display code, but it does
             // need to know about the font...
-            auto textSize = GetEditor().GetDisplay().GetTextSize(pCh, pEnd);
+            //auto textSize = GetEditor().GetDisplay().GetTextSize(pCh, pEnd);
             lineInfo.charInfo[charIndex].textSize = textSize;
 
             // Wrap
@@ -525,6 +531,12 @@ long ZepWindow::GetMaxDisplayLines()
 {
     CheckLineSpans();
     return m_maxDisplayLines;
+}
+
+long ZepWindow::GetNumDisplayedLines()
+{
+    CheckLineSpans();
+    return std::min((long)m_windowLines.size(), GetMaxDisplayLines());
 }
 
 void ZepWindow::SetBufferCursor(BufferLocation location)

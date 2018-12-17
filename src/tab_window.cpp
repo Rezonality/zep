@@ -1,7 +1,7 @@
-#include "buffer.h"
-#include "editor.h"
-#include "display.h"
 #include "tab_window.h"
+#include "buffer.h"
+#include "display.h"
+#include "editor.h"
 #include "window.h"
 
 // A 'window' is like a Vim Tab
@@ -77,18 +77,22 @@ void ZepTabWindow::Notify(std::shared_ptr<ZepMessage> payload)
 
 void ZepTabWindow::SetDisplayRegion(const DisplayRegion& region)
 {
-    m_windowRegion = region;
-    m_buffersRegion = m_windowRegion;
-
-    for(auto& pWin : m_windows)
+    if (m_lastRegion != region)
     {
-        pWin->SetDisplayRegion(m_buffersRegion);
+        m_lastRegion = region;
+        m_windowRegion = region;
+        m_buffersRegion = m_windowRegion;
+
+        for (auto& pWin : m_windows)
+        {
+            pWin->SetDisplayRegion(m_buffersRegion);
+        }
     }
 }
 
 void ZepTabWindow::Display()
 {
-    for(auto& pWin : m_windows)
+    for (auto& pWin : m_windows)
     {
         pWin->Display();
     }
