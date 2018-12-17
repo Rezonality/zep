@@ -644,10 +644,10 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
         return false;
     }
 
-    BufferLocation changeRange{ long(m_gapBuffer.size()) };
+    BufferLocation changeRange{ long(str.length())};
 
     // We are about to modify this range
-    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, startOffset, changeRange));
+    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, startOffset, startOffset + changeRange));
 
     // abcdef\r\nabc<insert>dfdf\r\n
     auto itrLine = std::lower_bound(m_lineEnds.begin(), m_lineEnds.end(), startOffset);
@@ -697,7 +697,7 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
     m_gapBuffer.insert(m_gapBuffer.begin() + startOffset, str.begin(), str.end());
 
     // This is the range we added (not valid any more in the buffer)
-    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextAdded, startOffset, changeRange, cursorAfter));
+    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextAdded, startOffset, startOffset + changeRange, cursorAfter));
 
     LOG(DEBUG) << m_gapBuffer.string();
 

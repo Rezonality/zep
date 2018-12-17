@@ -66,7 +66,6 @@ struct CommandContext
     std::string commandWithoutCount;
     std::string command;
     //const LineInfo* pLineInfo = nullptr;
-    long displayLineCount = 0;
     BufferLocation beginRange{ -1 };
     BufferLocation endRange{ -1 };
     ZepBuffer& buffer;

@@ -40,6 +40,8 @@ private:
     DisplayRegion m_windowRegion;                 // region of the display we are showing on.
     DisplayRegion m_buffersRegion;                   // region of the display for text.
 
+    DisplayRegion m_lastRegion;
+
     tWindows m_windows;
     ZepWindow* m_pActiveWindow = nullptr;
 };
