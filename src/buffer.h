@@ -158,6 +158,7 @@ public:
         return m_strName;
     }
 
+    std::string GetDisplayName() const;
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
 private:

@@ -57,7 +57,7 @@ void ZepWindow::UpdateAirline()
         m_airline.leftBoxes.push_back(AirBox{ "VISUAL", 0xFF1111AA });
         break;
     };
-    m_airline.leftBoxes.push_back(AirBox{ m_pBuffer->GetFilePath().string(), 0xFF000000 });
+    m_airline.leftBoxes.push_back(AirBox{ m_pBuffer->GetDisplayName(), 0xFF000000 });
 
     m_airline.rightBoxes.push_back(AirBox{std::to_string(m_pBuffer->GetLineEnds().size()) + " Lines", 0xFF11AAAA});
 }
