@@ -6,6 +6,8 @@
 #include "zepwidget_qt.h"
 #include "tab_window.h"
 #include "zepdisplay_qt.h"
+#include "mode_standard.h"
+#include "mode_vim.h"
 
 namespace Zep
 {
@@ -73,11 +75,11 @@ void ZepWidget_Qt::keyPressEvent(QKeyEvent* ev)
     {
         if (ev->key() == Qt::Key_1)
         {
-            m_spEditor->SetMode(Zep::StandardMode);
+            m_spEditor->SetMode(ZepMode_Standard::StaticName());
         }
         else if (ev->key() == Qt::Key_2)
         {
-            m_spEditor->SetMode(Zep::VimMode);
+            m_spEditor->SetMode(ZepMode_Vim::StaticName());
         }
         else
         {

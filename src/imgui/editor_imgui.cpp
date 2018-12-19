@@ -92,12 +92,12 @@ void ZepEditor_ImGui::HandleInput()
     {
         if (ImGui::IsKeyPressed(KEY_1))
         {
-            SetMode(StandardMode);
+            SetMode(ZepMode_Standard::StaticName());
             handled = true;
         }
         else if (ImGui::IsKeyPressed(KEY_2))
         {
-            SetMode(VimMode);
+            SetMode(ZepMode_Vim::StaticName());
             handled = true;
         }
         else

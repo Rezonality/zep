@@ -149,9 +149,6 @@ enum
 };
 };
 
-static const char* VimMode = "vim";
-static const char* StandardMode = "standard";
-
 const float bottomBorder = 4.0f;
 const float textBorder = 4.0f;
 const float leftBorder = 30.0f;
@@ -188,7 +185,7 @@ public:
     ZepMode* GetCurrentMode() const;
     void Display();
 
-    void RegisterMode(const std::string& name, std::shared_ptr<ZepMode> spMode);
+    void RegisterMode(std::shared_ptr<ZepMode> spMode);
     void SetMode(const std::string& mode);
     ZepMode* GetCurrentMode();
 

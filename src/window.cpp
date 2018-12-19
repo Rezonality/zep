@@ -37,10 +37,37 @@ ZepWindow::~ZepWindow()
 {
 }
 
+void ZepWindow::UpdateAirline()
+{
+    m_airline.leftBoxes.clear();
+    m_airline.rightBoxes.clear();
+    m_airline.leftBoxes.push_back(AirBox {GetEditor().GetCurrentMode()->Name(), 0xAAAA00AA } );
+    switch(m_cursorMode)
+    {
+    case CursorMode::Hidden:
+        m_airline.leftBoxes.push_back(AirBox{ "HIDDEN", 0xFF1111AA });
+        break;
+    case CursorMode::Insert:
+        m_airline.leftBoxes.push_back(AirBox{ "INSERT", 0xFF1111AA });
+        break;
+    case CursorMode::Normal:
+        m_airline.leftBoxes.push_back(AirBox{ "NORMAL", 0xFF1111AA });
+        break;
+    case CursorMode::Visual:
+        m_airline.leftBoxes.push_back(AirBox{ "VISUAL", 0xFF1111AA });
+        break;
+    };
+    m_airline.leftBoxes.push_back(AirBox{ m_pBuffer->GetFilePath().string(), 0xFF000000 });
+
+    m_airline.rightBoxes.push_back(AirBox{std::to_string(m_pBuffer->GetLineEnds().size()) + " Lines", 0xFF11AAAA});
+}
+
 void ZepWindow::SetCursorMode(CursorMode mode)
 {
     m_cursorMode = mode;
     GetEditor().ResetCursorTimer();
+
+    UpdateAirline();
 }
 
 void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
@@ -64,12 +91,6 @@ void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
     }
 }
 
-void ZepWindow::SetStatusText(const std::string& strText)
-{
-    m_statusLines = StringUtils::SplitLines(strText);
-    m_linesChanged = true;
-}
-
 void ZepWindow::SetDisplayRegion(const DisplayRegion& region)
 {
     if (m_bufferRegion == region)
@@ -80,13 +101,8 @@ void ZepWindow::SetDisplayRegion(const DisplayRegion& region)
     m_linesChanged = true;
     m_bufferRegion = region;
 
-    // ** Temporary, status
-    std::ostringstream str;
-    str << "(" << GetEditor().GetCurrentMode()->Name() << ") NORMAL"
-        << " : " << int(m_pBuffer->GetLineEnds().size()) << " Lines";
-    SetStatusText(str.str());
-
-    auto statusCount = m_statusLines.size();
+    // Account for airline
+    auto statusCount = 1;// m_statusLines.size() + 1;
     const auto windowSize = m_bufferRegion.bottomRightPx - m_bufferRegion.topLeftPx;
     const float statusSize = GetEditor().GetDisplay().GetFontSize() * statusCount + textBorder * 2.0f;
 
@@ -106,6 +122,8 @@ void ZepWindow::SetDisplayRegion(const DisplayRegion& region)
     m_defaultLineSize = GetEditor().GetDisplay().GetTextSize((Zep::utf8*)"A").y;
 
     m_bufferOffsetYPx = 0;
+
+    UpdateAirline();
 }
 
 void ZepWindow::ScrollToCursor()
@@ -294,9 +312,7 @@ void ZepWindow::UpdateVisibleLineRange()
     }
     m_visibleLineRange.y++;
 
-#if _DEBUG
-    LOG(DEBUG) << "Line Range: " << std::to_string(m_visibleLineRange.x) + ", " + std::to_string(m_visibleLineRange.y);
-#endif
+    //LOG(DEBUG) << "Line Range: " << std::to_string(m_visibleLineRange.x) + ", " + std::to_string(m_visibleLineRange.y);
 }
 
 const LineInfo& ZepWindow::GetCursorLineInfo(long y)
@@ -612,31 +628,23 @@ void ZepWindow::Display()
         }
     }
 
-    if (m_statusLines.empty())
-        m_statusLines.push_back(" ");
-    long statusCount = long(m_statusLines.size());
-    const float statusSize = GetEditor().GetDisplay().GetFontSize() * statusCount + textBorder * 2.0f;
-    auto statusSpace = statusCount;
-    statusSpace = std::max(statusCount, 0l);
-
-    // Background rect for status (airline)
-    GetEditor().GetDisplay().DrawRectFilled(m_statusRegion.topLeftPx, m_statusRegion.bottomRightPx, 0xAA111111);
-
-    // Draw status text
+    // Airline
+    GetEditor().GetDisplay().DrawRectFilled(m_statusRegion.topLeftPx, m_statusRegion.bottomRightPx, 0xFF222222);
+    auto airHeight = GetEditor().GetDisplay().GetFontSize();
+    auto border = 6.0f;
+    
     NVec2f screenPosYPx = m_statusRegion.topLeftPx + NVec2f(0.0f, textBorder);
-    for (int i = 0; i < statusSpace; i++)
+    for (int i = 0; i < m_airline.leftBoxes.size(); i++)
     {
-        auto textSize = GetEditor().GetDisplay().GetTextSize((const utf8*)m_statusLines[i].c_str(),
-            (const utf8*)(m_statusLines[i].c_str() + m_statusLines[i].size()));
-
-        GetEditor().GetDisplay().DrawRectFilled(screenPosYPx, screenPosYPx + NVec2f(textSize.x, GetEditor().GetDisplay().GetFontSize() + textBorder), 0xFF111111);
-        GetEditor().GetDisplay().DrawChars(screenPosYPx,
+        auto textSize = GetEditor().GetDisplay().GetTextSize((const utf8*)m_airline.leftBoxes[i].text.c_str());
+        textSize.x += border * 2;
+        GetEditor().GetDisplay().DrawRectFilled(screenPosYPx, NVec2f(textSize.x + screenPosYPx.x, screenPosYPx.y + airHeight), m_airline.leftBoxes[i].background);
+        GetEditor().GetDisplay().DrawChars(screenPosYPx + NVec2f(border, 0),
             0xFFFFFFFF,
-            (const utf8*)(m_statusLines[i].c_str()));
-
-        screenPosYPx.y += GetEditor().GetDisplay().GetFontSize();
-        screenPosYPx.x = m_statusRegion.topLeftPx.x;
+            (const utf8*)(m_airline.leftBoxes[i].text.c_str()));
+        screenPosYPx.x += textSize.x;
     }
+  
 }
 
 // *** Motions ***

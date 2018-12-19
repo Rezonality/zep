@@ -100,7 +100,14 @@ public:
     virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
     virtual void Begin() override;
 
-    virtual const char* Name() const override { return "Vim"; }
+    static const char* StaticName()
+    {
+        return "Vim";
+    }
+    virtual const char* Name() const override
+    {
+        return StaticName();
+    }
 
     const std::string& GetLastCommand() const { return m_lastCommand; }
     const int GetLastCount() const { return m_lastCount; }

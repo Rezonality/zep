@@ -64,6 +64,18 @@ enum
 };
 }
 
+struct AirBox
+{
+    std::string text;
+    uint32_t background;
+};
+
+struct Airline
+{
+    std::vector<AirBox> leftBoxes;
+    std::vector<AirBox> rightBoxes;
+};
+
 // Display state for a single pane of text.
 // Window shows a buffer, and is parented by a TabWindow
 // The buffer can change, but the window must always have an active buffer
@@ -77,7 +89,7 @@ public:
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
     void SetCursorMode(CursorMode mode);
-    void SetStatusText(const std::string& strStatus);
+    void UpdateAirline();
 
     ZepTabWindow& GetTabWindow() const;
 
@@ -164,6 +176,8 @@ private:
     Region m_selection; // Selection area
 
     bool m_linesChanged = true;
+
+    Airline m_airline;
 };
 
 } // namespace Zep

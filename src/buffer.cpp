@@ -424,7 +424,7 @@ void ZepBuffer::ProcessInput(const std::string& text)
     }
 
     m_lineEnds.push_back(long(m_gapBuffer.size()));
-    LOG(DEBUG) << m_gapBuffer.string();
+    //LOG(DEBUG) << m_gapBuffer.string();
 }
 
 BufferLocation ZepBuffer::Clamp(BufferLocation in) const
@@ -699,7 +699,7 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
     // This is the range we added (not valid any more in the buffer)
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextAdded, startOffset, startOffset + changeRange, cursorAfter));
 
-    LOG(DEBUG) << m_gapBuffer.string();
+    //LOG(DEBUG) << m_gapBuffer.string();
 
     return true;
 }

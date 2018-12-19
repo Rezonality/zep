@@ -38,9 +38,11 @@ ZepEditor::ZepEditor(IZepDisplay* pDisplay, uint32_t flags)
     , m_pDisplay(pDisplay)
 {
     assert(m_pDisplay != nullptr);
-    RegisterMode(VimMode, std::make_shared<ZepMode_Vim>(*this));
-    RegisterMode(StandardMode, std::make_shared<ZepMode_Standard>(*this));
-    SetMode(VimMode);
+    RegisterMode(std::make_shared<ZepMode_Vim>(*this));
+    RegisterMode(std::make_shared<ZepMode_Standard>(*this));
+    SetMode(ZepMode_Vim::StaticName());
+
+    m_commandLines.push_back("");
 
     RegisterSyntaxFactory("vert", tSyntaxFactory([](ZepBuffer* pBuffer) {
         return std::static_pointer_cast<ZepSyntax>(std::make_shared<ZepSyntaxGlsl>(*pBuffer));
@@ -198,9 +200,9 @@ const ZepEditor::tTabWindows& ZepEditor::GetTabWindows() const
     return m_tabWindows;
 }
 
-void ZepEditor::RegisterMode(const std::string& name, std::shared_ptr<ZepMode> spMode)
+void ZepEditor::RegisterMode(std::shared_ptr<ZepMode> spMode)
 {
-    m_mapModes[name] = spMode;
+    m_mapModes[spMode->Name()] = spMode;
 }
 
 void ZepEditor::SetMode(const std::string& mode)
@@ -404,7 +406,7 @@ void ZepEditor::Display()
     // Ensure window state is good ??
     UpdateWindowState();
 
-    // Always 1 command line
+    // Command plus output
     auto& commandLines = GetCommandLines();
 
     long commandCount = long(commandLines.size());
@@ -415,8 +417,8 @@ void ZepEditor::Display()
     auto commandSpace = commandCount;
     commandSpace = std::max(commandCount, 0l);
 
-    // Background rect for status (airline)
-    m_pDisplay->DrawRectFilled(m_commandRegion.topLeftPx, m_commandRegion.bottomRightPx, 0xFF333333);
+    // Background rect for CommandLine
+    m_pDisplay->DrawRectFilled(m_commandRegion.topLeftPx, m_commandRegion.bottomRightPx, 0xFF000000);
 
     // Draw command text
     auto screenPosYPx = m_commandRegion.topLeftPx + NVec2f(0.0f, textBorder);

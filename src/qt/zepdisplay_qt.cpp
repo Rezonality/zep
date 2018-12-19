@@ -8,7 +8,7 @@ namespace Zep
 
 ZepDisplay_Qt::ZepDisplay_Qt()
 {
-    qApp->setFont(QFont("Consolas", 9));
+    qApp->setFont(QFont("Consolas", 10));
     
     QFontMetrics met(qApp->font());
     m_fontSize = met.height();

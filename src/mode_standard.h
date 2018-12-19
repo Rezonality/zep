@@ -14,9 +14,17 @@ public:
     virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
     virtual void Begin() override;
 
-    virtual const char* Name() const override { return "Standard"; }
+    static const char* StaticName()
+    {
+        return "Standard";
+    }
+    virtual const char* Name() const override
+    {
+        return StaticName();
+    }
+
 private:
     virtual void SwitchMode(EditorMode mode);
 };
 
-} // Zep
+} // namespace Zep
