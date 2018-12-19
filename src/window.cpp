@@ -170,9 +170,6 @@ void ZepWindow::CheckLineSpans()
     // The performance of the editor currently comes down to this function
     // It can be improved by incrementally updating the line spans, potentially threading, etc.
     // but it isn't necessary yet.
-<<<<<<< HEAD
-    auto textSize = GetEditor().GetDisplay().GetTextSize((Zep::utf8*)"A");
-=======
     const auto& textBuffer = m_pBuffer->GetText();
 
     long bufferLine = 0;
@@ -186,7 +183,6 @@ void ZepWindow::CheckLineSpans()
             m_windowLines.resize(lines + 1);
         }
     };
->>>>>>> Fixed tab region display, fixed wrapping
 
     // Process every buffer line
     for (;;)
@@ -220,16 +216,7 @@ void ZepWindow::CheckLineSpans()
                     spanLine++;
                     bufferPosYPx += GetEditor().GetDisplay().GetFontSize();
 
-<<<<<<< HEAD
-            // This is the only place we need the display object outside of rendering; perhaps we can
-            // factor it out.
-            // Line length calculation for display in a window shouldn't need the display code, but it does
-            // need to know about the font...
-            //auto textSize = GetEditor().GetDisplay().GetTextSize(pCh, pEnd);
-            lineInfo.charInfo[charIndex].textSize = textSize;
-=======
                     ensureSpanLines(spanLine);
->>>>>>> Fixed tab region display, fixed wrapping
 
                     lineInfo = &m_windowLines[spanLine];
                     lineInfo->charInfo.clear();

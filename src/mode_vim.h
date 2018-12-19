@@ -65,11 +65,8 @@ struct CommandContext
     std::string commandText;
     std::string commandWithoutCount;
     std::string command;
-<<<<<<< HEAD
-    //const LineInfo* pLineInfo = nullptr;
-=======
-    //const SpanInfo* pLineInfo = nullptr;
->>>>>>> Fixed tab region display, fixed wrapping
+    
+    const SpanInfo* pLineInfo = nullptr;
     BufferLocation beginRange{ -1 };
     BufferLocation endRange{ -1 };
     ZepBuffer& buffer;

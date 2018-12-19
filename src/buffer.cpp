@@ -504,6 +504,13 @@ bool ZepBuffer::Save(int64_t& size)
     return Zep::file_write(m_filePath, &str[0], size);
 }
 
+std::string ZepBuffer::GetDisplayName()
+{
+    if (m_filePath.empty())
+    {
+    }
+}
+
 fs::path ZepBuffer::GetFilePath() const
 {
     return m_filePath;
