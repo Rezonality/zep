@@ -19,12 +19,12 @@ struct CharInfo
 };
 
 // Line information, calculated during display update.
-// This is a screen line, not a text buffer line, since we may wrap across multiple lines
-struct LineInfo
+// A collection of spans that show split lines on the display
+struct SpanInfo
 {
     NVec2i columnOffsets; // Begin/end range of the text buffer for this line, as always end is one beyond the end.
     long lastNonCROffset = InvalidOffset; // The last char that is visible on the line (i.e. not CR/LF)
-    float bufferPosYPx; // Position in the buffer in pixels, if the screen was as big as the buffer.
+    float spanYPx; // Position in the buffer in pixels, if the screen was as big as the buffer.
     long bufferLineNumber = 0; // Line in the original buffer, not the screen line
     int lineIndex;
 
@@ -124,13 +124,14 @@ private:
     void UpdateVisibleLineRange();
     bool IsInsideTextRegion(NVec2i pos) const;
 
-    const LineInfo& GetCursorLineInfo(long y);
+    const SpanInfo& GetCursorLineInfo(long y);
 
     NVec2i BufferToDisplay(const BufferLocation& location);
 
-    bool DisplayLine(const LineInfo& lineInfo, const DisplayRegion& region, int displayPass);
+    bool DisplayLine(const SpanInfo& lineInfo, const DisplayRegion& region, int displayPass);
 
 private:
+    NVec2f ToBufferRegion(const NVec2f& pos);
     DisplayRegion m_bufferRegion; // region of the display we are showing on.
     DisplayRegion m_textRegion; // region of the display for text.
     DisplayRegion m_statusRegion; // status text / airline
@@ -148,7 +149,7 @@ private:
 
     float m_bufferOffsetYPx = 0;
     NVec2i m_visibleLineRange = { 0, 0 }; // Offset of the displayed area into the text
-    std::vector<LineInfo> m_windowLines; // Information about the currently displayed lines
+    std::vector<SpanInfo> m_windowLines; // Information about the currently displayed lines
 
     ZepTabWindow& m_tabWindow;
 

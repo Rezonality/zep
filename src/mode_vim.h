@@ -7,7 +7,7 @@ class Timer;
 namespace Zep
 {
 
-struct LineInfo;
+struct SpanInfo;
 
 enum class VimMotion
 {
@@ -65,7 +65,11 @@ struct CommandContext
     std::string commandText;
     std::string commandWithoutCount;
     std::string command;
+<<<<<<< HEAD
     //const LineInfo* pLineInfo = nullptr;
+=======
+    //const SpanInfo* pLineInfo = nullptr;
+>>>>>>> Fixed tab region display, fixed wrapping
     BufferLocation beginRange{ -1 };
     BufferLocation endRange{ -1 };
     ZepBuffer& buffer;

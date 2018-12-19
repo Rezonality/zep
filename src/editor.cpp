@@ -388,7 +388,7 @@ void ZepEditor::UpdateSize()
         m_tabRegion.bottomRightPx = m_topLeftPx + NVec2f(displaySize.x, 0.0f);
     }
 
-    m_tabContentRegion.topLeftPx = m_tabRegion.bottomRightPx + NVec2f(-displaySize.x, 0.0f);
+    m_tabContentRegion.topLeftPx = m_tabRegion.bottomRightPx + NVec2f(-displaySize.x, 1.0f);
     m_tabContentRegion.bottomRightPx = m_commandRegion.topLeftPx + NVec2f(displaySize.x, 0.0f);
 
     GetActiveTabWindow()->SetDisplayRegion(m_tabContentRegion);
