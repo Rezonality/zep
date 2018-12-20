@@ -67,7 +67,7 @@ enum
 struct AirBox
 {
     std::string text;
-    uint32_t background;
+    NVec4f background;
 };
 
 struct Airline

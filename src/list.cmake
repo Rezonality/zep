@@ -26,6 +26,8 @@ ${ZEP_ROOT}/src/syntax.cpp
 ${ZEP_ROOT}/src/syntax.h
 ${ZEP_ROOT}/src/syntax_glsl.cpp
 ${ZEP_ROOT}/src/syntax_glsl.h
+${ZEP_ROOT}/src/syntax_rainbow_brackets.cpp
+${ZEP_ROOT}/src/syntax_rainbow_brackets.h
 ${ZEP_ROOT}/src/mode.cpp
 ${ZEP_ROOT}/src/mode.h
 ${ZEP_ROOT}/src/mode_standard.cpp
