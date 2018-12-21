@@ -17,6 +17,11 @@ NVec2f ZepDisplay_ImGui::GetTextSize(const utf8* pBegin, const utf8* pEnd) const
     ImFont* font = ImGui::GetFont();
     const float font_size = ImGui::GetFontSize();
     ImVec2 text_size = font->CalcTextSizeA(font_size, FLT_MAX, FLT_MAX, (const char*)pBegin, (const char*)pEnd, NULL);
+    if (text_size.x == 0.0)
+    {
+        // Make invalid characters a default size
+        return GetTextSize((utf8*)"A");
+    }
 
     return toNVec2f(text_size);
 }

@@ -1,11 +1,12 @@
 #pragma once
 
+#include <ostream>
 // 2D and 4D vectors, used for area and color calculations.
 // Some helpers for color conversion too.
 // This just saves using a library like glm (my personal preference)
 // - and it keeps the dependencies of Zep to just the source folder contents
 
-namespace Zep
+namespace COMMON_NAMESPACE
 {
 
 template <class T>
@@ -100,7 +101,7 @@ struct NVec4
     {
     }
 
-    NVec4(T val)
+    explicit NVec4(T val)
         : NVec4(val, val, val, val)
     {
     }
@@ -357,4 +358,5 @@ inline std::ostream& operator<< (std::ostream& str, const NRect<T>& region)
 
 using NRectf = NRect<float>;
 
-} // Zep namespace
+
+} // mcommon namespace

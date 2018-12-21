@@ -5,8 +5,8 @@
 #include "commands.h"
 #include "mode_vim.h"
 #include "tab_window.h"
-#include "utils/stringutils.h"
-#include "utils/timer.h"
+#include "mcommon/string/stringutils.h"
+#include "mcommon/animation/timer.h"
 #include "window.h"
 
 // Note:
@@ -278,7 +278,7 @@ ZepMode_Vim::~ZepMode_Vim()
 
 void ZepMode_Vim::Init()
 {
-    m_spInsertEscapeTimer = std::make_shared<Timer>();
+    timer_restart(m_insertEscapeTimer);
     for (int i = 0; i <= 9; i++)
     {
         GetEditor().SetRegister('0' + i, "");
@@ -880,7 +880,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
             else
             {
                 context.beginRange = context.buffer.LocationFromOffsetByChars(context.bufferCursor, 1);
-                context.cursorAfter = context.buffer.LocationFromOffset(context.beginRange, long(StringUtils::Utf8Length(context.pRegister->text.c_str())) - 1);
+                context.cursorAfter = context.buffer.LocationFromOffset(context.beginRange, long(Utf8Length(context.pRegister->text.c_str())) - 1);
             }
             context.op = CommandOperation::Insert;
         }
@@ -897,7 +897,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
             else
             {
                 context.beginRange = context.bufferCursor;
-                context.cursorAfter = context.buffer.LocationFromOffsetByChars(context.beginRange, long(StringUtils::Utf8Length(context.pRegister->text.c_str()) - 1));
+                context.cursorAfter = context.buffer.LocationFromOffsetByChars(context.beginRange, long(Utf8Length(context.pRegister->text.c_str()) - 1));
             }
             context.op = CommandOperation::Insert;
         }
@@ -996,7 +996,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
                     if (!reg.second.text.empty())
                     {
                         std::string displayText = reg.second.text;
-                        displayText = StringUtils::ReplaceString(displayText, "\n", "^J");
+                        displayText = ReplaceString(displayText, "\n", "^J");
                         str << "\"" << reg.first << "   " << displayText << '\n';
                     }
                 }
@@ -1033,7 +1033,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
                     if (!buffer->GetName().empty())
                     {
                         std::string displayText = buffer->GetName();
-                        displayText = StringUtils::ReplaceString(displayText, "\n", "^J");
+                        displayText = ReplaceString(displayText, "\n", "^J");
                         if (&GetCurrentWindow()->GetBuffer() == buffer.get())
                         {
                             str << "*";
@@ -1050,7 +1050,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
             }
             else if (context.command.find(":bu") == 0)
             {
-                auto strTok = StringUtils::Split(context.command, " ");
+                auto strTok = string_split(context.command, " ");
 
                 if (strTok.size() > 1)
                 {
@@ -1301,7 +1301,7 @@ void ZepMode_Vim::HandleInsert(uint32_t key)
     if (m_pendingEscape)
     {
         // My custom 'jk' escape option
-        auto canEscape = m_spInsertEscapeTimer->GetDelta() < .25f;
+        auto canEscape = timer_get_elapsed_seconds(m_insertEscapeTimer) < .25f;
         if (canEscape && key == 'k')
         {
             packCommand = true;
@@ -1377,7 +1377,7 @@ void ZepMode_Vim::HandleInsert(uint32_t key)
 
     if (key == 'j' && !m_pendingEscape)
     {
-        m_spInsertEscapeTimer->Restart();
+        timer_restart(m_insertEscapeTimer);
         m_pendingEscape = true;
     }
     else
@@ -1401,7 +1401,7 @@ void ZepMode_Vim::PreDisplay()
 
     // If we thought it was an escape but it wasn't, put the 'j' back in!
     // TODO: Move to a more sensible place where we can check the time
-    if (m_pendingEscape && m_spInsertEscapeTimer->GetDelta() > .25f)
+    if (m_pendingEscape && timer_get_elapsed_seconds(m_insertEscapeTimer) > .25f)
     {
         m_pendingEscape = false;
         GetCurrentWindow()->GetBuffer().Insert(GetCurrentWindow()->GetBufferCursor(), "j");

@@ -1,21 +1,19 @@
 #pragma once
 
-#include "config_shared.h"
-#include "utils/stringutils.h"
-#include <vector>
-
-#if TARGET_MAC == 1
-
-#include <fstream>
-#include <iostream>
+#include "common_namespace.h"
 #include <sys/stat.h>
 #include <sys/types.h>
+#include "mcommon/string/stringutils.h"
+#include "mcommon/file/file.h"
+
+#include <system_error>
 #include <chrono>
+#include <sstream>
+#include <fstream>
+#include <direct.h>
 
-namespace fs
+namespace COMMON_NAMESPACE
 {
-
-//using namespace Zep;
 
 // NOTE:
 // This is a very simple implementation of the <filesystem> functionality in CPP 14/17.
@@ -62,11 +60,6 @@ public:
         std::string name, ext;
         split(name, ext);
         return path(name + ext);
-    }
-
-    bool is_relative() const
-    {
-        return !is_absolute();
     }
 
     bool is_absolute() const
@@ -137,7 +130,7 @@ public:
     path operator / (const path& rhs) const
     {
         std::string temp = m_strPath;
-        Zep::StringUtils::RTrim(temp, "\\/");
+        RTrim(temp, "\\/");
         return path(temp + "/" + rhs.string());
     }
 
@@ -150,11 +143,11 @@ public:
 
     std::vector<std::string>::const_iterator begin()
     {
-        std::string can = Zep::StringUtils::ReplaceString(m_strPath, "\\", "/");
-        m_components = Zep::StringUtils::Split(can, "/");
+        std::string can = ReplaceString(m_strPath, "\\", "/");
+        m_components = string_split(can, "/");
         return m_components.begin();
     }
-
+    
     std::vector<std::string>::const_iterator end()
     {
         return m_components.end();
@@ -176,7 +169,7 @@ inline bool exists(const path& path)
 
 inline path canonical(const path& input)
 {
-    return path(Zep::StringUtils::ReplaceString(input.string(), "\\", "/"));
+    return path(ReplaceString(input.string(), "\\", "/"));
 }
 
 inline path absolute(const path& input)
@@ -184,7 +177,7 @@ inline path absolute(const path& input)
     // Read the comments at the top of this file; this is certainly incorrect, and doesn't handle ../
     // It is sufficient for what we need though
     auto p = canonical(input);
-    auto strAbs = Zep::StringUtils::ReplaceString(p.string(), "/.", "");
+    auto strAbs = ReplaceString(p.string(), "/.", "");
     return path(strAbs);
 }
 
@@ -204,8 +197,8 @@ enum
 
 inline bool copy_file(const path& source, const path& dest, uint32_t options)
 {
-    std::ifstream  src(source.string(), std::ios::binary);
-    std::ofstream  dst(dest.string(), std::ios::binary);
+    std::ifstream src(source.string(), std::ios::binary);
+    std::ofstream dst(dest.string(), std::ios::binary);
     if (!src.is_open() || !dst.is_open())
     {
         return false;
@@ -248,22 +241,22 @@ inline bool makePath(const std::string& path)
     {
     case ENOENT:
         // parent didn't exist, try to create it
-    {
-        auto pos = path.find_last_of('/');
-        if (pos == std::string::npos)
+        {
+            auto pos = path.find_last_of('/');
+            if (pos == std::string::npos)
 #if defined(_WIN32)
-            pos = path.find_last_of('\\');
-        if (pos == std::string::npos)
+                pos = path.find_last_of('\\');
+            if (pos == std::string::npos)
 #endif
-            return false;
-        if (!makePath(path.substr(0, pos)))
-            return false;
-    }
-    // now, try to create again
+                return false;
+            if (!makePath( path.substr(0, pos) ))
+                return false;
+        }
+        // now, try to create again
 #if defined(_WIN32)
-    return 0 == _mkdir(path.c_str());
+        return 0 == _mkdir(path.c_str());
 #else 
-    return 0 == mkdir(path.c_str(), mode);
+        return 0 == mkdir(path.c_str(), mode);
 #endif
 
     case EEXIST:
@@ -301,28 +294,5 @@ inline bool is_directory(const path& source)
     }
     return false;
 }
-} // fs namespace
-
-#else
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem::v1;
-#endif
-
-#include <functional>
-
-namespace Zep
-{
-std::string file_read(const fs::path& fileName);
-bool file_write(const fs::path& fileName, const void* pData, size_t size);
-fs::path file_get_relative_path(fs::path from, fs::path to);
-fs::path file_get_documents_path();
-std::vector<fs::path> file_gather_files(const fs::path& root);
-
-// File watcher
-using fileCB = std::function<void(const fs::path&)>;
-void file_init_dir_watch(const fs::path& dir, fileCB callback);
-void file_destroy_dir_watch();
-void file_update_dir_watch();
 
 }
-

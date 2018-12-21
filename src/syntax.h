@@ -5,19 +5,7 @@
 namespace Zep
 {
 
-namespace SyntaxType
-{
-enum
-{
-    Normal = (1 << 0),
-    Keyword = (1 << 1),
-    Integer = (1 << 2),
-    Comment = (1 << 3),
-    Whitespace = (1 << 4),
-    HiddenChar = (1 << 5),
-    Parenthesis = (1 << 6)
-};
-}
+enum class ThemeColor;
 
 struct CommentEntry
 {
@@ -34,7 +22,7 @@ public:
     ZepSyntax(ZepBuffer& buffer);
     virtual ~ZepSyntax();
 
-    virtual uint32_t GetSyntaxAt(long index) const;
+    virtual ThemeColor GetSyntaxAt(long index) const;
     virtual NVec4f GetSyntaxColorAt(long offset) const;
     virtual void UpdateSyntax();
     virtual void Interrupt();
@@ -43,7 +31,7 @@ public:
     {
         return m_processedChar;
     }
-    virtual const std::vector<uint32_t>& GetText() const
+    virtual const std::vector<ThemeColor>& GetText() const
     {
         return m_syntax;
     }
@@ -55,7 +43,7 @@ private:
 protected:
     ZepBuffer& m_buffer;
     std::vector<CommentEntry> m_commentEntries;
-    std::vector<uint32_t> m_syntax; // TODO: Use gap buffer - not sure why this is a vector?
+    std::vector<ThemeColor> m_syntax; // TODO: Use gap buffer - not sure why this is a vector?
     std::future<void> m_syntaxResult;
     std::atomic<long> m_processedChar = { 0 };
     std::atomic<long> m_targetChar = { 0 };

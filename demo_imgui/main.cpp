@@ -4,6 +4,7 @@
 // (GL3W is a helper library to access OpenGL functions since there is no standard header to access modern OpenGL functions easily. Alternatives are GLEW, Glad, etc.)
 
 #include "imgui.h"
+
 #include "examples/imgui_impl_opengl3.h"
 #include "examples/imgui_impl_sdl.h"
 #include <SDL.h>
@@ -24,13 +25,14 @@
 #include IMGUI_IMPL_OPENGL_LOADER_CUSTOM
 #endif
 
-#include "utils/timer.h"
+#include "mcommon/animation/timer.h"
 
 #undef max
 
 #include "src/imgui/display_imgui.h"
 #include "src/imgui/editor_imgui.h"
-
+#include "src/mode_standard.h"
+#include "src/mode_vim.h"
 using namespace Zep;
 
 #include "src/tests/longtext.tt"
@@ -99,10 +101,13 @@ bool ReadCommandLine(int argc, char** argv, int& exitCode)
 struct ZepContainer : public IZepComponent
 {
     ZepContainer(const std::string& startupFile)
-       : spEditor(std::make_unique<ZepEditor_ImGui>())
+        : spEditor(std::make_unique<ZepEditor_ImGui>())
     {
         spEditor->RegisterCallback(this);
-        spEditor->InitWithFileOrDir(startupFile);
+        if (!startupFile.empty())
+        {
+            spEditor->InitWithFileOrDir(startupFile);
+        }
 
         // Add a shader, as a default when no file - for the demo
         if (spEditor->GetBuffers().size() == 0)
@@ -212,15 +217,22 @@ int main(int argc, char** argv)
     // - Read 'misc/fonts/README.txt' for more instructions and details.
     // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
     //io.Fonts->AddFontDefault();
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
 
-    io.Fonts->AddFontFromFileTTF((std::string(SDL_GetBasePath()) + "ProggyClean.ttf").c_str(), 13.0f);
+    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
 
+    //io.Fonts->AddFontDefault();
+    /*ImFontConfig cfg;
+    cfg.OversampleH = 3;
+    cfg.OversampleV= 3;
+    cfg.SizePixels = 16;
+    cfg.PixelSnapH = true;
+    io.Fonts->AddFontFromFileTTF((std::string(SDL_GetBasePath()) + "ProggyClean.ttf").c_str(), 16.0f, &cfg );
+    */
     bool show_demo_window = false;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
@@ -261,31 +273,64 @@ int main(int argc, char** argv)
         ImGui_ImplSDL2_NewFrame(window);
         ImGui::NewFrame();
 
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
+        if (ImGui::BeginMainMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+            {
+                /*
+                if (ImGui::MenuItem("Open"))
+                {
+                }
+                */
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Settings"))
+            {
+                if (ImGui::BeginMenu("Editor Mode"))
+                {
+                    bool enabledVim = strcmp(zep.GetEditor().GetCurrentMode()->Name(), Zep::ZepMode_Vim::StaticName()) == 0;
+                    bool enabledNormal = !enabledVim;
+                    if (ImGui::MenuItem("Vim", "CTRL+2", &enabledVim))
+                    {
+                        zep.GetEditor().SetMode(Zep::ZepMode_Vim::StaticName());
+                    }
+                    else if (ImGui::MenuItem("Standard", "CTRL+1", &enabledNormal))
+                    {
+                        zep.GetEditor().SetMode(Zep::ZepMode_Standard::StaticName());
+                    }
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMenu();
+            }
+
+            ImGui::EndMainMenuBar();
+        }
 
         int w, h;
         SDL_GetWindowSize(window, &w, &h);
-        ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImVec2(float(w), float(h)), ImGuiCond_Always);
+
+        // This is a bit messy; and I have no idea why I don't need to remove the menu size from the calculation!
+        auto menuSize = ImGui::GetStyle().FramePadding.y * 2 + ImGui::GetFontSize();
+        ImGui::SetNextWindowPos(ImVec2(0, menuSize));
+        ImGui::SetNextWindowSize(ImVec2(float(w), float(h)));// -menuSize)));
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
         ImGui::Begin("Zep", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
-#if DEMO_HELP
-        ImGui::Text("CTRL+1 for Normal editing, CTRL+2 for VIM mode");
-#endif
         ImGui::PopStyleVar(4);
-
         // TODO: Change only when necessray
-        zep.spEditor->SetDisplayRegion(toNVec2f(ImGui::GetCursorScreenPos()), toNVec2f(ImGui::GetContentRegionAvail()));
+        zep.spEditor->SetDisplayRegion(toNVec2f(ImGui::GetWindowPos()), toNVec2f(ImGui::GetWindowSize()));
 
         // Display the editor inside this window
         zep.spEditor->Display();
         zep.spEditor->HandleInput();
+
+        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+        if (show_demo_window)
+            ImGui::ShowDemoWindow(&show_demo_window);
+
         ImGui::End();
 
         // Rendering

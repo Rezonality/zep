@@ -1,4 +1,4 @@
-#include "utils/stringutils.h"
+#include "mcommon/string/stringutils.h"
 #include "mode_standard.h"
 #include "window.h"
 #include "commands.h"
@@ -132,7 +132,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         auto pRegister = &GetEditor().GetRegister('"');
         if (!pRegister->text.empty())
         {
-            cursorAfter = buffer.LocationFromOffset(startOffset, long(StringUtils::Utf8Length(pRegister->text.c_str())) - 1);
+            cursorAfter = buffer.LocationFromOffset(startOffset, long(Utf8Length(pRegister->text.c_str())) - 1);
         
             // Simple insert
             auto cmd = std::make_shared<ZepCommand_Insert>(buffer,

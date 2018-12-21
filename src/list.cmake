@@ -1,20 +1,27 @@
 
 SET(ZEP_ROOT ${CMAKE_CURRENT_LIST_DIR}/../)
 SET(ZEP_SOURCE
-${ZEP_ROOT}/src/utils/timer.cpp
-${ZEP_ROOT}/src/utils/timer.h
-${ZEP_ROOT}/src/utils/stringutils.cpp
-${ZEP_ROOT}/src/utils/file.cpp
-${ZEP_ROOT}/src/utils/file.h
-${ZEP_ROOT}/src/utils/stringutils.h
-${ZEP_ROOT}/src/utils/threadutils.h
+${ZEP_ROOT}/src/mcommon/animation/timer.cpp
+${ZEP_ROOT}/src/mcommon/animation/timer.h
+${ZEP_ROOT}/src/mcommon/string/stringutils.cpp
+${ZEP_ROOT}/src/mcommon/file/file.cpp
+${ZEP_ROOT}/src/mcommon/file/file.h
+${ZEP_ROOT}/src/mcommon/string/stringutils.h
+${ZEP_ROOT}/src/mcommon/threadutils.h
+${ZEP_ROOT}/src/mcommon/file/archive.h
+${ZEP_ROOT}/src/mcommon/file/archive.cpp
+${ZEP_ROOT}/src/mcommon/logger.h
+${ZEP_ROOT}/src/mcommon/file/mfilesystem.h
+${ZEP_ROOT}/src/mcommon/file/mfilesystem.cpp
+${ZEP_ROOT}/src/mcommon/FileWatcher/FileWatcher.cpp
 ${ZEP_ROOT}/src/editor.cpp
 ${ZEP_ROOT}/src/editor.h
+${ZEP_ROOT}/src/splits.cpp
+${ZEP_ROOT}/src/splits.h
 ${ZEP_ROOT}/src/buffer.cpp
 ${ZEP_ROOT}/src/buffer.h
 ${ZEP_ROOT}/src/commands.cpp
 ${ZEP_ROOT}/src/commands.h
-${ZEP_ROOT}/src/display.cpp
 ${ZEP_ROOT}/src/display.h
 ${ZEP_ROOT}/src/tab_window.cpp
 ${ZEP_ROOT}/src/tab_window.h
@@ -39,7 +46,24 @@ ${ZEP_ROOT}/src/theme.h
 ${ZEP_ROOT}/src/list.cmake
 )
 
-LIST(APPEND SRC_INCLUDE src)
+IF (TARGET_PC)
+SET (ZEP_SOURCE ${ZEP_SOURCE}
+${ZEP_ROOT}/src/mcommon/FileWatcher/FileWatcherWin32.cpp
+)
+ENDIF()
+IF (TARGET_MAC)
+SET (ZEP_SOURCE ${ZEP_SOURCE}
+${ZEP_ROOT}/src/mcommon/FileWatcher/FileWatcherOSX.cpp
+)
+ENDIF()
+IF (TARGET_LINUX)
+SET (ZEP_SOURCE ${ZEP_SOURCE}
+${ZEP_ROOT}/src/mcommon/FileWatcher/FileWatcherLinux.cpp
+)
+ENDIF()
+
+
+LIST(APPEND SRC_INCLUDE src src/mcommon)
 
 IF (BUILD_QT)
 SET(ZEP_SOURCE_QT

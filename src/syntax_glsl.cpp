@@ -1,5 +1,5 @@
 #include "syntax_glsl.h"
-#include "utils/stringutils.h"
+#include "mcommon/string/stringutils.h"
 
 namespace
 {

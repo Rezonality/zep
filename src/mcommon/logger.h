@@ -7,7 +7,9 @@
  */
 
 #pragma once
+#include "common_namespace.h"
 #include <iostream>
+#include <sstream>
 
 #if TARGET_PC
 // A reference to the debug API on windows, to help the logger output in VC.  This is better
@@ -17,6 +19,11 @@ extern "C" { __declspec(dllimport) void __stdcall OutputDebugStringA(const char*
 #endif
 
 using namespace std;
+
+#undef ERROR
+
+namespace COMMON_NAMESPACE
+{
 
 enum typelog
 {
@@ -95,3 +102,5 @@ private:
     }
     std::ostringstream out;
 };
+
+} // mcommon

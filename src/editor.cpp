@@ -7,13 +7,17 @@
 #include "syntax_glsl.h"
 #include "tab_window.h"
 #include "theme.h"
-#include "utils/file.h"
-#include "utils/stringutils.h"
-#include "utils/timer.h"
-#include "utils/logger.h"
+#include "mcommon/file/file.h"
+#include "mcommon/string/stringutils.h"
+#include "mcommon/animation/timer.h"
+#include "mcommon/logger.h"
 #include "window.h"
 
+namespace COMMON_NAMESPACE
+{
 structlog LOGCFG = { true, DEBUG };
+}
+
 namespace Zep
 {
 
@@ -35,14 +39,16 @@ ZepComponent::~ZepComponent()
 
 ZepEditor::ZepEditor(IZepDisplay* pDisplay, uint32_t flags)
     : m_flags(flags)
-    , m_spCursorTimer(new Timer())
     , m_pDisplay(pDisplay)
 {
+    m_spTheme = std::make_shared<ZepTheme>();
+
     assert(m_pDisplay != nullptr);
     RegisterMode(std::make_shared<ZepMode_Vim>(*this));
     RegisterMode(std::make_shared<ZepMode_Standard>(*this));
     SetMode(ZepMode_Vim::StaticName());
 
+    timer_restart(m_cursorTimer);
     m_commandLines.push_back("");
 
     RegisterSyntaxFactory("vert", tSyntaxFactory([](ZepBuffer* pBuffer) {
@@ -135,7 +141,7 @@ void ZepEditor::UpdateWindowState()
 
 void ZepEditor::ResetCursorTimer()
 {
-    m_spCursorTimer->Restart();
+    timer_restart(m_cursorTimer);
 }
 
 void ZepEditor::SetCurrentTabWindow(ZepTabWindow* pTabWindow)
@@ -331,7 +337,7 @@ void ZepEditor::Notify(std::shared_ptr<ZepMessage> message)
 
 void ZepEditor::SetCommandText(const std::string& strCommand)
 {
-    m_commandLines = StringUtils::SplitLines(strCommand);
+    m_commandLines = string_split(strCommand, "\n\r");
     if (m_commandLines.empty())
     {
         m_commandLines.push_back("");
@@ -356,7 +362,7 @@ bool ZepEditor::RefreshRequired() const
 
 bool ZepEditor::GetCursorBlinkState() const
 {
-    m_lastCursorBlink = (int(m_spCursorTimer->GetDelta() * 1.75f) & 1) ? true : false;
+    m_lastCursorBlink = (int(timer_get_elapsed_seconds(m_cursorTimer) * 1.75f) & 1) ? true : false;
     return m_lastCursorBlink;
 }
 
@@ -423,8 +429,10 @@ void ZepEditor::Display()
     auto commandSpace = commandCount;
     commandSpace = std::max(commandCount, 0l);
 
+    GetDisplay().DrawRectFilled(m_topLeftPx, m_bottomRightPx, GetTheme().GetColor(ThemeColor::Background));
+
     // Background rect for CommandLine
-    m_pDisplay->DrawRectFilled(m_commandRegion.topLeftPx, m_commandRegion.bottomRightPx, 0xFF000000);
+    m_pDisplay->DrawRectFilled(m_commandRegion.topLeftPx, m_commandRegion.bottomRightPx, GetTheme().GetColor(ThemeColor::Background));
 
     // Draw command text
     auto screenPosYPx = m_commandRegion.topLeftPx + NVec2f(0.0f, textBorder);
@@ -434,7 +442,7 @@ void ZepEditor::Display()
             (const utf8*)commandLines[i].c_str() + commandLines[i].size());
 
         m_pDisplay->DrawChars(screenPosYPx,
-            Theme::Instance().GetColor(ThemeColor::Text),
+            GetTheme().GetColor(ThemeColor::Text),
             (const utf8*)commandLines[i].c_str());
 
         screenPosYPx.y += m_pDisplay->GetFontSize();
@@ -445,13 +453,13 @@ void ZepEditor::Display()
     {
         // Tab region
         // TODO Handle it when tabs are bigger than the available width!
-        m_pDisplay->DrawRectFilled(m_tabRegion.BottomLeft() - NVec2f(0.0f, 2.0f), m_tabRegion.bottomRightPx, Theme::Instance().GetColor(ThemeColor::TabBorder));
+        m_pDisplay->DrawRectFilled(m_tabRegion.BottomLeft() - NVec2f(0.0f, 2.0f), m_tabRegion.bottomRightPx, GetTheme().GetColor(ThemeColor::TabBorder));
         NVec2f currentTab = m_tabRegion.topLeftPx;
         for (auto& window : GetTabWindows())
         {
             // Show active buffer in tab as tab name
             auto& buffer = window->GetActiveWindow()->GetBuffer();
-            auto tabColor = (window == GetActiveTabWindow()) ? Theme::Instance().GetColor(ThemeColor::TabActive) : Theme::Instance().GetColor(ThemeColor::Tab);
+            auto tabColor = (window == GetActiveTabWindow()) ? GetTheme().GetColor(ThemeColor::TabActive) : GetTheme().GetColor(ThemeColor::Tab);
             auto tabLength = m_pDisplay->GetTextSize((utf8*)buffer.GetName().c_str()).x + textBorder * 2;
             m_pDisplay->DrawRectFilled(currentTab, currentTab + NVec2f(tabLength, m_tabRegion.Height()), tabColor);
 
@@ -466,6 +474,11 @@ void ZepEditor::Display()
     {
         GetActiveTabWindow()->Display();
     }
+}
+
+ZepTheme& ZepEditor::GetTheme() const
+{
+    return *m_spTheme;
 }
 
 } // namespace Zep

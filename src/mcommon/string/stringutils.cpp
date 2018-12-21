@@ -1,20 +1,18 @@
-#include <algorithm>
 #include <string>
+#include "stringutils.h"
+#include <algorithm>
 #include <cassert>
 #include <codecvt>
-#include <locale>
 
-#include "stringutils.h"
 
-namespace Zep
-{
-namespace StringUtils
+namespace COMMON_NAMESPACE
 {
 
+std::unordered_map<uint32_t, std::string> StringId::stringLookup;
 std::string toLower(const std::string& str)
 {
     std::string copy = str;
-    std::transform(copy.begin(), copy.end(), copy.begin(), ::tolower);
+    std::transform(copy.begin(),copy.end(),copy.begin(),::tolower);
     return copy;
 }
 
@@ -39,28 +37,18 @@ void ReplaceStringInPlace(std::string& subject, const std::string& search,
     }
 }
 
-// String split with multiple delims
-// https://stackoverflow.com/a/7408245/18942
-std::vector<std::string> Split(const std::string& text, const std::string& delims)
+#pragma warning (disable : 4996)
+//https://stackoverflow.com/questions/4804298/how-to-convert-wstring-into-string
+std::string makeStr(const std::wstring& str)
 {
-    std::vector<std::string> tokens;
-    std::size_t start = text.find_first_not_of(delims), end = 0;
+    using convert_type = std::codecvt_utf8<wchar_t>;
+    std::wstring_convert<convert_type, wchar_t> converter;
 
-    while ((end = text.find_first_of(delims, start)) != std::string::npos)
-    {
-        tokens.push_back(text.substr(start, end - start));
-        start = text.find_first_not_of(delims, end);
-    }
-    if (start != std::string::npos)
-        tokens.push_back(text.substr(start));
-
-    return tokens;
+    //use converter (.to_bytes: wstr->str, .from_bytes: str->wstr)
+    std::string converted_str = converter.to_bytes(str);
+    return converted_str;
 }
-
-std::vector<std::string> SplitLines(const std::string& text)
-{
-    return Split(text, "\r\n");
-}
+#pragma warning (default : 4996)
 
 // CM: I can't remember where this came from; please let me know if you do!
 // I know it is open source, but not sure who wrote it.
@@ -210,7 +198,7 @@ uint64_t murmur_hash_64(const void * key, uint32_t len, uint64_t seed)
     return h;
 }
 
-#pragma warning (disable : 4996)
+/*
 //https://stackoverflow.com/questions/4804298/how-to-convert-wstring-into-string
 std::string makeStr(const std::wstring& str)
 {
@@ -221,7 +209,136 @@ std::string makeStr(const std::wstring& str)
     std::string converted_str = converter.to_bytes(str);
     return converted_str;
 }
-#pragma warning (default : 4996)
+*/
 
+
+std::vector<std::string> string_split(const std::string& text, const char* delims)
+{
+    std::vector<std::string> tok;
+    string_split(text, delims, tok);
+    return tok;
 }
+
+// String split with multiple delims
+// https://stackoverflow.com/a/7408245/18942
+void string_split(const std::string& text, const char* delims, std::vector<std::string>& tokens)
+{
+    tokens.clear();
+    std::size_t start = text.find_first_not_of(delims), end = 0;
+
+    while ((end = text.find_first_of(delims, start)) != std::string::npos)
+    {
+        tokens.push_back(text.substr(start, end - start));
+        start = text.find_first_not_of(delims, end);
+    }
+    if (start != std::string::npos)
+        tokens.push_back(text.substr(start));
 }
+
+void string_split_each(const std::string& text, const char* delims, std::function<bool(size_t, size_t)> fn)
+{
+    std::size_t start = text.find_first_not_of(delims), end = 0;
+
+    while ((end = text.find_first_of(delims, start)) != std::string::npos)
+    {
+        if (!fn(start, end - start))
+            return;
+        start = text.find_first_not_of(delims, end);
+    }
+    if (start != std::string::npos)
+        fn(start, text.length() - start);
+}
+
+size_t string_first_not_of(const char* text, size_t start, size_t end, const char* delims)
+{
+    for(auto index = start; index < end; index++)
+    { 
+        bool found = false;
+        auto pDelim = delims;
+        while (*pDelim != 0)
+        { 
+            if (text[index] == *pDelim++)
+            {
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+            return index;
+    }
+    return std::string::npos;
+}
+
+size_t string_first_of(const char* text, size_t start, size_t end, const char* delims)
+{
+    for(auto index = start; index < end; index++)
+    { 
+        auto pDelim = delims;
+        while (*pDelim != 0)
+        { 
+            if (text[index] == *pDelim++)
+            {
+                return index;
+            }
+        }
+    }
+    return std::string::npos;
+}
+
+void string_split_each(char* text, size_t startIndex, size_t endIndex, const char* delims, std::function<bool(size_t, size_t)> fn)
+{
+    // Skip delims (start now at first thing that is not a delim)
+    std::size_t start = string_first_not_of(text, startIndex, endIndex, delims);
+    std::size_t end;
+
+    // Find first delim (end now at first delim)
+    while ((end = string_first_of(text, start, endIndex, delims)) != std::string::npos)
+    {
+        // Callback with string between delims
+        if (!fn(start, end))
+            return;
+
+        if (text[end] == 0 && end < endIndex)
+            end++;
+
+        // Find the first non-delim
+        start = string_first_not_of(text, end, endIndex, delims);
+    }
+    // Return the last one
+    if (start != std::string::npos)
+        fn(start, endIndex);
+}
+
+void string_split_lines(const std::string& text, std::vector<std::string>& split)
+{
+    string_split(text, "\r\n", split);
+}
+
+StringId::StringId(const char* pszString)
+{
+    id = murmur_hash(pszString, (int)strlen(pszString), 0);
+    stringLookup[id] = pszString;
+}
+
+StringId::StringId(const std::string& str)
+{
+    id = murmur_hash(str.c_str(), (int)str.length(), 0);
+    stringLookup[id] = str;
+}
+
+const StringId& StringId::operator= (const char* pszString)
+{
+    id = murmur_hash(pszString, (int)strlen(pszString), 0);
+    stringLookup[id] = pszString;
+    return *this;
+}
+
+const StringId& StringId::operator= (const std::string& str)
+{
+    id = murmur_hash(str.c_str(), (int)str.length(), 0);
+    stringLookup[id] = str;
+    return *this;
+}
+
+} // mcommon
+

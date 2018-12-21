@@ -1,10 +1,13 @@
 #include "mainwindow.h"
 #include <QPainter>
+#include <QMenu>
+#include <QMenuBar>
 #include <QCommandLineParser>
 
 #include "buffer.h"
 #include "zepwidget_qt.h"
-
+#include "src/mode_standard.h"
+#include "src/mode_vim.h"
 
 using namespace Zep;
 
@@ -54,9 +57,42 @@ MainWindow::MainWindow()
         pBuffer->SetText(shader.c_str());
     }
 
-    setStyleSheet("background-color: darkBlue");
+    //setStyleSheet("background-color: darkBlue");
 
-    setContentsMargins(4, 4, 4, 4);
+    setContentsMargins(2, 2, 2, 2);
+
+    auto menu = new QMenuBar();
+    auto pFile = menu->addMenu("File");
+    auto pSettings = menu->addMenu("Settings");
+    {
+        auto pMode = pSettings->addMenu("Editor Mode");
+        {
+            auto pVim = pMode->addAction("Vim");
+            auto pStandard = pMode->addAction("Standard");
+
+            bool enabledVim = strcmp(pWidget->GetEditor().GetCurrentMode()->Name(), Zep::ZepMode_Vim::StaticName()) == 0;
+            bool enabledNormal = !enabledVim;
+            pVim->setCheckable(true);
+            pStandard->setCheckable(true);
+            pVim->setChecked(enabledVim);
+            pStandard->setChecked(!enabledVim);
+
+            connect(pVim, &QAction::triggered, this, [pWidget, pVim, pStandard]()
+            {
+                pVim->setChecked(true);
+                pStandard->setChecked(false);
+                pWidget->GetEditor().SetMode(ZepMode_Vim::StaticName());
+            });
+            connect(pStandard, &QAction::triggered, this, [pWidget, pStandard, pVim]()
+            {
+                pVim->setChecked(false);
+                pStandard->setChecked(true);
+                pWidget->GetEditor().SetMode(ZepMode_Standard::StaticName());
+            });
+        }
+    }
+
+    setMenuBar(menu);
     setCentralWidget(pWidget);
 }
 

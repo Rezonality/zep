@@ -10,8 +10,8 @@
 #include "theme.h"
 #include "window.h"
 
-#include "utils/logger.h"
-#include "utils/stringutils.h"
+#include "mcommon/logger.h"
+#include "mcommon/string/stringutils.h"
 
 // A 'window' is like a vim window; i.e. a region inside a tab
 namespace Zep
@@ -35,24 +35,24 @@ void ZepWindow::UpdateAirline()
 {
     m_airline.leftBoxes.clear();
     m_airline.rightBoxes.clear();
-    m_airline.leftBoxes.push_back(AirBox{ GetEditor().GetCurrentMode()->Name(), Theme::Instance().GetColor(ThemeColor::Mode) });
+    m_airline.leftBoxes.push_back(AirBox{ GetEditor().GetCurrentMode()->Name(), m_pBuffer->GetTheme().GetColor(ThemeColor::Mode) });
     switch (m_cursorMode)
     {
     case CursorMode::Hidden:
-        m_airline.leftBoxes.push_back(AirBox{ "HIDDEN", Theme::Instance().GetColor(ThemeColor::HiddenText) });
+        m_airline.leftBoxes.push_back(AirBox{ "HIDDEN", m_pBuffer->GetTheme().GetColor(ThemeColor::HiddenText) });
         break;
     case CursorMode::Insert:
-        m_airline.leftBoxes.push_back(AirBox{ "INSERT", Theme::Instance().GetColor(ThemeColor::CursorInsert) });
+        m_airline.leftBoxes.push_back(AirBox{ "INSERT", m_pBuffer->GetTheme().GetColor(ThemeColor::CursorInsert) });
         break;
     case CursorMode::Normal:
-        m_airline.leftBoxes.push_back(AirBox{ "NORMAL", Theme::Instance().GetColor(ThemeColor::CursorNormal) });
+        m_airline.leftBoxes.push_back(AirBox{ "NORMAL", m_pBuffer->GetTheme().GetColor(ThemeColor::CursorNormal) });
         break;
     case CursorMode::Visual:
-        m_airline.leftBoxes.push_back(AirBox{ "VISUAL", Theme::Instance().GetColor(ThemeColor::VisualSelectBackground) });
+        m_airline.leftBoxes.push_back(AirBox{ "VISUAL", m_pBuffer->GetTheme().GetColor(ThemeColor::VisualSelectBackground) });
         break;
     };
-    m_airline.leftBoxes.push_back(AirBox{ m_pBuffer->GetDisplayName(), Theme::Instance().GetColor(ThemeColor::AirlineBackground) });
-    m_airline.rightBoxes.push_back(AirBox{ std::to_string(m_pBuffer->GetLineEnds().size()) + " Lines", Theme::Instance().GetColor(ThemeColor::LineNumberBackground) });
+    m_airline.leftBoxes.push_back(AirBox{ m_pBuffer->GetDisplayName(), m_pBuffer->GetTheme().GetColor(ThemeColor::AirlineBackground) });
+    m_airline.rightBoxes.push_back(AirBox{ std::to_string(m_pBuffer->GetLineEnds().size()) + " Lines", m_pBuffer->GetTheme().GetColor(ThemeColor::LineNumberBackground) });
 }
 
 void ZepWindow::SetCursorMode(CursorMode mode)
@@ -351,7 +351,7 @@ float ZepWindow::ToWindowY(float pos) const
 bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int displayPass)
 {
     // A middle-dot whitespace character
-    static const auto whiteSpace = StringUtils::makeStr(std::wstring(L"\x00b7"));
+    static const auto whiteSpace = makeStr(std::wstring(L"\x00b7"));
     static const auto blankSpace = ' ';
 
     auto activeWindow = (GetEditor().GetActiveTabWindow()->GetActiveWindow() == this);
@@ -378,12 +378,12 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
         // Number background
         GetEditor().GetDisplay().DrawRectFilled(NVec2f(m_leftRegion.topLeftPx.x, ToWindowY(lineInfo.spanYPx)),
             NVec2f(m_leftRegion.bottomRightPx.x, ToWindowY(lineInfo.spanYPx) + GetEditor().GetDisplay().GetFontSize()),
-            Theme::Instance().GetColor(ThemeColor::LineNumberBackground));
+            m_pBuffer->GetTheme().GetColor(ThemeColor::LineNumberBackground));
 
-        auto digitCol = Theme::Instance().GetColor(ThemeColor::LineNumber);
+        auto digitCol = m_pBuffer->GetTheme().GetColor(ThemeColor::LineNumber);
         if (lineInfo.BufferCursorInside(m_bufferCursor))
         {
-            digitCol = Theme::Instance().GetColor(ThemeColor::CursorNormal);
+            digitCol = m_pBuffer->GetTheme().GetColor(ThemeColor::CursorNormal);
         }
 
         // Numbers
@@ -407,12 +407,12 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
     {
         auto& info = lineInfo.charInfo[ch - lineInfo.columnOffsets.x];
         auto pSyntax = m_pBuffer->GetSyntax();
-        auto col = pSyntax != nullptr ? pSyntax->GetSyntaxColorAt(info.bufferLocation) : Theme::Instance().GetColor(ThemeColor::Text);
+        auto col = pSyntax != nullptr ? pSyntax->GetSyntaxColorAt(info.bufferLocation) : m_pBuffer->GetTheme().GetColor(ThemeColor::Text);
 
         const utf8* pCh = &m_pBuffer->GetText()[info.bufferLocation];
 
         // Visible white space
-        if (pSyntax && pSyntax->GetSyntaxAt(info.bufferLocation) == SyntaxType::Whitespace)
+        if (pSyntax && pSyntax->GetSyntaxAt(info.bufferLocation) == ThemeColor::Whitespace)
         {
             pCh = (const utf8*)whiteSpace.c_str();
         }
@@ -429,7 +429,7 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
             {
                 pCh = (const utf8*)&blankSpace;
             }
-            col = Theme::Instance().GetColor(ThemeColor::HiddenText);
+            col = m_pBuffer->GetTheme().GetColor(ThemeColor::HiddenText);
         }
         const utf8* pEnd = pCh + UTF8_CHAR_LEN(*pCh);
 
@@ -441,17 +441,17 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
                 {
                     if (info.bufferLocation >= m_selection.start && info.bufferLocation <= m_selection.end)
                     {
-                        GetEditor().GetDisplay().DrawRectFilled(NVec2f(screenPosX, ToWindowY(lineInfo.spanYPx)), NVec2f(screenPosX + info.textSize.x, ToWindowY(lineInfo.spanYPx) + info.textSize.y), Theme::Instance().GetColor(ThemeColor::VisualSelectBackground));
+                        GetEditor().GetDisplay().DrawRectFilled(NVec2f(screenPosX, ToWindowY(lineInfo.spanYPx)), NVec2f(screenPosX + info.textSize.x, ToWindowY(lineInfo.spanYPx) + info.textSize.y), m_pBuffer->GetTheme().GetColor(ThemeColor::VisualSelectBackground));
                     }
                 }
             }
         }
         else
         {
-            if (pSyntax && pSyntax->GetSyntaxAt(info.bufferLocation) == SyntaxType::Whitespace)
+            if (pSyntax && pSyntax->GetSyntaxAt(info.bufferLocation) == ThemeColor::Whitespace)
             {
                 auto centerChar = NVec2f(screenPosX + info.textSize.x / 2, ToWindowY(lineInfo.spanYPx) + info.textSize.y / 2);
-                GetEditor().GetDisplay().DrawRectFilled(centerChar - NVec2f(1.0f, 1.0f), centerChar + NVec2f(1.0f, 1.0f), Theme::Instance().GetSyntaxColor(SyntaxType::Whitespace));
+                GetEditor().GetDisplay().DrawRectFilled(centerChar - NVec2f(1.0f, 1.0f), centerChar + NVec2f(1.0f, 1.0f), m_pBuffer->GetTheme().GetColor(ThemeColor::Whitespace));
             }
             else
             {
@@ -527,14 +527,14 @@ void ZepWindow::DisplayCursor()
 
         case CursorMode::Insert:
         {
-            GetEditor().GetDisplay().DrawRectFilled(NVec2f(cursorPosPx.x - 1, cursorPosPx.y), NVec2f(cursorPosPx.x, cursorPosPx.y + pCharInfo->textSize.y), Theme::Instance().GetColor(ThemeColor::CursorInsert));
+            GetEditor().GetDisplay().DrawRectFilled(NVec2f(cursorPosPx.x - 1, cursorPosPx.y), NVec2f(cursorPosPx.x, cursorPosPx.y + pCharInfo->textSize.y), m_pBuffer->GetTheme().GetColor(ThemeColor::CursorInsert));
         }
         break;
 
         case CursorMode::Normal:
         case CursorMode::Visual:
         {
-            GetEditor().GetDisplay().DrawRectFilled(cursorPosPx, NVec2f(cursorPosPx.x + pCharInfo->textSize.x, cursorPosPx.y + pCharInfo->textSize.y), Theme::Instance().GetColor(ThemeColor::CursorNormal));
+            GetEditor().GetDisplay().DrawRectFilled(cursorPosPx, NVec2f(cursorPosPx.x + pCharInfo->textSize.x, cursorPosPx.y + pCharInfo->textSize.y), m_pBuffer->GetTheme().GetColor(ThemeColor::CursorNormal));
         }
         break;
         }
@@ -625,6 +625,8 @@ void ZepWindow::Display()
 
     auto activeWindow = (GetEditor().GetActiveTabWindow()->GetActiveWindow() == this);
 
+    GetEditor().GetDisplay().DrawRectFilled(m_textRegion.topLeftPx, m_textRegion.bottomRightPx, m_pBuffer->GetTheme().GetColor(ThemeColor::Background));
+
     if (activeWindow && cursorCL.x != -1)
     {
         if (m_cursorMode == CursorMode::Normal || m_cursorMode == CursorMode::Insert)
@@ -636,7 +638,7 @@ void ZepWindow::Display()
                 // Cursor line
                 GetEditor().GetDisplay().DrawRectFilled(NVec2f(m_textRegion.topLeftPx.x, cursorLine.spanYPx - m_bufferOffsetYPx + m_textRegion.topLeftPx.y),
                     NVec2f(m_textRegion.bottomRightPx.x, cursorLine.spanYPx - m_bufferOffsetYPx + m_textRegion.topLeftPx.y + GetEditor().GetDisplay().GetFontSize()),
-                    Theme::Instance().GetColor(ThemeColor::CursorLineBackground));
+                    m_pBuffer->GetTheme().GetColor(ThemeColor::CursorLineBackground));
             }
         }
     }
@@ -654,7 +656,7 @@ void ZepWindow::Display()
     }
 
     // Airline
-    GetEditor().GetDisplay().DrawRectFilled(m_statusRegion.topLeftPx, m_statusRegion.bottomRightPx, Theme::Instance().GetColor(ThemeColor::AirlineBackground));
+    GetEditor().GetDisplay().DrawRectFilled(m_statusRegion.topLeftPx, m_statusRegion.bottomRightPx, m_pBuffer->GetTheme().GetColor(ThemeColor::AirlineBackground));
     auto airHeight = GetEditor().GetDisplay().GetFontSize();
     auto border = 12.0f;
 
@@ -665,7 +667,7 @@ void ZepWindow::Display()
         textSize.x += border * 2;
         GetEditor().GetDisplay().DrawRectFilled(screenPosYPx, NVec2f(textSize.x + screenPosYPx.x, screenPosYPx.y + airHeight), m_airline.leftBoxes[i].background);
 
-        NVec4f textCol = Theme::Instance().GetComplement(m_airline.leftBoxes[i].background);
+        NVec4f textCol = m_pBuffer->GetTheme().GetComplement(m_airline.leftBoxes[i].background);
         GetEditor().GetDisplay().DrawChars(screenPosYPx + NVec2f(border, 0),
             textCol,
             (const utf8*)(m_airline.leftBoxes[i].text.c_str()));

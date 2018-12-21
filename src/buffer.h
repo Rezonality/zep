@@ -1,7 +1,7 @@
 #pragma once
 
 #include "editor.h"
-#include <utils/file.h>
+#include <mcommon/file/file.h>
 
 #include <set>
 #include <shared_mutex>
@@ -14,6 +14,7 @@ namespace Zep
 {
 
 class ZepSyntax;
+class ZepTheme;
 
 enum class SearchDirection
 {
@@ -161,6 +162,7 @@ public:
     std::string GetDisplayName() const;
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
+    ZepTheme& GetTheme() const;
 private:
     // Internal
     GapBuffer<utf8>::const_iterator SearchWord(uint32_t searchType, GapBuffer<utf8>::const_iterator itrBegin, GapBuffer<utf8>::const_iterator itrEnd, SearchDirection dir) const;
@@ -179,6 +181,7 @@ private:
     std::string m_strName;
     uint32_t m_fileFlags;
     fs::path m_filePath;
+    std::shared_ptr<ZepTheme> m_spOverrideTheme;
 };
 
 // Notification payload
@@ -206,5 +209,6 @@ struct BufferMessage : public ZepMessage
     BufferLocation startLocation;
     BufferLocation endLocation;
     BufferLocation cursorAfter;
+
 };
 } // namespace Zep

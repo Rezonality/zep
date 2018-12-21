@@ -11,6 +11,7 @@ enum class ThemeColor
     TabBorder,
     HiddenText,
     Text,
+    Background,
     Tab,
     TabActive,
     LineNumberBackground,
@@ -23,20 +24,29 @@ enum class ThemeColor
     VisualSelectBackground,
     CursorLineBackground,
     AirlineBackground,
-    Mode
+    Mode,
+    Normal,
+    Keyword,
+    Integer,
+    Comment,
+    Whitespace,
+    HiddenChar,
+    Parenthesis
 };
 
-class Theme
+class ZepTheme
 {
 public:
-    Theme();
-    static Theme& Instance();
-    virtual NVec4f GetSyntaxColor(uint32_t syntax) const;
+    ZepTheme();
     virtual NVec4f GetColor(ThemeColor themeColor) const;
     virtual NVec4f GetComplement(const NVec4f& col) const;
     virtual NVec4f GetUniqueColor(uint32_t id) const;
+
+    void SetDarkTheme();
+    void SetLightTheme();
 private:
     std::vector<NVec4f> m_uniqueColors;
+    std::map<ThemeColor, NVec4f> m_colors;
 };
 
 }

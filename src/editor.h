@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common_namespace.h"
 #include <deque>
 #include <map>
 #include <memory>
@@ -9,7 +10,8 @@
 #include <string>
 #include <threadpool/ThreadPool.hpp>
 #include <vector>
-#include "utils/math.h"
+#include "mcommon/math/math.h"
+#include "mcommon/animation/timer.h"
 
 // Basic Architecture
 
@@ -32,6 +34,8 @@
 namespace Zep
 {
 
+using namespace COMMON_NAMESPACE;
+
 class ZepBuffer;
 class ZepMode;
 class ZepMode_Vim;
@@ -40,10 +44,9 @@ class ZepEditor;
 class ZepSyntax;
 class ZepTabWindow;
 class ZepWindow;
+class ZepTheme;
 
 class IZepDisplay;
-
-class Timer;
 
 using utf8 = uint8_t;
 
@@ -211,18 +214,21 @@ public:
         return *m_pDisplay;
     }
 
+    ZepTheme& GetTheme() const;
+
 private:
     IZepDisplay* m_pDisplay;
     std::set<IZepComponent*> m_notifyClients;
     mutable tRegisters m_registers;
 
+    std::shared_ptr<ZepTheme> m_spTheme;
     std::shared_ptr<ZepMode_Vim> m_spVimMode;
     std::shared_ptr<ZepMode_Standard> m_spStandardMode;
     std::map<std::string, tSyntaxFactory> m_mapSyntax;
     std::map<std::string, std::shared_ptr<ZepMode>> m_mapModes;
 
     // Blinking cursor
-    std::shared_ptr<Timer> m_spCursorTimer;
+    timer m_cursorTimer;
 
     // Active mode
     ZepMode* m_pCurrentMode = nullptr;

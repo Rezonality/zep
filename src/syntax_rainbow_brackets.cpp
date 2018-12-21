@@ -1,7 +1,7 @@
 #include "syntax_rainbow_brackets.h"
-#include "utils/stringutils.h"
+#include "mcommon/string/stringutils.h"
 #include "theme.h"
-#include "utils/logger.h"
+#include "mcommon/logger.h"
 
 // A Simple adornment to add rainbow brackets to the syntax
 namespace Zep
@@ -55,9 +55,9 @@ NVec4f ZepSyntaxAdorn_RainbowBrackets::GetSyntaxColorAt(long offset, bool& found
     found = true;
     if (itr->second.indent < 0)
     {
-        return Theme::Instance().GetColor(ThemeColor::HiddenText);
+        return m_buffer.GetTheme().GetColor(ThemeColor::HiddenText);
     }
-    return Theme::Instance().GetUniqueColor(itr->second.indent);
+    return m_buffer.GetTheme().GetUniqueColor(itr->second.indent);
 }
 
 void ZepSyntaxAdorn_RainbowBrackets::Insert(long start, long end)

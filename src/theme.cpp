@@ -5,98 +5,95 @@
 namespace Zep
 {
 
-Theme::Theme()
+ZepTheme::ZepTheme()
 {
     double golden_ratio_conjugate = 0.618033988749895;
     double h = .4f;
-    for(int i = 0; i < 10; i++)
+    for (int i = 0; i < 10; i++)
     {
         h += golden_ratio_conjugate;
         h = std::fmod(h, 1.0);
         m_uniqueColors.emplace_back(HSVToRGB(float(h) * 360.0f, 0.6f, 200.0f));
     }
+    SetDarkTheme();
 }
 
-Theme& Theme::Instance()
+void ZepTheme::SetDarkTheme()
 {
-    static Theme instance;
-    return instance;
+    m_colors[ThemeColor::Text] = NVec4f(1.0f);
+    m_colors[ThemeColor::Background] = NVec4f(0.1f, 0.1f, 0.1f, 1.0f);
+    m_colors[ThemeColor::HiddenText] = NVec4f(.9f, .1f, .1f, 1.0f);
+    m_colors[ThemeColor::TabBorder] = NVec4f(.55f, .55f, .55f, 1.0f);
+    m_colors[ThemeColor::Tab] = NVec4f(.4f, .4f, .4f, .55f);
+    m_colors[ThemeColor::TabActive] = NVec4f(.55f, .55f, .55f, 1.0f);
+    m_colors[ThemeColor::LineNumberBackground] = NVec4(.13f, .13f, .13f, 1.0f);
+    m_colors[ThemeColor::LineNumber] = NVec4(.13f, 1.0f, .13f, 1.0f);
+    m_colors[ThemeColor::LineNumberActive] = NVec4(.13f, 1.0f, .13f, 1.0f);
+    m_colors[ThemeColor::CursorNormal] = NVec4(130.0f / 255.0f, 140.0f / 255.0f, 230.0f / 255.0f, 1.0f);
+    m_colors[ThemeColor::CursorInsert] = NVec4(1.0f, 1.0f, 1.0f, .9f);
+    m_colors[ThemeColor::CursorLineBackground] = NVec4(.15f, .15f, .15f, 1.0f);
+    m_colors[ThemeColor::AirlineBackground] = NVec4(.12f, .12f, .12f, 1.0f);
+    m_colors[ThemeColor::Light] = NVec4(1.0f);
+    m_colors[ThemeColor::Dark] = NVec4(0.0f, 0.0f, 0.0f, 1.0f);
+    m_colors[ThemeColor::VisualSelectBackground] = NVec4(.47f, 0.30f, 0.25f, 1.0f);
+    m_colors[ThemeColor::Mode] = NVec4(.2f, 0.8f, 0.2f, 1.0f);
+
+    m_colors[ThemeColor::Normal] = m_colors[ThemeColor::Text];
+    m_colors[ThemeColor::Parenthesis] = m_colors[ThemeColor::Text];
+    m_colors[ThemeColor::Comment] = NVec4f(0.0f, 1.0f, .1f, 1.0f);
+    m_colors[ThemeColor::Keyword] = NVec4f(0.1f, 1.0f, 1.0f, 1.0f);
+    m_colors[ThemeColor::Integer] = NVec4f(0.1f, 1.0f, 1.0f, 1.0f);
+    m_colors[ThemeColor::Whitespace] = NVec4f(0.15f, .2f, .15f, 1.0f);
 }
 
-NVec4f Theme::GetUniqueColor(uint32_t index) const
+void ZepTheme::SetLightTheme()
+{
+    m_colors[ThemeColor::Text] = NVec4f(0.0f, 0.0f, 0.0f, 1.0f);
+    m_colors[ThemeColor::Background] = NVec4f(.9f, .9f, .9f, 1.0f);
+    m_colors[ThemeColor::HiddenText] = NVec4f(.9f, .1f, .1f, 1.0f);
+    m_colors[ThemeColor::TabBorder] = NVec4f(.55f, .55f, .55f, 1.0f);
+    m_colors[ThemeColor::Tab] = NVec4f(.4f, .4f, .4f, .55f);
+    m_colors[ThemeColor::TabActive] = NVec4f(.55f, .55f, .55f, 1.0f);
+    m_colors[ThemeColor::LineNumberBackground] = NVec4(.87f, .87f, .87f, 1.0f);
+    m_colors[ThemeColor::LineNumber] = NVec4(.13f, .5f, .13f, 1.0f);
+    m_colors[ThemeColor::LineNumberActive] = NVec4(.13f, 0.6f, .13f, 1.0f);
+    m_colors[ThemeColor::CursorNormal] = NVec4(130.0f / 255.0f, 140.0f / 255.0f, 230.0f / 255.0f, 1.0f);
+    m_colors[ThemeColor::CursorInsert] = NVec4(1.0f, 1.0f, 1.0f, .9f);
+    m_colors[ThemeColor::CursorLineBackground] = NVec4(.85f, .85f, .85f, 1.0f);
+    m_colors[ThemeColor::AirlineBackground] = NVec4(.87f, .87f, .87f, 1.0f);
+    m_colors[ThemeColor::Light] = NVec4(1.0f);
+    m_colors[ThemeColor::Dark] = NVec4(0.0f, 0.0f, 0.0f, 1.0f);
+    m_colors[ThemeColor::VisualSelectBackground] = NVec4(.49f, 0.60f, 0.45f, 1.0f);
+    m_colors[ThemeColor::Mode] = NVec4(.2f, 0.8f, 0.2f, 1.0f);
+
+    m_colors[ThemeColor::Normal] = m_colors[ThemeColor::Text];
+    m_colors[ThemeColor::Parenthesis] = m_colors[ThemeColor::Text];
+    m_colors[ThemeColor::Comment] = NVec4f(0.1f, .4f, .1f, 1.0f);
+    m_colors[ThemeColor::Keyword] = NVec4f(0.1f, .2f, .4f, 1.0f);
+    m_colors[ThemeColor::Integer] = NVec4f(0.1f, .4f, .2f, 1.0f);
+    m_colors[ThemeColor::Whitespace] = NVec4f(0.15f, .2f, .15f, 1.0f);
+}
+NVec4f ZepTheme::GetUniqueColor(uint32_t index) const
 {
     return m_uniqueColors[index % m_uniqueColors.size()];
 }
 
-NVec4f Theme::GetColor(ThemeColor themeColor) const
+NVec4f ZepTheme::GetColor(ThemeColor themeColor) const
 {
-    switch (themeColor)
+    auto itr = m_colors.find(themeColor);
+    if (itr == m_colors.end())
     {
-    case ThemeColor::Text:
         return NVec4f(1.0f);
-    case ThemeColor::HiddenText:
-        return NVec4f(.9f, .1f, .1f, 1.0f);
-    case ThemeColor::TabBorder:
-        return NVec4f(.55f, .55f, .55f, 1.0f);
-    case ThemeColor::Tab:
-        return NVec4f(.4f, .4f, .4f, .55f);
-    case ThemeColor::TabActive:
-        return NVec4f(.55f, .55f, .55f, 1.0f);
-    case ThemeColor::LineNumberBackground:
-        return NVec4(.13f, .13f, .13f, 1.0f);
-    case ThemeColor::LineNumber:
-        return NVec4(.13f, 1.0f, .13f, 1.0f);
-    case ThemeColor::LineNumberActive:
-        return NVec4(.13f, 1.0f, .13f, 1.0f);
-    case ThemeColor::CursorNormal:
-        return NVec4(130.0f / 255.0f, 140.0f / 255.0f, 230.0f / 255.0f, 1.0f);
-    case ThemeColor::CursorInsert:
-        return NVec4(1.0f, 1.0f, 1.0f, .9f);
-    case ThemeColor::CursorLineBackground:
-        return NVec4(.15f, .15f, .15f, 1.0f);
-    case ThemeColor::AirlineBackground:
-        return NVec4(.12f, .12f, .12f, 1.0f);
-    case ThemeColor::Light:
-        return NVec4(1.0f);
-    case ThemeColor::Dark:
-        return NVec4(0.0f, 0.0f, 0.0f, 1.0f);
-    case ThemeColor::VisualSelectBackground:
-        return NVec4(.47f, 0.30f, 0.25f, 1.0f);
-    case ThemeColor::Mode:
-        return NVec4(.2f, 0.8f, 0.2f, 1.0f);
-    default:
-        return NVec4f(1.0f);
-        break;
     }
+    return itr->second;
 }
 
-// Return color based on theme
-NVec4f Theme::GetSyntaxColor(uint32_t type) const
-{
-    switch (type)
-    {
-    default:
-    case SyntaxType::Normal:
-        return Theme::Instance().GetColor(ThemeColor::Text);
-    case SyntaxType::Parenthesis:
-        return Theme::Instance().GetColor(ThemeColor::Text);
-    case SyntaxType::Comment:
-        return NVec4f(0.0f, 1.0f, .1f, 1.0f);
-    case SyntaxType::Keyword:
-        return NVec4f(0.1f, 1.0f, 1.0f, 1.0f);
-    case SyntaxType::Integer:
-        return NVec4f(.1f, 1.0f, 1.0f, 1.0f);
-    case SyntaxType::Whitespace:
-        return NVec4f(.15f, .2f, .15f, 1.0f);
-    }
-}
-NVec4f Theme::GetComplement(const NVec4f& col) const
+NVec4f ZepTheme::GetComplement(const NVec4f& col) const
 {
     auto lum = Luminosity(col);
     if (lum > 0.5f)
         return GetColor(ThemeColor::Dark);
     return GetColor(ThemeColor::Light);
 }
-
 
 } // namespace Zep

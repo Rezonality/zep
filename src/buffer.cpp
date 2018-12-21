@@ -3,13 +3,13 @@
 #include <cstdlib>
 
 #include "buffer.h"
-#include "utils/file.h"
-#include "utils/stringutils.h"
+#include "mcommon/file/file.h"
+#include "mcommon/string/stringutils.h"
 
 #include <algorithm>
 #include <regex>
 
-#include "utils/logger.h"
+#include "mcommon/logger.h"
 
 namespace
 {
@@ -486,7 +486,7 @@ bool ZepBuffer::Save(int64_t& size)
     if (m_fileFlags & FileFlags::StrippedCR)
     {
         // TODO: faster way to replace newlines
-        StringUtils::ReplaceStringInPlace(str, "\n", "\r\n");
+        ReplaceStringInPlace(str, "\n", "\r\n");
     }
 
     // Remove the appended 0 if necessary
@@ -767,6 +767,15 @@ BufferLocation ZepBuffer::EndLocation() const
 {
     auto end = m_gapBuffer.size() - 1;
     return LocationFromOffset(long(end));
+}
+
+ZepTheme& ZepBuffer::GetTheme() const
+{
+    if (m_spOverrideTheme)
+    {
+        return *m_spOverrideTheme;
+    }
+    return GetEditor().GetTheme();
 }
 
 } // namespace Zep

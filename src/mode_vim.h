@@ -128,7 +128,7 @@ private:
     std::string m_lastInsertString;
 
     bool m_pendingEscape = false;
-    std::shared_ptr<Timer> m_spInsertEscapeTimer;
+    timer m_insertEscapeTimer;
     VimSettings m_settings;
 };
 
