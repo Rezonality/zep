@@ -7,7 +7,9 @@
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/cmaughan/zep/blob/master/LICENSE)
 
 Zep is a simple embeddable editor, with a rendering agnostic design and optional Vim mode.  Out of the box it can draw to a Qt Widget
-or an an ImGui window - useful for embedding in a game engine.  A simple threaded syntax highlighting engine is provided, and can easily be extended. 
+or an an ImGui window - useful for embedding in a game engine.  A simple syntax highlighting engine is provided, and can easily be extended. 
+Basic theming support is also included, and window tabs and splits are in the works.  Zep is 'opinionated' in how it does things, but is easy to
+modify and supports many common features
 
 Zep supports the standard editing keystrokes you'll find in most editors, along with a reasonable subset of modal Vim editing, as an option.
 Zep is not meant to replace Vim.  I don't have a lifetime spare to write that, but it has most of the functionality I use day to day, and 
@@ -18,13 +20,24 @@ on something more substantial like NeoVim.  The core library is dependency free,
 The demos for Qt and ImGui require their additional packages, but the core library is easily built and cross platform.  The ImGui demo builds and runs on Windows, Linux and
 Mac OS.
 
-Though I have limited time to work on Zep, I do try to move it forward.  Currently I hope it is functional/stable enough to be used.
-There are many unit tests for the Vim mode. 
+Key Features:
+* Modal 'vim' or modeless 'standard' editing styles.
+* Terminal-style text wrapping, as an option
+* Splits and tabs
+* Qt or ImGui rendering (and extensible) 
+* A simple syntax highlighting engine, with pluggable secondary highlighters
+* Theme support
+* No dependencies, cross platform, small library
 
-This project started mainly as an experiment, and a learning exercise.  I like the idea of a programmer building programmer tools; as carpenters
-used to build toolboxes as part of their internship.
+Limitations:
+* Zep currently ignores tabs and converts them to spaces, and converts \r\n to \n.  It will replace \r\n on save if necessary
+* Utf8 is not supported, and may not be, though the code has some placeholders for it as a future possibility
+
+Though I have limited time to work on Zep, I do try to move it forward.  Currently I hope it is functional/stable enough to be used.
+There are over 100 unit tests for the Vim mode, and more on the way for the 'notepad'-like editing mode.  This project started mainly as an experiment, and a learning exercise.  I like the idea of a programmer building programmer tools for their own use, 
+just as carpenters used to build their toolbox.
+
 Pull requests are appreciated and encouraged ;) 
-Note: Zep currently ignores tabs and converts them to spaces, and converts \r\n to \n.  It is opinionated in that way(!) It also doesn't play nice with utf8 yet.
 
 Screenshot
 ----------
@@ -33,6 +46,9 @@ Using the ImGui Renderer:
 
 Using the Qt Renderer:
 ![Qt](screenshots/sample-qt.png)
+
+A light theme:
+![Qt](screenshots/sample-light-qt.png)
 
 Embedded in a Game Engine:
 ![Embedded](screenshots/embedded.png)
@@ -50,9 +66,9 @@ On top of the thin buffer layer, is a command layer for inserting and removing s
 and implements undo/redo functionality.
 
 ##### Window
-The window layer manages views onto buffers.  It helps with cursor operations, and enables multiple views of the same or multiple buffers.  Since selections
-are window specific, such things are done relative to windows, not buffers. The ZepTabWindow is the window class.
-Most of the buffer/tab management is architected, but not yet enabled.  Support for Tabs and Splits is planned
+The window layer manages views onto buffers.  It helps with cursor operations, and enables multiple views of the same or multiple buffers.
+Since selections are window specific due to wrapped text, such things are done relative to windows, not buffers.
+Most of the buffer/tab management is architected, but not yet enabled.  Support for Tabs and Splits is planned.
 
 ##### Display
 A simple display layer is used to render buffers into a window.  It has a thin backend for drawing to the screen, requiring just a few simple
@@ -67,23 +83,17 @@ The Vim mode has most of the usual word motions, visual mode, etc.  The standard
 See [Vim Mode](https://github.com/cmaughan/zep/wiki/Vim-Mode), or the top of the mode_vim.cpp file for a list of supported operations.
 
 ##### Syntax highlight
-Syntax plugins scan and update the color information for the display layer, and enable syntax highlighting.  The syntax layer is runs in
+Syntax plugins scan and update the color information for the display layer, and enable syntax highlighting.  The syntax layer runs in
 a thread, collecting buffer updates and generating a color attribute list for the display layer.  It is a work in progress to make this
 more general.  Currently there is a simple OpenGL highlight mode, which will likely become a base class for standard tokenized highlighting.
+There is also a 'rainbow brackets' adornment plugin which works with any syntax mode.
 
 ##### Design goals
-- Threaded syntax highlighting, using a simple highlighter class.
 - A simple rendering layer, making the editor work on ImGui, Qt, or whatever.
 - A useful notepad/vim alternative
 - Support basic Vim commands I use every day.
-- A small kernel that actually manipulates the text using a Gap Buffer
-- Something that works well inside a live shader editor/game editor, etc.
+- Something that works well inside a live shader editor/game editor, etc.  i.e. the kinds of tools I'm interested in.
 - A learning tool.
-
-##### Non Goals
-- No unicode.  I've tried to keep things ready for utf-8, but may not get there.
-- No international character sets
-- No variable typeface support.  It's more like a terminal view where the grid of chars is constant
 
 Building
 ---------
