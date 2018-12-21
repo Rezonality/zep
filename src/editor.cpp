@@ -6,6 +6,7 @@
 #include "syntax.h"
 #include "syntax_glsl.h"
 #include "tab_window.h"
+#include "theme.h"
 #include "utils/file.h"
 #include "utils/stringutils.h"
 #include "utils/timer.h"
@@ -433,7 +434,7 @@ void ZepEditor::Display()
             (const utf8*)commandLines[i].c_str() + commandLines[i].size());
 
         m_pDisplay->DrawChars(screenPosYPx,
-            0xFFFFFFFF,
+            Theme::Instance().GetColor(ThemeColor::Text),
             (const utf8*)commandLines[i].c_str());
 
         screenPosYPx.y += m_pDisplay->GetFontSize();
@@ -444,17 +445,17 @@ void ZepEditor::Display()
     {
         // Tab region
         // TODO Handle it when tabs are bigger than the available width!
-        m_pDisplay->DrawRectFilled(m_tabRegion.BottomLeft() - NVec2f(0.0f, 2.0f), m_tabRegion.bottomRightPx, 0xFF888888);
+        m_pDisplay->DrawRectFilled(m_tabRegion.BottomLeft() - NVec2f(0.0f, 2.0f), m_tabRegion.bottomRightPx, Theme::Instance().GetColor(ThemeColor::TabBorder));
         NVec2f currentTab = m_tabRegion.topLeftPx;
         for (auto& window : GetTabWindows())
         {
             // Show active buffer in tab as tab name
             auto& buffer = window->GetActiveWindow()->GetBuffer();
-            auto tabColor = (window == GetActiveTabWindow()) ? 0xFF666666 : 0x44888888;
+            auto tabColor = (window == GetActiveTabWindow()) ? Theme::Instance().GetColor(ThemeColor::TabActive) : Theme::Instance().GetColor(ThemeColor::Tab);
             auto tabLength = m_pDisplay->GetTextSize((utf8*)buffer.GetName().c_str()).x + textBorder * 2;
             m_pDisplay->DrawRectFilled(currentTab, currentTab + NVec2f(tabLength, m_tabRegion.Height()), tabColor);
 
-            m_pDisplay->DrawChars(currentTab + NVec2f(textBorder, textBorder), 0xFFFFFFFF, (utf8*)buffer.GetName().c_str());
+            m_pDisplay->DrawChars(currentTab + NVec2f(textBorder, textBorder), NVec4f(1.0f), (utf8*)buffer.GetName().c_str());
 
             currentTab.x += tabLength + textBorder;
         }

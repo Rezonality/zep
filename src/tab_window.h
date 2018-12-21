@@ -31,16 +31,16 @@ public:
     using tWindows = std::vector<ZepWindow*>;
     const tWindows& GetWindows() const { return m_windows; }
 
-    void SetDisplayRegion(const DisplayRegion& region);
+    void SetDisplayRegion(const NRectf& region);
 
     void Display();
 
 private:
     ZepEditor& m_editor;                            // Editor that owns this window
-    DisplayRegion m_windowRegion;                 // region of the display we are showing on.
-    DisplayRegion m_buffersRegion;                   // region of the display for text.
+    NRectf m_windowRegion;                 // region of the display we are showing on.
+    NRectf m_buffersRegion;                   // region of the display for text.
 
-    DisplayRegion m_lastRegion;
+    NRectf m_lastRegion;
 
     tWindows m_windows;
     ZepWindow* m_pActiveWindow = nullptr;

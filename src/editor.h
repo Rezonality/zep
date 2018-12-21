@@ -1,14 +1,15 @@
 #pragma once
 
-#include <vector>
-#include <string>
-#include <map>
-#include <set>
 #include <deque>
+#include <map>
 #include <memory>
 #include <ostream>
-#include <threadpool/ThreadPool.hpp>
+#include <set>
 #include <sstream>
+#include <string>
+#include <threadpool/ThreadPool.hpp>
+#include <vector>
+#include "utils/math.h"
 
 // Basic Architecture
 
@@ -44,56 +45,6 @@ class IZepDisplay;
 
 class Timer;
 
-// Helper for 2D operations
-template<class T>
-struct NVec2
-{
-    NVec2(T xVal, T yVal)
-        : x(xVal),
-        y(yVal)
-    {}
-
-    NVec2()
-        : x(0),
-        y(0)
-    {}
-
-    T x;
-    T y;
-
-    bool operator == (const NVec2<T>& rhs) const
-    {
-        if (x == rhs.x &&
-            y == rhs.y)
-            return true;
-        return false;
-    }
-
-    bool operator != (const NVec2<T>& rhs) const
-    {
-        return !(*this = rhs);
-    }
-};
-template<class T> inline NVec2<T> operator+ (const NVec2<T>& lhs, const NVec2<T>& rhs) { return NVec2<T>(lhs.x + rhs.x, lhs.y + rhs.y); }
-template<class T> inline NVec2<T> operator- (const NVec2<T>& lhs, const NVec2<T>& rhs) { return NVec2<T>(lhs.x - rhs.x, lhs.y - rhs.y); }
-template<class T> inline NVec2<T>& operator+= (NVec2<T>& lhs, const NVec2<T>& rhs) { lhs.x += rhs.x; lhs.y += rhs.y; return lhs; }
-template<class T> inline NVec2<T>& operator-= (NVec2<T>& lhs, const NVec2<T>& rhs) { lhs.x -= rhs.x; lhs.y -= rhs.y; return lhs; }
-template<class T> inline NVec2<T> operator* (const NVec2<T>& lhs, float val) { return NVec2<T>(lhs.x * val, lhs.y * val); }
-template<class T> inline NVec2<T>& operator*= (NVec2<T>& lhs, float val) { lhs.x *= val; lhs.y *= val; return lhs; }
-template<class T> inline NVec2<T> Clamp(const NVec2<T>& val, const NVec2<T>& min, const NVec2<T>& max)
-{
-    return NVec2<T>(std::min(max.x, std::max(min.x, val.x)), std::min(max.y, std::max(min.y, val.y)));
-}
-template<class T>
-std::ostream& operator << (std::ostream& str, const NVec2<T>& v)
-{
-    str << "(" << v.x << ", " << v.y << ")";
-    return str;
-}
-
-using NVec2f = NVec2<float>;
-using NVec2i = NVec2<long>;
-
 using utf8 = uint8_t;
 
 extern const char* Msg_HandleCommand;
@@ -105,13 +56,14 @@ class ZepMessage
 {
 public:
     ZepMessage(const char* id, const std::string& strIn = std::string())
-        : messageId(id),
-        str(strIn)
-    { }
+        : messageId(id)
+        , str(strIn)
+    {
+    }
 
-    const char* messageId;      // Message ID 
-    std::string str;            // Generic string for simple messages
-    bool handled = false;       // If the message was handled
+    const char* messageId; // Message ID
+    std::string str; // Generic string for simple messages
+    bool handled = false; // If the message was handled
 };
 
 struct IZepComponent
@@ -125,7 +77,10 @@ class ZepComponent : public IZepComponent
 public:
     ZepComponent(ZepEditor& editor);
     virtual ~ZepComponent();
-    ZepEditor& GetEditor() const override { return m_editor; }
+    ZepEditor& GetEditor() const override
+    {
+        return m_editor;
+    }
 
 private:
     ZepEditor& m_editor;
@@ -134,10 +89,26 @@ private:
 // Registers are used by the editor to store/retrieve text fragments
 struct Register
 {
-    Register() : text(""), lineWise(false) {}
-    Register(const char* ch, bool lw = false) : text(ch), lineWise(lw) {}
-    Register(utf8* ch, bool lw = false) : text((const char*)ch), lineWise(lw) {}
-    Register(const std::string& str, bool lw = false) : text(str), lineWise(lw) {}
+    Register()
+        : text("")
+        , lineWise(false)
+    {
+    }
+    Register(const char* ch, bool lw = false)
+        : text(ch)
+        , lineWise(lw)
+    {
+    }
+    Register(utf8* ch, bool lw = false)
+        : text((const char*)ch)
+        , lineWise(lw)
+    {
+    }
+    Register(const std::string& str, bool lw = false)
+        : text(str)
+        , lineWise(lw)
+    {
+    }
 
     std::string text;
     bool lineWise = false;
@@ -160,30 +131,6 @@ const float bottomBorder = 4.0f;
 const float textBorder = 4.0f;
 const float leftBorder = 30.0f;
 
-struct DisplayRegion
-{
-    NVec2f topLeftPx;
-    NVec2f bottomRightPx;
-    NVec2f BottomLeft() const { return NVec2f(topLeftPx.x, bottomRightPx.y); }
-    NVec2f TopRight() const { return NVec2f(bottomRightPx.x, topLeftPx.y); }
-    float Height() const { return bottomRightPx.y - topLeftPx.y; }
-    float Width() const { return bottomRightPx.x - topLeftPx.x; }
-    bool operator == (const DisplayRegion& region) const
-    {
-        return (topLeftPx == region.topLeftPx) &&
-            (bottomRightPx == region.bottomRightPx);
-    }
-    bool operator != (const DisplayRegion& region) const
-    {
-        return !(*this == region);
-    }
-};
-
-inline std::ostream& operator<< (std::ostream& str, const DisplayRegion& region)
-{
-    str << region.topLeftPx << ", " << region.bottomRightPx << ", size: " << region.Width() << ", " << region.Height();
-    return str;
-}
 
 class ZepEditor
 {
@@ -204,8 +151,14 @@ public:
 
     void RegisterSyntaxFactory(const std::string& extension, tSyntaxFactory factory);
     bool Broadcast(std::shared_ptr<ZepMessage> payload);
-    void RegisterCallback(IZepComponent* pClient) { m_notifyClients.insert(pClient); }
-    void UnRegisterCallback(IZepComponent* pClient) { m_notifyClients.erase(pClient); }
+    void RegisterCallback(IZepComponent* pClient)
+    {
+        m_notifyClients.insert(pClient);
+    }
+    void UnRegisterCallback(IZepComponent* pClient)
+    {
+        m_notifyClients.erase(pClient);
+    }
 
     const tBuffers& GetBuffers() const;
     ZepBuffer* AddBuffer(const std::string& str);
@@ -221,7 +174,10 @@ public:
     const tRegisters& GetRegisters() const;
 
     void Notify(std::shared_ptr<ZepMessage> message);
-    uint32_t GetFlags() const { return m_flags; }
+    uint32_t GetFlags() const
+    {
+        return m_flags;
+    }
 
     // Tab windows
     using tTabWindows = std::vector<ZepTabWindow*>;
@@ -239,7 +195,10 @@ public:
 
     void SetCommandText(const std::string& strCommand);
 
-    const std::vector<std::string>& GetCommandLines() { return m_commandLines; }
+    const std::vector<std::string>& GetCommandLines()
+    {
+        return m_commandLines;
+    }
 
     void UpdateWindowState();
 
@@ -247,13 +206,16 @@ public:
     void SetDisplayRegion(const NVec2f& topLeft, const NVec2f& bottomRight);
     void UpdateSize();
 
-    IZepDisplay& GetDisplay() const { return *m_pDisplay; }
+    IZepDisplay& GetDisplay() const
+    {
+        return *m_pDisplay;
+    }
 
 private:
     IZepDisplay* m_pDisplay;
     std::set<IZepComponent*> m_notifyClients;
     mutable tRegisters m_registers;
-    
+
     std::shared_ptr<ZepMode_Vim> m_spVimMode;
     std::shared_ptr<ZepMode_Standard> m_spStandardMode;
     std::map<std::string, tSyntaxFactory> m_mapSyntax;
@@ -273,18 +235,18 @@ private:
     // May or may not be visible
     tBuffers m_buffers;
     uint32_t m_flags = 0;
-    
+
     mutable bool m_bPendingRefresh = true;
     mutable bool m_lastCursorBlink = false;
 
-    std::vector<std::string> m_commandLines;        // Command information, shown under the buffer
+    std::vector<std::string> m_commandLines; // Command information, shown under the buffer
 
-    DisplayRegion m_tabContentRegion;
-    DisplayRegion m_commandRegion;
-    DisplayRegion m_tabRegion;
+    NRectf m_tabContentRegion;
+    NRectf m_commandRegion;
+    NRectf m_tabRegion;
     NVec2f m_topLeftPx;
     NVec2f m_bottomRightPx;
     bool m_bRegionsChanged = false;
 };
 
-} // Zep
+} // namespace Zep

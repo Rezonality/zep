@@ -67,7 +67,7 @@ enum
 struct AirBox
 {
     std::string text;
-    uint32_t background;
+    NVec4f background;
 };
 
 struct Airline
@@ -93,7 +93,7 @@ public:
 
     ZepTabWindow& GetTabWindow() const;
 
-    void SetDisplayRegion(const DisplayRegion& region);
+    void SetDisplayRegion(const NRectf& region);
 
     void Display();
     void DisplayCursor();
@@ -144,14 +144,14 @@ private:
 
     NVec2i BufferToDisplay(const BufferLocation& location);
 
-    bool DisplayLine(const SpanInfo& lineInfo, const DisplayRegion& region, int displayPass);
+    bool DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int displayPass);
 
 private:
     NVec2f ToBufferRegion(const NVec2f& pos);
-    DisplayRegion m_bufferRegion; // region of the display we are showing on.
-    DisplayRegion m_textRegion; // region of the display for text.
-    DisplayRegion m_statusRegion; // status text / airline
-    DisplayRegion m_leftRegion; // Numbers/indicators
+    NRectf m_bufferRegion; // region of the display we are showing on.
+    NRectf m_textRegion; // region of the display for text.
+    NRectf m_statusRegion; // status text / airline
+    NRectf m_leftRegion; // Numbers/indicators
     NVec2f m_topLeftPx; // Top-left position on screen
     NVec2f m_bottomRightPx; // Limits of the screen position
     bool m_wrap = true; // Wrap

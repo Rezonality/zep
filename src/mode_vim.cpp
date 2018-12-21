@@ -15,7 +15,7 @@
 // My aim is to make it easy to add commands, so if you want to put something in, please send me a PR.
 // The buffer/display search and find support makes it easy to gather the info you need, and the basic insert/delete undo redo commands
 // make it easy to find the locations in the buffer
-// Important to note: I'm not trying to beat/better Vim here.  Just make an editor I can use in a viewport without feeling pain ;)
+// Important to note: I'm not trying to beat/better Vim here.  Just make an editor I can use in a viewport without feeling pain!
 // See further down for what is implemented, and what's on my todo list
 
 // IMPLEMENTED VIM:
@@ -52,9 +52,9 @@
 // 'V' (linewise v)
 // Y, D, linewise yank/paste
 // d[a]<count>w/e  Delete words
-// di})]"'
+// di[({})]"'
 // c[a]<count>w/e  Change word
-// ci})]"'
+// ci[({})]"'
 
 namespace Zep
 {

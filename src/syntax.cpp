@@ -1,5 +1,7 @@
 #include "syntax.h"
 #include "editor.h"
+#include "theme.h"
+#include "syntax_rainbow_brackets.h"
 
 namespace Zep
 {
@@ -10,11 +12,32 @@ ZepSyntax::ZepSyntax(ZepBuffer& buffer)
     m_stop(false)
 {
     m_syntax.resize(m_buffer.GetText().size());
+    m_adornments.push_back(std::make_shared<ZepSyntaxAdorn_RainbowBrackets>(*this, m_buffer));
 }
 
 ZepSyntax::~ZepSyntax()
 {
     Interrupt();
+}
+
+NVec4f ZepSyntax::GetSyntaxColorAt(long offset) const
+{
+    if (m_processedChar < offset ||
+        m_syntax.size() <= offset)
+    {
+        return Theme::Instance().GetSyntaxColor(SyntaxType::Normal);
+    }
+
+    for(auto& adorn : m_adornments)
+    {
+        bool found = false;
+        auto col = adorn->GetSyntaxColorAt(offset, found);
+        if (found)
+        {
+            return col;
+        }
+    }
+    return Theme::Instance().GetSyntaxColor(m_syntax[offset]);
 }
 
 uint32_t ZepSyntax::GetSyntaxAt(long offset) const
@@ -27,7 +50,6 @@ uint32_t ZepSyntax::GetSyntaxAt(long offset) const
 
     return m_syntax[offset];
 }
-
 void ZepSyntax::Interrupt()
 {
     // Stop the thread, wait for it
@@ -115,7 +137,6 @@ void ZepSyntax::UpdateSyntax()
     auto itrEnd = buffer.begin() + m_targetChar;
 
     assert(std::distance(itrCurrent, itrEnd) < int(m_syntax.size()));
-
     assert(m_syntax.size() == buffer.size());
 
     std::string delim(" \t.\n;(){}=");
@@ -192,6 +213,10 @@ void ZepSyntax::UpdateSyntax()
         else if (token.find_first_not_of("0123456789") == std::string::npos)
         {
             mark(itrFirst, itrLast, SyntaxType::Integer);
+        }
+        else if (token.find_first_not_of("{}()[]") == std::string::npos)
+        {
+            mark(itrFirst, itrLast, SyntaxType::Parenthesis);
         }
         else
         {

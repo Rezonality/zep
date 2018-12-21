@@ -21,7 +21,7 @@ NVec2f ZepDisplay_ImGui::GetTextSize(const utf8* pBegin, const utf8* pEnd) const
     return toNVec2f(text_size);
 }
 
-void ZepDisplay_ImGui::DrawChars(const NVec2f& pos, uint32_t col, const utf8* text_begin, const utf8* text_end) const
+void ZepDisplay_ImGui::DrawChars(const NVec2f& pos, const NVec4f& col, const utf8* text_begin, const utf8* text_end) const
 {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     if (text_end == nullptr)
@@ -30,49 +30,49 @@ void ZepDisplay_ImGui::DrawChars(const NVec2f& pos, uint32_t col, const utf8* te
     }
     if (m_clipRect.Width() == 0)
     {
-        drawList->AddText(toImVec2(pos), col, (const char*)text_begin, (const char*)text_end);
+        drawList->AddText(toImVec2(pos), ToPackedABGR(col), (const char*)text_begin, (const char*)text_end);
     }
     else
     {
         drawList->PushClipRect(toImVec2(m_clipRect.topLeftPx), toImVec2(m_clipRect.bottomRightPx));
-        drawList->AddText(toImVec2(pos), col, (const char*)text_begin, (const char*)text_end);
+        drawList->AddText(toImVec2(pos), ToPackedABGR(col), (const char*)text_begin, (const char*)text_end);
         drawList->PopClipRect();
     }
 }
 
-void ZepDisplay_ImGui::DrawLine(const NVec2f& start, const NVec2f& end, uint32_t color, float width) const
+void ZepDisplay_ImGui::DrawLine(const NVec2f& start, const NVec2f& end, const NVec4f& color, float width) const
 {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     // Background rect for numbers
     if (m_clipRect.Width() == 0)
     {
-        drawList->AddLine(toImVec2(start), toImVec2(end), color, width);
+        drawList->AddLine(toImVec2(start), toImVec2(end), ToPackedABGR(color), width);
     }
     else
     {
         drawList->PushClipRect(toImVec2(m_clipRect.topLeftPx), toImVec2(m_clipRect.bottomRightPx));
-        drawList->AddLine(toImVec2(start), toImVec2(end), color, width);
+        drawList->AddLine(toImVec2(start), toImVec2(end), ToPackedABGR(color), width);
         drawList->PopClipRect();
     }
 }
 
-void ZepDisplay_ImGui::DrawRectFilled(const NVec2f& a, const NVec2f& b, uint32_t color) const
+void ZepDisplay_ImGui::DrawRectFilled(const NVec2f& a, const NVec2f& b, const NVec4f& color) const
 {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     // Background rect for numbers
     if (m_clipRect.Width() == 0)
     {
-        drawList->AddRectFilled(toImVec2(a), toImVec2(b), color);
+        drawList->AddRectFilled(toImVec2(a), toImVec2(b), ToPackedABGR(color));
     }
     else
     {
         drawList->PushClipRect(toImVec2(m_clipRect.topLeftPx), toImVec2(m_clipRect.bottomRightPx));
-        drawList->AddRectFilled(toImVec2(a), toImVec2(b), color);
+        drawList->AddRectFilled(toImVec2(a), toImVec2(b), ToPackedABGR(color));
         drawList->PopClipRect();
     }
 }
 
-void ZepDisplay_ImGui::SetClipRect(const DisplayRegion& rc) 
+void ZepDisplay_ImGui::SetClipRect(const NRectf& rc) 
 {
     m_clipRect = rc;
 

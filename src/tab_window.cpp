@@ -75,7 +75,7 @@ void ZepTabWindow::Notify(std::shared_ptr<ZepMessage> payload)
     // Nothing yet.
 }
 
-void ZepTabWindow::SetDisplayRegion(const DisplayRegion& region)
+void ZepTabWindow::SetDisplayRegion(const NRectf& region)
 {
     if (m_lastRegion != region)
     {
