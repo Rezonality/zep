@@ -30,7 +30,7 @@ Key Features:
 * No dependencies, cross platform, small library
 
 Limitations:
-* Zep currently ignores tabs and converts them to spaces, and converts \r\n to \n.  It will replace \r\n on save if necessary
+* Zep currently ignores tabs and converts them to spaces, and internally works with \n. It will restore \r\n on save if necessary.
 * Utf8 is not supported, and may not be, though the code has some placeholders for it as a future possibility
 
 Though I have limited time to work on Zep, I do try to move it forward.  Currently I hope it is functional/stable enough to be used.
