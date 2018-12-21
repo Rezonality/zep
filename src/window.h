@@ -8,7 +8,7 @@ namespace Zep
 
 class ZepTabWindow;
 
-struct IZepDisplay;
+class IZepDisplay;
 
 struct CharInfo
 {
@@ -119,6 +119,10 @@ public:
     // Public for the tests!
     NVec2i BufferToDisplay();
 
+    NVec2f GetTextSize(const utf8* pCh, const utf8* pEnd = nullptr);
+
+    float ToWindowY(float pos) const;
+
 private:
     struct WindowPass
     {
@@ -179,6 +183,7 @@ private:
     bool m_linesChanged = true;
 
     Airline m_airline;
+    std::map<Zep::utf8, NVec2f> m_mapCharSizes;
 };
 
 } // namespace Zep

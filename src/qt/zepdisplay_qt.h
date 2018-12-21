@@ -15,7 +15,7 @@ class ZepDisplay_Qt : public IZepDisplay
 public:
     using TParent = IZepDisplay;
     ZepDisplay_Qt();
-    ~ZepDisplay_Qt();
+    virtual ~ZepDisplay_Qt();
 
     void SetPainter(QPainter* pPainter) { m_pPainter = pPainter; }
 
@@ -25,10 +25,13 @@ public:
     virtual void DrawLine(const NVec2f& start, const NVec2f& end, uint32_t color = 0xFFFFFFFF, float width = 1.0f) const override;
     virtual void DrawChars(const NVec2f& pos, uint32_t col, const utf8* text_begin, const utf8* text_end = nullptr) const override;
     virtual void DrawRectFilled(const NVec2f& a, const NVec2f& b, uint32_t col = 0xFFFFFFFF) const override;
+    virtual void SetClipRect(const DisplayRegion& rc) override;
+
 private:
     QPainter* m_pPainter = nullptr;
     int m_fontSize;
     int m_fontOffset;
+    DisplayRegion m_clipRect;
 };
 
 } // Zep

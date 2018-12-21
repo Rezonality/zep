@@ -8,7 +8,7 @@ namespace Zep
 
 class ZepWindow;
 
-struct IZepDisplay;
+class IZepDisplay;
 
 // Display state for a single pane of text.
 // Editor operations such as select and change are local to a displayed pane

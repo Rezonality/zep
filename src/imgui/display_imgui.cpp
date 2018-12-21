@@ -28,22 +28,54 @@ void ZepDisplay_ImGui::DrawChars(const NVec2f& pos, uint32_t col, const utf8* te
     {
         text_end = text_begin + strlen((const char*)text_begin);
     }
-    drawList->AddText(toImVec2(pos), col, (const char*)text_begin, (const char*)text_end);
+    if (m_clipRect.Width() == 0)
+    {
+        drawList->AddText(toImVec2(pos), col, (const char*)text_begin, (const char*)text_end);
+    }
+    else
+    {
+        drawList->PushClipRect(toImVec2(m_clipRect.topLeftPx), toImVec2(m_clipRect.bottomRightPx));
+        drawList->AddText(toImVec2(pos), col, (const char*)text_begin, (const char*)text_end);
+        drawList->PopClipRect();
+    }
 }
 
 void ZepDisplay_ImGui::DrawLine(const NVec2f& start, const NVec2f& end, uint32_t color, float width) const
 {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     // Background rect for numbers
-    drawList->AddLine(toImVec2(start), toImVec2(end), color, width);
+    if (m_clipRect.Width() == 0)
+    {
+        drawList->AddLine(toImVec2(start), toImVec2(end), color, width);
+    }
+    else
+    {
+        drawList->PushClipRect(toImVec2(m_clipRect.topLeftPx), toImVec2(m_clipRect.bottomRightPx));
+        drawList->AddLine(toImVec2(start), toImVec2(end), color, width);
+        drawList->PopClipRect();
+    }
 }
 
 void ZepDisplay_ImGui::DrawRectFilled(const NVec2f& a, const NVec2f& b, uint32_t color) const
 {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     // Background rect for numbers
-    drawList->AddRectFilled(toImVec2(a), toImVec2(b), color);
+    if (m_clipRect.Width() == 0)
+    {
+        drawList->AddRectFilled(toImVec2(a), toImVec2(b), color);
+    }
+    else
+    {
+        drawList->PushClipRect(toImVec2(m_clipRect.topLeftPx), toImVec2(m_clipRect.bottomRightPx));
+        drawList->AddRectFilled(toImVec2(a), toImVec2(b), color);
+        drawList->PopClipRect();
+    }
 }
 
+void ZepDisplay_ImGui::SetClipRect(const DisplayRegion& rc) 
+{
+    m_clipRect = rc;
+
+}
 
 } // Zep

@@ -6,6 +6,7 @@
 #include <set>
 #include <deque>
 #include <memory>
+#include <ostream>
 #include <threadpool/ThreadPool.hpp>
 #include <sstream>
 
@@ -39,7 +40,7 @@ class ZepSyntax;
 class ZepTabWindow;
 class ZepWindow;
 
-struct IZepDisplay;
+class IZepDisplay;
 
 class Timer;
 
@@ -82,6 +83,12 @@ template<class T> inline NVec2<T>& operator*= (NVec2<T>& lhs, float val) { lhs.x
 template<class T> inline NVec2<T> Clamp(const NVec2<T>& val, const NVec2<T>& min, const NVec2<T>& max)
 {
     return NVec2<T>(std::min(max.x, std::max(min.x, val.x)), std::min(max.y, std::max(min.y, val.y)));
+}
+template<class T>
+std::ostream& operator << (std::ostream& str, const NVec2<T>& v)
+{
+    str << "(" << v.x << ", " << v.y << ")";
+    return str;
 }
 
 using NVec2f = NVec2<float>;
@@ -171,6 +178,12 @@ struct DisplayRegion
         return !(*this == region);
     }
 };
+
+inline std::ostream& operator<< (std::ostream& str, const DisplayRegion& region)
+{
+    str << region.topLeftPx << ", " << region.bottomRightPx << ", size: " << region.Width() << ", " << region.Height();
+    return str;
+}
 
 class ZepEditor
 {

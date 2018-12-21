@@ -46,6 +46,7 @@ void ZepDisplay_Qt::DrawChars(const NVec2f& pos, uint32_t col, const utf8* text_
     m_pPainter->setPen(QColor::fromRgba(color));
     
     p0.setY(p0.y() + m_fontOffset);
+
     m_pPainter->drawText(p0, QString::fromUtf8((char*)text_begin, text_end - text_begin));
 }
 
@@ -62,6 +63,20 @@ void ZepDisplay_Qt::DrawRectFilled(const NVec2f& a, const NVec2f& b, uint32_t co
     QPoint start = toQPoint(a);
     QPoint end = toQPoint(b);
     m_pPainter->fillRect(QRect(start, end), QColor::fromRgba(color));
+}
+
+void ZepDisplay_Qt::SetClipRect(const DisplayRegion& rc)
+{
+    m_clipRect = rc;
+    if (m_clipRect.Width() > 0)
+    {
+        auto clip = QRect(m_clipRect.topLeftPx.x, m_clipRect.topLeftPx.y, m_clipRect.Width(), m_clipRect.Height());
+        m_pPainter->setClipRect(clip);
+    }
+    else
+    {
+        m_pPainter->setClipping(false);
+    }
 }
 
 } // Zep
