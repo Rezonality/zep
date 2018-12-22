@@ -69,13 +69,13 @@ void ZepTheme::SetDarkTheme()
 void ZepTheme::SetLightTheme()
 {
     m_colors[ThemeColor::Text] = NVec4f(0.0f, 0.0f, 0.0f, 1.0f);
-    m_colors[ThemeColor::Background] = NVec4f(.9f, .9f, .9f, 1.0f);
+    m_colors[ThemeColor::Background] = NVec4f(1.0f, 1.0f, 1.0f, 1.0f);
     m_colors[ThemeColor::HiddenText] = NVec4f(.9f, .1f, .1f, 1.0f);
     m_colors[ThemeColor::TabBorder] = NVec4f(.55f, .55f, .55f, 1.0f);
     m_colors[ThemeColor::Tab] = NVec4f(.4f, .4f, .4f, .55f);
     m_colors[ThemeColor::TabActive] = NVec4f(.55f, .55f, .55f, 1.0f);
-    m_colors[ThemeColor::LineNumberBackground] = NVec4f(.87f, .87f, .87f, 1.0f);
-    m_colors[ThemeColor::LineNumber] = NVec4f(.13f, .5f, .13f, 1.0f);
+    m_colors[ThemeColor::LineNumberBackground] = NVec4f(.77f, .77f, .77f, 1.0f);
+    m_colors[ThemeColor::LineNumber] = NVec4f(.13f, .4f, .13f, 1.0f);
     m_colors[ThemeColor::LineNumberActive] = NVec4f(.13f, 0.6f, .13f, 1.0f);
     m_colors[ThemeColor::CursorNormal] = NVec4f(130.0f / 255.0f, 140.0f / 255.0f, 230.0f / 255.0f, 1.0f);
     m_colors[ThemeColor::CursorInsert] = NVec4f(1.0f, 1.0f, 1.0f, .9f);
@@ -89,8 +89,8 @@ void ZepTheme::SetLightTheme()
     m_colors[ThemeColor::Normal] = m_colors[ThemeColor::Text];
     m_colors[ThemeColor::Parenthesis] = m_colors[ThemeColor::Text];
     m_colors[ThemeColor::Comment] = NVec4f(0.1f, .4f, .1f, 1.0f);
-    m_colors[ThemeColor::Keyword] = NVec4f(0.1f, .2f, .4f, 1.0f);
-    m_colors[ThemeColor::Integer] = NVec4f(0.1f, .4f, .2f, 1.0f);
+    m_colors[ThemeColor::Keyword] = NVec4f(0.1f, .2f, .3f, 1.0f);
+    m_colors[ThemeColor::Integer] = NVec4f(0.1f, .3f, .2f, 1.0f);
     m_colors[ThemeColor::Whitespace] = NVec4f(0.15f, .2f, .15f, 1.0f);
 }
 NVec4f ZepTheme::GetUniqueColor(uint32_t index) const

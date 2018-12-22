@@ -33,6 +33,7 @@
 #include "src/imgui/editor_imgui.h"
 #include "src/mode_standard.h"
 #include "src/mode_vim.h"
+#include "src/theme.h"
 using namespace Zep;
 
 #include "src/tests/longtext.tt"
@@ -297,6 +298,22 @@ int main(int argc, char** argv)
                     else if (ImGui::MenuItem("Standard", "CTRL+1", &enabledNormal))
                     {
                         zep.GetEditor().SetMode(Zep::ZepMode_Standard::StaticName());
+                    }
+                    ImGui::EndMenu();
+                }
+
+                if (ImGui::BeginMenu("Theme"))
+                {
+                    bool enabledDark = zep.GetEditor().GetTheme().GetThemeType() == ThemeType::Dark ? true : false;
+                    bool enabledLight = !enabledDark;
+
+                    if (ImGui::MenuItem("Dark", "", &enabledDark))
+                    {
+                        zep.GetEditor().GetTheme().SetThemeType(ThemeType::Dark);
+                    }
+                    else if (ImGui::MenuItem("Light", "", &enabledLight))
+                    {
+                        zep.GetEditor().GetTheme().SetThemeType(ThemeType::Light);
                     }
                     ImGui::EndMenu();
                 }

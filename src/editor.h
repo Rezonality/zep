@@ -135,7 +135,7 @@ enum
 
 const float bottomBorder = 4.0f;
 const float textBorder = 4.0f;
-const float leftBorder = 60.0f;
+const float leftBorderChars = 3;
 
 
 class ZepEditor

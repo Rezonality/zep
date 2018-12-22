@@ -126,10 +126,11 @@ void ZepWindow::SetDisplayRegion(const NRectf& region)
     m_textRegion.rect.topLeftPx = m_bufferRegion.rect.topLeftPx;
 
     // Border, and move the text across a bit
+    auto textSize = GetEditor().GetDisplay().GetTextSize((utf8*)"A");
     m_leftRegion.rect.topLeftPx = m_textRegion.rect.topLeftPx;
-    m_leftRegion.rect.bottomRightPx = NVec2f(m_leftRegion.rect.topLeftPx.x + leftBorder, m_textRegion.rect.bottomRightPx.y);
+    m_leftRegion.rect.bottomRightPx = NVec2f(m_leftRegion.rect.topLeftPx.x + float(leftBorderChars) * textSize.x, m_textRegion.rect.bottomRightPx.y);
 
-    m_textRegion.rect.topLeftPx.x += leftBorder + textBorder;
+    m_textRegion.rect.topLeftPx.x += leftBorderChars * textSize.x + textBorder;
 
     LOG(DEBUG) << "BufferRegion   : " << m_bufferRegion;
     LOG(DEBUG) << "StatusRegion   : " << m_statusRegion;
