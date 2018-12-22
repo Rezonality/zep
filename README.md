@@ -58,12 +58,11 @@ A light theme:
 Embedded in a Game Engine:
 ![Embedded](screenshots/embedded.png)
 
-Design
-------
-# Layers
+# Design
+## Layers
 Zep is built from simple interacting layers for simplicity.
 
-## Text
+### Text
 Buffer->Commands->Mode->ModeVim 
       ->Syntax        ->ModeStandard
 
@@ -77,20 +76,19 @@ The Mode layer supports editing text using Vim commands, or using standard notep
 
 A Syntax layer monitors the buffer and provides file-specific syntax coloring. Syntax highlighting can be easily extended
 
-## Display
+### Display
 TabWindow->Window->Display_ImGui
                  ->Display_Qt
 
 Tab windows are like workspaces, each containing a set of windows arranged in splits.  The window lass arranges the rendering and calls a thin
 display layer to draw the text.  This makes it simple to draw the editor using different rendering code.  Adding Qt took just an hour to do.
 
-## Vim & Standard Modes
+### Vim & Standard Modes
 Mode plugins provide the editing facility - currently that is Vim & Standard.
 The Vim mode has most of the usual word motions, visual mode, etc.  The standard mode has the usual shift, select, cut/copy/paste, etc.
 See [Vim Mode](https://github.com/cmaughan/zep/wiki/Vim-Mode), or the top of the mode_vim.cpp file for a list of supported operations in Vim
 
-Building
----------
+# Building
 You can follow the build buttons above to see build scripts, but the process is fairly simple:
 
 ## Install Packages  
