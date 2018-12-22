@@ -10,7 +10,6 @@
 #include <chrono>
 #include <sstream>
 #include <fstream>
-#include <direct.h>
 
 namespace COMMON_NAMESPACE
 {

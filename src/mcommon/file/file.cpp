@@ -1,4 +1,7 @@
+#include "common_namespace.h"
+
 #include <fstream>
+
 #if TARGET_PC
 #include <windows.h>
 #include <shlobj.h>

@@ -28,6 +28,7 @@ Key Features:
 * A simple syntax highlighting engine, with pluggable secondary highlighters
 * Theme support
 * No dependencies, cross platform, small library
+* Builds on VC 2017, GCC 6, Clang. C++14 is the basic requirement
 
 Limitations:
 * Zep currently ignores tabs and converts them to spaces, and internally works with \n. It will restore \r\n on save if necessary.
