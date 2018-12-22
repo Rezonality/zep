@@ -56,48 +56,48 @@ operator glm::vec4() const { return glm::vec4(x,y,z,w); }
 ImQuat(const glm::quat& f) { x = f.x; y = f.y; z = f.z; w = f.w; }          \
 operator glm::quat() const { return glm::quat(w,x,y,z); }
 
-template <typename T> __forceinline T AlignUpWithMask( T value, size_t mask )
+template <typename T> inline T AlignUpWithMask( T value, size_t mask )
 {
     return (T)(((size_t)value + mask) & ~mask);
 }
 
-template <typename T> __forceinline T AlignDownWithMask( T value, size_t mask )
+template <typename T> inline T AlignDownWithMask( T value, size_t mask )
 {
     return (T)((size_t)value & ~mask);
 }
 
-template <typename T> __forceinline T AlignUp( T value, size_t alignment )
+template <typename T> inline T AlignUp( T value, size_t alignment )
 {
     return AlignUpWithMask(value, alignment - 1);
 }
 
-template <typename T> __forceinline T AlignDown( T value, size_t alignment )
+template <typename T> inline T AlignDown( T value, size_t alignment )
 {
     return AlignDownWithMask(value, alignment - 1);
 }
 
-template <typename T> __forceinline bool IsAligned( T value, size_t alignment )
+template <typename T> inline bool IsAligned( T value, size_t alignment )
 {
     return 0 == ((size_t)value & (alignment - 1));
 }
 
-template <typename T> __forceinline T DivideByMultiple( T value, size_t alignment )
+template <typename T> inline T DivideByMultiple( T value, size_t alignment )
 {
     return (T)((value + alignment - 1) / alignment);
 }
 
-template <typename T> __forceinline bool IsPowerOfTwo(T value)
+template <typename T> inline bool IsPowerOfTwo(T value)
 {
     return 0 == (value & (value - 1));
 }
 
-template <typename T> __forceinline bool IsDivisible(T value, T divisor)
+template <typename T> inline bool IsDivisible(T value, T divisor)
 {
     return (value / divisor) * divisor == value;
 }
 
 /*
-__forceinline uint8_t Log2(uint64_t value)
+inline uint8_t Log2(uint64_t value)
 {
     unsigned long mssb; // most significant set bit
     unsigned long lssb; // least significant set bit
@@ -110,7 +110,7 @@ __forceinline uint8_t Log2(uint64_t value)
         return 0;
 }
 
-template <typename T> __forceinline T AlignPowerOfTwo(T value)
+template <typename T> inline T AlignPowerOfTwo(T value)
 {
     return value == 0 ? 0 : 1 << Log2(value);
 }

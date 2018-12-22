@@ -13,6 +13,7 @@ namespace fs = std::experimental::filesystem::v1;
 namespace fs = COMMON_NAMESPACE;
 #endif
 
+#include <functional>
 namespace COMMON_NAMESPACE
 {
 std::string file_read(const fs::path& fileName);

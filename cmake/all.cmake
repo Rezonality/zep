@@ -39,6 +39,7 @@ endif()
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
     message(STATUS "TARGET_LINUX")
     SET(TARGET_LINUX 1)
+	set(PROJECT_CPP_FILESYSTEM 1)
     INCLUDE(${PROJECT_SOURCE_DIR}/cmake/linux.cmake)
 endif()
 	

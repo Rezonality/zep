@@ -5,7 +5,7 @@
 #endif
 
 // For logging events to file
-#include "mcommon/filewatcher/FileWatcher.h"
+#include "mcommon/FileWatcher/FileWatcher.h"
 #include "mcommon/file/file.h"
 #include "mcommon/file/tinydir.h"
 

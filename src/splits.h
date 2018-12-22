@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <limits>
 #include <vector>
+#include <memory>
 #include "common_namespace.h"
 #include "mcommon/math/math.h"
 

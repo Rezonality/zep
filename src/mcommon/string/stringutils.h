@@ -4,6 +4,9 @@
 #include <functional>
 #include <string>
 #include <ostream>
+#include <sstream>
+#include <unordered_map>
+#include <vector>
 
 namespace COMMON_NAMESPACE
 {

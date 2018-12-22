@@ -266,7 +266,8 @@ ZepBuffer* ZepEditor::AddBuffer(const std::string& str)
     auto pBuffer = std::make_shared<ZepBuffer>(*this, str);
     m_buffers.push_front(pBuffer);
 
-    if (auto extOffset = str.find_last_of('.'); extOffset != std::string::npos)
+    auto extOffset = str.find_last_of('.');
+    if (extOffset != std::string::npos)
     {
         auto itrFactory = m_mapSyntax.find(str.substr(extOffset + 1, str.size() - extOffset));
         if (itrFactory != m_mapSyntax.end())

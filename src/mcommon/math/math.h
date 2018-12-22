@@ -1,6 +1,8 @@
 #pragma once
 
 #include <ostream>
+#include <cmath>
+
 // 2D and 4D vectors, used for area and color calculations.
 // Some helpers for color conversion too.
 // This just saves using a library like glm (my personal preference)

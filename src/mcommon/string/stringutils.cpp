@@ -3,7 +3,8 @@
 #include <algorithm>
 #include <cassert>
 #include <codecvt>
-
+#include <locale>
+#include <cstring>
 
 namespace COMMON_NAMESPACE
 {
