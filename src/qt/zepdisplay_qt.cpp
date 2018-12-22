@@ -57,10 +57,10 @@ void ZepDisplay_Qt::DrawLine(const NVec2f& start, const NVec2f& end, const NVec4
     m_pPainter->drawLine(p0, p1);
 }
 
-void ZepDisplay_Qt::DrawRectFilled(const NVec2f& a, const NVec2f& b, const NVec4f& color) const
+void ZepDisplay_Qt::DrawRectFilled(const NRectf& a, const NVec4f& color) const
 {
-    QPoint start = toQPoint(a);
-    QPoint end = toQPoint(b);
+    QPoint start = toQPoint(a.topLeftPx);
+    QPoint end = toQPoint(a.bottomRightPx);
     m_pPainter->fillRect(QRect(start, end), QColor::fromRgbF(color.x, color.y, color.z, color.w));
 }
 

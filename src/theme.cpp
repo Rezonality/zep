@@ -15,7 +15,27 @@ ZepTheme::ZepTheme()
         h = std::fmod(h, 1.0);
         m_uniqueColors.emplace_back(HSVToRGB(float(h) * 360.0f, 0.6f, 200.0f));
     }
-    SetDarkTheme();
+    SetThemeType(ThemeType::Dark);
+}
+
+void ZepTheme::SetThemeType(ThemeType type)
+{
+    m_currentTheme = type;
+    switch(type)
+    {
+    default:
+    case ThemeType::Dark:
+        SetDarkTheme();
+        break;
+    case ThemeType::Light:
+        SetLightTheme();
+        break;
+    }
+}
+
+ThemeType ZepTheme::GetThemeType() const
+{
+    return m_currentTheme;
 }
 
 void ZepTheme::SetDarkTheme()

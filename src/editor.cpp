@@ -430,10 +430,10 @@ void ZepEditor::Display()
     auto commandSpace = commandCount;
     commandSpace = std::max(commandCount, 0l);
 
-    GetDisplay().DrawRectFilled(m_topLeftPx, m_bottomRightPx, GetTheme().GetColor(ThemeColor::Background));
+    GetDisplay().DrawRectFilled(NRectf(m_topLeftPx, m_bottomRightPx), GetTheme().GetColor(ThemeColor::Background));
 
     // Background rect for CommandLine
-    m_pDisplay->DrawRectFilled(m_commandRegion.rect.topLeftPx, m_commandRegion.rect.bottomRightPx, GetTheme().GetColor(ThemeColor::Background));
+    m_pDisplay->DrawRectFilled(m_commandRegion.rect, GetTheme().GetColor(ThemeColor::Background));
 
     // Draw command text
     auto screenPosYPx = m_commandRegion.rect.topLeftPx + NVec2f(0.0f, textBorder);
@@ -454,7 +454,7 @@ void ZepEditor::Display()
     {
         // Tab region
         // TODO Handle it when tabs are bigger than the available width!
-        m_pDisplay->DrawRectFilled(m_tabRegion.rect.BottomLeft() - NVec2f(0.0f, 2.0f), m_tabRegion.rect.bottomRightPx, GetTheme().GetColor(ThemeColor::TabBorder));
+        m_pDisplay->DrawRectFilled(NRectf(m_tabRegion.rect.BottomLeft() - NVec2f(0.0f, 2.0f), m_tabRegion.rect.bottomRightPx), GetTheme().GetColor(ThemeColor::TabBorder));
         NVec2f currentTab = m_tabRegion.rect.topLeftPx;
         for (auto& window : GetTabWindows())
         {
@@ -462,7 +462,7 @@ void ZepEditor::Display()
             auto& buffer = window->GetActiveWindow()->GetBuffer();
             auto tabColor = (window == GetActiveTabWindow()) ? GetTheme().GetColor(ThemeColor::TabActive) : GetTheme().GetColor(ThemeColor::Tab);
             auto tabLength = m_pDisplay->GetTextSize((utf8*)buffer.GetName().c_str()).x + textBorder * 2;
-            m_pDisplay->DrawRectFilled(currentTab, currentTab + NVec2f(tabLength, m_tabRegion.rect.Height()), tabColor);
+            m_pDisplay->DrawRectFilled(NRectf(currentTab, currentTab + NVec2f(tabLength, m_tabRegion.rect.Height())), tabColor);
 
             m_pDisplay->DrawChars(currentTab + NVec2f(textBorder, textBorder), NVec4f(1.0f), (utf8*)buffer.GetName().c_str());
 

@@ -61,18 +61,18 @@ void ZepDisplay_ImGui::DrawLine(const NVec2f& start, const NVec2f& end, const NV
     }
 }
 
-void ZepDisplay_ImGui::DrawRectFilled(const NVec2f& a, const NVec2f& b, const NVec4f& color) const
+void ZepDisplay_ImGui::DrawRectFilled(const NRectf& rc, const NVec4f& color) const
 {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     // Background rect for numbers
     if (m_clipRect.Width() == 0)
     {
-        drawList->AddRectFilled(toImVec2(a), toImVec2(b), ToPackedABGR(color));
+        drawList->AddRectFilled(toImVec2(rc.topLeftPx), toImVec2(rc.bottomRightPx), ToPackedABGR(color));
     }
     else
     {
         drawList->PushClipRect(toImVec2(m_clipRect.topLeftPx), toImVec2(m_clipRect.bottomRightPx));
-        drawList->AddRectFilled(toImVec2(a), toImVec2(b), ToPackedABGR(color));
+        drawList->AddRectFilled(toImVec2(rc.topLeftPx), toImVec2(rc.bottomRightPx), ToPackedABGR(color));
         drawList->PopClipRect();
     }
 }

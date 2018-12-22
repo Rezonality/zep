@@ -3,8 +3,11 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QCommandLineParser>
+#include <QWidget>
 
 #include "buffer.h"
+#include "editor.h"
+#include "theme.h"
 #include "zepwidget_qt.h"
 #include "src/mode_standard.h"
 #include "src/mode_vim.h"
@@ -88,6 +91,31 @@ MainWindow::MainWindow()
                 pVim->setChecked(false);
                 pStandard->setChecked(true);
                 pWidget->GetEditor().SetMode(ZepMode_Standard::StaticName());
+            });
+        }
+        auto pTheme = pSettings->addMenu("Theme");
+        {
+            auto pDark = pTheme->addAction("Dark");
+            auto pLight = pTheme->addAction("Light");
+
+            bool enabledDark = pWidget->GetEditor().GetTheme().GetThemeType() == ThemeType::Dark ? true : false;
+            bool enabledLight = !enabledDark;
+            pDark->setCheckable(true);
+            pLight->setCheckable(true);
+            pDark->setChecked(enabledDark);
+            pLight->setChecked(!enabledDark);
+
+            connect(pDark, &QAction::triggered, this, [pWidget, pDark, pLight]()
+            {
+                pDark->setChecked(true);
+                pLight->setChecked(false);
+                pWidget->GetEditor().GetTheme().SetThemeType(ThemeType::Dark);
+            });
+            connect(pLight, &QAction::triggered, this, [pWidget, pLight, pDark]()
+            {
+                pDark->setChecked(false);
+                pLight->setChecked(true);
+                pWidget->GetEditor().GetTheme().SetThemeType(ThemeType::Light);
             });
         }
     }
