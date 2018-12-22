@@ -60,10 +60,10 @@ Embedded in a Game Engine:
 
 Design
 ------
-##### Layers
+# Layers
 Zep is built from simple interacting layers for simplicity.
 
-###### Text
+## Text
 Buffer->Commands->Mode->ModeVim 
       ->Syntax        ->ModeStandard
 
@@ -77,14 +77,14 @@ The Mode layer supports editing text using Vim commands, or using standard notep
 
 A Syntax layer monitors the buffer and provides file-specific syntax coloring. Syntax highlighting can be easily extended
 
-###### Display
+## Display
 TabWindow->Window->Display_ImGui
                  ->Display_Qt
 
 Tab windows are like workspaces, each containing a set of windows arranged in splits.  The window lass arranges the rendering and calls a thin
 display layer to draw the text.  This makes it simple to draw the editor using different rendering code.  Adding Qt took just an hour to do.
 
-##### Vim & Standard Modes
+## Vim & Standard Modes
 Mode plugins provide the editing facility - currently that is Vim & Standard.
 The Vim mode has most of the usual word motions, visual mode, etc.  The standard mode has the usual shift, select, cut/copy/paste, etc.
 See [Vim Mode](https://github.com/cmaughan/zep/wiki/Vim-Mode), or the top of the mode_vim.cpp file for a list of supported operations in Vim
@@ -93,47 +93,47 @@ Building
 ---------
 You can follow the build buttons above to see build scripts, but the process is fairly simple:
 
-##### Install Packages  
+## Install Packages  
 If you don't have them already, the following packages are required, depending on your system.  Note, that SDL is part of the build,
 and not installed seperately.  It is only used for the demo, not the core editor library or unit tests. Qt is required to build the Qt demo on linux.
 If you have compilation problems, you might need to investigate the compiler you are using.
 Ubuntu 16 & 17 both have a recent enough version for it to work.  On Ubuntu 14 I tend to upgrade to g++6
 The Qt app builds on linux, but is not part of the travis setup yet.
 
-###### Linux
+## Linux
 ```
 sudo apt install cmake  
 sudo apt install git  
 sudo apt install qt-default (for Qt support)
 ```
 
-###### Mac
+## Mac
 ```
 brew install cmake
 brew install git
 ```
 (If in doubt, see the .travis.yml build file for how the remote build machines are setup)
 
-##### Get the Source
+## Get the Source
 git clone https://github.com/cmaughan/zep zep  
 cd zep  
 
-##### Make
+## Make
 There are some sample scripts which call CMake, but you can generate makefiles for your favourite compiler by passing a different generator to it.
 
-###### Linux 
+## Linux 
 ```
 ./config.sh
 make
 ```  
 
-###### Mac (XCode)
+## Mac (XCode)
 ```
 ./config_mac.sh
 cd build
 cmake --build .
 ```
-###### PC
+## PC
 For ImGui:
 ```
 config.bat
@@ -150,7 +150,7 @@ cmake --build .
 (Or load solution in VC 2017)
 ```
 
-##### Tests
+## Tests
 Type `CTest --verbose` in the build folder to run unit tests.
 
 Libraries
