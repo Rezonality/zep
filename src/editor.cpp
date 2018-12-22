@@ -383,24 +383,24 @@ void ZepEditor::UpdateSize()
 
     // Regions
     // TODO: A simple splitter manager to make calculating/moving these easier
-    m_commandRegion.bottomRightPx = m_bottomRightPx;
-    m_commandRegion.topLeftPx = m_commandRegion.bottomRightPx - NVec2f(displaySize.x, commandSize);
+    m_commandRegion.rect.bottomRightPx = m_bottomRightPx;
+    m_commandRegion.rect.topLeftPx = m_commandRegion.rect.bottomRightPx - NVec2f(displaySize.x, commandSize);
 
     // Add tabs for extra windows
     if (GetTabWindows().size() > 1)
     {
-        m_tabRegion.topLeftPx = m_topLeftPx;
-        m_tabRegion.bottomRightPx = m_tabRegion.topLeftPx + NVec2f(displaySize.x, m_pDisplay->GetFontSize() + textBorder * 2);
+        m_tabRegion.rect.topLeftPx = m_topLeftPx;
+        m_tabRegion.rect.bottomRightPx = m_tabRegion.rect.topLeftPx + NVec2f(displaySize.x, m_pDisplay->GetFontSize() + textBorder * 2);
     }
     else
     {
         // Empty
-        m_tabRegion.topLeftPx = m_topLeftPx;
-        m_tabRegion.bottomRightPx = m_topLeftPx + NVec2f(displaySize.x, 0.0f);
+        m_tabRegion.rect.topLeftPx = m_topLeftPx;
+        m_tabRegion.rect.bottomRightPx = m_topLeftPx + NVec2f(displaySize.x, 0.0f);
     }
 
-    m_tabContentRegion.topLeftPx = m_tabRegion.bottomRightPx + NVec2f(-displaySize.x, 1.0f);
-    m_tabContentRegion.bottomRightPx = m_commandRegion.topLeftPx + NVec2f(displaySize.x, 0.0f);
+    m_tabContentRegion.rect.topLeftPx = m_tabRegion.rect.bottomRightPx + NVec2f(-displaySize.x, 1.0f);
+    m_tabContentRegion.rect.bottomRightPx = m_commandRegion.rect.topLeftPx + NVec2f(displaySize.x, 0.0f);
 
     LOG(DEBUG) << "CommandRegion    : " << m_commandRegion;
     LOG(DEBUG) << "TabRegion        : " << m_tabRegion;
@@ -433,10 +433,10 @@ void ZepEditor::Display()
     GetDisplay().DrawRectFilled(m_topLeftPx, m_bottomRightPx, GetTheme().GetColor(ThemeColor::Background));
 
     // Background rect for CommandLine
-    m_pDisplay->DrawRectFilled(m_commandRegion.topLeftPx, m_commandRegion.bottomRightPx, GetTheme().GetColor(ThemeColor::Background));
+    m_pDisplay->DrawRectFilled(m_commandRegion.rect.topLeftPx, m_commandRegion.rect.bottomRightPx, GetTheme().GetColor(ThemeColor::Background));
 
     // Draw command text
-    auto screenPosYPx = m_commandRegion.topLeftPx + NVec2f(0.0f, textBorder);
+    auto screenPosYPx = m_commandRegion.rect.topLeftPx + NVec2f(0.0f, textBorder);
     for (int i = 0; i < commandSpace; i++)
     {
         auto textSize = m_pDisplay->GetTextSize((const utf8*)commandLines[i].c_str(),
@@ -447,22 +447,22 @@ void ZepEditor::Display()
             (const utf8*)commandLines[i].c_str());
 
         screenPosYPx.y += m_pDisplay->GetFontSize();
-        screenPosYPx.x = m_commandRegion.topLeftPx.x;
+        screenPosYPx.x = m_commandRegion.rect.topLeftPx.x;
     }
 
     if (GetTabWindows().size() > 1)
     {
         // Tab region
         // TODO Handle it when tabs are bigger than the available width!
-        m_pDisplay->DrawRectFilled(m_tabRegion.BottomLeft() - NVec2f(0.0f, 2.0f), m_tabRegion.bottomRightPx, GetTheme().GetColor(ThemeColor::TabBorder));
-        NVec2f currentTab = m_tabRegion.topLeftPx;
+        m_pDisplay->DrawRectFilled(m_tabRegion.rect.BottomLeft() - NVec2f(0.0f, 2.0f), m_tabRegion.rect.bottomRightPx, GetTheme().GetColor(ThemeColor::TabBorder));
+        NVec2f currentTab = m_tabRegion.rect.topLeftPx;
         for (auto& window : GetTabWindows())
         {
             // Show active buffer in tab as tab name
             auto& buffer = window->GetActiveWindow()->GetBuffer();
             auto tabColor = (window == GetActiveTabWindow()) ? GetTheme().GetColor(ThemeColor::TabActive) : GetTheme().GetColor(ThemeColor::Tab);
             auto tabLength = m_pDisplay->GetTextSize((utf8*)buffer.GetName().c_str()).x + textBorder * 2;
-            m_pDisplay->DrawRectFilled(currentTab, currentTab + NVec2f(tabLength, m_tabRegion.Height()), tabColor);
+            m_pDisplay->DrawRectFilled(currentTab, currentTab + NVec2f(tabLength, m_tabRegion.rect.Height()), tabColor);
 
             m_pDisplay->DrawChars(currentTab + NVec2f(textBorder, textBorder), NVec4f(1.0f), (utf8*)buffer.GetName().c_str());
 

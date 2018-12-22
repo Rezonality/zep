@@ -8,7 +8,7 @@ namespace Zep
 class ZepTabWindow;
 
 // A region inside the text for selections
-struct Region
+struct SelectRegion
 {
     // For vertical select, we will have a list of spans...
     BufferLocation start;  

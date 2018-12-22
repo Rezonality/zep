@@ -12,6 +12,7 @@
 #include <vector>
 #include "mcommon/math/math.h"
 #include "mcommon/animation/timer.h"
+#include "splits.h"
 
 // Basic Architecture
 
@@ -47,6 +48,8 @@ class ZepWindow;
 class ZepTheme;
 
 class IZepDisplay;
+
+struct Region;
 
 using utf8 = uint8_t;
 
@@ -247,11 +250,13 @@ private:
 
     std::vector<std::string> m_commandLines; // Command information, shown under the buffer
 
-    NRectf m_tabContentRegion;
-    NRectf m_commandRegion;
-    NRectf m_tabRegion;
+    Region m_tabContentRegion;
+    Region m_commandRegion;
+    Region m_tabRegion;
+
     NVec2f m_topLeftPx;
     NVec2f m_bottomRightPx;
+
     bool m_bRegionsChanged = false;
 };
 

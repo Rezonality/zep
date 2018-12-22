@@ -106,31 +106,30 @@ NVec2f ZepWindow::GetTextSize(const utf8* pCh, const utf8* pEnd)
 
 void ZepWindow::SetDisplayRegion(const NRectf& region)
 {
-    if (m_bufferRegion == region)
+    if (m_bufferRegion.rect == region)
     {
         return;
     }
 
     m_linesChanged = true;
-    m_bufferRegion = region;
+    m_bufferRegion.rect = region;
 
     // Account for airline
     auto statusCount = 1; // m_statusLines.size() + 1;
-    const auto windowSize = m_bufferRegion.bottomRightPx - m_bufferRegion.topLeftPx;
+    const auto windowSize = m_bufferRegion.rect.bottomRightPx - m_bufferRegion.rect.topLeftPx;
     const float statusSize = GetEditor().GetDisplay().GetFontSize() * statusCount + textBorder * 2.0f;
 
-    m_statusRegion.bottomRightPx = m_bufferRegion.bottomRightPx;
-    m_statusRegion.topLeftPx = m_bufferRegion.bottomRightPx - NVec2f(windowSize.x, statusSize);
+    m_statusRegion.rect.bottomRightPx = m_bufferRegion.rect.bottomRightPx;
+    m_statusRegion.rect.topLeftPx = m_bufferRegion.rect.bottomRightPx - NVec2f(windowSize.x, statusSize);
 
-    auto lastRegion = m_textRegion;
-    m_textRegion.bottomRightPx = m_statusRegion.topLeftPx + NVec2f(windowSize.x, 0.0f);
-    m_textRegion.topLeftPx = m_bufferRegion.topLeftPx;
+    m_textRegion.rect.bottomRightPx = m_statusRegion.rect.topLeftPx + NVec2f(windowSize.x, 0.0f);
+    m_textRegion.rect.topLeftPx = m_bufferRegion.rect.topLeftPx;
 
     // Border, and move the text across a bit
-    m_leftRegion.topLeftPx = m_textRegion.topLeftPx;
-    m_leftRegion.bottomRightPx = NVec2f(m_leftRegion.topLeftPx.x + leftBorder, m_textRegion.bottomRightPx.y);
+    m_leftRegion.rect.topLeftPx = m_textRegion.rect.topLeftPx;
+    m_leftRegion.rect.bottomRightPx = NVec2f(m_leftRegion.rect.topLeftPx.x + leftBorder, m_textRegion.rect.bottomRightPx.y);
 
-    m_textRegion.topLeftPx.x += leftBorder + textBorder;
+    m_textRegion.rect.topLeftPx.x += leftBorder + textBorder;
 
     LOG(DEBUG) << "BufferRegion   : " << m_bufferRegion;
     LOG(DEBUG) << "StatusRegion   : " << m_statusRegion;
@@ -156,9 +155,9 @@ void ZepWindow::ScrollToCursor()
         m_bufferOffsetYPx -= (m_bufferOffsetYPx - (cursorLine.spanYPx - two_lines));
         changed = true;
     }
-    else if ((m_bufferOffsetYPx + m_textRegion.Height() - two_lines) < cursorLine.spanYPx)
+    else if ((m_bufferOffsetYPx + m_textRegion.rect.Height() - two_lines) < cursorLine.spanYPx)
     {
-        m_bufferOffsetYPx += cursorLine.spanYPx - (m_bufferOffsetYPx + m_textRegion.Height() - two_lines);
+        m_bufferOffsetYPx += cursorLine.spanYPx - (m_bufferOffsetYPx + m_textRegion.rect.Height() - two_lines);
         changed = true;
     }
 
@@ -178,9 +177,9 @@ void ZepWindow::CheckLineSpans()
     }
     m_linesChanged = false;
 
-    m_maxDisplayLines = (long)std::max(0.0f, std::floor((m_textRegion.bottomRightPx.y - m_textRegion.topLeftPx.y) / m_defaultLineSize));
+    m_maxDisplayLines = (long)std::max(0.0f, std::floor((m_textRegion.rect.bottomRightPx.y - m_textRegion.rect.topLeftPx.y) / m_defaultLineSize));
 
-    float screenPosX = m_textRegion.topLeftPx.x;
+    float screenPosX = m_textRegion.rect.topLeftPx.x;
 
     BufferLocation loc = 0;
 
@@ -224,7 +223,7 @@ void ZepWindow::CheckLineSpans()
             // Wrap if we have displayed at least one char, and we have to
             if (m_wrap && ch != columnOffsets.x)
             {
-                if (((screenPosX + textSize.x) + textSize.x) >= (m_textRegion.bottomRightPx.x))
+                if (((screenPosX + textSize.x) + textSize.x) >= (m_textRegion.rect.bottomRightPx.x))
                 {
                     // Remember the offset beyond the end of the line
                     lineInfo->columnOffsets.y = ch;
@@ -243,7 +242,7 @@ void ZepWindow::CheckLineSpans()
                     lineInfo->lastNonCROffset = 0;
                     lineInfo->lineIndex = spanLine;
                     lineInfo->bufferLineNumber = bufferLine;
-                    screenPosX = m_textRegion.topLeftPx.x;
+                    screenPosX = m_textRegion.rect.topLeftPx.x;
                 }
                 else
                 {
@@ -282,7 +281,7 @@ void ZepWindow::CheckLineSpans()
         // Next time round - down a buffer line, down a span line
         bufferLine++;
         spanLine++;
-        screenPosX = m_textRegion.topLeftPx.x;
+        screenPosX = m_textRegion.rect.topLeftPx.x;
         bufferPosYPx += GetEditor().GetDisplay().GetFontSize();
         lineInfo = nullptr;
     }
@@ -316,7 +315,7 @@ void ZepWindow::UpdateVisibleLineRange()
             continue;
         }
 
-        if ((windowLine.spanYPx - m_bufferOffsetYPx) >= m_textRegion.Height())
+        if ((windowLine.spanYPx - m_bufferOffsetYPx) >= m_textRegion.rect.Height())
         {
             break;
         }
@@ -341,7 +340,7 @@ const SpanInfo& ZepWindow::GetCursorLineInfo(long y)
 // Convert a normalized y coordinate to the window region 
 float ZepWindow::ToWindowY(float pos) const
 {
-    return pos - m_bufferOffsetYPx + m_bufferRegion.topLeftPx.y;
+    return pos - m_bufferOffsetYPx + m_bufferRegion.rect.topLeftPx.y;
 }
 
 // TODO: This function draws one char at a time.  It could be more optimal at the expense of some
@@ -357,7 +356,7 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
     auto activeWindow = (GetEditor().GetActiveTabWindow()->GetActiveWindow() == this);
     auto cursorCL = BufferToDisplay();
 
-    GetEditor().GetDisplay().SetClipRect(m_bufferRegion);
+    GetEditor().GetDisplay().SetClipRect(m_bufferRegion.rect);
 
     // Draw line numbers
     auto showLineNumber = [&]() {
@@ -376,8 +375,8 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
         auto textSize = GetEditor().GetDisplay().GetTextSize((const utf8*)strNum.c_str(), (const utf8*)(strNum.c_str() + strNum.size()));
 
         // Number background
-        GetEditor().GetDisplay().DrawRectFilled(NVec2f(m_leftRegion.topLeftPx.x, ToWindowY(lineInfo.spanYPx)),
-            NVec2f(m_leftRegion.bottomRightPx.x, ToWindowY(lineInfo.spanYPx) + GetEditor().GetDisplay().GetFontSize()),
+        GetEditor().GetDisplay().DrawRectFilled(NVec2f(m_leftRegion.rect.topLeftPx.x, ToWindowY(lineInfo.spanYPx)),
+            NVec2f(m_leftRegion.rect.bottomRightPx.x, ToWindowY(lineInfo.spanYPx) + GetEditor().GetDisplay().GetFontSize()),
             m_pBuffer->GetTheme().GetColor(ThemeColor::LineNumberBackground));
 
         auto digitCol = m_pBuffer->GetTheme().GetColor(ThemeColor::LineNumber);
@@ -387,7 +386,7 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
         }
 
         // Numbers
-        GetEditor().GetDisplay().DrawChars(NVec2f(m_leftRegion.bottomRightPx.x - textSize.x - textBorder, ToWindowY(lineInfo.spanYPx)), digitCol,
+        GetEditor().GetDisplay().DrawChars(NVec2f(m_leftRegion.rect.bottomRightPx.x - textSize.x - textBorder, ToWindowY(lineInfo.spanYPx)), digitCol,
             (const utf8*)strNum.c_str(),
             (const utf8*)(strNum.c_str() + strNum.size()));
     };
@@ -398,7 +397,7 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
     }
 
     bool foundCR = false;
-    auto screenPosX = m_textRegion.topLeftPx.x;
+    auto screenPosX = m_textRegion.rect.topLeftPx.x;
 
     char invalidChar;
 
@@ -515,7 +514,7 @@ void ZepWindow::DisplayCursor()
     }
 
     // Cursor
-    auto cursorPosPx = NVec2f(pCharInfo->screenPosXPx, cursorBufferLine.spanYPx - m_bufferOffsetYPx + m_textRegion.topLeftPx.y);
+    auto cursorPosPx = NVec2f(pCharInfo->screenPosXPx, cursorBufferLine.spanYPx - m_bufferOffsetYPx + m_textRegion.rect.topLeftPx.y);
     auto cursorBlink = GetEditor().GetCursorBlinkState();
     if (!cursorBlink)
     {
@@ -625,7 +624,7 @@ void ZepWindow::Display()
 
     auto activeWindow = (GetEditor().GetActiveTabWindow()->GetActiveWindow() == this);
 
-    GetEditor().GetDisplay().DrawRectFilled(m_textRegion.topLeftPx, m_textRegion.bottomRightPx, m_pBuffer->GetTheme().GetColor(ThemeColor::Background));
+    GetEditor().GetDisplay().DrawRectFilled(m_textRegion.rect.topLeftPx, m_textRegion.rect.bottomRightPx, m_pBuffer->GetTheme().GetColor(ThemeColor::Background));
 
     if (activeWindow && cursorCL.x != -1)
     {
@@ -636,8 +635,8 @@ void ZepWindow::Display()
             if (IsInsideTextRegion(cursorCL))
             {
                 // Cursor line
-                GetEditor().GetDisplay().DrawRectFilled(NVec2f(m_textRegion.topLeftPx.x, cursorLine.spanYPx - m_bufferOffsetYPx + m_textRegion.topLeftPx.y),
-                    NVec2f(m_textRegion.bottomRightPx.x, cursorLine.spanYPx - m_bufferOffsetYPx + m_textRegion.topLeftPx.y + GetEditor().GetDisplay().GetFontSize()),
+                GetEditor().GetDisplay().DrawRectFilled(NVec2f(m_textRegion.rect.topLeftPx.x, cursorLine.spanYPx - m_bufferOffsetYPx + m_textRegion.rect.topLeftPx.y),
+                    NVec2f(m_textRegion.rect.bottomRightPx.x, cursorLine.spanYPx - m_bufferOffsetYPx + m_textRegion.rect.topLeftPx.y + GetEditor().GetDisplay().GetFontSize()),
                     m_pBuffer->GetTheme().GetColor(ThemeColor::CursorLineBackground));
             }
         }
@@ -648,7 +647,7 @@ void ZepWindow::Display()
         for (long windowLine = m_visibleLineRange.x; windowLine < m_visibleLineRange.y; windowLine++)
         {
             auto& lineInfo = m_windowLines[windowLine];
-            if (!DisplayLine(lineInfo, m_textRegion, displayPass))
+            if (!DisplayLine(lineInfo, m_textRegion.rect, displayPass))
             {
                 break;
             }
@@ -656,11 +655,11 @@ void ZepWindow::Display()
     }
 
     // Airline
-    GetEditor().GetDisplay().DrawRectFilled(m_statusRegion.topLeftPx, m_statusRegion.bottomRightPx, m_pBuffer->GetTheme().GetColor(ThemeColor::AirlineBackground));
+    GetEditor().GetDisplay().DrawRectFilled(m_statusRegion.rect.topLeftPx, m_statusRegion.rect.bottomRightPx, m_pBuffer->GetTheme().GetColor(ThemeColor::AirlineBackground));
     auto airHeight = GetEditor().GetDisplay().GetFontSize();
     auto border = 12.0f;
 
-    NVec2f screenPosYPx = m_statusRegion.topLeftPx + NVec2f(0.0f, textBorder);
+    NVec2f screenPosYPx = m_statusRegion.rect.topLeftPx + NVec2f(0.0f, textBorder);
     for (int i = 0; i < m_airline.leftBoxes.size(); i++)
     {
         auto textSize = GetEditor().GetDisplay().GetTextSize((const utf8*)m_airline.leftBoxes[i].text.c_str());

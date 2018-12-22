@@ -7,8 +7,8 @@ namespace Zep
 {
 
 class ZepTabWindow;
-
 class IZepDisplay;
+struct Region;
 
 struct CharInfo
 {
@@ -148,10 +148,10 @@ private:
 
 private:
     NVec2f ToBufferRegion(const NVec2f& pos);
-    NRectf m_bufferRegion; // region of the display we are showing on.
-    NRectf m_textRegion; // region of the display for text.
-    NRectf m_statusRegion; // status text / airline
-    NRectf m_leftRegion; // Numbers/indicators
+    Region m_bufferRegion; // region of the display we are showing on.
+    Region m_textRegion; // region of the display for text.
+    Region m_statusRegion; // status text / airline
+    Region m_leftRegion; // Numbers/indicators
     NVec2f m_topLeftPx; // Top-left position on screen
     NVec2f m_bottomRightPx; // Limits of the screen position
     bool m_wrap = true; // Wrap
@@ -178,7 +178,7 @@ private:
     long m_lastCursorColumn = 0; // The last cursor column (could be removed and recalculated)
 
     ZepBuffer* m_pBuffer = nullptr;
-    Region m_selection; // Selection area
+    SelectRegion m_selection; // Selection area
 
     bool m_linesChanged = true;
 
