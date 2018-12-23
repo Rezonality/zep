@@ -112,6 +112,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
             endOffset = buffer.GetLinePos(bufferCursor, LineLocation::BeyondLineEnd);
         }
     }
+    // Paste
     else if (key == 'v' && (modifierKeys & ModifierKey::Ctrl))
     {
         bool boundary = false;
@@ -167,7 +168,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         }
         else
         {
-            auto pos = buffer.GetLinePos(bufferCursor, LineLocation::BeyondLineEnd);
+            auto pos = buffer.GetLinePos(bufferCursor, LineLocation::LineCRBegin);
             GetCurrentWindow()->SetBufferCursor(pos);
         }
     }

@@ -308,10 +308,20 @@ COMMAND_TEST(visual_switch_V, "one", "lVlV", "one");
     TEST_F(VimTest, name)                                  \
     {                                                      \
         pBuffer->SetText(source);                          \
-        spMode->AddCommandText(command);                   \
-        ASSERT_EQ(pWindow->BufferToDisplay().x, xcoord);   \
-        ASSERT_EQ(pWindow->BufferToDisplay().y, ycoord);   \
-    };
+        for (auto& ch : command)                           \
+        {                                                  \
+            if (ch == '\n')                                \
+            {                                              \
+                spMode->AddKeyPress(ExtKeys::RETURN);      \
+            }                                              \
+            else                                            \
+            {                                               \
+                spMode->AddKeyPress(ch);                     \
+            }                                                 \
+        }                                                      \
+        ASSERT_EQ(pWindow->BufferToDisplay().x, xcoord);       \
+        ASSERT_EQ(pWindow->BufferToDisplay().y, ycoord);        \
+    } ;
 
 // Motions
 CURSOR_TEST(motion_lright, "one", "ll", 2, 0);
@@ -329,7 +339,7 @@ CURSOR_TEST(motion_jklh_find_center, "one\ntwo\nthree", "jjlk", 1, 1);
 CURSOR_TEST(motion_goto_endline, "one two", "$", 6, 0);
 CURSOR_TEST(motion_G_goto_enddoc, "one\ntwo", "G", 0, 1);
 CURSOR_TEST(motion_3G, "one\ntwo\nthree\nfour\n", "3G", 0, 2); // Note: Goto line3, offset 2!
-CURSOR_TEST(motion_0G, "one\ntwo\nthree\nfour\n", "0G", 0, 4); // Note: 0 means go to last line 
+CURSOR_TEST(motion_0G, "one\ntwo\nthree\nfour\n", "0G", 0, 4); // Note: 0 means go to last line
 CURSOR_TEST(motion_goto_begindoc, "one\ntwo", "lljgg", 0, 0);
 CURSOR_TEST(motion_goto_beginline, "one two", "lllll0", 0, 0);
 CURSOR_TEST(motion_goto_firstlinechar, "   one two", "^", 3, 0);
@@ -354,3 +364,4 @@ CURSOR_TEST(motion_ge_startspace, "one! two three", "wwjge", 3, 0);
 CURSOR_TEST(motion_0, "one two", "llll0", 0, 0);
 CURSOR_TEST(motion_gg, "one two", "llllgg", 0, 0);
 CURSOR_TEST(motion_dollar, "one two", "ll$", 6, 0);
+CURSOR_TEST(motion_cr_then_escape, "one", "$a\njk", 0, 1);

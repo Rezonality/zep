@@ -132,10 +132,12 @@ void ZepWindow::SetDisplayRegion(const NRectf& region)
 
     m_textRegion.rect.topLeftPx.x += leftBorderChars * textSize.x + textBorder;
 
+    /*
     LOG(DEBUG) << "BufferRegion   : " << m_bufferRegion;
     LOG(DEBUG) << "StatusRegion   : " << m_statusRegion;
     LOG(DEBUG) << "LeftRegion     : " << m_leftRegion;
     LOG(DEBUG) << "TextRegion     : " << m_textRegion;
+    */
 
     m_defaultLineSize = GetEditor().GetDisplay().GetFontSize();
 
@@ -326,8 +328,10 @@ void ZepWindow::UpdateVisibleLineRange()
     }
     m_visibleLineRange.y++;
 
+    /*
     LOG(DEBUG) << "Line Range: " << std::to_string(m_visibleLineRange.x) + ", " + std::to_string(m_visibleLineRange.y);
     LOG(DEBUG) << "YStart: " << m_windowLines[m_visibleLineRange.x].spanYPx << ", BufferOffset " << m_bufferOffsetYPx << ", font: " << GetEditor().GetDisplay().GetFontSize();
+    */
 }
 
 const SpanInfo& ZepWindow::GetCursorLineInfo(long y)

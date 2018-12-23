@@ -72,6 +72,11 @@ void ZepMode::Redo()
                 inGroup = !inGroup;
             }
 
+            if (spCommand->GetCursorAfter() != -1)
+            {
+                GetCurrentWindow()->SetBufferCursor(spCommand->GetCursorAfter());
+            }
+
             m_undoStack.push(spCommand);
             m_redoStack.pop();
         }
@@ -95,6 +100,11 @@ void ZepMode::Undo()
             if (spCommand->GetFlags() & CommandFlags::GroupBoundary)
             {
                 inGroup = !inGroup;
+            }
+
+            if (spCommand->GetCursorAfter() != -1)
+            {
+                GetCurrentWindow()->SetBufferCursor(spCommand->GetCursorAfter());
             }
 
             m_redoStack.push(spCommand);
