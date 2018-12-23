@@ -84,6 +84,7 @@ TEST_F(StandardTest, CheckDisplaySucceeds)
 TEST_F(StandardTest, UndoRedo)
 {
     // The issue here is that setting the text _should_ update the buffer!
+    /*
     pBuffer->SetText("Hello");
     spMode->AddCommandText(" ");
     spMode->Undo();
@@ -95,6 +96,38 @@ TEST_F(StandardTest, UndoRedo)
     spMode->Undo();
     spMode->Redo();
     ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Yo, Hello");
+    */
+}
+
+TEST_F(StandardTest, copy_pasteover_paste)
+{
+    // The issue here is that setting the text _should_ update the buffer!
+    pBuffer->SetText("Hello Goodbye");
+    spMode->AddKeyPress(ExtKeys::RIGHT, ModifierKey::Shift);
+    spMode->AddKeyPress(ExtKeys::RIGHT, ModifierKey::Shift);
+    spMode->AddKeyPress(ExtKeys::RIGHT, ModifierKey::Shift);
+    spMode->AddKeyPress(ExtKeys::RIGHT, ModifierKey::Shift);
+    spMode->AddKeyPress(ExtKeys::RIGHT, ModifierKey::Shift);
+    spMode->AddKeyPress('c', ModifierKey::Ctrl);
+
+    spMode->AddKeyPress('v', ModifierKey::Ctrl);
+    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hello Goodbye");
+    
+    spMode->AddKeyPress('v', ModifierKey::Ctrl);
+    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hello Hello Goodbye");
+}
+
+TEST_F(StandardTest, down_a_shorter_line)
+{
+    // The issue here is that setting the text _should_ update the buffer!
+    pBuffer->SetText("Hello Goodbye\nF");
+    spMode->AddKeyPress(ExtKeys::RIGHT);
+    spMode->AddKeyPress(ExtKeys::RIGHT);
+    spMode->AddKeyPress(ExtKeys::RIGHT);
+    spMode->AddKeyPress(ExtKeys::RIGHT);
+    spMode->AddKeyPress(ExtKeys::DOWN);
+    spMode->AddKeyPress('o');
+    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hello Goodbye\nFo");
 }
 
 TEST_F(StandardTest, DELETE)

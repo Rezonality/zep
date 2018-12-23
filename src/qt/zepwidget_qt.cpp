@@ -71,25 +71,39 @@ void ZepWidget_Qt::keyPressEvent(QKeyEvent* ev)
 {
     uint32_t mod = 0;
     auto pMode = m_spEditor->GetCurrentMode();
+    
+    if (ev->modifiers() & Qt::ShiftModifier)
+    {
+        mod |= ModifierKey::Shift;
+    }
+    else if (ev->modifiers() & Qt::ControlModifier)
+    {
+        mod |= ModifierKey::Ctrl;
+    }
+
     if (ev->modifiers() & Qt::ControlModifier)
     {
         if (ev->key() == Qt::Key_1)
         {
             m_spEditor->SetMode(ZepMode_Standard::StaticName());
+            update();
+            return;
         }
         else if (ev->key() == Qt::Key_2)
         {
             m_spEditor->SetMode(ZepMode_Vim::StaticName());
+            update();
+            return;
         }
         else
         {
             if (ev->key() >= Qt::Key_A && ev->key() <= Qt::Key_Z)
             {
                 pMode->AddKeyPress((ev->key() - Qt::Key_A) + 'a', ModifierKey::Ctrl);
+                update();
+                return;
             }
         }
-        update();
-        return;
     }
 
     if (ev->key() == Qt::Key_Tab)

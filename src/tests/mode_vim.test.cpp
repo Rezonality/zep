@@ -161,6 +161,7 @@ TEST_F(VimTest, BACKSPACE)
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
     ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hllo");
 }
+
 // The various rules of vim keystrokes are hard to consolidate.
 // diw deletes inner word for example, but also deletes just whitespace if you are on it.
 // daw deletes the whole word, but also the first spaces up to it, or the last spaces after it....
@@ -168,7 +169,7 @@ TEST_F(VimTest, BACKSPACE)
 // These are below.  I wil likely never write enough of these!
 
 // Dot!
-COMMAND_TEST(dot_ciw, "four two three", "ciwfourjkl.l.", "four three");
+COMMAND_TEST(dot_ciw, "four two three", "ciwfourjkl.l.", "four four four");
 COMMAND_TEST(dot_ciw_step, "four two three", "ciwfourjklll.lll.", "four four four");
 COMMAND_TEST(dot_3x, "four two three", "l3xll.", "f tthree");
 COMMAND_TEST(dot_d2w_count3, "one two three four five", "d2w3.", "");
