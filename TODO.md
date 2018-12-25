@@ -3,6 +3,7 @@ Delete everything; iterator bug. ?How to repro
 
 #### Window
 - Finish HSplit 
+- Finish Tab management
 
 #### General
 - Finish cut/paste to OS buffer
@@ -15,16 +16,9 @@ Delete everything; iterator bug. ?How to repro
 - 'R'/'r' overstrike
 
 #### Standard Mode
+- Ctrl + Shift Select word motions
 
 #### Syntax Highlight
-- Generalize the token matching into the base class for easy 
-implementation of c like languages
-- Add multilinne highlight via a hierarchy table?
 
 #### Tests
-- Add standard mode unit tests
-- Test syntax highlighting
-
-#### Future
-- UTF 8?
-- Standalone editor tool so I can dogfood it
+- Add tests for syntax highlighting

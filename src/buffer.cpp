@@ -35,6 +35,15 @@ inline bool IsSpace(const char ch)
 {
     return ch == ' ';
 }
+inline bool IsSpaceOrTerminal(const char ch)
+{
+    return ch == ' ' || ch == 0 || ch == '\n';
+}
+inline bool IsNewlineOrEnd(const char ch)
+{
+    return ch == '\n' || ch == 0;
+}
+
 using fnMatch = std::function<bool>(const char);
 
 } // namespace
@@ -226,6 +235,70 @@ BufferRange ZepBuffer::AWordMotion(BufferLocation start, uint32_t searchType) co
         r.second = start;
     }
 
+    return r;
+}
+
+// Implements the ctrl + motion of a standard editor.
+// This is a little convoluted; perhaps the logic can be simpler!
+// Playing around with CTRL+ arrows and shift in an app like notepad will teach you that the rules for how far to jump
+// depend on what you are over, and which direction you are going.....
+// The unit tests are designed to enforce the behavior here
+BufferRange ZepBuffer::StandardCtrlMotion(BufferLocation visual_start, BufferLocation cursor, SearchDirection searchDir) const
+{
+    auto IsWord = IsWORDChar;
+    auto searchType = SearchType::WORD;
+    MotionBegin(cursor, searchType, SearchDirection::Forward);
+
+    auto lineEnd = GetLinePos(cursor, LineLocation::LineLastNonCR);
+    auto current = std::min(lineEnd, Clamp(cursor));
+
+    BufferRange r;
+    r.first = current;
+    r.second = current;
+
+    if (searchDir == SearchDirection::Forward)
+    {
+        // Skip space
+        Skip(IsSpaceOrTerminal, current, searchDir);
+        if (Skip(IsWORDChar, current, searchDir))
+        {
+            if (Skip(IsSpace, current, searchDir))
+            {
+                if (current > visual_start)
+                {
+                    current--;
+                }
+            }
+        }
+        // Forward jumping, step back before word
+        if (current != cursor &&
+            current > visual_start && 
+            (m_gapBuffer[current] == '\n' ||
+            m_gapBuffer[current] == 0))
+        {
+            current--;
+        }
+    }
+    else
+    {
+        // If on the first char of a new word, skip back
+        if (current > 0 && IsWORDChar(m_gapBuffer[current]) &&
+            !IsWORDChar(m_gapBuffer[current - 1]))
+        {
+            current--;
+        }
+
+        // Skip a space
+        Skip(IsSpaceOrTerminal, current, searchDir);
+
+        // Back to the beginning of the next word
+        if (Skip(IsWORDChar, current, searchDir))
+        {
+            current++;
+        }
+    }
+    r.second = Clamp(current);
+   
     return r;
 }
 

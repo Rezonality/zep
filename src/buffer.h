@@ -102,6 +102,7 @@ public:
     BufferLocation ChangeWordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
     BufferRange AWordMotion(BufferLocation start, uint32_t searchType) const;
     BufferRange InnerWordMotion(BufferLocation start, uint32_t searchType) const;
+    BufferRange StandardCtrlMotion(BufferLocation visual_start, BufferLocation cursor, SearchDirection searchDir) const;
 
     bool Delete(const BufferLocation& startOffset, const BufferLocation& endOffset, const BufferLocation& cursorAfter = BufferLocation{ -1 });
     bool Insert(const BufferLocation& startOffset, const std::string& str, const BufferLocation& cursorAfter = BufferLocation{ -1 });

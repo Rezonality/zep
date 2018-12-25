@@ -1,13 +1,16 @@
-#include <string>
-#include <QKeyEvent>
 #include <QApplication>
+#include <QKeyEvent>
+#include <string>
+
 #include "editor.h"
+#include "logger.h"
 #include "mode.h"
-#include "zepwidget_qt.h"
-#include "tab_window.h"
-#include "zepdisplay_qt.h"
 #include "mode_standard.h"
 #include "mode_vim.h"
+#include "tab_window.h"
+
+#include "zepdisplay_qt.h"
+#include "zepwidget_qt.h"
 
 namespace Zep
 {
@@ -71,18 +74,16 @@ void ZepWidget_Qt::keyPressEvent(QKeyEvent* ev)
 {
     uint32_t mod = 0;
     auto pMode = m_spEditor->GetCurrentMode();
-    
+
+    LOG(INFO) << ev->text().toUtf8().data();
+    LOG(INFO) << std::hex << ev->modifiers();
     if (ev->modifiers() & Qt::ShiftModifier)
     {
         mod |= ModifierKey::Shift;
     }
-    else if (ev->modifiers() & Qt::ControlModifier)
-    {
-        mod |= ModifierKey::Ctrl;
-    }
-
     if (ev->modifiers() & Qt::ControlModifier)
     {
+        mod |= ModifierKey::Ctrl;
         if (ev->key() == Qt::Key_1)
         {
             m_spEditor->SetMode(ZepMode_Standard::StaticName());
@@ -99,7 +100,7 @@ void ZepWidget_Qt::keyPressEvent(QKeyEvent* ev)
         {
             if (ev->key() >= Qt::Key_A && ev->key() <= Qt::Key_Z)
             {
-                pMode->AddKeyPress((ev->key() - Qt::Key_A) + 'a', ModifierKey::Ctrl);
+                pMode->AddKeyPress((ev->key() - Qt::Key_A) + 'a', mod);
                 update();
                 return;
             }
@@ -114,8 +115,7 @@ void ZepWidget_Qt::keyPressEvent(QKeyEvent* ev)
     {
         pMode->AddKeyPress(ExtKeys::ESCAPE, mod);
     }
-    else if (ev->key() == Qt::Key_Enter ||
-        ev->key() == Qt::Key_Return)
+    else if (ev->key() == Qt::Key_Enter || ev->key() == Qt::Key_Return)
     {
         pMode->AddKeyPress(ExtKeys::RETURN, mod);
     }
@@ -153,8 +153,6 @@ void ZepWidget_Qt::keyPressEvent(QKeyEvent* ev)
     }
     else
     {
-
-        mod |= (ev->modifiers() & Qt::ShiftModifier);
         QString input = ev->text();
         for (auto& i : input)
         {
@@ -168,4 +166,4 @@ void ZepWidget_Qt::keyPressEvent(QKeyEvent* ev)
     update();
 }
 
-}
+} // namespace Zep
