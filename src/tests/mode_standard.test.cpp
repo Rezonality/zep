@@ -1,4 +1,5 @@
 #include "m3rdparty.h"
+#include "mcommon/logger.h"
 #include "src/buffer.h"
 #include "src/display.h"
 #include "src/editor.h"
@@ -112,7 +113,7 @@ TEST_F(StandardTest, copy_pasteover_paste)
 
     spMode->AddKeyPress('v', ModifierKey::Ctrl);
     ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hello Goodbye");
-    
+
     spMode->AddKeyPress('v', ModifierKey::Ctrl);
     ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hello Hello Goodbye");
 }
@@ -174,26 +175,65 @@ TEST_F(StandardTest, BACKSPACE)
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
     ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hllo");
 }
-#define CURSOR_TEST(name, source, command, xcoord, ycoord) \
-    TEST_F(VimTest, name)                                  \
-    {                                                      \
-        pBuffer->SetText(source);                          \
-        for (auto& ch : command)                           \
-        {                                                  \
-            if (ch == '\n')                                \
-            {                                              \
-                spMode->AddKeyPress(ExtKeys::RETURN);      \
-            }                                              \
-            else                                            \
-            {                                               \
-                spMode->AddKeyPress(ch);                     \
-            }                                                 \
-        }                                                      \
-        ASSERT_EQ(pWindow->BufferToDisplay().x, xcoord);       \
-        ASSERT_EQ(pWindow->BufferToDisplay().y, ycoord);        \
-    } ;
-
-// Motions
-CURSOR_TEST(motion_lright, "one", "ll", 2, 0);
-CURSOR_TEST(motion_cr_then_escape, "one", "$a\njk", 0, 1);
 */
+
+#define CURSOR_TEST(name, source, command, xcoord, ycoord)    \
+    TEST_F(StandardTest, name)                                \
+    {                                                         \
+        int mod = 0;                                          \
+        pBuffer->SetText(source);                             \
+        bool mod_marker = false;                              \
+        for (auto& ch : command)                              \
+        {                                                     \
+            if (ch == 0)                                      \
+                continue;                                     \
+            if (ch == '%')                                    \
+            {                                                 \
+                mod_marker = true;                            \
+                continue;                                     \
+            }                                                 \
+            if (mod_marker)                                   \
+            {                                                 \
+                mod_marker = false;                           \
+                if (ch == 's')                                \
+                {                                             \
+                    mod |= ModifierKey::Shift;                \
+                    continue;                                 \
+                }                                             \
+                else if (ch == 'c')                           \
+                {                                             \
+                    mod |= ModifierKey::Ctrl;                 \
+                    continue;                                 \
+                }                                             \
+                else if (ch == 'r')                           \
+                {                                             \
+                    spMode->AddKeyPress(ExtKeys::RIGHT, mod); \
+                    mod = 0;                                  \
+                }                                             \
+                else if (ch == 'l')                           \
+                {                                             \
+                    spMode->AddKeyPress(ExtKeys::LEFT, mod);  \
+                    mod = 0;                                  \
+                }                                             \
+            }                                                 \
+            else if (ch == '\n')                              \
+            {                                                 \
+                spMode->AddKeyPress(ExtKeys::RETURN, mod);    \
+                LOG(INFO) << "new";                           \
+                mod = 0;                                      \
+            }                                                 \
+            else                                              \
+            {                                                 \
+                spMode->AddKeyPress(ch, mod);                 \
+                mod = 0;                                      \
+            }                                                 \
+        }                                                     \
+        ASSERT_EQ(pWindow->BufferToDisplay().x, xcoord);      \
+        ASSERT_EQ(pWindow->BufferToDisplay().y, ycoord);      \
+        LOG(INFO) << "done";                                  \
+    }
+
+CURSOR_TEST(motion_shift_right, "one two", "%c%s%r", 3, 0);
+CURSOR_TEST(motion_shift_right_twice, "one two", "%c%s%r%c%s%r", 6, 0);
+
+CURSOR_TEST(motion_shift_right_twice_back, "one two", "%c%s%r%c%s%r%c%s%l", 4, 0);

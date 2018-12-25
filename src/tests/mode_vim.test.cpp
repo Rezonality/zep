@@ -311,18 +311,20 @@ COMMAND_TEST(visual_switch_V, "one", "lVlV", "one");
         pBuffer->SetText(source);                          \
         for (auto& ch : command)                           \
         {                                                  \
+            if (ch == 0)                                   \
+                continue;                                  \
             if (ch == '\n')                                \
             {                                              \
                 spMode->AddKeyPress(ExtKeys::RETURN);      \
             }                                              \
-            else                                            \
-            {                                               \
-                spMode->AddKeyPress(ch);                     \
-            }                                                 \
-        }                                                      \
-        ASSERT_EQ(pWindow->BufferToDisplay().x, xcoord);       \
-        ASSERT_EQ(pWindow->BufferToDisplay().y, ycoord);        \
-    } ;
+            else                                           \
+            {                                              \
+                spMode->AddKeyPress(ch);                   \
+            }                                              \
+        }                                                  \
+        ASSERT_EQ(pWindow->BufferToDisplay().x, xcoord);   \
+        ASSERT_EQ(pWindow->BufferToDisplay().y, ycoord);   \
+    };
 
 // Motions
 CURSOR_TEST(motion_lright, "one", "ll", 2, 0);
