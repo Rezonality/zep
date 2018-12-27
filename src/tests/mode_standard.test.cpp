@@ -115,7 +115,7 @@ TEST_F(StandardTest, copy_pasteover_paste)
     ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hello Goodbye");
 
     spMode->AddKeyPress('v', ModifierKey::Ctrl);
-    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hello Hello Goodbye");
+    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "HelloHello Goodbye");
 }
 
 TEST_F(StandardTest, down_a_shorter_line)
@@ -233,7 +233,69 @@ TEST_F(StandardTest, BACKSPACE)
         LOG(INFO) << "done";                                  \
     }
 
-CURSOR_TEST(motion_shift_right, "one two", "%c%s%r", 3, 0);
-CURSOR_TEST(motion_shift_right_twice, "one two", "%c%s%r%c%s%r", 6, 0);
+#define VISUAL_TEST(name, source, command, start, end)        \
+    TEST_F(StandardTest, name)                                \
+    {                                                         \
+        int mod = 0;                                          \
+        pBuffer->SetText(source);                             \
+        bool mod_marker = false;                              \
+        for (auto& ch : command)                              \
+        {                                                     \
+            if (ch == 0)                                      \
+                continue;                                     \
+            if (ch == '%')                                    \
+            {                                                 \
+                mod_marker = true;                            \
+                continue;                                     \
+            }                                                 \
+            if (mod_marker)                                   \
+            {                                                 \
+                mod_marker = false;                           \
+                if (ch == 's')                                \
+                {                                             \
+                    mod |= ModifierKey::Shift;                \
+                    continue;                                 \
+                }                                             \
+                else if (ch == 'c')                           \
+                {                                             \
+                    mod |= ModifierKey::Ctrl;                 \
+                    continue;                                 \
+                }                                             \
+                else if (ch == 'r')                           \
+                {                                             \
+                    spMode->AddKeyPress(ExtKeys::RIGHT, mod); \
+                    mod = 0;                                  \
+                }                                             \
+                else if (ch == 'l')                           \
+                {                                             \
+                    spMode->AddKeyPress(ExtKeys::LEFT, mod);  \
+                    mod = 0;                                  \
+                }                                             \
+            }                                                 \
+            else if (ch == '\n')                              \
+            {                                                 \
+                spMode->AddKeyPress(ExtKeys::RETURN, mod);    \
+                LOG(INFO) << "new";                           \
+                mod = 0;                                      \
+            }                                                 \
+            else                                              \
+            {                                                 \
+                spMode->AddKeyPress(ch, mod);                 \
+                mod = 0;                                      \
+            }                                                 \
+        }                                                     \
+        ASSERT_EQ(spMode->GetVisualRange().x, start);         \
+        ASSERT_EQ(spMode->GetVisualRange().y, end);      \
+    }
 
-CURSOR_TEST(motion_shift_right_twice_back, "one two", "%c%s%r%c%s%r%c%s%l", 4, 0);
+// NOTE: Cursor lands on the character after the shift select - i.e. the next 'Word'
+CURSOR_TEST(motion_right, "one two", "%c%r", 4, 0);
+CURSOR_TEST(motion_right_twice, "one two", "%c%r%c%r", 7, 0);
+CURSOR_TEST(motion_right_twice_back, "one two", "%c%r%c%r%c%l", 4, 0);
+CURSOR_TEST(motion_left, "one two", "%r%r%r%r%c%l", 0, 0);
+
+// Visual Range selection
+VISUAL_TEST(visual_shift_right, "one two", "%c%s%r", 0, 3);
+VISUAL_TEST(visual_shift_right_right, "one two three", "%c%s%r%c%s%r", 0, 7);
+VISUAL_TEST(visual_shift_right_right_back, "one two three", "%c%s%r%c%s%r%c%s%l", 0, 3);
+

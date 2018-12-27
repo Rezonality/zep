@@ -40,7 +40,7 @@ struct SpanInfo
     }
 };
 
-enum class CursorMode
+enum class CursorType
 {
     Hidden,
     Normal,
@@ -88,7 +88,7 @@ public:
 
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
-    void SetCursorMode(CursorMode mode);
+    void SetCursorType(CursorType mode);
     void UpdateAirline();
 
     ZepTabWindow& GetTabWindow() const;
@@ -157,7 +157,7 @@ private:
     bool m_wrap = true; // Wrap
 
     // The buffer offset is where we are looking, but the cursor is only what you see on the screen
-    CursorMode m_cursorMode = CursorMode::Normal; // Type of cursor
+    CursorType m_cursorType = CursorType::Normal; // Type of cursor
     DisplayMode m_displayMode = DisplayMode::Vim; // Vim editing mode
 
     // Visual stuff

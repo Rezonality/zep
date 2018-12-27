@@ -45,7 +45,8 @@ void ZepMode_Standard::SwitchMode(EditorMode mode)
     m_currentMode = mode;
     if (GetCurrentWindow())
     {
-        GetCurrentWindow()->SetCursorMode(mode == EditorMode::Insert ? CursorMode::Insert : CursorMode::Visual);
+        // Cursor is always in insert mode for standard
+        GetCurrentWindow()->SetCursorType(CursorType::Insert);
     }
     if (mode == EditorMode::Insert)
     {
@@ -96,8 +97,21 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     {
         SwitchMode(EditorMode::Insert);
     }
+   
+    bool begin_shift = false;
+    if (modifierKeys & ModifierKey::Shift)
+    {
+        if (m_currentMode != EditorMode::Visual)
+        {
+            SwitchMode(EditorMode::Visual);
+            m_visualBegin = startOffset;
+            m_visualEnd = startOffset;
+            begin_shift = true;
+        }
+    }
+
     // CTRL + ...
-    else if (modifierKeys & ModifierKey::Ctrl)
+    if (modifierKeys & ModifierKey::Ctrl)
     {
         // Undo
         if (key == 'z')
@@ -113,12 +127,13 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         }
         else if (key == ExtKeys::RIGHT)
         {
-            auto target = buffer.StandardCtrlMotion(m_visualBegin, bufferCursor, SearchDirection::Forward);
+            auto target = buffer.StandardCtrlMotion(bufferCursor, SearchDirection::Forward);
             GetCurrentWindow()->SetBufferCursor(target.second);
+            
         }
         else if (key == ExtKeys::LEFT)
         {
-            auto target = buffer.StandardCtrlMotion(m_visualBegin, bufferCursor, SearchDirection::Backward);
+            auto target = buffer.StandardCtrlMotion(bufferCursor, SearchDirection::Backward);
             GetCurrentWindow()->SetBufferCursor(target.second);
         }
         else if (key == ExtKeys::HOME)
@@ -318,21 +333,34 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         op = CommandOperation::Insert;
     }
 
-    // Shift select
-    // Turn on visual mode and track the selection area
-    if (modifierKeys & ModifierKey::Shift && op == CommandOperation::None)
+    startOffset = buffer.Clamp(startOffset);
+    endOffset = buffer.Clamp(endOffset);
+
+    // Here we handle the logic of wether the visual range starts or ends before or 
+    // after the cursor!  It depends on which direction the user moved when they started the selection
+    if (m_currentMode == EditorMode::Visual)
     {
-        if (m_currentMode != EditorMode::Visual)
+        if (begin_shift)
         {
-            m_currentMode = EditorMode::Visual;
-            if (GetCurrentWindow()->GetBufferCursor() < startOffset)
+            if (GetCurrentWindow()->GetBufferCursor() <= startOffset)
             {
-                startOffset--;
+                m_visualBegin = buffer.LocationFromOffsetByChars(startOffset, -1);
             }
-            m_visualBegin = startOffset;
-            m_visualEnd = startOffset;
-            GetCurrentWindow()->SetCursorMode(CursorMode::Visual);
+            else
+            {
+                m_visualBegin = startOffset;
+            }
+            m_visualBegin = buffer.ClampToVisibleLine(m_visualBegin);
         }
+        if (GetCurrentWindow()->GetBufferCursor() > m_visualBegin)
+        {
+            m_visualEnd = buffer.LocationFromOffsetByChars(GetCurrentWindow()->GetBufferCursor(), -1);
+        }
+        else
+        {
+            m_visualEnd = GetCurrentWindow()->GetBufferCursor();
+        }
+        m_visualEnd = buffer.ClampToVisibleLine(m_visualEnd);
     }
 
     // Op is a copy or also requires the region to be copied
@@ -349,7 +377,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     else if (!(modifierKeys & ModifierKey::Shift))
     {
         m_currentMode = EditorMode::Insert;
-        GetCurrentWindow()->SetCursorMode(CursorMode::Insert);
+        GetCurrentWindow()->SetCursorType(CursorType::Insert);
         m_visualBegin = m_visualEnd = 0;
     }
 
@@ -363,7 +391,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
             cursorAfter);
         AddCommand(std::static_pointer_cast<ZepCommand>(cmd));
         m_currentMode = EditorMode::Insert;
-        GetCurrentWindow()->SetCursorMode(CursorMode::Insert);
+        GetCurrentWindow()->SetCursorType(CursorType::Insert);
     }
     // Delete from buffer
     else if (op == CommandOperation::Delete)
@@ -376,10 +404,13 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
             cursorAfter != -1 ? cursorAfter : startOffset);
         AddCommand(std::static_pointer_cast<ZepCommand>(cmd));
         m_currentMode = EditorMode::Insert;
-        GetCurrentWindow()->SetCursorMode(CursorMode::Insert);
+        GetCurrentWindow()->SetCursorType(CursorType::Insert);
     }
 
-    UpdateVisualSelection();
+    if (m_currentMode == EditorMode::Visual)
+    {
+        GetCurrentWindow()->SetSelectionRange(m_visualBegin, m_visualEnd);
+    }
 }
 
 } // namespace Zep

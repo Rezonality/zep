@@ -64,6 +64,7 @@ public:
     virtual void Notify(std::shared_ptr<ZepMessage> message) override {}
     virtual void AddCommand(std::shared_ptr<ZepCommand> spCmd);
     virtual void UpdateVisualSelection();
+    virtual EditorMode GetEditorMode() const;
 
     // Called when we begin editing in this mode
     virtual void Begin() = 0;
@@ -74,6 +75,7 @@ public:
     virtual ZepWindow* GetCurrentWindow() const;
     virtual void PreDisplay() {};
 
+    virtual NVec2i GetVisualRange() const;
 protected:
     std::stack<std::shared_ptr<ZepCommand>> m_undoStack;
     std::stack<std::shared_ptr<ZepCommand>> m_redoStack;

@@ -27,6 +27,11 @@ ZepWindow* ZepMode::GetCurrentWindow() const
     return nullptr;
 }
 
+EditorMode ZepMode::GetEditorMode() const
+{
+    return m_currentMode;
+}
+
 void ZepMode::AddCommandText(std::string strText)
 {
     for (auto& ch : strText)
@@ -50,7 +55,7 @@ void ZepMode::AddCommand(std::shared_ptr<ZepCommand> spCmd)
     // Can't redo anything beyond this point
     std::stack<std::shared_ptr<ZepCommand>> empty;
     m_redoStack.swap(empty);
-                
+
     if (spCmd->GetCursorAfter() != -1)
     {
         GetCurrentWindow()->SetBufferCursor(spCmd->GetCursorAfter());
@@ -134,4 +139,9 @@ void ZepMode::UpdateVisualSelection()
         GetCurrentWindow()->SetSelectionRange(m_visualBegin, m_visualEnd);
     }
 }
+NVec2i ZepMode::GetVisualRange() const
+{
+    return NVec2i(m_visualBegin, m_visualEnd);
+}
+
 } // namespace Zep

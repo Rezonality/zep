@@ -36,18 +36,19 @@ void ZepWindow::UpdateAirline()
     m_airline.leftBoxes.clear();
     m_airline.rightBoxes.clear();
     m_airline.leftBoxes.push_back(AirBox{ GetEditor().GetCurrentMode()->Name(), m_pBuffer->GetTheme().GetColor(ThemeColor::Mode) });
-    switch (m_cursorMode)
+    switch(GetEditor().GetCurrentMode()->GetEditorMode())
     {
-    case CursorMode::Hidden:
+    /*case EditorMode::Hidden:
         m_airline.leftBoxes.push_back(AirBox{ "HIDDEN", m_pBuffer->GetTheme().GetColor(ThemeColor::HiddenText) });
         break;
-    case CursorMode::Insert:
+        */
+    case EditorMode::Insert:
         m_airline.leftBoxes.push_back(AirBox{ "INSERT", m_pBuffer->GetTheme().GetColor(ThemeColor::CursorInsert) });
         break;
-    case CursorMode::Normal:
+    case EditorMode::Normal:
         m_airline.leftBoxes.push_back(AirBox{ "NORMAL", m_pBuffer->GetTheme().GetColor(ThemeColor::CursorNormal) });
         break;
-    case CursorMode::Visual:
+    case EditorMode::Visual:
         m_airline.leftBoxes.push_back(AirBox{ "VISUAL", m_pBuffer->GetTheme().GetColor(ThemeColor::VisualSelectBackground) });
         break;
     };
@@ -55,9 +56,9 @@ void ZepWindow::UpdateAirline()
     m_airline.rightBoxes.push_back(AirBox{ std::to_string(m_pBuffer->GetLineEnds().size()) + " Lines", m_pBuffer->GetTheme().GetColor(ThemeColor::LineNumberBackground) });
 }
 
-void ZepWindow::SetCursorMode(CursorMode mode)
+void ZepWindow::SetCursorType(CursorType mode)
 {
-    m_cursorMode = mode;
+    m_cursorType = mode;
     GetEditor().ResetCursorTimer();
 
     UpdateAirline();
@@ -441,11 +442,14 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
         {
             if (activeWindow)
             {
-                if (m_cursorMode == CursorMode::Visual)
+                if (GetEditor().GetCurrentMode()->GetEditorMode() == EditorMode::Visual)
                 {
-                    if (info.bufferLocation >= m_selection.start && info.bufferLocation <= m_selection.end)
+                    if (m_selection.end != m_selection.start)
                     {
-                        GetEditor().GetDisplay().DrawRectFilled(NRectf(NVec2f(screenPosX, ToWindowY(lineInfo.spanYPx)), NVec2f(screenPosX + info.textSize.x, ToWindowY(lineInfo.spanYPx) + info.textSize.y)), m_pBuffer->GetTheme().GetColor(ThemeColor::VisualSelectBackground));
+                        if (info.bufferLocation >= m_selection.start && info.bufferLocation <= m_selection.end)
+                        {
+                            GetEditor().GetDisplay().DrawRectFilled(NRectf(NVec2f(screenPosX, ToWindowY(lineInfo.spanYPx)), NVec2f(screenPosX + info.textSize.x, ToWindowY(lineInfo.spanYPx) + info.textSize.y)), m_pBuffer->GetTheme().GetColor(ThemeColor::VisualSelectBackground));
+                        }
                     }
                 }
             }
@@ -518,25 +522,25 @@ void ZepWindow::DisplayCursor()
         pCharInfo = &lastPos;
     }
 
-    // Cursor
+    // Draw the Cursor symbol
     auto cursorPosPx = NVec2f(pCharInfo->screenPosXPx, cursorBufferLine.spanYPx - m_bufferOffsetYPx + m_textRegion.rect.topLeftPx.y);
     auto cursorBlink = GetEditor().GetCursorBlinkState();
     if (!cursorBlink)
     {
-        switch (m_cursorMode)
+        switch (m_cursorType)
         {
         default:
-        case CursorMode::Hidden:
+        case CursorType::Hidden:
             break;
 
-        case CursorMode::Insert:
+        case CursorType::Insert:
         {
             GetEditor().GetDisplay().DrawRectFilled(NRectf(NVec2f(cursorPosPx.x - 1, cursorPosPx.y), NVec2f(cursorPosPx.x, cursorPosPx.y + pCharInfo->textSize.y)), m_pBuffer->GetTheme().GetColor(ThemeColor::CursorInsert));
         }
         break;
 
-        case CursorMode::Normal:
-        case CursorMode::Visual:
+        case CursorType::Normal:
+        case CursorType::Visual:
         {
             GetEditor().GetDisplay().DrawRectFilled(NRectf(cursorPosPx, NVec2f(cursorPosPx.x + pCharInfo->textSize.x, cursorPosPx.y + pCharInfo->textSize.y)), m_pBuffer->GetTheme().GetColor(ThemeColor::CursorNormal));
         }
@@ -633,7 +637,7 @@ void ZepWindow::Display()
 
     if (activeWindow && cursorCL.x != -1)
     {
-        if (m_cursorMode == CursorMode::Normal || m_cursorMode == CursorMode::Insert)
+        if (GetEditor().GetCurrentMode()->GetEditorMode() != EditorMode::Visual)
         {
             auto& cursorLine = GetCursorLineInfo(cursorCL.y);
 

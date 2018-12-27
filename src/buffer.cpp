@@ -243,7 +243,7 @@ BufferRange ZepBuffer::AWordMotion(BufferLocation start, uint32_t searchType) co
 // Playing around with CTRL+ arrows and shift in an app like notepad will teach you that the rules for how far to jump
 // depend on what you are over, and which direction you are going.....
 // The unit tests are designed to enforce the behavior here
-BufferRange ZepBuffer::StandardCtrlMotion(BufferLocation visual_start, BufferLocation cursor, SearchDirection searchDir) const
+BufferRange ZepBuffer::StandardCtrlMotion(BufferLocation cursor, SearchDirection searchDir) const
 {
     auto IsWord = IsWORDChar;
     auto searchType = SearchType::WORD;
@@ -262,21 +262,7 @@ BufferRange ZepBuffer::StandardCtrlMotion(BufferLocation visual_start, BufferLoc
         Skip(IsSpaceOrTerminal, current, searchDir);
         if (Skip(IsWORDChar, current, searchDir))
         {
-            if (Skip(IsSpace, current, searchDir))
-            {
-                if (current > visual_start)
-                {
-                    current--;
-                }
-            }
-        }
-        // Forward jumping, step back before word
-        if (current != cursor &&
-            current > visual_start && 
-            (m_gapBuffer[current] == '\n' ||
-            m_gapBuffer[current] == 0))
-        {
-            current--;
+            Skip(IsSpace, current, searchDir);
         }
     }
     else
@@ -504,6 +490,14 @@ BufferLocation ZepBuffer::Clamp(BufferLocation in) const
 {
     in = std::min(in, BufferLocation(m_gapBuffer.size() - 1));
     in = std::max(in, BufferLocation(0));
+    return in;
+}
+
+BufferLocation ZepBuffer::ClampToVisibleLine(BufferLocation in) const
+{
+    in = Clamp(in);
+    auto loc = GetLinePos(in, LineLocation::LineLastNonCR);
+    in = std::min(loc, in);
     return in;
 }
 

@@ -306,16 +306,16 @@ void ZepMode_Vim::SwitchMode(EditorMode mode)
     switch (mode)
     {
     case EditorMode::Normal:
-        GetCurrentWindow()->SetCursorMode(CursorMode::Normal);
+        GetCurrentWindow()->SetCursorType(CursorType::Normal);
         ResetCommand();
         break;
     case EditorMode::Insert:
         m_insertBegin = GetCurrentWindow()->GetBufferCursor();
-        GetCurrentWindow()->SetCursorMode(CursorMode::Insert);
+        GetCurrentWindow()->SetCursorType(CursorType::Insert);
         m_pendingEscape = false;
         break;
     case EditorMode::Visual:
-        GetCurrentWindow()->SetCursorMode(CursorMode::Visual);
+        GetCurrentWindow()->SetCursorType(CursorType::Visual);
         ResetCommand();
         m_pendingEscape = false;
         break;
@@ -1130,7 +1130,7 @@ void ZepMode_Vim::Begin()
 {
     if (GetCurrentWindow())
     {
-        GetCurrentWindow()->SetCursorMode(CursorMode::Normal);
+        GetCurrentWindow()->SetCursorType(CursorType::Normal);
         GetEditor().SetCommandText(m_currentCommand);
     }
     m_currentMode = EditorMode::Normal;
