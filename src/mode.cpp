@@ -122,23 +122,6 @@ void ZepMode::Undo()
     } while (inGroup);
 }
 
-void ZepMode::UpdateVisualSelection()
-{
-    // Visual mode update - after a command
-    if (m_currentMode == EditorMode::Visual)
-    {
-        // Update the visual range
-        if (m_lineWise)
-        {
-            m_visualEnd = GetCurrentWindow()->GetBuffer().GetLinePos(GetCurrentWindow()->GetBufferCursor(), LineLocation::BeyondLineEnd) - 1;
-        }
-        else
-        {
-            m_visualEnd = GetCurrentWindow()->GetBufferCursor();
-        }
-        GetCurrentWindow()->SetSelectionRange(m_visualBegin, m_visualEnd);
-    }
-}
 NVec2i ZepMode::GetVisualRange() const
 {
     return NVec2i(m_visualBegin, m_visualEnd);
