@@ -337,7 +337,7 @@ bool ZepMode_Vim::GetOperationRange(const std::string& op, EditorMode mode, Buff
         if (mode == EditorMode::Visual)
         {
             beginRange = m_visualBegin;
-            endRange = buffer.LocationFromOffsetByChars(m_visualEnd, 1);
+            endRange = m_visualEnd;
             cursorAfter = beginRange;
         }
     }
@@ -615,7 +615,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
             if (context.command == "V")
             {
                 m_visualBegin = context.buffer.GetLinePos(context.bufferCursor, LineLocation::LineBegin);
-                m_visualEnd = context.buffer.GetLinePos(context.bufferCursor, LineLocation::BeyondLineEnd) - 1;
+                m_visualEnd = context.buffer.GetLinePos(context.bufferCursor, LineLocation::BeyondLineEnd);
             }
             else
             {
@@ -634,7 +634,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         if (m_currentMode == EditorMode::Visual)
         {
             context.beginRange = m_visualBegin;
-            context.endRange = context.buffer.LocationFromOffsetByChars(m_visualEnd, 1);
+            context.endRange = m_visualEnd;
             context.cursorAfter = m_visualBegin;
             context.op = CommandOperation::Delete;
             context.commandResult.modeSwitch = EditorMode::Normal;
@@ -908,7 +908,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         {
             context.registers.push('0');
             context.beginRange = m_visualBegin;
-            context.endRange = context.buffer.LocationFromOffsetByChars(m_visualEnd, 1);
+            context.endRange = m_visualEnd;
             context.cursorAfter = m_visualBegin;
             context.commandResult.modeSwitch = EditorMode::Normal;
             context.op = m_lineWise ? CommandOperation::CopyLines : CommandOperation::Copy;
@@ -1140,6 +1140,23 @@ void ZepMode_Vim::Begin()
     m_pendingEscape = false;
 }
 
+void ZepMode_Vim::UpdateVisualSelection()
+{
+    // Visual mode update - after a command
+    if (m_currentMode == EditorMode::Visual)
+    {
+        // Update the visual range
+        if (m_lineWise)
+        {
+            m_visualEnd = GetCurrentWindow()->GetBuffer().GetLinePos(GetCurrentWindow()->GetBufferCursor(), LineLocation::BeyondLineEnd);
+        }
+        else
+        {
+            m_visualEnd = GetCurrentWindow()->GetBuffer().LocationFromOffsetByChars(GetCurrentWindow()->GetBufferCursor(), 1);
+        }
+        GetCurrentWindow()->SetSelectionRange(m_visualBegin, m_visualEnd);
+    }
+}
 void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
 {
     if (!GetCurrentWindow())

@@ -63,7 +63,6 @@ public:
     virtual const char* Name() const = 0;
     virtual void Notify(std::shared_ptr<ZepMessage> message) override {}
     virtual void AddCommand(std::shared_ptr<ZepCommand> spCmd);
-    virtual void UpdateVisualSelection();
     virtual EditorMode GetEditorMode() const;
 
     // Called when we begin editing in this mode

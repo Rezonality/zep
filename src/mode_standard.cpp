@@ -352,13 +352,12 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         }
         if (GetCurrentWindow()->GetBufferCursor() > m_visualBegin)
         {
-            m_visualEnd = /*buffer.LocationFromOffsetByChars(*/GetCurrentWindow()->GetBufferCursor();// , -1);
+            m_visualEnd = GetCurrentWindow()->GetBufferCursor();
         }
         else
         {
-            m_visualEnd = GetCurrentWindow()->GetBufferCursor();
+            m_visualEnd = buffer.LocationFromOffsetByChars(GetCurrentWindow()->GetBufferCursor(), -1);
         }
-        m_visualEnd = buffer.ClampToVisibleLine(m_visualEnd);
     }
 
     // Op is a copy or also requires the region to be copied
