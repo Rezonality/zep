@@ -39,9 +39,14 @@ void ZepMode_Standard::Begin()
     SwitchMode(EditorMode::Insert);
 }
 
-void ZepMode_Standard::SwitchMode(EditorMode mode)
+bool ZepMode_Standard::SwitchMode(EditorMode mode)
 {
     assert(mode == EditorMode::Insert || mode == EditorMode::Visual);
+    if (mode == m_currentMode)
+    {
+        return false;
+    }
+
     m_currentMode = mode;
 
     if (GetCurrentWindow())
@@ -54,6 +59,12 @@ void ZepMode_Standard::SwitchMode(EditorMode mode)
     {
         m_visualBegin = m_visualEnd = 0;
     }
+    else
+    {
+        m_visualBegin = GetCurrentWindow()->GetBufferCursor();
+        m_visualEnd = m_visualBegin;
+    }
+    return true;
 }
 
 void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
@@ -102,16 +113,30 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     }
 
     bool begin_shift = false;
-    if (!isgraph(key) &&
-        modifierKeys & ModifierKey::Shift)
+    bool return_to_insert = false;
+    switch (key)
     {
-        if (m_currentMode != EditorMode::Visual)
+    case ExtKeys::DOWN:
+    case ExtKeys::UP:
+    case ExtKeys::LEFT:
+    case ExtKeys::RIGHT:
+    case ExtKeys::END:
+    case ExtKeys::HOME:
+    case ExtKeys::PAGEDOWN:
+    case ExtKeys::PAGEUP:
+        if (modifierKeys & ModifierKey::Shift)
         {
-            SwitchMode(EditorMode::Visual);
-            m_visualBegin = startOffset;
-            m_visualEnd = startOffset;
-            begin_shift = true;
+            begin_shift = SwitchMode(EditorMode::Visual);
         }
+        else
+        {
+            // Immediate switch back to insert
+            SwitchMode(EditorMode::Insert);
+        }
+        break;
+    default:
+        return_to_insert = true;
+        break;
     }
 
     // CTRL + ...
@@ -183,6 +208,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
                 cursorAfter = startOffset;
                 normalizeOffsets();
                 extendEndOffset(1);
+                return_to_insert = false;
             }
             else
             {
@@ -246,6 +272,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     {
         auto start_x = GetCurrentWindow()->BufferToDisplay().x;
         GetCurrentWindow()->MoveCursorY(1);
+        // We move down to the character one to the right of where our cursor is!
         if (GetCurrentWindow()->BufferToDisplay().x < start_x)
         {
             GetCurrentWindow()->SetBufferCursor(GetCurrentWindow()->GetBufferCursor() + 1);
@@ -325,7 +352,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         }
         if (GetCurrentWindow()->GetBufferCursor() > m_visualBegin)
         {
-            m_visualEnd = buffer.LocationFromOffsetByChars(GetCurrentWindow()->GetBufferCursor(), -1);
+            m_visualEnd = /*buffer.LocationFromOffsetByChars(*/GetCurrentWindow()->GetBufferCursor();// , -1);
         }
         else
         {
@@ -343,6 +370,9 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         GetEditor().GetRegister('"').lineWise = lineWise;
         GetEditor().GetRegister('0').text = str;
         GetEditor().GetRegister('0').lineWise = lineWise;
+
+        // Copy doesn't clear the visual seletion
+        return_to_insert = false;
     }
     // Insert into buffer
     else if (op == CommandOperation::Insert)
@@ -384,19 +414,22 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
             }
             AddCommand(std::static_pointer_cast<ZepCommand>(cmd));
         }
-        SwitchMode(EditorMode::Insert);
+        return_to_insert = true;
     }
     // Delete from buffer
     else if (op == CommandOperation::Delete)
     {
-
         // Delete
         auto cmd = std::make_shared<ZepCommand_DeleteRange>(buffer,
             startOffset,
             endOffset,
             cursorAfter != -1 ? cursorAfter : startOffset);
         AddCommand(std::static_pointer_cast<ZepCommand>(cmd));
+        return_to_insert = true;
+    }
 
+    if (return_to_insert)
+    {
         SwitchMode(EditorMode::Insert);
     }
 

@@ -24,7 +24,7 @@ public:
     }
 
 private:
-    virtual void SwitchMode(EditorMode mode);
+    virtual bool SwitchMode(EditorMode mode);
 };
 
 } // namespace Zep

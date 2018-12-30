@@ -1,10 +1,6 @@
 ### Bugs
 VIM: Select lines all the way up to the first line should cover all chars
 
-#### Window
-- Finish HSplit 
-- Finish Tab management
-
 #### General
 - Finish cut/paste to OS buffer
 
