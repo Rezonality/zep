@@ -295,7 +295,7 @@ CURSOR_TEST(motion_right_twice_back, "one two", "%c%r%c%r%c%l", 4, 0);
 CURSOR_TEST(motion_left, "one two", "%r%r%r%r%c%l", 0, 0);
 
 // Visual Range selection
-VISUAL_TEST(visual_shift_right, "one two", "%c%s%r", 0, 3);
-VISUAL_TEST(visual_shift_right_right, "one two three", "%c%s%r%c%s%r", 0, 7);
-VISUAL_TEST(visual_shift_right_right_back, "one two three", "%c%s%r%c%s%r%c%s%l", 0, 3);
+VISUAL_TEST(visual_shift_right, "one two", "%c%s%r", 0, 4);
+VISUAL_TEST(visual_shift_right_right, "one two three", "%c%s%r%c%s%r", 0, 8);
+VISUAL_TEST(visual_shift_right_right_back, "one two three", "%c%s%r%c%s%r%c%s%l", 0, 4);
 
