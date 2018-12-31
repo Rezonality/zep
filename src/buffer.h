@@ -105,8 +105,8 @@ public:
     BufferRange InnerWordMotion(BufferLocation start, uint32_t searchType) const;
     BufferRange StandardCtrlMotion(BufferLocation cursor, SearchDirection searchDir) const;
 
-    bool Delete(const BufferLocation& startOffset, const BufferLocation& endOffset, const BufferLocation& cursorAfter = BufferLocation{ -1 });
-    bool Insert(const BufferLocation& startOffset, const std::string& str, const BufferLocation& cursorAfter = BufferLocation{ -1 });
+    bool Delete(const BufferLocation& startOffset, const BufferLocation& endOffset);
+    bool Insert(const BufferLocation& startOffset, const std::string& str);
 
     long GetLineCount() const
     {
@@ -202,7 +202,6 @@ struct BufferMessage : public ZepMessage
         , type(messageType)
         , startLocation(startLoc)
         , endLocation(endLoc)
-        , cursorAfter(cursor)
     {
     }
 
@@ -210,7 +209,6 @@ struct BufferMessage : public ZepMessage
     BufferMessageType type;
     BufferLocation startLocation;
     BufferLocation endLocation;
-    BufferLocation cursorAfter;
 
 };
 } // namespace Zep

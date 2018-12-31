@@ -107,9 +107,9 @@ void ZepMode::Undo()
                 inGroup = !inGroup;
             }
 
-            if (spCommand->GetCursorAfter() != -1)
+            if (spCommand->GetCursorBefore() != -1)
             {
-                GetCurrentWindow()->SetBufferCursor(spCommand->GetCursorAfter());
+                GetCurrentWindow()->SetBufferCursor(spCommand->GetCursorBefore());
             }
 
             m_redoStack.push(spCommand);

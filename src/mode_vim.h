@@ -73,7 +73,6 @@ struct CommandContext
 
     // Cursor State
     BufferLocation bufferCursor{ -1 };
-    BufferLocation cursorAfter{ -1 };
 
     // Register state
     std::stack<char> registers;
@@ -117,7 +116,7 @@ public:
 private:
     void UpdateVisualSelection();
     void HandleInsert(uint32_t key);
-    bool GetOperationRange(const std::string& op, EditorMode mode, BufferLocation& beginRange, BufferLocation& endRange, BufferLocation& cursorAfter) const;
+    bool GetOperationRange(const std::string& op, EditorMode mode, BufferLocation& beginRange, BufferLocation& endRange) const;
     void SwitchMode(EditorMode mode);
     void ResetCommand();
     void Init();

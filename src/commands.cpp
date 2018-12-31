@@ -4,8 +4,8 @@ namespace Zep
 {
 
 // Delete Range of chars
-ZepCommand_DeleteRange::ZepCommand_DeleteRange(ZepBuffer& buffer, const BufferLocation& start, const BufferLocation& end, const BufferLocation& cursorAfter)
-    : ZepCommand(buffer, cursorAfter),
+ZepCommand_DeleteRange::ZepCommand_DeleteRange(ZepBuffer& buffer, const BufferLocation& start, const BufferLocation& end, const BufferLocation& cursor)
+    : ZepCommand(buffer, cursor, start),
     m_startOffset(start),
     m_endOffset(end)
 {
@@ -27,7 +27,7 @@ void ZepCommand_DeleteRange::Redo()
         m_deleted = std::string(m_buffer.GetText().begin() + m_startOffset,
             m_buffer.GetText().begin() + m_endOffset);
 
-        m_buffer.Delete(m_startOffset, m_endOffset, m_cursorAfter);
+        m_buffer.Delete(m_startOffset, m_endOffset);
     }
 }
 
@@ -35,12 +35,12 @@ void ZepCommand_DeleteRange::Undo()
 {
     if (m_deleted.empty())
         return;
-    m_buffer.Insert(m_startOffset, m_deleted, m_startOffset);
+    m_buffer.Insert(m_startOffset, m_deleted);
 }
 
 // Insert a string
-ZepCommand_Insert::ZepCommand_Insert(ZepBuffer& buffer, const BufferLocation& start, const std::string& str, const BufferLocation& cursorAfter)
-    : ZepCommand(buffer, cursorAfter),
+ZepCommand_Insert::ZepCommand_Insert(ZepBuffer& buffer, const BufferLocation& start, const std::string& str, const BufferLocation& cursor)
+    : ZepCommand(buffer, cursor, start + BufferLocation(str.length() - 1)),
     m_startOffset(start),
     m_strInsert(str)
 {
@@ -49,7 +49,7 @@ ZepCommand_Insert::ZepCommand_Insert(ZepBuffer& buffer, const BufferLocation& st
 
 void ZepCommand_Insert::Redo()
 {
-    bool ret = m_buffer.Insert(m_startOffset, m_strInsert, m_cursorAfter);
+    bool ret = m_buffer.Insert(m_startOffset, m_strInsert);
     assert(ret);
     if (ret == true)
     {
@@ -65,7 +65,7 @@ void ZepCommand_Insert::Undo()
 {
     if (m_endOffsetInserted != -1)
     {
-        m_buffer.Delete(m_startOffset, m_endOffsetInserted, m_startOffset);
+        m_buffer.Delete(m_startOffset, m_endOffsetInserted);
     }
 }
 }

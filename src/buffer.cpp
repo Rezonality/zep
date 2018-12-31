@@ -713,7 +713,7 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
     return bufferLocation;
 }
 
-bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str, const BufferLocation& cursorAfter)
+bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str)
 {
     if (startOffset > m_gapBuffer.size())
     {
@@ -773,7 +773,7 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
     m_gapBuffer.insert(m_gapBuffer.begin() + startOffset, str.begin(), str.end());
 
     // This is the range we added (not valid any more in the buffer)
-    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextAdded, startOffset, startOffset + changeRange, cursorAfter));
+    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextAdded, startOffset, startOffset + changeRange));
 
     //LOG(DEBUG) << m_gapBuffer.string();
 
@@ -789,7 +789,7 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
 // This helps them to fix up their data structures without rebuilding.
 // Assumption: The buffer always is at least a single line/character of '0', representing file end.
 // This makes a few things fall out more easily
-bool ZepBuffer::Delete(const BufferLocation& startOffset, const BufferLocation& endOffset, const BufferLocation& cursorAfter)
+bool ZepBuffer::Delete(const BufferLocation& startOffset, const BufferLocation& endOffset)
 {
     assert(startOffset >= 0 && endOffset <= (m_gapBuffer.size() - 1));
 
@@ -825,7 +825,7 @@ bool ZepBuffer::Delete(const BufferLocation& startOffset, const BufferLocation& 
     assert(m_gapBuffer.size() > 0 && m_gapBuffer[m_gapBuffer.size() - 1] == 0);
 
     // This is the range we deleted (not valid any more in the buffer)
-    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextDeleted, startOffset, endOffset, cursorAfter));
+    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextDeleted, startOffset, endOffset));
 
     return true;
 }
