@@ -99,12 +99,6 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         }
     };
 
-    auto extendEndOffset = [&](int count) {
-        // Clamp and orient the correct way around
-        endOffset = buffer.LocationFromOffsetByChars(endOffset, count);
-        endOffset = buffer.Clamp(endOffset);
-    };
-
     if (key == ExtKeys::ESCAPE)
     {
         SwitchMode(EditorMode::Insert);
@@ -185,7 +179,6 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
                 startOffset = m_visualBegin;
                 endOffset = m_visualEnd;
                 normalizeOffsets();
-                extendEndOffset(1);
             }
             else
             {
@@ -203,7 +196,6 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
                 startOffset = m_visualBegin;
                 endOffset = m_visualEnd;
                 normalizeOffsets();
-                extendEndOffset(1);
                 return_to_insert = false;
             }
             else
@@ -226,8 +218,8 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
                 ch.clear();
             }
             op = CommandOperation::Insert;
-            startOffset = m_visualBegin;
-            endOffset = m_visualEnd;
+            startOffset = bufferCursor;
+            endOffset = startOffset + BufferLocation(ch.length());
         }
     }
     else if (key == ExtKeys::HOME)
@@ -292,7 +284,6 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
             startOffset = m_visualBegin;
             endOffset = m_visualEnd;
             normalizeOffsets();
-            extendEndOffset(1);
         }
         else
         {
@@ -307,7 +298,6 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
             startOffset = m_visualBegin;
             endOffset = m_visualEnd;
             normalizeOffsets();
-            extendEndOffset(1);
         }
         else
         {
@@ -365,13 +355,12 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     // Insert into buffer
     else if (op == CommandOperation::Insert)
     {
-        bool boundary = true;
+        bool boundary = false;
         if (m_currentMode == EditorMode::Visual)
         {
             startOffset = m_visualBegin;
             endOffset = m_visualEnd;
             normalizeOffsets();
-            extendEndOffset(1);
 
             // Delete existing selection
             auto cmd = std::make_shared<ZepCommand_DeleteRange>(buffer,
