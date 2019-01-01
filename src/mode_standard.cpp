@@ -321,13 +321,12 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         {
             if (GetCurrentWindow()->GetBufferCursor() <= startOffset)
             {
-                m_visualBegin = buffer.LocationFromOffsetByChars(startOffset, -1);
+                m_visualBegin = startOffset;// buffer.LocationFromOffsetByChars(startOffset, -1);
             }
             else
             {
                 m_visualBegin = startOffset;
             }
-            m_visualBegin = buffer.ClampToVisibleLine(m_visualBegin);
         }
         if (GetCurrentWindow()->GetBufferCursor() > m_visualBegin)
         {
@@ -335,7 +334,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         }
         else
         {
-            m_visualEnd = buffer.LocationFromOffsetByChars(GetCurrentWindow()->GetBufferCursor(), -1);
+            m_visualEnd = GetCurrentWindow()->GetBufferCursor();// buffer.LocationFromOffsetByChars(GetCurrentWindow()->GetBufferCursor(), -1);
         }
     }
 
