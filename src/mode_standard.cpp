@@ -243,27 +243,13 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     }
     else if (key == ExtKeys::UP)
     {
-        // In standard mode, the cursor might jump back to a shorter line, but we want
-        // it 'one' further along because we are always in 'insert' mode (in vim the cursor
-        // is effectively on the 'previous' character.  So this fix is just working around that
-        // beahvior in the window layer
-        // TODO: A cleaner approach?
         auto start_x = GetCurrentWindow()->BufferToDisplay().x;
         GetCurrentWindow()->MoveCursorY(-1);
-        if (GetCurrentWindow()->BufferToDisplay().x < start_x)
-        {
-            GetCurrentWindow()->SetBufferCursor(GetCurrentWindow()->GetBufferCursor() + 1);
-        }
     }
     else if (key == ExtKeys::DOWN)
     {
         auto start_x = GetCurrentWindow()->BufferToDisplay().x;
         GetCurrentWindow()->MoveCursorY(1);
-        // We move down to the character one to the right of where our cursor is!
-        if (GetCurrentWindow()->BufferToDisplay().x < start_x)
-        {
-            GetCurrentWindow()->SetBufferCursor(GetCurrentWindow()->GetBufferCursor() + 1);
-        }
     }
     else if (key == ExtKeys::RETURN)
     {

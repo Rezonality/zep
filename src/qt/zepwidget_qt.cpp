@@ -75,8 +75,6 @@ void ZepWidget_Qt::keyPressEvent(QKeyEvent* ev)
     uint32_t mod = 0;
     auto pMode = m_spEditor->GetCurrentMode();
 
-    LOG(INFO) << ev->text().toUtf8().data();
-    LOG(INFO) << std::hex << ev->modifiers();
     if (ev->modifiers() & Qt::ShiftModifier)
     {
         mod |= ModifierKey::Shift;

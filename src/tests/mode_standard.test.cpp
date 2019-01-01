@@ -98,7 +98,6 @@ TEST_F(StandardTest, CheckDisplaySucceeds)
             else if (ch == '\n')                                   \
             {                                                      \
                 spMode->AddKeyPress(ExtKeys::RETURN, mod);         \
-                LOG(INFO) << "new";                                \
                 mod = 0;                                           \
             }                                                      \
             else                                                   \
@@ -234,7 +233,6 @@ TEST_F(StandardTest, BACKSPACE)
             else if (ch == '\n')                              \
             {                                                 \
                 spMode->AddKeyPress(ExtKeys::RETURN, mod);    \
-                LOG(INFO) << "new";                           \
                 mod = 0;                                      \
             }                                                 \
             else                                              \
@@ -289,7 +287,6 @@ TEST_F(StandardTest, BACKSPACE)
             else if (ch == '\n')                              \
             {                                                 \
                 spMode->AddKeyPress(ExtKeys::RETURN, mod);    \
-                LOG(INFO) << "new";                           \
                 mod = 0;                                      \
             }                                                 \
             else                                              \
