@@ -4,8 +4,8 @@ namespace Zep
 {
 
 // Delete Range of chars
-ZepCommand_DeleteRange::ZepCommand_DeleteRange(ZepBuffer& buffer, const BufferLocation& start, const BufferLocation& end, const BufferLocation& cursor)
-    : ZepCommand(buffer, cursor, start),
+ZepCommand_DeleteRange::ZepCommand_DeleteRange(ZepBuffer& buffer, const BufferLocation& start, const BufferLocation& end, const BufferLocation& cursor, const BufferLocation& cursorAfter)
+    : ZepCommand(buffer, cursor, cursorAfter != -1 ? cursorAfter : start),
     m_startOffset(start),
     m_endOffset(end)
 {
@@ -39,8 +39,8 @@ void ZepCommand_DeleteRange::Undo()
 }
 
 // Insert a string
-ZepCommand_Insert::ZepCommand_Insert(ZepBuffer& buffer, const BufferLocation& start, const std::string& str, const BufferLocation& cursor)
-    : ZepCommand(buffer, cursor, start + BufferLocation(str.length() - 1)),
+ZepCommand_Insert::ZepCommand_Insert(ZepBuffer& buffer, const BufferLocation& start, const std::string& str, const BufferLocation& cursor, const BufferLocation& cursorAfter)
+    : ZepCommand(buffer, cursor, cursorAfter != -1 ? cursorAfter : (start + long(str.length()))),
     m_startOffset(start),
     m_strInsert(str)
 {

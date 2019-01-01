@@ -73,6 +73,7 @@ struct CommandContext
 
     // Cursor State
     BufferLocation bufferCursor{ -1 };
+    BufferLocation cursorAfterOverride{ -1 };
 
     // Register state
     std::stack<char> registers;

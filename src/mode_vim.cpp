@@ -646,9 +646,6 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         context.pRegister = &context.tempReg;
         context.op = CommandOperation::Insert;
         context.commandResult.modeSwitch = EditorMode::Insert;
-
-        // For 'o', cursor is on the next line after insert (
-        // context.bufferCursor = context.buffer.LocationFromOffsetByChars(context.beginRange, 1);
     }
     else if (context.command[0] == 'O')
     {
@@ -657,6 +654,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         context.pRegister = &context.tempReg;
         context.op = CommandOperation::Insert;
         context.commandResult.modeSwitch = EditorMode::Insert;
+        context.cursorAfterOverride = context.bufferCursor;
     }
     else if (context.command[0] == 'd' || context.command == "D")
     {
@@ -1088,7 +1086,8 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         auto cmd = std::make_shared<ZepCommand_Insert>(context.buffer,
             context.beginRange,
             context.pRegister->text,
-            context.bufferCursor);
+            context.bufferCursor,
+            context.cursorAfterOverride);
         context.commandResult.spCommand = std::static_pointer_cast<ZepCommand>(cmd);
         return true;
     }
@@ -1318,12 +1317,17 @@ void ZepMode_Vim::HandleInsert(uint32_t key)
             // Remember the inserted string for repeating the command
             m_lastInsertString = strInserted;
 
+            auto lineBegin = buffer.GetLinePos(bufferCursor, LineLocation::LineBegin);
+
             // Temporarily remove it
             buffer.Delete(m_insertBegin, insertEnd);
 
             // Generate a command to put it in with undoable state
-            // Leave cusor at the end of the insert
-            auto cmd = std::make_shared<ZepCommand_Insert>(buffer, m_insertBegin, strInserted, bufferCursor);
+            // Leave cusor at the end of the insert, on the last inserted char.
+            // ...but clamp to the line begin, so that a RETURN + ESCAPE lands you at the beginning of the new line
+            auto cursorAfterEscape = std::max(lineBegin, m_insertBegin + BufferLocation(strInserted.length() - 1));
+
+            auto cmd = std::make_shared<ZepCommand_Insert>(buffer, m_insertBegin, strInserted, bufferCursor, cursorAfterEscape);
             AddCommand(std::static_pointer_cast<ZepCommand>(cmd));
         }
 

@@ -43,7 +43,7 @@ protected:
 class ZepCommand_DeleteRange : public ZepCommand
 {
 public:
-    ZepCommand_DeleteRange(ZepBuffer& buffer, const BufferLocation& startOffset, const BufferLocation& endOffset, const BufferLocation& cursor = BufferLocation{ -1 });
+    ZepCommand_DeleteRange(ZepBuffer& buffer, const BufferLocation& startOffset, const BufferLocation& endOffset, const BufferLocation& cursor = BufferLocation{ -1 }, const BufferLocation& cursorAfter = BufferLocation{ -1 });
     virtual ~ZepCommand_DeleteRange() {};
 
     virtual void Redo() override;
@@ -58,7 +58,7 @@ public:
 class ZepCommand_Insert : public ZepCommand
 {
 public:
-    ZepCommand_Insert(ZepBuffer& buffer, const BufferLocation& startOffset, const std::string& str, const BufferLocation& cursor = BufferLocation{ -1 });
+    ZepCommand_Insert(ZepBuffer& buffer, const BufferLocation& startOffset, const std::string& str, const BufferLocation& cursor = BufferLocation{ -1 }, const BufferLocation& cursorAfter = BufferLocation{ -1 });
     virtual ~ZepCommand_Insert() {};
 
     virtual void Redo() override;
