@@ -37,6 +37,7 @@ ZepMode_Standard::~ZepMode_Standard()
 void ZepMode_Standard::Begin()
 {
     SwitchMode(EditorMode::Insert);
+    GetCurrentWindow()->SetCursorType(CursorType::Insert);
 }
 
 bool ZepMode_Standard::SwitchMode(EditorMode mode)
@@ -227,29 +228,33 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         // Beginning of line
         auto pos = buffer.GetLinePos(bufferCursor, LineLocation::LineFirstGraphChar);
         GetCurrentWindow()->SetBufferCursor(pos);
+        GetEditor().ResetCursorTimer();
     }
     else if (key == ExtKeys::END)
     {
         auto pos = buffer.GetLinePos(bufferCursor, LineLocation::LineCRBegin);
         GetCurrentWindow()->SetBufferCursor(pos);
+        GetEditor().ResetCursorTimer();
     }
     else if (key == ExtKeys::RIGHT)
     {
         GetCurrentWindow()->SetBufferCursor(bufferCursor + 1);
+        GetEditor().ResetCursorTimer();
     }
     else if (key == ExtKeys::LEFT)
     {
         GetCurrentWindow()->SetBufferCursor(bufferCursor - 1);
+        GetEditor().ResetCursorTimer();
     }
     else if (key == ExtKeys::UP)
     {
         auto start_x = GetCurrentWindow()->BufferToDisplay().x;
-        GetCurrentWindow()->MoveCursorY(-1);
+        GetCurrentWindow()->MoveCursorY(-1, LineLocation::LineCRBegin);
     }
     else if (key == ExtKeys::DOWN)
     {
         auto start_x = GetCurrentWindow()->BufferToDisplay().x;
-        GetCurrentWindow()->MoveCursorY(1);
+        GetCurrentWindow()->MoveCursorY(1, LineLocation::LineCRBegin);
     }
     else if (key == ExtKeys::RETURN)
     {

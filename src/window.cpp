@@ -704,10 +704,14 @@ void ZepWindow::MoveCursorY(int yDistance, LineLocation clampLocation)
     // Update the master buffer cursor
     m_bufferCursor = line.columnOffsets.x + target.x;
 
-    // Ensure the current x offset didn't walk us off the line (column offset is 1 beyond, and there is a single \n before it)
+
+    // Ensure the current x offset didn't walk us off the line
     // We are clamping to visible line here
-    m_bufferCursor = std::min(m_bufferCursor, line.columnOffsets.y - 2);
     m_bufferCursor = std::max(m_bufferCursor, line.columnOffsets.x);
+    m_bufferCursor = std::min(m_bufferCursor, line.columnOffsets.y);
+
+    auto clampOffset = GetBuffer().GetLinePos(line.columnOffsets.x, clampLocation);
+    m_bufferCursor = std::min(m_bufferCursor, clampOffset);
 
     GetEditor().ResetCursorTimer();
 }
