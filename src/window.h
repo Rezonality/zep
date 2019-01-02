@@ -22,10 +22,10 @@ struct CharInfo
 // A collection of spans that show split lines on the display
 struct SpanInfo
 {
-    NVec2i columnOffsets; // Begin/end range of the text buffer for this line, as always end is one beyond the end.
+    NVec2i columnOffsets;                 // Begin/end range of the text buffer for this line, as always end is one beyond the end.
     long lastNonCROffset = InvalidOffset; // The last char that is visible on the line (i.e. not CR/LF)
-    float spanYPx; // Position in the buffer in pixels, if the screen was as big as the buffer.
-    long bufferLineNumber = 0; // Line in the original buffer, not the screen line
+    float spanYPx;                        // Position in the buffer in pixels, if the screen was as big as the buffer.
+    long bufferLineNumber = 0;            // Line in the original buffer, not the screen line
     int lineIndex;
 
     std::vector<CharInfo> charInfo;
@@ -148,13 +148,13 @@ private:
 
 private:
     NVec2f ToBufferRegion(const NVec2f& pos);
-    Region m_bufferRegion; // region of the display we are showing on.
-    Region m_textRegion; // region of the display for text.
-    Region m_statusRegion; // status text / airline
-    Region m_leftRegion; // Numbers/indicators
-    NVec2f m_topLeftPx; // Top-left position on screen
+    Region m_bufferRegion;  // region of the display we are showing on.
+    Region m_textRegion;    // region of the display for text.
+    Region m_statusRegion;  // status text / airline
+    Region m_leftRegion;    // Numbers/indicators
+    NVec2f m_topLeftPx;     // Top-left position on screen
     NVec2f m_bottomRightPx; // Limits of the screen position
-    bool m_wrap = true; // Wrap
+    bool m_wrap = true;     // Wrap
 
     // The buffer offset is where we are looking, but the cursor is only what you see on the screen
     CursorType m_cursorType = CursorType::Normal; // Type of cursor
@@ -164,7 +164,7 @@ private:
     std::vector<std::string> m_statusLines; // Status information, shown under the buffer
 
     float m_bufferOffsetYPx = 0;
-    NVec2i m_visibleLineRange = { 0, 0 }; // Offset of the displayed area into the text
+    NVec2i m_visibleLineRange = {0, 0};  // Offset of the displayed area into the text
     std::vector<SpanInfo> m_windowLines; // Information about the currently displayed lines
 
     ZepTabWindow& m_tabWindow;
@@ -174,8 +174,8 @@ private:
     long m_maxDisplayLines = 0;
     float m_defaultLineSize = 0;
 
-    BufferLocation m_bufferCursor{ 0 }; // Location in buffer coordinates.  Each window has a different buffer cursor
-    long m_lastCursorColumn = 0; // The last cursor column (could be removed and recalculated)
+    BufferLocation m_bufferCursor{0}; // Location in buffer coordinates.  Each window has a different buffer cursor
+    long m_lastCursorColumn = 0;      // The last cursor column (could be removed and recalculated)
 
     ZepBuffer* m_pBuffer = nullptr;
     SelectRegion m_selection; // Selection area

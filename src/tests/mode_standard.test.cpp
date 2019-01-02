@@ -29,7 +29,7 @@ public:
         pTabWindow = spEditor->GetActiveTabWindow();
         pWindow = spEditor->GetActiveTabWindow()->GetActiveWindow();
 
-        // Setup editor with a default size so that text doesn't wrap and confuse the tests!
+        // Setup editor with a default fixed_size so that text doesn't wrap and confuse the tests!
         spEditor->SetDisplayRegion(NVec2f(0.0f, 0.0f), NVec2f(1024.0f, 1024.0f));
 
         pWindow->SetBufferCursor(0);

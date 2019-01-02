@@ -52,6 +52,11 @@ inline NVec2<T> operator-(const NVec2<T>& lhs, const NVec2<T>& rhs)
     return NVec2<T>(lhs.x - rhs.x, lhs.y - rhs.y);
 }
 template <class T>
+inline NVec2<T> operator/(const NVec2<T>& lhs, const NVec2<T>& rhs)
+{
+    return NVec2<T>(lhs.x / rhs.x, lhs.y / rhs.y);
+}
+template <class T>
 inline NVec2<T>& operator+=(NVec2<T>& lhs, const NVec2<T>& rhs)
 {
     lhs.x += rhs.x;
@@ -340,6 +345,15 @@ struct NRect
     float Width() const
     {
         return bottomRightPx.x - topLeftPx.x;
+    }
+    NVec2f Size() const
+    {
+        return bottomRightPx - topLeftPx;
+    }
+    void Clear()
+    {
+        topLeftPx = NRect<T>();
+        bottomRightPx = NRect<T>();
     }
     bool operator==(const NRect<T>& region) const
     {

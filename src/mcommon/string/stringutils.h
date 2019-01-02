@@ -13,10 +13,14 @@ namespace COMMON_NAMESPACE
 
 inline size_t CountUtf8BytesFromChar(const char c)
 {
-    if (c < 0x80) return 1;
-    if (c < 0x800) return 2;
-    if (c >= 0xdc00 && c < 0xe000) return 0;
-    if (c >= 0xd800 && c < 0xdc00) return 4;
+    if (c < 0x80)
+        return 1;
+    if (c < 0x800)
+        return 2;
+    if (c >= 0xdc00 && c < 0xe000)
+        return 0;
+    if (c >= 0xd800 && c < 0xdc00)
+        return 4;
     return 3;
 }
 
@@ -60,15 +64,17 @@ inline std::string& Trim(std::string& s, const char* t = " \t\n\r\f\v")
     return LTrim(RTrim(s, t), t);
 }
 
-template<typename T>
-std::string toString(const T &t) {
+template <typename T>
+std::string toString(const T& t)
+{
     std::ostringstream oss;
     oss << t;
     return oss.str();
 }
 
-template<typename T>
-T fromString(const std::string& s) {
+template <typename T>
+T fromString(const std::string& s)
+{
     std::istringstream stream(s);
     T t;
     stream >> t;
@@ -83,22 +89,26 @@ inline std::wstring makeWStr(const std::string& str)
 std::string makeStr(const std::wstring& str);
 std::string toLower(const std::string& str);
 
-
 struct StringId
 {
     uint32_t id = 0;
-    StringId() {}
+    StringId()
+    {
+    }
     StringId(const char* pszString);
     StringId(const std::string& str);
-    StringId(uint32_t _id) { id = _id; }
+    StringId(uint32_t _id)
+    {
+        id = _id;
+    }
 
-    bool operator == (const StringId& rhs) const
+    bool operator==(const StringId& rhs) const
     {
         return id == rhs.id;
     }
-    const StringId& operator= (const char* pszString);
-    const StringId& operator= (const std::string& str);
-    bool operator < (const StringId& rhs) const
+    const StringId& operator=(const char* pszString);
+    const StringId& operator=(const std::string& str);
+    bool operator<(const StringId& rhs) const
     {
         return id < rhs.id;
     }
@@ -114,15 +124,13 @@ struct StringId
     }
 
     static std::unordered_map<uint32_t, std::string> stringLookup;
-
 };
 
-inline std::ostream& operator << (std::ostream& str, StringId id)
+inline std::ostream& operator<<(std::ostream& str, StringId id)
 {
     str << id.ToString();
     return str;
 }
-
 
 void string_split(const std::string& text, const char* delims, std::vector<std::string>& tokens);
 std::vector<std::string> string_split(const std::string& text, const char* delims);
@@ -136,22 +144,23 @@ inline bool string_equals(const std::string& str, const std::string& str2)
 {
     return str == str2;
 }
-} // mcommon
+} // namespace COMMON_NAMESPACE
 
-namespace std {
-  template <>
-  struct hash<COMMON_NAMESPACE::StringId> {
+namespace std
+{
+template <>
+struct hash<COMMON_NAMESPACE::StringId>
+{
     std::size_t operator()(const COMMON_NAMESPACE::StringId& k) const
     {
-      // Compute individual hash values for first,
-      // second and third and combine them using XOR
-      // and bit shifting:
+        // Compute individual hash values for first,
+        // second and third and combine them using XOR
+        // and bit shifting:
 
-      return std::hash<uint32_t>()(k.id);
+        return std::hash<uint32_t>()(k.id);
     }
-  };
-}
-
+};
+} // namespace std
 
 namespace COMMON_NAMESPACE
 {
@@ -159,4 +168,4 @@ inline bool string_equals(const StringId lhs, const StringId rhs)
 {
     return lhs.id == rhs.id;
 }
-}
+} // namespace COMMON_NAMESPACE

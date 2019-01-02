@@ -80,14 +80,12 @@ MainWindow::MainWindow()
             pVim->setChecked(enabledVim);
             pStandard->setChecked(!enabledVim);
 
-            connect(pVim, &QAction::triggered, this, [pWidget, pVim, pStandard]()
-            {
+            connect(pVim, &QAction::triggered, this, [pWidget, pVim, pStandard]() {
                 pVim->setChecked(true);
                 pStandard->setChecked(false);
                 pWidget->GetEditor().SetMode(ZepMode_Vim::StaticName());
             });
-            connect(pStandard, &QAction::triggered, this, [pWidget, pStandard, pVim]()
-            {
+            connect(pStandard, &QAction::triggered, this, [pWidget, pStandard, pVim]() {
                 pVim->setChecked(false);
                 pStandard->setChecked(true);
                 pWidget->GetEditor().SetMode(ZepMode_Standard::StaticName());
@@ -105,14 +103,12 @@ MainWindow::MainWindow()
             pDark->setChecked(enabledDark);
             pLight->setChecked(!enabledDark);
 
-            connect(pDark, &QAction::triggered, this, [pWidget, pDark, pLight]()
-            {
+            connect(pDark, &QAction::triggered, this, [pWidget, pDark, pLight]() {
                 pDark->setChecked(true);
                 pLight->setChecked(false);
                 pWidget->GetEditor().GetTheme().SetThemeType(ThemeType::Dark);
             });
-            connect(pLight, &QAction::triggered, this, [pWidget, pLight, pDark]()
-            {
+            connect(pLight, &QAction::triggered, this, [pWidget, pLight, pDark]() {
                 pDark->setChecked(false);
                 pLight->setChecked(true);
                 pWidget->GetEditor().GetTheme().SetThemeType(ThemeType::Light);
@@ -123,4 +119,3 @@ MainWindow::MainWindow()
     setMenuBar(menu);
     setCentralWidget(pWidget);
 }
-

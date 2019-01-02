@@ -16,14 +16,13 @@ namespace COMMON_NAMESPACE
 
 // NOTE:
 // This is a very simple implementation of the <filesystem> functionality in CPP 14/17.
-// It is not meant to be production code, but is enough to get this code working on a Mac, on which I can't get a 
+// It is not meant to be production code, but is enough to get this code working on a Mac, on which I can't get a
 // working version of <filesystem>.
 // I will remove this when I figure it out, or the compiler catches up ;)
 // I'll also try to make this code more tested/functional until that time
 
 class filesystem_error : public std::system_error
 {
-
 };
 typedef std::chrono::system_clock::time_point file_time_type;
 class path
@@ -33,13 +32,11 @@ public:
     path(const std::string& strPath = std::string())
         : m_strPath(strPath)
     {
-
     }
 
     path(const char* pszPath)
         : m_strPath(pszPath)
     {
-
     }
 
     bool empty() const
@@ -84,7 +81,6 @@ public:
         return path("");
     }
 
-
     path& replace_extension(const std::string& extension)
     {
         size_t dot = m_strPath.find_last_of(".");
@@ -121,21 +117,33 @@ public:
         }
     }
 
-    const char* c_str() const { return m_strPath.c_str(); }
-    std::string string() const { return m_strPath; }
+    const char* c_str() const
+    {
+        return m_strPath.c_str();
+    }
+    std::string string() const
+    {
+        return m_strPath;
+    }
 
-    bool operator == (const path& rhs) const { return m_strPath == rhs.string(); }
+    bool operator==(const path& rhs) const
+    {
+        return m_strPath == rhs.string();
+    }
 
-    path operator / (const path& rhs) const
+    path operator/(const path& rhs) const
     {
         std::string temp = m_strPath;
         RTrim(temp, "\\/");
         return path(temp + "/" + rhs.string());
     }
 
-    operator std::string() const { return m_strPath; }
+    operator std::string() const
+    {
+        return m_strPath;
+    }
 
-    bool operator < (const path& rhs) const
+    bool operator<(const path& rhs) const
     {
         return m_strPath < rhs.string();
     }
@@ -146,11 +154,12 @@ public:
         m_components = string_split(can, "/");
         return m_components.begin();
     }
-    
+
     std::vector<std::string>::const_iterator end()
     {
         return m_components.end();
     }
+
 private:
     std::vector<std::string> m_components;
     std::string m_strPath;
@@ -180,7 +189,7 @@ inline path absolute(const path& input)
     return path(strAbs);
 }
 
-inline std::ostream& operator << (std::ostream& rhs, const path& p)
+inline std::ostream& operator<<(std::ostream& rhs, const path& p)
 {
     rhs << p.string();
     return rhs;
@@ -215,7 +224,7 @@ inline bool isDirExist(const std::string& path)
         return false;
     }
     return (info.st_mode & _S_IFDIR) != 0;
-#else 
+#else
     struct stat info;
     if (stat(path.c_str(), &info) != 0)
     {
@@ -238,32 +247,32 @@ inline bool makePath(const std::string& path)
 
     switch (errno)
     {
-    case ENOENT:
-        // parent didn't exist, try to create it
-        {
-            auto pos = path.find_last_of('/');
-            if (pos == std::string::npos)
+        case ENOENT:
+            // parent didn't exist, try to create it
+            {
+                auto pos = path.find_last_of('/');
+                if (pos == std::string::npos)
 #if defined(_WIN32)
-                pos = path.find_last_of('\\');
-            if (pos == std::string::npos)
+                    pos = path.find_last_of('\\');
+                if (pos == std::string::npos)
 #endif
-                return false;
-            if (!makePath( path.substr(0, pos) ))
-                return false;
-        }
-        // now, try to create again
+                    return false;
+                if (!makePath(path.substr(0, pos)))
+                    return false;
+            }
+            // now, try to create again
 #if defined(_WIN32)
-        return 0 == _mkdir(path.c_str());
-#else 
-        return 0 == mkdir(path.c_str(), mode);
+            return 0 == _mkdir(path.c_str());
+#else
+            return 0 == mkdir(path.c_str(), mode);
 #endif
 
-    case EEXIST:
-        // done!
-        return isDirExist(path);
+        case EEXIST:
+            // done!
+            return isDirExist(path);
 
-    default:
-        return false;
+        default:
+            return false;
     }
 }
 inline bool create_directories(const path& source)
@@ -294,4 +303,4 @@ inline bool is_directory(const path& source)
     return false;
 }
 
-}
+} // namespace COMMON_NAMESPACE

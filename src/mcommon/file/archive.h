@@ -27,10 +27,10 @@ struct Binding
 struct ArchiveSection
 {
     ArchiveSection* pParent = nullptr;
-    StringId name;                          // Subsection name    eg. materialcomponent.
-    StringId fullName;                      // Full section name: eg. foo/bar/me
-    size_t keyBase = 0;                     // Base of the keys in the value array
-    std::vector<std::shared_ptr<ArchiveSection>> children;      // Child sections
+    StringId name;                                         // Subsection name    eg. materialcomponent.
+    StringId fullName;                                     // Full section name: eg. foo/bar/me
+    size_t keyBase = 0;                                    // Base of the keys in the value array
+    std::vector<std::shared_ptr<ArchiveSection>> children; // Child sections
 };
 
 // See archive_dump for an explanation of the loaded data structure.
@@ -97,4 +97,4 @@ void archive_reload(Archive& ar);
 void archive_bind(Archive& archive, StringId section, StringId key, float& val);
 void archive_bind(Archive& archive, StringId section, StringId key, bool& val);
 
-} // mcommon
+} // namespace COMMON_NAMESPACE

@@ -9,7 +9,7 @@ namespace Zep
 ZepDisplay_Qt::ZepDisplay_Qt()
 {
     qApp->setFont(QFont("Consolas", 10));
-    
+
     QFontMetrics met(qApp->font());
     m_fontSize = met.height();
     m_fontOffset = met.ascent();
@@ -31,7 +31,7 @@ NVec2f ZepDisplay_Qt::GetTextSize(const utf8* pBegin, const utf8* pEnd) const
     {
         pEnd = pBegin + strlen((const char*)pBegin);
     }
-    auto rc = met.size(Qt::TextSingleLine, QString::fromUtf8((char*)pBegin, pEnd- pBegin));
+    auto rc = met.size(Qt::TextSingleLine, QString::fromUtf8((char*)pBegin, pEnd - pBegin));
     return NVec2f(rc.width(), rc.height());
 }
 
@@ -43,7 +43,7 @@ void ZepDisplay_Qt::DrawChars(const NVec2f& pos, const NVec4f& col, const utf8* 
     }
     QPoint p0 = toQPoint(pos);
     m_pPainter->setPen(QColor::fromRgbF(col.x, col.y, col.z, col.w));
-    
+
     p0.setY(p0.y() + m_fontOffset);
 
     m_pPainter->drawText(p0, QString::fromUtf8((char*)text_begin, text_end - text_begin));
@@ -78,4 +78,4 @@ void ZepDisplay_Qt::SetClipRect(const NRectf& rc)
     }
 }
 
-} // Zep
+} // namespace Zep

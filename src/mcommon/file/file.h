@@ -28,5 +28,4 @@ void file_init_dir_watch(const fs::path& dir, fileCB callback);
 void file_destroy_dir_watch();
 void file_update_dir_watch();
 
-}
-
+} // namespace COMMON_NAMESPACE

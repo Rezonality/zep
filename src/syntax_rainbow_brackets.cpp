@@ -72,7 +72,7 @@ void ZepSyntaxAdorn_RainbowBrackets::Insert(long start, long end)
         else
             replace[b.first + diff] = b.second;
     }
-    std::swap(m_brackets,replace);
+    std::swap(m_brackets, replace);
 
     RefreshBrackets();
 }
@@ -84,7 +84,7 @@ void ZepSyntaxAdorn_RainbowBrackets::Clear(long start, long end)
     {
         m_brackets.erase(BufferLocation(current));
     }
-  
+
     // Adjust remaining brackets by the difference
     auto diff = end - start;
     std::map<BufferLocation, Bracket> replace;
@@ -95,7 +95,7 @@ void ZepSyntaxAdorn_RainbowBrackets::Clear(long start, long end)
         else
             replace[b.first - diff] = b.second;
     }
-    std::swap(m_brackets,replace);
+    std::swap(m_brackets, replace);
 
     RefreshBrackets();
 }
@@ -111,27 +111,27 @@ void ZepSyntaxAdorn_RainbowBrackets::Update(long start, long end)
         auto offset = itrBracket - buffer.begin();
         if (*itrBracket == '(')
         {
-            m_brackets[BufferLocation(offset)] = Bracket{ 0, BracketType::Bracket, true };
+            m_brackets[BufferLocation(offset)] = Bracket{0, BracketType::Bracket, true};
         }
         else if (*itrBracket == ')')
         {
-            m_brackets[BufferLocation(offset)] = Bracket{ 0, BracketType::Bracket, false };
+            m_brackets[BufferLocation(offset)] = Bracket{0, BracketType::Bracket, false};
         }
         else if (*itrBracket == '[')
         {
-            m_brackets[BufferLocation(offset)] = Bracket{ 0, BracketType::Group, true };
+            m_brackets[BufferLocation(offset)] = Bracket{0, BracketType::Group, true};
         }
         else if (*itrBracket == ']')
         {
-            m_brackets[BufferLocation(offset)] = Bracket{ 0, BracketType::Group, false };
+            m_brackets[BufferLocation(offset)] = Bracket{0, BracketType::Group, false};
         }
         else if (*itrBracket == '{')
         {
-            m_brackets[BufferLocation(offset)] = Bracket{ 0, BracketType::Brace, true };
+            m_brackets[BufferLocation(offset)] = Bracket{0, BracketType::Brace, true};
         }
         else if (*itrBracket == '}')
         {
-            m_brackets[BufferLocation(offset)] = Bracket{ 0, BracketType::Brace, false };
+            m_brackets[BufferLocation(offset)] = Bracket{0, BracketType::Brace, false};
         }
         else
         {
@@ -168,4 +168,4 @@ void ZepSyntaxAdorn_RainbowBrackets::RefreshBrackets()
     }
 }
 
-} // Zep
+} // namespace Zep

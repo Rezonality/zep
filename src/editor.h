@@ -68,8 +68,8 @@ public:
     }
 
     const char* messageId; // Message ID
-    std::string str; // Generic string for simple messages
-    bool handled = false; // If the message was handled
+    std::string str;       // Generic string for simple messages
+    bool handled = false;  // If the message was handled
 };
 
 struct IZepComponent
@@ -136,7 +136,6 @@ enum
 const float bottomBorder = 4.0f;
 const float textBorder = 4.0f;
 const float leftBorderChars = 3;
-
 
 class ZepEditor
 {
@@ -208,7 +207,7 @@ public:
 
     void UpdateWindowState();
 
-    // Setup the display size for the editor
+    // Setup the display fixed_size for the editor
     void SetDisplayRegion(const NVec2f& topLeft, const NVec2f& bottomRight);
     void UpdateSize();
 
@@ -250,13 +249,10 @@ private:
 
     std::vector<std::string> m_commandLines; // Command information, shown under the buffer
 
-    Region m_tabContentRegion;
-    Region m_commandRegion;
-    Region m_tabRegion;
-
-    NVec2f m_topLeftPx;
-    NVec2f m_bottomRightPx;
-
+    std::shared_ptr<Region> m_editorRegion;
+    std::shared_ptr<Region> m_tabContentRegion;
+    std::shared_ptr<Region> m_commandRegion;
+    std::shared_ptr<Region> m_tabRegion;
     bool m_bRegionsChanged = false;
 };
 

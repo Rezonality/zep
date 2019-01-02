@@ -45,8 +45,8 @@ protected:
     std::vector<CommentEntry> m_commentEntries;
     std::vector<ThemeColor> m_syntax; // TODO: Use gap buffer - not sure why this is a vector?
     std::future<void> m_syntaxResult;
-    std::atomic<long> m_processedChar = { 0 };
-    std::atomic<long> m_targetChar = { 0 };
+    std::atomic<long> m_processedChar = {0};
+    std::atomic<long> m_targetChar = {0};
     std::vector<uint32_t> m_multiCommentStarts;
     std::vector<uint32_t> m_multiCommentEnds;
     std::set<std::string> keywords;
@@ -58,10 +58,11 @@ class ZepSyntaxAdorn : public ZepComponent
 {
 public:
     ZepSyntaxAdorn(ZepSyntax& syntax, ZepBuffer& buffer)
-        : ZepComponent(syntax.GetEditor()),
-        m_syntax(syntax),
-        m_buffer(buffer)
-    {}
+        : ZepComponent(syntax.GetEditor())
+        , m_syntax(syntax)
+        , m_buffer(buffer)
+    {
+    }
 
     virtual NVec4f GetSyntaxColorAt(long offset, bool& found) const = 0;
 

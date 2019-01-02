@@ -86,10 +86,12 @@ long ZepBuffer::GetBufferLine(BufferLocation location) const
     return line;
 }
 
-BufferLocation ZepBuffer::LocationFromOffsetByChars(const BufferLocation& location, long offset) const
+BufferLocation ZepBuffer::LocationFromOffsetByChars(const BufferLocation& location, long offset, LineLocation clampLimit) const
 {
     // Walk and find.
     long dir = offset > 0 ? 1 : -1;
+
+    auto clampLocation = GetLinePos(location, clampLimit);
 
     // TODO: This can be cleaner(?)
     long current = location;
@@ -117,6 +119,10 @@ BufferLocation ZepBuffer::LocationFromOffsetByChars(const BufferLocation& locati
         }
     }
 
+    if (clampLocation != InvalidOffset)
+    {
+        current = std::min(clampLocation, current);
+    }
     return LocationFromOffset(current);
 }
 
@@ -127,12 +133,12 @@ BufferLocation ZepBuffer::LocationFromOffset(const BufferLocation& location, lon
 
 BufferLocation ZepBuffer::LocationFromOffset(long offset) const
 {
-    return BufferLocation{ offset };
+    return BufferLocation{offset};
 }
 
 BufferLocation ZepBuffer::Search(const std::string& str, BufferLocation start, SearchDirection dir, BufferLocation end) const
 {
-    return BufferLocation{ 0 };
+    return BufferLocation{0};
 }
 
 bool ZepBuffer::Valid(BufferLocation location) const
@@ -268,8 +274,7 @@ BufferRange ZepBuffer::StandardCtrlMotion(BufferLocation cursor, SearchDirection
     else
     {
         // If on the first char of a new word, skip back
-        if (current > 0 && IsWORDChar(m_gapBuffer[current]) &&
-            !IsWORDChar(m_gapBuffer[current - 1]))
+        if (current > 0 && IsWORDChar(m_gapBuffer[current]) && !IsWORDChar(m_gapBuffer[current - 1]))
         {
             current--;
         }
@@ -284,7 +289,7 @@ BufferRange ZepBuffer::StandardCtrlMotion(BufferLocation cursor, SearchDirection
         }
     }
     r.second = Clamp(current);
-   
+
     return r;
 }
 
@@ -562,7 +567,7 @@ bool ZepBuffer::Save(int64_t& size)
     {
         size--;
     }
-    
+
     if (size <= 0)
     {
         return true;
@@ -590,18 +595,12 @@ void ZepBuffer::SetText(const std::string& text)
 {
     if (m_gapBuffer.size() != 0)
     {
-        GetEditor().Broadcast(std::make_shared<BufferMessage>(this,
-            BufferMessageType::TextDeleted,
-            BufferLocation{ 0 },
-            BufferLocation{ long(m_gapBuffer.size()) }));
+        GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextDeleted, BufferLocation{0}, BufferLocation{long(m_gapBuffer.size())}));
     }
 
     ProcessInput(text);
 
-    GetEditor().Broadcast(std::make_shared<BufferMessage>(this,
-        BufferMessageType::TextAdded,
-        BufferLocation{ 0 },
-        BufferLocation{ long(m_gapBuffer.size()) }));
+    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextAdded, BufferLocation{0}, BufferLocation{long(m_gapBuffer.size())}));
 
     // Doc is not dirty
     m_dirty = 0;
@@ -610,6 +609,11 @@ void ZepBuffer::SetText(const std::string& text)
 // TODO: These can be cleaner
 BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation lineLocation) const
 {
+    if (lineLocation == LineLocation::None)
+    {
+        return InvalidOffset;
+    }
+
     bufferLocation = Clamp(bufferLocation);
     if (m_gapBuffer.empty())
         return bufferLocation;
@@ -631,83 +635,83 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
 
     switch (lineLocation)
     {
-    default:
-    case LineLocation::LineBegin:
-    {
-        return Clamp(bufferLocation);
-    }
-    break;
-
-    // The point just after the line end
-    case LineLocation::BeyondLineEnd:
-    {
-        while (bufferLocation < m_gapBuffer.size() && m_gapBuffer[bufferLocation] != '\n' && m_gapBuffer[bufferLocation] != 0)
+        default:
+        case LineLocation::LineBegin:
         {
+            return Clamp(bufferLocation);
+        }
+        break;
+
+        // The point just after the line end
+        case LineLocation::BeyondLineEnd:
+        {
+            while (bufferLocation < m_gapBuffer.size() && m_gapBuffer[bufferLocation] != '\n' && m_gapBuffer[bufferLocation] != 0)
+            {
+                bufferLocation++;
+            }
             bufferLocation++;
+            return Clamp(bufferLocation);
         }
-        bufferLocation++;
-        return Clamp(bufferLocation);
-    }
-    break;
+        break;
 
-    case LineLocation::LineCRBegin:
-    {
-        while (bufferLocation < m_gapBuffer.size()
-            && m_gapBuffer[bufferLocation] != '\n'
-            && m_gapBuffer[bufferLocation] != 0)
+        case LineLocation::LineCRBegin:
         {
-            bufferLocation++;
+            while (bufferLocation < m_gapBuffer.size()
+                   && m_gapBuffer[bufferLocation] != '\n'
+                   && m_gapBuffer[bufferLocation] != 0)
+            {
+                bufferLocation++;
+            }
+            return bufferLocation;
         }
-        return bufferLocation;
-    }
-    break;
+        break;
 
-    case LineLocation::LineFirstGraphChar:
-    {
-        while (bufferLocation < m_gapBuffer.size() && !std::isgraph(m_gapBuffer[bufferLocation]) && m_gapBuffer[bufferLocation] != '\n')
+        case LineLocation::LineFirstGraphChar:
         {
-            bufferLocation++;
+            while (bufferLocation < m_gapBuffer.size() && !std::isgraph(m_gapBuffer[bufferLocation]) && m_gapBuffer[bufferLocation] != '\n')
+            {
+                bufferLocation++;
+            }
+            return Clamp(bufferLocation);
         }
-        return Clamp(bufferLocation);
-    }
-    break;
+        break;
 
-    case LineLocation::LineLastNonCR:
-    {
-        auto start = bufferLocation;
-
-        while (bufferLocation < m_gapBuffer.size()
-            && m_gapBuffer[bufferLocation] != '\n'
-            && m_gapBuffer[bufferLocation] != 0)
+        case LineLocation::LineLastNonCR:
         {
-            bufferLocation++;
-        }
+            auto start = bufferLocation;
 
-        if (start != bufferLocation)
+            while (bufferLocation < m_gapBuffer.size()
+                   && m_gapBuffer[bufferLocation] != '\n'
+                   && m_gapBuffer[bufferLocation] != 0)
+            {
+                bufferLocation++;
+            }
+
+            if (start != bufferLocation)
+            {
+                bufferLocation--;
+            }
+
+            return Clamp(bufferLocation);
+        }
+        break;
+
+        case LineLocation::LineLastGraphChar:
         {
-            bufferLocation--;
-        }
+            while (bufferLocation < m_gapBuffer.size()
+                   && m_gapBuffer[bufferLocation] != '\n'
+                   && m_gapBuffer[bufferLocation] != 0)
+            {
+                bufferLocation++;
+            }
 
-        return Clamp(bufferLocation);
-    }
-    break;
-
-    case LineLocation::LineLastGraphChar:
-    {
-        while (bufferLocation < m_gapBuffer.size()
-            && m_gapBuffer[bufferLocation] != '\n'
-            && m_gapBuffer[bufferLocation] != 0)
-        {
-            bufferLocation++;
+            while (bufferLocation > 0 && bufferLocation < m_gapBuffer.size() && !std::isgraph(m_gapBuffer[bufferLocation]))
+            {
+                bufferLocation--;
+            }
+            return Clamp(bufferLocation);
         }
-
-        while (bufferLocation > 0 && bufferLocation < m_gapBuffer.size() && !std::isgraph(m_gapBuffer[bufferLocation]))
-        {
-            bufferLocation--;
-        }
-        return Clamp(bufferLocation);
-    }
-    break;
+        break;
     }
 
     return bufferLocation;
@@ -720,7 +724,7 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
         return false;
     }
 
-    BufferLocation changeRange{ long(str.length())};
+    BufferLocation changeRange{long(str.length())};
 
     // We are about to modify this range
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, startOffset, startOffset + changeRange));
@@ -756,7 +760,7 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
     }
 
     // Increment the rest of the line ends
-    // We make all the remaning line ends bigger by the size of the insertion
+    // We make all the remaning line ends bigger by the fixed_size of the insertion
     auto itrAdd = itrLine;
     while (itrAdd != m_lineEnds.end())
     {

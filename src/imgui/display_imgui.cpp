@@ -19,7 +19,7 @@ NVec2f ZepDisplay_ImGui::GetTextSize(const utf8* pBegin, const utf8* pEnd) const
     ImVec2 text_size = font->CalcTextSizeA(font_size, FLT_MAX, FLT_MAX, (const char*)pBegin, (const char*)pEnd, NULL);
     if (text_size.x == 0.0)
     {
-        // Make invalid characters a default size
+        // Make invalid characters a default fixed_size
         return GetTextSize((utf8*)"A");
     }
 
@@ -77,10 +77,9 @@ void ZepDisplay_ImGui::DrawRectFilled(const NRectf& rc, const NVec4f& color) con
     }
 }
 
-void ZepDisplay_ImGui::SetClipRect(const NRectf& rc) 
+void ZepDisplay_ImGui::SetClipRect(const NRectf& rc)
 {
     m_clipRect = rc;
-
 }
 
-} // Zep
+} // namespace Zep

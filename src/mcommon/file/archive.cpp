@@ -7,7 +7,6 @@
 
 #include "mcommon/animation/timer.h"
 
-
 #include <iomanip>
 #include <cassert>
 #include <algorithm>
@@ -178,7 +177,6 @@ ArchiveSection* archive_find_section(ArchiveSection* section, const char* pszNam
     return nullptr;
 }
 
-
 ArchiveSection* Archive_SetSection(Archive& ar, const std::string& strSection)
 {
     // Ensure there is a root
@@ -239,7 +237,7 @@ bool archive_begin_section(Archive& ar, const std::string& name)
     if (ar.saving)
     {
         // Add a new section
-        auto pNewSection =  archive_add_section(ar, pCurrent, name);
+        auto pNewSection = archive_add_section(ar, pCurrent, name);
         ar.currentSection = pNewSection.get();
         ar.currentSectionIndex++;
         ar.sectionChanged = true;
@@ -701,27 +699,27 @@ void archive_update_binding(Archive& ar, Binding& binding)
     ar.currentSection = itr->second;
     switch (binding.type)
     {
-    default:
-        LOG(INFO) << "No binding type";
-        break;
-    case BindingType::Float:
-        archive_value(ar, binding.name, *(float*)binding.pData);
-        break;
-    case BindingType::Bool:
-        archive_value(ar, binding.name, *(bool*)binding.pData);
-        break;
+        default:
+            LOG(INFO) << "No binding type";
+            break;
+        case BindingType::Float:
+            archive_value(ar, binding.name, *(float*)binding.pData);
+            break;
+        case BindingType::Bool:
+            archive_value(ar, binding.name, *(bool*)binding.pData);
+            break;
     }
 }
 
 void archive_bind(Archive& ar, StringId section, StringId key, float& val)
 {
-    ar.bindings.push_back(Binding{ section, key, BindingType::Float, &val });
+    ar.bindings.push_back(Binding{section, key, BindingType::Float, &val});
     archive_update_binding(ar, ar.bindings[ar.bindings.size() - 1]);
 }
 
 void archive_bind(Archive& ar, StringId section, StringId key, bool& val)
 {
-    ar.bindings.push_back(Binding{ section, key, BindingType::Bool, &val });
+    ar.bindings.push_back(Binding{section, key, BindingType::Bool, &val});
     archive_update_binding(ar, ar.bindings[ar.bindings.size() - 1]);
 }
 

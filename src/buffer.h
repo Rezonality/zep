@@ -45,12 +45,13 @@ enum : uint32_t
 
 enum class LineLocation
 {
+    None,               // Not any specific location
     LineFirstGraphChar, // First non blank character
-    LineLastGraphChar, // Last non blank character
-    LineLastNonCR, // Last character before the carriage return
-    LineBegin, // Beginning of line
-    BeyondLineEnd, // The line end of the buffer line (for wrapped lines).
-    LineCRBegin, // The first carriage return character
+    LineLastGraphChar,  // Last non blank character
+    LineLastNonCR,      // Last character before the carriage return
+    LineBegin,          // Beginning of line
+    BeyondLineEnd,      // The line end of the buffer line (for wrapped lines).
+    LineCRBegin,        // The first carriage return character
 };
 
 using BufferLocation = long;
@@ -74,10 +75,7 @@ public:
 
     fs::path GetFilePath() const;
 
-    BufferLocation Search(const std::string& str,
-        BufferLocation start,
-        SearchDirection dir = SearchDirection::Forward,
-        BufferLocation end = BufferLocation{ -1l }) const;
+    BufferLocation Search(const std::string& str, BufferLocation start, SearchDirection dir = SearchDirection::Forward, BufferLocation end = BufferLocation{-1l}) const;
 
     BufferLocation GetLinePos(BufferLocation bufferLocation, LineLocation lineLocation) const;
     bool GetLineOffsets(const long line, long& charStart, long& charEnd) const;
@@ -115,7 +113,7 @@ public:
     long GetBufferLine(BufferLocation offset) const;
     BufferLocation LocationFromOffset(const BufferLocation& location, long offset) const;
     BufferLocation LocationFromOffset(long offset) const;
-    BufferLocation LocationFromOffsetByChars(const BufferLocation& location, long offset) const;
+    BufferLocation LocationFromOffsetByChars(const BufferLocation& location, long offset, LineLocation loc = LineLocation::None) const;
     BufferLocation EndLocation() const;
 
     const GapBuffer<utf8>& GetText() const
@@ -165,6 +163,7 @@ public:
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
     ZepTheme& GetTheme() const;
+
 private:
     // Internal
     GapBuffer<utf8>::const_iterator SearchWord(uint32_t searchType, GapBuffer<utf8>::const_iterator itrBegin, GapBuffer<utf8>::const_iterator itrEnd, SearchDirection dir) const;
@@ -172,10 +171,10 @@ private:
     void ProcessInput(const std::string& str);
 
 private:
-    bool m_dirty; // Is the text modified?
-    bool m_readOnly = false; // Is the text read only?
-    bool m_viewOnly = false; // Is the text not editable, only view?
-    GapBuffer<utf8> m_gapBuffer; // Storage for the text - a gap buffer for efficiency
+    bool m_dirty;                 // Is the text modified?
+    bool m_readOnly = false;      // Is the text read only?
+    bool m_viewOnly = false;      // Is the text not editable, only view?
+    GapBuffer<utf8> m_gapBuffer;  // Storage for the text - a gap buffer for efficiency
     std::vector<long> m_lineEnds; // End of each line
     ThreadPool m_threadPool;
     uint32_t m_flags;
@@ -196,7 +195,7 @@ enum class BufferMessageType
 };
 struct BufferMessage : public ZepMessage
 {
-    BufferMessage(ZepBuffer* pBuff, BufferMessageType messageType, const BufferLocation& startLoc, const BufferLocation& endLoc, const BufferLocation& cursor = BufferLocation{ -1 })
+    BufferMessage(ZepBuffer* pBuff, BufferMessageType messageType, const BufferLocation& startLoc, const BufferLocation& endLoc, const BufferLocation& cursor = BufferLocation{-1})
         : ZepMessage(Msg_Buffer)
         , pBuffer(pBuff)
         , type(messageType)
@@ -209,6 +208,5 @@ struct BufferMessage : public ZepMessage
     BufferMessageType type;
     BufferLocation startLocation;
     BufferLocation endLocation;
-
 };
 } // namespace Zep

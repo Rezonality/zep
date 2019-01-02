@@ -1,4 +1,4 @@
-#include <chrono>     // Timing
+#include <chrono> // Timing
 #include <iomanip>
 #include "mcommon/logger.h"
 
@@ -64,7 +64,7 @@ void profile_end()
 }
 
 TimerBlock::TimerBlock(const std::string& timer)
-    :strTimer(timer)
+    : strTimer(timer)
 {
     timer_start(blockTimer);
 }
@@ -72,7 +72,7 @@ TimerBlock::TimerBlock(const std::string& timer)
 TimerBlock::~TimerBlock()
 {
     elapsed = timer_get_elapsed(blockTimer);
-    LOG(INFO) << "[timer] " << strTimer << " : " << elapsed / 1000 <<  " msec";
+    LOG(INFO) << "[timer] " << strTimer << " : " << elapsed / 1000 << " msec";
 }
 
-} // mcommon
+} // namespace COMMON_NAMESPACE

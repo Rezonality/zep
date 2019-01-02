@@ -44,7 +44,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.*/
 // A Gap buffer is a special type of buffer that has favourable performance when inserting/removing entries
 // in a local region.  Thus memory moving cost is amortised
 // Editors like emacs use it to efficiently manage an edit buffer.
-// For the curious, you can ask emacs for the gap position and size by evaluating (gap-size), (gap-position)
+// For the curious, you can ask emacs for the gap position and fixed_size by evaluating (gap-fixed_size), (gap-position)
 
 template <class T, class A = std::allocator<T>>
 class GapBuffer
@@ -63,7 +63,7 @@ public:
     T *m_pEnd = nullptr;         // Pointer after the end 
     T *m_pGapStart = nullptr;    // Gap start position
     T *m_pGapEnd = nullptr;      // End of the gap, just beyond
-    size_t m_defaultGap = 0;     // Current size of gap
+    size_t m_defaultGap = 0;     // Current fixed_size of gap
     A _alloc;                    // The memory allocator to use
 
     // An iterator used to walk the buffer
@@ -77,8 +77,8 @@ public:
         typedef std::random_access_iterator_tag iterator_category; //or another tag
 
         bool skipGap = true;
-        // Note: p is measured in actual characters, not entire buffer size.
-        // i.e. p skips the gap, and is always less than size()!
+        // Note: p is measured in actual characters, not entire buffer fixed_size.
+        // i.e. p skips the gap, and is always less than fixed_size()!
         size_t p = 0;
 
         GapBuffer<T>& buffer;
@@ -172,10 +172,10 @@ public:
     bool operator==(const GapBuffer<T>& rhs) const { return this == &rhs; }
     bool operator!=(const GapBuffer<T>& rhs) const { return this != &rhs; }
      
-    // Size is size of buffer - the gap size
+    // Size is fixed_size of buffer - the gap fixed_size
     inline size_type size() const { return (m_pEnd - m_pStart) - (m_pGapEnd - m_pGapStart); }
 
-    // No current limit ; not sure how to calculate the ram max size here
+    // No current limit ; not sure how to calculate the ram max fixed_size here
     size_type max_size() const { return std::numeric_limits<size_t>::max(); }
 
     // An empty buffer 
@@ -218,7 +218,7 @@ public:
         m_pEnd = m_pGapEnd;
     }
 
-    // Make buffer this size, but only ever actually grow the memory for now.
+    // Make buffer this fixed_size, but only ever actually grow the memory for now.
     void resize(size_t newSize)
     {
         auto sizeIncrease = (int64_t)newSize - (int64_t)size();
@@ -229,7 +229,7 @@ public:
 
         // If the buffer is shrunk, we move the gap to the end and make it bigger
         // Thus we don't make the buffer smaller, we make the gap bigger instead.
-        // From the outside the size() is the smaller size.
+        // From the outside the fixed_size() is the smaller fixed_size.
         if (sizeIncrease < 0)
         {
             // Move the gap to the end
@@ -238,7 +238,7 @@ public:
             return;
         }
        
-        // New total size and new gap size
+        // New total fixed_size and new gap fixed_size
         auto bufferSize = CurrentSizeWithGap() + sizeIncrease;
 
         // Make the new buffer
@@ -266,7 +266,7 @@ public:
         m_pEnd = pNewStart + bufferSize;
     }
 
-    // Resize the gap to this size
+    // Resize the gap to this fixed_size
     void resizeGap(size_t newGapSize)
     {
         auto sizeIncrease = int64_t(newGapSize) - int64_t(CurrentGapSize());
@@ -276,7 +276,7 @@ public:
             return;
         }
        
-        // New total size and new gap size
+        // New total fixed_size and new gap fixed_size
         auto bufferSize = CurrentSizeWithGap() + sizeIncrease;
 
         // Make the new buffer
@@ -313,7 +313,7 @@ public:
         DEBUG_FILL_GAP;
     }
 
-    // Return a string version of the gap, optionally showing the gap size
+    // Return a string version of the gap, optionally showing the gap fixed_size
     // inside ||.  This is used for testing/validation
     std::string string(bool showGap = false) const
     {
@@ -737,13 +737,13 @@ private:
         return offset;
     }
 
-    // The size of the buffer, including the gap
+    // The fixed_size of the buffer, including the gap
     inline size_t CurrentSizeWithGap() const
     {
         return m_pEnd - m_pStart;
     }
 
-    // The size of the gap (will grow and shrink as necessary)
+    // The fixed_size of the gap (will grow and shrink as necessary)
     inline size_t CurrentGapSize() const
     {
         return m_pGapEnd - m_pGapStart;

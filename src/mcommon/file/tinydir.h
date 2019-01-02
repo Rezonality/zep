@@ -253,7 +253,7 @@ int tinydir_open(tinydir_dir *dir, const _tinydir_char_t *path)
 #ifndef _MSC_VER
 #ifndef _TINYDIR_USE_READDIR
 	int error;
-	int size;	/* using int size */
+	int size;	/* using int fixed_size */
 #endif
 #else
 	_tinydir_char_t path_buf[_TINYDIR_PATH_MAX];
@@ -758,7 +758,7 @@ int _tinydir_file_cmp(const void *a, const void *b)
 The following authored by Ben Hutchings <ben@decadent.org.uk>
 from https://womble.decadent.org.uk/readdir_r-advisory.html
 */
-/* Calculate the required buffer size (in bytes) for directory      *
+/* Calculate the required buffer fixed_size (in bytes) for directory      *
 * entries read from the given directory handle.  Return -1 if this  *
 * this cannot be done.                                              *
 *                                                                   *

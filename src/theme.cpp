@@ -21,15 +21,15 @@ ZepTheme::ZepTheme()
 void ZepTheme::SetThemeType(ThemeType type)
 {
     m_currentTheme = type;
-    switch(type)
+    switch (type)
     {
-    default:
-    case ThemeType::Dark:
-        SetDarkTheme();
-        break;
-    case ThemeType::Light:
-        SetLightTheme();
-        break;
+        default:
+        case ThemeType::Dark:
+            SetDarkTheme();
+            break;
+        case ThemeType::Light:
+            SetLightTheme();
+            break;
     }
 }
 

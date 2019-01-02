@@ -44,4 +44,4 @@ public:
 
 #define TIME_SCOPE(name) TimerBlock name##_timer_block(#name);
 
-} // mcommon
+} // namespace COMMON_NAMESPACE

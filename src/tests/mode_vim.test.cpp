@@ -28,7 +28,7 @@ public:
         pTabWindow = spEditor->GetActiveTabWindow();
         pWindow = spEditor->GetActiveTabWindow()->GetActiveWindow();
 
-        // Setup editor with a default size so that text doesn't wrap and confuse the tests!
+        // Setup editor with a default fixed_size so that text doesn't wrap and confuse the tests!
         spEditor->SetDisplayRegion(NVec2f(0.0f, 0.0f), NVec2f(1024.0f, 1024.0f));
 
         pWindow->SetBufferCursor(0);
@@ -130,14 +130,13 @@ TEST_F(VimTest, ESCAPE)
 
 TEST_F(VimTest, RETURN)
 {
-    /*spBuffer->SetText("one\ntwo");
+    pBuffer->SetText("one\ntwo");
     spMode->AddKeyPress(ExtKeys::RETURN);
-    ASSERT_EQ(pWindow->GetCursor().y, 1);
+    ASSERT_EQ(pWindow->BufferToDisplay().y, 1);
 
     spMode->AddCommandText("li");
     spMode->AddKeyPress(ExtKeys::RETURN);
-    ASSERT_STREQ(spBuffer->GetText().string().c_str(), "ne\ntwo");
-    */
+    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "one\nt\nwo");
 }
 
 TEST_F(VimTest, TAB)
@@ -259,6 +258,7 @@ COMMAND_TEST(copy_to_register_and_append_paste, "(one)", "vll\"rylllv\"Ry\"Rp", 
 COMMAND_TEST(copy_to_null_register_and_paste, "(one)", "vll\"_yllllll\"rp", "(one)");
 
 COMMAND_TEST(copy_yy, "(one)", "yyp", "(one)(one)");
+COMMAND_TEST(copy_yy_paste_line, "one\ntwo", "yyp", "one\none\ntwo");
 COMMAND_TEST(copy_visual_y, "(one)", "vllyp", "((onone)");
 
 // Todo; check syntax highlight result is actually correct during test!
@@ -369,3 +369,4 @@ CURSOR_TEST(motion_gg, "one two", "llllgg", 0, 0);
 CURSOR_TEST(motion_dollar, "one two", "ll$", 6, 0);
 CURSOR_TEST(motion_cr_then_escape, "one", "$a\njk", 0, 1);
 
+CURSOR_TEST(cursor_copy_yy_paste_line, "one\ntwo", "yyp", 0, 1);

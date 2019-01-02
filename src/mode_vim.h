@@ -52,7 +52,7 @@ enum class CommandOperation
 struct CommandContext
 {
     CommandContext(const std::string& commandIn, ZepMode_Vim& md, uint32_t lastK, uint32_t modifierK, EditorMode editorMode);
-   
+
     // Parse the command into:
     // [count1] opA [count2] opB
     // And generate (count1 * count2), opAopB
@@ -65,15 +65,15 @@ struct CommandContext
     std::string commandText;
     std::string commandWithoutCount;
     std::string command;
-    
+
     const SpanInfo* pLineInfo = nullptr;
-    BufferLocation beginRange{ -1 };
-    BufferLocation endRange{ -1 };
+    BufferLocation beginRange{-1};
+    BufferLocation endRange{-1};
     ZepBuffer& buffer;
 
     // Cursor State
-    BufferLocation bufferCursor{ -1 };
-    BufferLocation cursorAfterOverride{ -1 };
+    BufferLocation bufferCursor{-1};
+    BufferLocation cursorAfterOverride{-1};
 
     // Register state
     std::stack<char> registers;
@@ -110,10 +110,17 @@ public:
         return StaticName();
     }
 
-    const std::string& GetLastCommand() const { return m_lastCommand; }
-    const int GetLastCount() const { return m_lastCount; }
+    const std::string& GetLastCommand() const
+    {
+        return m_lastCommand;
+    }
+    const int GetLastCount() const
+    {
+        return m_lastCount;
+    }
 
     virtual void PreDisplay() override;
+
 private:
     void UpdateVisualSelection();
     void HandleInsert(uint32_t key);
@@ -133,4 +140,4 @@ private:
     VimSettings m_settings;
 };
 
-} // Zep
+} // namespace Zep

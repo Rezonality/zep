@@ -11,27 +11,41 @@ enum
 {
     GroupBoundary = (1 << 0),
 };
-
 }
 
 class ZepCommand
 {
 public:
     ZepCommand(ZepBuffer& mode, BufferLocation cursorBefore = -1, BufferLocation cursorAfter = -1)
-        : m_buffer(mode),
-        m_cursorBefore(cursorBefore),
-        m_cursorAfter(cursorAfter)
-    {}
+        : m_buffer(mode)
+        , m_cursorBefore(cursorBefore)
+        , m_cursorAfter(cursorAfter)
+    {
+    }
 
-    virtual ~ZepCommand() {}
+    virtual ~ZepCommand()
+    {
+    }
 
     virtual void Redo() = 0;
     virtual void Undo() = 0;
 
-    virtual void SetFlags(uint32_t flags) { m_flags = flags; }
-    virtual uint32_t GetFlags() const { return m_flags; }
-    virtual BufferLocation GetCursorAfter() const { return m_cursorAfter; }
-    virtual BufferLocation GetCursorBefore() const { return m_cursorBefore; }
+    virtual void SetFlags(uint32_t flags)
+    {
+        m_flags = flags;
+    }
+    virtual uint32_t GetFlags() const
+    {
+        return m_flags;
+    }
+    virtual BufferLocation GetCursorAfter() const
+    {
+        return m_cursorAfter;
+    }
+    virtual BufferLocation GetCursorBefore() const
+    {
+        return m_cursorBefore;
+    }
 
 protected:
     ZepBuffer& m_buffer;
@@ -43,8 +57,8 @@ protected:
 class ZepCommand_DeleteRange : public ZepCommand
 {
 public:
-    ZepCommand_DeleteRange(ZepBuffer& buffer, const BufferLocation& startOffset, const BufferLocation& endOffset, const BufferLocation& cursor = BufferLocation{ -1 }, const BufferLocation& cursorAfter = BufferLocation{ -1 });
-    virtual ~ZepCommand_DeleteRange() {};
+    ZepCommand_DeleteRange(ZepBuffer& buffer, const BufferLocation& startOffset, const BufferLocation& endOffset, const BufferLocation& cursor = BufferLocation{-1}, const BufferLocation& cursorAfter = BufferLocation{-1});
+    virtual ~ZepCommand_DeleteRange(){};
 
     virtual void Redo() override;
     virtual void Undo() override;
@@ -58,8 +72,8 @@ public:
 class ZepCommand_Insert : public ZepCommand
 {
 public:
-    ZepCommand_Insert(ZepBuffer& buffer, const BufferLocation& startOffset, const std::string& str, const BufferLocation& cursor = BufferLocation{ -1 }, const BufferLocation& cursorAfter = BufferLocation{ -1 });
-    virtual ~ZepCommand_Insert() {};
+    ZepCommand_Insert(ZepBuffer& buffer, const BufferLocation& startOffset, const std::string& str, const BufferLocation& cursor = BufferLocation{-1}, const BufferLocation& cursorAfter = BufferLocation{-1});
+    virtual ~ZepCommand_Insert(){};
 
     virtual void Redo() override;
     virtual void Undo() override;
@@ -70,4 +84,4 @@ public:
     BufferLocation m_endOffsetInserted;
 };
 
-} // Zep
+} // namespace Zep

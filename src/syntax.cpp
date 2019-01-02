@@ -115,9 +115,7 @@ void ZepSyntax::Notify(std::shared_ptr<ZepMessage> spMsg)
         else if (spBufferMsg->type == BufferMessageType::TextAdded)
         {
             Interrupt();
-            m_syntax.insert(m_syntax.begin() + spBufferMsg->startLocation,
-                spBufferMsg->endLocation - spBufferMsg->startLocation,
-                ThemeColor::Normal);
+            m_syntax.insert(m_syntax.begin() + spBufferMsg->startLocation, spBufferMsg->endLocation - spBufferMsg->startLocation, ThemeColor::Normal);
             QueueUpdateSyntax(spBufferMsg->startLocation, spBufferMsg->endLocation);
         }
         else if (spBufferMsg->type == BufferMessageType::TextChanged)

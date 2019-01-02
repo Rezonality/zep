@@ -13,4 +13,4 @@ public:
     virtual ~ZepSyntaxGlsl();
 };
 
-} // Zep
+} // namespace Zep

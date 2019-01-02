@@ -5,9 +5,9 @@ namespace Zep
 
 // Delete Range of chars
 ZepCommand_DeleteRange::ZepCommand_DeleteRange(ZepBuffer& buffer, const BufferLocation& start, const BufferLocation& end, const BufferLocation& cursor, const BufferLocation& cursorAfter)
-    : ZepCommand(buffer, cursor, cursorAfter != -1 ? cursorAfter : start),
-    m_startOffset(start),
-    m_endOffset(end)
+    : ZepCommand(buffer, cursor, cursorAfter != -1 ? cursorAfter : start)
+    , m_startOffset(start)
+    , m_endOffset(end)
 {
     // We never allow deletion of the '0' at the end of the buffer
     if (buffer.GetText().empty())
@@ -24,8 +24,7 @@ void ZepCommand_DeleteRange::Redo()
 {
     if (m_startOffset != m_endOffset)
     {
-        m_deleted = std::string(m_buffer.GetText().begin() + m_startOffset,
-            m_buffer.GetText().begin() + m_endOffset);
+        m_deleted = std::string(m_buffer.GetText().begin() + m_startOffset, m_buffer.GetText().begin() + m_endOffset);
 
         m_buffer.Delete(m_startOffset, m_endOffset);
     }
@@ -40,9 +39,9 @@ void ZepCommand_DeleteRange::Undo()
 
 // Insert a string
 ZepCommand_Insert::ZepCommand_Insert(ZepBuffer& buffer, const BufferLocation& start, const std::string& str, const BufferLocation& cursor, const BufferLocation& cursorAfter)
-    : ZepCommand(buffer, cursor, cursorAfter != -1 ? cursorAfter : (start + long(str.length()))),
-    m_startOffset(start),
-    m_strInsert(str)
+    : ZepCommand(buffer, cursor, cursorAfter != -1 ? cursorAfter : (start + long(str.length())))
+    , m_startOffset(start)
+    , m_strInsert(str)
 {
     m_startOffset = buffer.Clamp(m_startOffset);
 }
@@ -68,4 +67,4 @@ void ZepCommand_Insert::Undo()
         m_buffer.Delete(m_startOffset, m_endOffsetInserted);
     }
 }
-}
+} // namespace Zep

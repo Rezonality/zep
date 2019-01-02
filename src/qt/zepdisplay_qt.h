@@ -7,8 +7,14 @@
 namespace Zep
 {
 
-inline NVec2f toNVec2f(const QPoint& im) { return NVec2f(im.x(), im.y()); }
-inline QPoint toQPoint(const NVec2f& im) { return QPoint(im.x, im.y); }
+inline NVec2f toNVec2f(const QPoint& im)
+{
+    return NVec2f(im.x(), im.y());
+}
+inline QPoint toQPoint(const NVec2f& im)
+{
+    return QPoint(im.x, im.y);
+}
 
 class ZepDisplay_Qt : public IZepDisplay
 {
@@ -17,7 +23,10 @@ public:
     ZepDisplay_Qt();
     virtual ~ZepDisplay_Qt();
 
-    void SetPainter(QPainter* pPainter) { m_pPainter = pPainter; }
+    void SetPainter(QPainter* pPainter)
+    {
+        m_pPainter = pPainter;
+    }
 
     // ImGui specific display methods
     virtual NVec2f GetTextSize(const utf8* pBegin, const utf8* pEnd = nullptr) const override;
@@ -26,6 +35,7 @@ public:
     virtual void DrawChars(const NVec2f& pos, const NVec4f& col, const utf8* text_begin, const utf8* text_end = nullptr) const override;
     virtual void DrawRectFilled(const NRectf& rc, const NVec4f& col = NVec4f(1.0f)) const override;
     virtual void SetClipRect(const NRectf& rc) override;
+
 private:
     QPainter* m_pPainter = nullptr;
     int m_fontSize;
@@ -33,4 +43,4 @@ private:
     NRectf m_clipRect;
 };
 
-} // Zep
+} // namespace Zep

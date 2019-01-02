@@ -15,34 +15,42 @@ struct Region;
 class ZepTabWindow : public ZepComponent
 {
 public:
-
     ZepTabWindow(ZepEditor& editor);
     virtual ~ZepTabWindow();
 
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
-
-    ZepWindow* AddWindow(ZepBuffer* pBuffer);
+    ZepWindow* AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, bool vsplit);
     void RemoveWindow(ZepWindow* pWindow);
-    void SetActiveWindow(ZepWindow* pBuffer) { m_pActiveWindow = pBuffer; }
-    ZepWindow* GetActiveWindow() const { return m_pActiveWindow; }
+    void SetActiveWindow(ZepWindow* pBuffer)
+    {
+        m_pActiveWindow = pBuffer;
+    }
+    ZepWindow* GetActiveWindow() const
+    {
+        return m_pActiveWindow;
+    }
     void CloseActiveWindow();
-    
-    using tWindows = std::vector<ZepWindow*>;
-    const tWindows& GetWindows() const { return m_windows; }
 
-    void SetDisplayRegion(const Region& region);
+    using tWindows = std::vector<ZepWindow*>;
+    using tWindowRegions = std::map<ZepWindow*, std::shared_ptr<Region>>;
+    const tWindows& GetWindows() const
+    {
+        return m_windows;
+    }
+
+    void SetDisplayRegion(const NRectf& region, bool force = false);
 
     void Display();
 
 private:
-    ZepEditor& m_editor;                            // Editor that owns this window
-    Region m_windowRegion;                 // region of the display we are showing on.
-    Region m_buffersRegion;                   // region of the display for text.
+    ZepEditor& m_editor;    // Editor that owns this window
     NRectf m_lastRegionRect;
 
     tWindows m_windows;
+    tWindowRegions m_windowRegions;
+    std::shared_ptr<Region> m_spRootRegion;
     ZepWindow* m_pActiveWindow = nullptr;
 };
 
-} // Zep
+} // namespace Zep

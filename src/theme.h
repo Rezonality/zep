@@ -54,10 +54,11 @@ public:
 private:
     void SetDarkTheme();
     void SetLightTheme();
+
 private:
     std::vector<NVec4f> m_uniqueColors;
     std::map<ThemeColor, NVec4f> m_colors;
     ThemeType m_currentTheme;
 };
 
-}
+} // namespace Zep

@@ -61,7 +61,9 @@ public:
     virtual void AddCommandText(std::string strText);
     virtual void AddKeyPress(uint32_t key, uint32_t modifierKeys = ModifierKey::None) = 0;
     virtual const char* Name() const = 0;
-    virtual void Notify(std::shared_ptr<ZepMessage> message) override {}
+    virtual void Notify(std::shared_ptr<ZepMessage> message) override
+    {
+    }
     virtual void AddCommand(std::shared_ptr<ZepCommand> spCmd);
     virtual EditorMode GetEditorMode() const;
 
@@ -72,9 +74,10 @@ public:
     virtual void Redo();
 
     virtual ZepWindow* GetCurrentWindow() const;
-    virtual void PreDisplay() {};
+    virtual void PreDisplay(){};
 
     virtual NVec2i GetVisualRange() const;
+
 protected:
     std::stack<std::shared_ptr<ZepCommand>> m_undoStack;
     std::stack<std::shared_ptr<ZepCommand>> m_redoStack;
@@ -85,4 +88,4 @@ protected:
     BufferLocation m_visualEnd;
 };
 
-} // Zep
+} // namespace Zep

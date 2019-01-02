@@ -214,7 +214,7 @@ int main(int argc, char** argv)
     // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
     // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
     // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-    // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
+    // - The fonts will be rasterized at a given fixed_size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
     // - Read 'misc/fonts/README.txt' for more instructions and details.
     // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
     //io.Fonts->AddFontDefault();
@@ -326,10 +326,10 @@ int main(int argc, char** argv)
         int w, h;
         SDL_GetWindowSize(window, &w, &h);
 
-        // This is a bit messy; and I have no idea why I don't need to remove the menu size from the calculation!
+        // This is a bit messy; and I have no idea why I don't need to remove the menu fixed_size from the calculation!
         auto menuSize = ImGui::GetStyle().FramePadding.y * 2 + ImGui::GetFontSize();
         ImGui::SetNextWindowPos(ImVec2(0, menuSize));
-        ImGui::SetNextWindowSize(ImVec2(float(w), float(h)));// -menuSize)));
+        ImGui::SetNextWindowSize(ImVec2(float(w), float(h))); // -menuSize)));
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);

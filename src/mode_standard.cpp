@@ -110,27 +110,27 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     bool return_to_insert = false;
     switch (key)
     {
-    case ExtKeys::DOWN:
-    case ExtKeys::UP:
-    case ExtKeys::LEFT:
-    case ExtKeys::RIGHT:
-    case ExtKeys::END:
-    case ExtKeys::HOME:
-    case ExtKeys::PAGEDOWN:
-    case ExtKeys::PAGEUP:
-        if (modifierKeys & ModifierKey::Shift)
-        {
-            begin_shift = SwitchMode(EditorMode::Visual);
-        }
-        else
-        {
-            // Immediate switch back to insert
-            SwitchMode(EditorMode::Insert);
-        }
-        break;
-    default:
-        return_to_insert = true;
-        break;
+        case ExtKeys::DOWN:
+        case ExtKeys::UP:
+        case ExtKeys::LEFT:
+        case ExtKeys::RIGHT:
+        case ExtKeys::END:
+        case ExtKeys::HOME:
+        case ExtKeys::PAGEDOWN:
+        case ExtKeys::PAGEUP:
+            if (modifierKeys & ModifierKey::Shift)
+            {
+                begin_shift = SwitchMode(EditorMode::Visual);
+            }
+            else
+            {
+                // Immediate switch back to insert
+                SwitchMode(EditorMode::Insert);
+            }
+            break;
+        default:
+            return_to_insert = true;
+            break;
     }
 
     // CTRL + ...
@@ -162,7 +162,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         else if (key == ExtKeys::HOME)
         {
             // CTRL HOME = top of file
-            GetCurrentWindow()->SetBufferCursor(BufferLocation{ 0 });
+            GetCurrentWindow()->SetBufferCursor(BufferLocation{0});
         }
         else if (key == ExtKeys::END)
         {
@@ -312,7 +312,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         {
             if (GetCurrentWindow()->GetBufferCursor() <= startOffset)
             {
-                m_visualBegin = startOffset;// buffer.LocationFromOffsetByChars(startOffset, -1);
+                m_visualBegin = startOffset; // buffer.LocationFromOffsetByChars(startOffset, -1);
             }
             else
             {
@@ -325,7 +325,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         }
         else
         {
-            m_visualEnd = GetCurrentWindow()->GetBufferCursor();// buffer.LocationFromOffsetByChars(GetCurrentWindow()->GetBufferCursor(), -1);
+            m_visualEnd = GetCurrentWindow()->GetBufferCursor(); // buffer.LocationFromOffsetByChars(GetCurrentWindow()->GetBufferCursor(), -1);
         }
     }
 
@@ -353,10 +353,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
             normalizeOffsets();
 
             // Delete existing selection
-            auto cmd = std::make_shared<ZepCommand_DeleteRange>(buffer,
-                startOffset,
-                endOffset,
-                GetCurrentWindow()->GetBufferCursor());
+            auto cmd = std::make_shared<ZepCommand_DeleteRange>(buffer, startOffset, endOffset, GetCurrentWindow()->GetBufferCursor());
             if (!ch.empty())
             {
                 cmd->SetFlags(CommandFlags::GroupBoundary);
@@ -368,10 +365,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         // Simple insert
         if (!ch.empty())
         {
-            auto cmd = std::make_shared<ZepCommand_Insert>(buffer,
-                startOffset,
-                ch,
-                GetCurrentWindow()->GetBufferCursor());
+            auto cmd = std::make_shared<ZepCommand_Insert>(buffer, startOffset, ch, GetCurrentWindow()->GetBufferCursor());
             if (boundary)
             {
                 cmd->SetFlags(CommandFlags::GroupBoundary);
@@ -384,10 +378,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     else if (op == CommandOperation::Delete)
     {
         // Delete
-        auto cmd = std::make_shared<ZepCommand_DeleteRange>(buffer,
-            startOffset,
-            endOffset,
-            GetCurrentWindow()->GetBufferCursor());
+        auto cmd = std::make_shared<ZepCommand_DeleteRange>(buffer, startOffset, endOffset, GetCurrentWindow()->GetBufferCursor());
         AddCommand(std::static_pointer_cast<ZepCommand>(cmd));
         return_to_insert = true;
     }

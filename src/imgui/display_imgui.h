@@ -7,8 +7,14 @@
 namespace Zep
 {
 
-inline NVec2f toNVec2f(const ImVec2& im) { return NVec2f(im.x, im.y); }
-inline ImVec2 toImVec2(const NVec2f& im) { return ImVec2(im.x, im.y); }
+inline NVec2f toNVec2f(const ImVec2& im)
+{
+    return NVec2f(im.x, im.y);
+}
+inline ImVec2 toImVec2(const NVec2f& im)
+{
+    return ImVec2(im.x, im.y);
+}
 
 class ZepDisplay_ImGui : public IZepDisplay
 {
@@ -20,8 +26,9 @@ public:
     virtual void DrawChars(const NVec2f& pos, const NVec4f& col, const utf8* text_begin, const utf8* text_end = nullptr) const override;
     virtual void DrawRectFilled(const NRectf& a, const NVec4f& col = NVec4f(1.0f)) const override;
     virtual void SetClipRect(const NRectf& a) override;
+
 private:
     NRectf m_clipRect;
 };
 
-} // Zep
+} // namespace Zep

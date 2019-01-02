@@ -26,11 +26,11 @@ class UpdateListener : public FW::FileWatchListener
 {
 public:
     UpdateListener(fileCB cb)
-     : callback(cb)
-    {}
+        : callback(cb)
+    {
+    }
 
-    void handleFileAction(FW::WatchID watchid, const FW::String& dir, const FW::String& filename,
-        FW::Action action)
+    void handleFileAction(FW::WatchID watchid, const FW::String& dir, const FW::String& filename, FW::Action action)
     {
         if (action == FW::Action::Modified)
         {
@@ -73,7 +73,7 @@ std::string file_read(const fs::path& fileName)
         in.seekg(0, std::ios::beg);
         in.read(&contents[0], contents.size());
         in.close();
-        return(contents);
+        return (contents);
     }
     else
     {
@@ -132,7 +132,7 @@ fs::path file_get_documents_path()
 {
     PWSTR path;
     HRESULT hr = SHGetKnownFolderPath(FOLDERID_Documents, 0, NULL, &path);
-    if (SUCCEEDED(hr)) 
+    if (SUCCEEDED(hr))
     {
         fs::path ret(path);
         CoTaskMemFree(path);
@@ -177,8 +177,7 @@ std::vector<fs::path> file_gather_files(const fs::path& root)
 
                 // Ignore . and ..
                 // Otherwise we walk forever.  Do this before absolute path!
-                if (filePath.string().find("\\.") != std::string::npos ||
-                    filePath.string().find("..") != std::string::npos)
+                if (filePath.string().find("\\.") != std::string::npos || filePath.string().find("..") != std::string::npos)
                 {
                     //LOG(INFO) << "Skipping: " << filePath.string();
                     tinydir_next(&thisDir);
@@ -221,4 +220,4 @@ std::vector<fs::path> file_gather_files(const fs::path& root)
     return ret;
 }
 
-} // FileUtils
+} // namespace COMMON_NAMESPACE

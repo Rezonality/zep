@@ -12,7 +12,8 @@ class ZepEditor_ImGui : public ZepEditor
 public:
     ZepEditor_ImGui();
     void HandleInput();
-private: 
+
+private:
 };
 
-} // Zep
+} // namespace Zep
