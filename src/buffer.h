@@ -163,6 +163,7 @@ public:
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
     ZepTheme& GetTheme() const;
+    void SetTheme(std::shared_ptr<ZepTheme> spTheme);
 
 private:
     // Internal

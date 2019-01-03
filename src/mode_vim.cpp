@@ -8,6 +8,7 @@
 #include "mcommon/string/stringutils.h"
 #include "mcommon/animation/timer.h"
 #include "window.h"
+#include "theme.h"
 
 // Note:
 // This is a very basic implementation of the common Vim commands that I use: the bare minimum I can live with.
@@ -1012,6 +1013,23 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
             else if (context.command == ":ZWhiteSpace")
             {
                 pWindow->ToggleFlag(WindowFlags::ShowCR);
+            }
+            else if (context.command == ":ZThemeToggle")
+            {
+                // An easy test command to check per-buffer themeing
+                // Just gets the current theme on the buffer and makes a new
+                // one that is opposite
+                auto theme = pWindow->GetBuffer().GetTheme();
+                auto spNewTheme = std::make_shared<ZepTheme>();
+                if (theme.GetThemeType() == ThemeType::Dark)
+                {
+                    spNewTheme->SetThemeType(ThemeType::Light);
+                }
+                else
+                {
+                    spNewTheme->SetThemeType(ThemeType::Dark);
+                }
+                pWindow->GetBuffer().SetTheme(spNewTheme);
             }
             else if (context.command == ":ls")
             {

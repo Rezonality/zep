@@ -849,4 +849,9 @@ ZepTheme& ZepBuffer::GetTheme() const
     return GetEditor().GetTheme();
 }
 
+void ZepBuffer::SetTheme(std::shared_ptr<ZepTheme> spTheme)
+{
+    m_spOverrideTheme = spTheme;
+}
+
 } // namespace Zep

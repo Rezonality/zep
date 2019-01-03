@@ -133,7 +133,7 @@ void ZepWindow::SetDisplayRegion(const NRectf& region)
     m_leftRegion.rect.bottomRightPx = NVec2f(m_leftRegion.rect.topLeftPx.x + float(leftBorderChars) * textSize.x, m_textRegion.rect.bottomRightPx.y);
 
     m_leftRegion.rect.topLeftPx.x += 1;
-    m_textRegion.rect.topLeftPx.x += leftBorderChars * textSize.x + textBorder - 1;
+    m_textRegion.rect.topLeftPx.x += leftBorderChars * textSize.x;
 
     m_defaultLineSize = GetEditor().GetDisplay().GetFontSize();
 
@@ -241,7 +241,7 @@ void ZepWindow::CheckLineSpans()
                     lineInfo->lastNonCROffset = 0;
                     lineInfo->lineIndex = spanLine;
                     lineInfo->bufferLineNumber = bufferLine;
-                    screenPosX = m_textRegion.rect.topLeftPx.x;
+                    screenPosX = m_textRegion.rect.topLeftPx.x + textBorder;
                 }
                 else
                 {
@@ -280,7 +280,7 @@ void ZepWindow::CheckLineSpans()
         // Next time round - down a buffer line, down a span line
         bufferLine++;
         spanLine++;
-        screenPosX = m_textRegion.rect.topLeftPx.x;
+        screenPosX = m_textRegion.rect.topLeftPx.x + textBorder;
         bufferPosYPx += GetEditor().GetDisplay().GetFontSize();
         lineInfo = nullptr;
     }
@@ -393,7 +393,7 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
     }
 
     bool foundCR = false;
-    auto screenPosX = m_textRegion.rect.topLeftPx.x;
+    auto screenPosX = m_textRegion.rect.topLeftPx.x + textBorder;
 
     char invalidChar;
 
@@ -633,7 +633,7 @@ void ZepWindow::Display()
     auto cursorCL = BufferToDisplay(m_bufferCursor);
 
     GetEditor().GetDisplay().DrawRectFilled(m_textRegion.rect, m_pBuffer->GetTheme().GetColor(ThemeColor::Background));
-
+    GetEditor().GetDisplay().DrawRectFilled(m_leftRegion.rect, m_pBuffer->GetTheme().GetColor(ThemeColor::LineNumberBackground));
     if (m_leftRegion.rect.topLeftPx.x > m_leftRegion.rect.Width())
     {
         GetEditor().GetDisplay().DrawRectFilled(
