@@ -17,6 +17,7 @@
 namespace Zep
 {
 
+// UTF8 Not supported yet.
 //#define UTF8_CHAR_LEN(byte) ((0xE5000000 >> ((byte >> 3) & 0x1e)) & 3) + 1
 #define UTF8_CHAR_LEN(byte) 1
 
@@ -116,9 +117,9 @@ void ZepWindow::SetDisplayRegion(const NRectf& region)
     m_bufferRegion.rect = region;
 
     // Account for airline
-    auto statusCount = 1; // m_statusLines.fixed_size() + 1;
+    auto airlineCount = 1;
     const auto windowSize = m_bufferRegion.rect.bottomRightPx - m_bufferRegion.rect.topLeftPx;
-    const float statusSize = GetEditor().GetDisplay().GetFontSize() * statusCount + textBorder * 2.0f;
+    const float statusSize = GetEditor().GetDisplay().GetFontSize() * airlineCount + textBorder * 2.0f;
 
     m_statusRegion.rect.bottomRightPx = m_bufferRegion.rect.bottomRightPx;
     m_statusRegion.rect.topLeftPx = m_bufferRegion.rect.bottomRightPx - NVec2f(windowSize.x, statusSize);
@@ -131,14 +132,8 @@ void ZepWindow::SetDisplayRegion(const NRectf& region)
     m_leftRegion.rect.topLeftPx = m_textRegion.rect.topLeftPx;
     m_leftRegion.rect.bottomRightPx = NVec2f(m_leftRegion.rect.topLeftPx.x + float(leftBorderChars) * textSize.x, m_textRegion.rect.bottomRightPx.y);
 
-    m_textRegion.rect.topLeftPx.x += leftBorderChars * textSize.x + textBorder;
-
-    /*
-    LOG(DEBUG) << "BufferRegion   : " << m_bufferRegion;
-    LOG(DEBUG) << "StatusRegion   : " << m_statusRegion;
-    LOG(DEBUG) << "LeftRegion     : " << m_leftRegion;
-    LOG(DEBUG) << "TextRegion     : " << m_textRegion;
-    */
+    m_leftRegion.rect.topLeftPx.x += 1;
+    m_textRegion.rect.topLeftPx.x += leftBorderChars * textSize.x + textBorder - 1;
 
     m_defaultLineSize = GetEditor().GetDisplay().GetFontSize();
 
@@ -359,7 +354,6 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
     static const auto whiteSpace = makeStr(std::wstring(L"\x00b7"));
     static const auto blankSpace = ' ';
 
-    auto activeWindow = (GetEditor().GetActiveTabWindow()->GetActiveWindow() == this);
     auto cursorCL = BufferToDisplay();
 
     GetEditor().GetDisplay().SetClipRect(m_bufferRegion.rect);
@@ -436,7 +430,7 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
 
         if (displayPass == 0)
         {
-            if (activeWindow)
+            if (IsActiveWindow())
             {
                 if (GetEditor().GetCurrentMode()->GetEditorMode() == EditorMode::Visual)
                 {
@@ -481,7 +475,9 @@ bool ZepWindow::IsInsideTextRegion(NVec2i pos) const
 
 void ZepWindow::DisplayCursor()
 {
-    auto activeWindow = (GetEditor().GetActiveTabWindow()->GetActiveWindow() == this);
+    if (!IsActiveWindow())
+        return;
+
     auto cursorCL = BufferToDisplay();
 
     // Draw the cursor
@@ -613,6 +609,20 @@ ZepBuffer& ZepWindow::GetBuffer() const
     return *m_pBuffer;
 }
 
+bool ZepWindow::IsActiveWindow() const
+{
+    return m_tabWindow.GetActiveWindow() == this;
+}
+
+NVec4f ZepWindow::FilterActiveColor(const NVec4f& col)
+{
+    if (!IsActiveWindow())
+    {
+        return NVec4f(Luminosity(col));
+    }
+    return col;
+}
+
 void ZepWindow::Display()
 {
     // Ensure line spans are valid; updated if the text is changed or the window dimensions change
@@ -622,11 +632,15 @@ void ZepWindow::Display()
 
     auto cursorCL = BufferToDisplay(m_bufferCursor);
 
-    auto activeWindow = (GetEditor().GetActiveTabWindow()->GetActiveWindow() == this);
-
     GetEditor().GetDisplay().DrawRectFilled(m_textRegion.rect, m_pBuffer->GetTheme().GetColor(ThemeColor::Background));
 
-    if (activeWindow && cursorCL.x != -1)
+    if (m_leftRegion.rect.topLeftPx.x > m_leftRegion.rect.Width())
+    {
+        GetEditor().GetDisplay().DrawRectFilled(
+            NRectf(NVec2f(m_leftRegion.rect.topLeftPx.x - 1, m_leftRegion.rect.topLeftPx.y), NVec2f(m_leftRegion.rect.topLeftPx.x, m_leftRegion.rect.bottomRightPx.y)), m_pBuffer->GetTheme().GetColor(ThemeColor::TabInactive));
+    }
+
+    if (IsActiveWindow() && cursorCL.x != -1)
     {
         if (GetEditor().GetCurrentMode()->GetEditorMode() != EditorMode::Visual)
         {
@@ -662,7 +676,9 @@ void ZepWindow::Display()
     {
         auto textSize = GetEditor().GetDisplay().GetTextSize((const utf8*)m_airline.leftBoxes[i].text.c_str());
         textSize.x += border * 2;
-        GetEditor().GetDisplay().DrawRectFilled(NRectf(screenPosYPx, NVec2f(textSize.x + screenPosYPx.x, screenPosYPx.y + airHeight)), m_airline.leftBoxes[i].background);
+
+        auto col = FilterActiveColor(m_airline.leftBoxes[i].background);
+        GetEditor().GetDisplay().DrawRectFilled(NRectf(screenPosYPx, NVec2f(textSize.x + screenPosYPx.x, screenPosYPx.y + airHeight)), col);
 
         NVec4f textCol = m_pBuffer->GetTheme().GetComplement(m_airline.leftBoxes[i].background);
         GetEditor().GetDisplay().DrawChars(screenPosYPx + NVec2f(border, 0), textCol, (const utf8*)(m_airline.leftBoxes[i].text.c_str()));

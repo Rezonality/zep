@@ -56,6 +56,8 @@ ZepEditor::ZepEditor(IZepDisplay* pDisplay, uint32_t flags)
                           }));
 
     m_editorRegion = std::make_shared<Region>();
+    m_editorRegion->vertical = false;
+
     m_tabRegion = std::make_shared<Region>();
     m_tabContentRegion = std::make_shared<Region>();
     m_commandRegion = std::make_shared<Region>();
@@ -459,7 +461,7 @@ void ZepEditor::Display()
         {
             // Show active buffer in tab as tab name
             auto& buffer = window->GetActiveWindow()->GetBuffer();
-            auto tabColor = (window == GetActiveTabWindow()) ? GetTheme().GetColor(ThemeColor::TabActive) : GetTheme().GetColor(ThemeColor::Tab);
+            auto tabColor = (window == GetActiveTabWindow()) ? GetTheme().GetColor(ThemeColor::TabActive) : GetTheme().GetColor(ThemeColor::TabInactive);
             auto tabLength = m_pDisplay->GetTextSize((utf8*)buffer.GetName().c_str()).x + textBorder * 2;
             m_pDisplay->DrawRectFilled(NRectf(currentTab, currentTab + NVec2f(tabLength, m_tabRegion->rect.Height())), tabColor);
 

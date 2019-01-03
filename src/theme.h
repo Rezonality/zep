@@ -12,7 +12,7 @@ enum class ThemeColor
     HiddenText,
     Text,
     Background,
-    Tab,
+    TabInactive,
     TabActive,
     LineNumberBackground,
     LineNumber,

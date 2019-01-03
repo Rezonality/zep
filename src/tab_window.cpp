@@ -24,38 +24,59 @@ ZepTabWindow::~ZepTabWindow()
 
 ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, bool vsplit)
 {
+    // Make a new window
     auto pWin = new ZepWindow(*this, pBuffer);
-
-    // Make a new window, add a region splitter for it.
     m_windows.push_back(pWin);
 
-    // Every window gets an associated split region
+    // This new window is going to introduce a new region
     auto r = std::make_shared<Region>();
     r->ratio = 1.0f;
     r->flags = RegionFlags::Expanding;
 
+    // No active windows yet, so make this one the active
     if (m_pActiveWindow == nullptr)
     {
         m_pActiveWindow = pWin;
     }
 
-    Region* pRegion = nullptr;
+    Region* pParentRegion = nullptr;
     if (pParent == nullptr)
     {
-        pRegion = m_spRootRegion.get();
+        // If there is no parent window, then we are adding this window into the root region
+        pParentRegion = m_spRootRegion.get();
+        pParentRegion->vertical = vsplit;
     }
     else
     {
-        pRegion = m_windowRegions[pParent].get();
-        if (pRegion->pParent && pRegion->pParent->vertical == r->vertical)
-        {
-            pRegion = pRegion->pParent;
-        }
+        // Get the parent region that holds the parent window!
+        pParentRegion = m_windowRegions[pParent]->pParent;
     }
 
-    pRegion->children.push_back(r);
-    r->pParent = pRegion;
-    m_windowRegions[pWin] = r;
+    if (pParentRegion->vertical == vsplit)
+    {
+        // Add our newly created region into the parent
+        pParentRegion->children.push_back(r);
+        r->pParent = pParentRegion;
+        m_windowRegions[pWin] = r;
+    }
+    else
+    {
+        auto pSplitRegion = m_windowRegions[pParent];
+        assert(pSplitRegion->children.empty());
+
+        pSplitRegion->vertical = vsplit;
+
+        auto r1 = std::make_shared<Region>();
+        r1->ratio = 1.0f;
+        r1->flags = RegionFlags::Expanding;
+        pSplitRegion->children.push_back(r1);
+        r1->pParent = pSplitRegion.get();
+        m_windowRegions[pParent] = r1;
+
+        pSplitRegion->children.push_back(r);
+        r->pParent = pSplitRegion.get();
+        m_windowRegions[pWin] = r;
+    }
 
     SetDisplayRegion(m_lastRegionRect, true);
     return pWin;

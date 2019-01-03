@@ -123,6 +123,9 @@ public:
 
     float ToWindowY(float pos) const;
 
+    bool IsActiveWindow() const;
+    NVec4f FilterActiveColor(const NVec4f& col);
+
 private:
     struct WindowPass
     {
