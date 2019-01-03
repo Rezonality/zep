@@ -58,7 +58,7 @@ private:
 private:
     std::vector<NVec4f> m_uniqueColors;
     std::map<ThemeColor, NVec4f> m_colors;
-    ThemeType m_currentTheme;
+    ThemeType m_currentTheme = ThemeType::Dark;
 };
 
 } // namespace Zep

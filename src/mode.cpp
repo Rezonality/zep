@@ -10,7 +10,6 @@ namespace Zep
 
 ZepMode::ZepMode(ZepEditor& editor)
     : ZepComponent(editor)
-    , m_currentMode(EditorMode::Normal)
 {
 }
 

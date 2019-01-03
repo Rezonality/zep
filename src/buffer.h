@@ -172,16 +172,16 @@ private:
     void ProcessInput(const std::string& str);
 
 private:
-    bool m_dirty;                 // Is the text modified?
+    bool m_dirty = false;         // Is the text modified?
     bool m_readOnly = false;      // Is the text read only?
     bool m_viewOnly = false;      // Is the text not editable, only view?
     GapBuffer<utf8> m_gapBuffer;  // Storage for the text - a gap buffer for efficiency
     std::vector<long> m_lineEnds; // End of each line
     ThreadPool m_threadPool;
-    uint32_t m_flags;
+    uint32_t m_flags = 0;
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::string m_strName;
-    uint32_t m_fileFlags;
+    uint32_t m_fileFlags = 0;
     fs::path m_filePath;
     std::shared_ptr<ZepTheme> m_spOverrideTheme;
 };

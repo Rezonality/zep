@@ -346,6 +346,10 @@ struct NRect
     {
         return bottomRightPx.x - topLeftPx.x;
     }
+    NVec2f Center() const
+    {
+        return (bottomRightPx + topLeftPx) * .5f;
+    }
     NVec2f Size() const
     {
         return bottomRightPx - topLeftPx;

@@ -16,7 +16,7 @@
 // than out to the console sometimes, and as long as you are building on Windows, you are referencing the necessary
 // kernel32.dll....
 extern "C" {
-__declspec(dllimport) void __stdcall OutputDebugStringA(const char* pszChar);
+__declspec(dllimport) void __stdcall OutputDebugStringA(_In_opt_ const char* pszChar);
 }
 #endif
 

@@ -422,6 +422,27 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         GetCurrentWindow()->SetBufferCursor(context.buffer.GetLinePos(bufferCursor, LineLocation::LineFirstGraphChar));
         return true;
     }
+    // Moving between splits
+    else if (context.command == "j" && (context.modifierKeys & ModifierKey::Ctrl))
+    {
+        GetCurrentWindow()->GetTabWindow().DoMotion(WindowMotion::Down);
+        return true;
+    }
+    else if (context.command == "k" && (context.modifierKeys & ModifierKey::Ctrl))
+    {
+        GetCurrentWindow()->GetTabWindow().DoMotion(WindowMotion::Up);
+        return true;
+    }
+    else if (context.command == "h" && (context.modifierKeys & ModifierKey::Ctrl))
+    {
+        GetCurrentWindow()->GetTabWindow().DoMotion(WindowMotion::Left);
+        return true;
+    }
+    else if (context.command == "l" && (context.modifierKeys & ModifierKey::Ctrl))
+    {
+        GetCurrentWindow()->GetTabWindow().DoMotion(WindowMotion::Right);
+        return true;
+    }
     else if (context.command == "j" || context.command == "+" || context.lastKey == ExtKeys::DOWN)
     {
         GetCurrentWindow()->MoveCursorY(context.count);
@@ -991,7 +1012,8 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
                     pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pTab->GetActiveWindow(), true);
                 }
             }
-            else if (context.command == ":hsplit")
+            else if (context.command == ":hsplit" || 
+                context.command == ":split")
             {
                 auto pTab = GetEditor().GetActiveTabWindow();
                 if (pTab)
@@ -999,9 +1021,24 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
                     pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pTab->GetActiveWindow(), false);
                 }
             }
+            else if (context.command.find(":e") == 0)
+            {
+                auto strTok = string_split(context.command, " ");
+                if (strTok.size() > 1)
+                {
+                    auto fname = strTok[1];
+                    auto pBuffer = GetEditor().AddBuffer(fname);
+                    pBuffer->Load(fname);
+                    GetEditor().GetActiveTabWindow()->GetActiveWindow()->SetBuffer(pBuffer);
+                }
+            }
             else if (context.command == ":w")
             {
                 GetEditor().SaveBuffer(context.buffer);
+            }
+            else if (context.command == ":close" || context.command == ":clo")
+            {
+                GetEditor().GetActiveTabWindow()->CloseActiveWindow();
             }
             else if (context.command[1] == 'q')
             {
@@ -1385,6 +1422,7 @@ void ZepMode_Vim::HandleInsert(uint32_t key)
             // There is more work to do here to support keyboard combos in insert mode
             // (not that I can think of ones that I use!)
             CommandContext context("", *this, key, 0, EditorMode::Insert);
+            context.bufferCursor = bufferCursor;
             if (GetCommand(context) && context.commandResult.spCommand)
             {
                 AddCommand(context.commandResult.spCommand);

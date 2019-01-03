@@ -11,10 +11,10 @@ class ZepTabWindow;
 struct SelectRegion
 {
     // For vertical select, we will have a list of spans...
-    BufferLocation start;
-    BufferLocation end;
-    bool visible;
-    bool vertical; // Not yet supported
+    BufferLocation start = 0;
+    BufferLocation end = 0;
+    bool visible = true;
+    bool vertical = false; // Not yet supported
 };
 
 // Display interface

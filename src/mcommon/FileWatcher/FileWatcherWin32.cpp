@@ -136,6 +136,8 @@ WatchStruct* CreateWatch(LPCTSTR szDirectory, bool recursive, DWORD mNotifyFilte
     WatchStruct* pWatch;
     size_t ptrsize = sizeof(*pWatch);
     pWatch = static_cast<WatchStruct*>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, ptrsize));
+    if (!pWatch)
+        return nullptr;
 
     pWatch->mDirHandle = CreateFile(szDirectory, FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
 
@@ -151,8 +153,14 @@ WatchStruct* CreateWatch(LPCTSTR szDirectory, bool recursive, DWORD mNotifyFilte
         }
         else
         {
-            CloseHandle(pWatch->mOverlapped.hEvent);
-            CloseHandle(pWatch->mDirHandle);
+            if (pWatch->mOverlapped.hEvent != 0)
+            {
+                CloseHandle(pWatch->mOverlapped.hEvent);
+            }
+            if (pWatch->mDirHandle != 0)
+            {
+                CloseHandle(pWatch->mDirHandle);
+            }
         }
     }
 
@@ -252,6 +260,7 @@ void FileWatcherWin32::handleAction(WatchStruct* watch, const String& filename, 
             fwAction = Actions::Delete;
             break;
         case FILE_ACTION_MODIFIED:
+        default:
             fwAction = Actions::Modified;
             break;
     };

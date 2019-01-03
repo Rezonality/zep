@@ -8,6 +8,11 @@
 #include "src/window.h"
 #include <gtest/gtest.h>
 
+// TESTS
+// TODO:
+// - A check that navigation up/down on wrapped lines is correct.  Needs to setup a window with a long buffer 
+// line that wraps, and that navigation moves correctly
+
 using namespace Zep;
 class VimTest : public testing::Test
 {
@@ -159,6 +164,14 @@ TEST_F(VimTest, BACKSPACE)
     spMode->AddCommandText("lli");
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
     ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hllo");
+   
+    // Check that appending on the line then hitting backspace removes the last char
+    // A bug that showed up at some point
+    pBuffer->SetText("AB");
+    spMode->AddKeyPress(ExtKeys::ESCAPE);
+    spMode->AddCommandText("AC");
+    spMode->AddKeyPress(ExtKeys::BACKSPACE);
+    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "AB");
 }
 
 // The various rules of vim keystrokes are hard to consolidate.
@@ -368,5 +381,4 @@ CURSOR_TEST(motion_0, "one two", "llll0", 0, 0);
 CURSOR_TEST(motion_gg, "one two", "llllgg", 0, 0);
 CURSOR_TEST(motion_dollar, "one two", "ll$", 6, 0);
 CURSOR_TEST(motion_cr_then_escape, "one", "$a\njk", 0, 1);
-
 CURSOR_TEST(cursor_copy_yy_paste_line, "one\ntwo", "yyp", 0, 1);

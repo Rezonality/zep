@@ -132,7 +132,7 @@ private:
 
     std::string m_currentCommand;
     std::string m_lastCommand;
-    int m_lastCount;
+    int m_lastCount = 0;
     std::string m_lastInsertString;
 
     bool m_pendingEscape = false;

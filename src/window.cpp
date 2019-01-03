@@ -178,7 +178,7 @@ void ZepWindow::CheckLineSpans()
 
     m_maxDisplayLines = (long)std::max(0.0f, std::floor((m_textRegion.rect.bottomRightPx.y - m_textRegion.rect.topLeftPx.y) / m_defaultLineSize));
 
-    float screenPosX = m_textRegion.rect.topLeftPx.x;
+    float screenPosX = m_textRegion.rect.topLeftPx.x + textBorder;
 
     BufferLocation loc = 0;
 
@@ -373,9 +373,6 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
             strNum = std::to_string(lineInfo.bufferLineNumber);
         }
         auto textSize = GetEditor().GetDisplay().GetTextSize((const utf8*)strNum.c_str(), (const utf8*)(strNum.c_str() + strNum.size()));
-
-        // Number background
-        GetEditor().GetDisplay().DrawRectFilled(NRectf(NVec2f(m_leftRegion.rect.topLeftPx.x, ToWindowY(lineInfo.spanYPx)), NVec2f(m_leftRegion.rect.bottomRightPx.x, ToWindowY(lineInfo.spanYPx) + GetEditor().GetDisplay().GetFontSize())), m_pBuffer->GetTheme().GetColor(ThemeColor::LineNumberBackground));
 
         auto digitCol = m_pBuffer->GetTheme().GetColor(ThemeColor::LineNumber);
         if (lineInfo.BufferCursorInside(m_bufferCursor))
@@ -578,7 +575,7 @@ long ZepWindow::GetNumDisplayedLines()
 void ZepWindow::SetBufferCursor(BufferLocation location)
 {
     m_bufferCursor = m_pBuffer->Clamp(location);
-    m_lastCursorColumn = m_pBuffer->GetBufferColumn(location);
+    m_lastCursorColumn = BufferToDisplay(m_bufferCursor).x;
 }
 
 void ZepWindow::SetSelectionRange(BufferLocation start, BufferLocation end)
@@ -637,7 +634,7 @@ void ZepWindow::Display()
     if (m_leftRegion.rect.topLeftPx.x > m_leftRegion.rect.Width())
     {
         GetEditor().GetDisplay().DrawRectFilled(
-            NRectf(NVec2f(m_leftRegion.rect.topLeftPx.x - 1, m_leftRegion.rect.topLeftPx.y), NVec2f(m_leftRegion.rect.topLeftPx.x, m_leftRegion.rect.bottomRightPx.y)), m_pBuffer->GetTheme().GetColor(ThemeColor::TabInactive));
+            NRectf(NVec2f(m_leftRegion.rect.topLeftPx.x, m_leftRegion.rect.topLeftPx.y), NVec2f(m_leftRegion.rect.topLeftPx.x + 1, m_leftRegion.rect.bottomRightPx.y)), m_pBuffer->GetTheme().GetColor(ThemeColor::TabInactive));
     }
 
     if (IsActiveWindow() && cursorCL.x != -1)
@@ -666,8 +663,9 @@ void ZepWindow::Display()
         }
     }
 
-    // Airline
+    // Airline and underline
     GetEditor().GetDisplay().DrawRectFilled(m_statusRegion.rect, m_pBuffer->GetTheme().GetColor(ThemeColor::AirlineBackground));
+
     auto airHeight = GetEditor().GetDisplay().GetFontSize();
     auto border = 12.0f;
 
@@ -713,9 +711,38 @@ void ZepWindow::MoveCursorY(int yDistance, LineLocation clampLocation)
     // Ensure the current x offset didn't walk us off the line
     // We are clamping to visible line here
     m_bufferCursor = std::max(m_bufferCursor, line.columnOffsets.x);
-    m_bufferCursor = std::min(m_bufferCursor, line.columnOffsets.y);
+    m_bufferCursor = std::min(m_bufferCursor, line.columnOffsets.y - 1);
 
-    auto clampOffset = GetBuffer().GetLinePos(line.columnOffsets.x, clampLocation);
+    // We can't call the buffer's LineLocation code, because when moving in span lines,
+    // we are technically not moving in buffer lines; we are stepping in wrapped buffer lines.
+    // But this function still requires a line end clamp! So we calculate it here based on the line info
+    // In practice, we only care about LastNonCR and CRBegin, which are the Y Motions that Standard and Vim
+    // Require (because standard has the cursor _on_ the CR sometimes, but Vim modes do not.
+    // Because the LineLastNonCR might find a 'split' line which has a line end in the middle of the line,
+    // it has to be more tricky to find the last 'Non CR' character, as here
+    BufferLocation clampOffset = line.columnOffsets.y;
+    switch (clampLocation)
+    {
+        case LineLocation::BeyondLineEnd:
+            clampOffset = line.columnOffsets.y;
+            break;
+        case LineLocation::LineLastNonCR:
+            if ((line.columnOffsets.y > 0) && (m_pBuffer->GetText()[line.columnOffsets.y - 1] == '\n' || m_pBuffer->GetText()[line.columnOffsets.y - 1] == 0))
+            {
+                clampOffset = std::max(line.columnOffsets.x, line.columnOffsets.y - 2);
+            }
+            else
+            {
+                clampOffset = std::max(line.columnOffsets.x, line.columnOffsets.y - 1);
+            }
+            break;
+        case LineLocation::LineCRBegin:
+            clampOffset = line.columnOffsets.y - 1;
+            break;
+        default:
+            assert(!"Not supported Y motion line clamp!");
+            break;
+    }
     m_bufferCursor = std::min(m_bufferCursor, clampOffset);
 
     GetEditor().ResetCursorTimer();

@@ -12,9 +12,9 @@ struct Region;
 
 struct CharInfo
 {
-    float screenPosXPx;
-    BufferLocation bufferLocation;
-    BufferLocation bufferLocationEnd;
+    float screenPosXPx = 0.0f;
+    BufferLocation bufferLocation = 0;
+    BufferLocation bufferLocationEnd = 0;
     NVec2f textSize;
 };
 
@@ -24,9 +24,9 @@ struct SpanInfo
 {
     NVec2i columnOffsets;                 // Begin/end range of the text buffer for this line, as always end is one beyond the end.
     long lastNonCROffset = InvalidOffset; // The last char that is visible on the line (i.e. not CR/LF)
-    float spanYPx;                        // Position in the buffer in pixels, if the screen was as big as the buffer.
+    float spanYPx = 0.0f;                 // Position in the buffer in pixels, if the screen was as big as the buffer.
     long bufferLineNumber = 0;            // Line in the original buffer, not the screen line
-    int lineIndex;
+    int lineIndex = 0;
 
     std::vector<CharInfo> charInfo;
 
@@ -181,7 +181,7 @@ private:
     long m_lastCursorColumn = 0;      // The last cursor column (could be removed and recalculated)
 
     ZepBuffer* m_pBuffer = nullptr;
-    SelectRegion m_selection; // Selection area
+    SelectRegion m_selection = SelectRegion{}; // Selection area
 
     bool m_linesChanged = true;
 

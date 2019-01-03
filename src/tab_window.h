@@ -10,6 +10,14 @@ class ZepWindow;
 class IZepDisplay;
 struct Region;
 
+enum class WindowMotion
+{
+    Left,
+    Right,
+    Up,
+    Down
+};
+
 // Display state for a single pane of text.
 // Editor operations such as select and change are local to a displayed pane
 class ZepTabWindow : public ZepComponent
@@ -20,6 +28,7 @@ public:
 
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
+    ZepWindow* DoMotion(WindowMotion motion);
     ZepWindow* AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, bool vsplit);
     void RemoveWindow(ZepWindow* pWindow);
     void SetActiveWindow(ZepWindow* pBuffer)

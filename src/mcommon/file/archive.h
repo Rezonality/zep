@@ -38,7 +38,7 @@ struct ArchiveSection
 // The tables index into the loaded string, which is poked full of 0's to deliniate the data
 struct Archive
 {
-    bool saving;
+    bool saving = false;
     uint64_t currentSectionIndex;
 
     // Path of this file

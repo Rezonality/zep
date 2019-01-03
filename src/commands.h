@@ -81,7 +81,7 @@ public:
     BufferLocation m_startOffset;
     std::string m_strInsert;
 
-    BufferLocation m_endOffsetInserted;
+    BufferLocation m_endOffsetInserted = -1;
 };
 
 } // namespace Zep

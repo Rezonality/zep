@@ -15,7 +15,7 @@ enum class TimerSample : uint32_t
 
 struct timer
 {
-    int64_t startTime;
+    int64_t startTime = 0;
 };
 extern timer globalTimer;
 
@@ -36,7 +36,7 @@ class TimerBlock
 public:
     std::string strTimer;
     timer blockTimer;
-    uint64_t elapsed;
+    uint64_t elapsed = 0;
 
     TimerBlock(const std::string& timer);
     ~TimerBlock();

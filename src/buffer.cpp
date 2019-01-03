@@ -54,7 +54,6 @@ namespace Zep
 const char* Msg_Buffer = "Buffer";
 ZepBuffer::ZepBuffer(ZepEditor& editor, const std::string& strName)
     : ZepComponent(editor)
-    , m_threadPool()
     , m_strName(strName)
 {
     SetText("");
@@ -606,7 +605,10 @@ void ZepBuffer::SetText(const std::string& text)
     m_dirty = 0;
 }
 
-// TODO: These can be cleaner
+// TODO: This can be cleaner
+// The function needs to find the point on the line which bufferLocation is on.
+// It needs to account for empty lines or the last line, zero terminated.
+// It shouldn't walk away to another line!
 BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation lineLocation) const
 {
     if (lineLocation == LineLocation::None)
@@ -618,7 +620,7 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
     if (m_gapBuffer.empty())
         return bufferLocation;
 
-    // If we are on the CR, move back 1
+    // If we are on the CR, move back 1, unless the \n is all that is on the line
     if (m_gapBuffer[bufferLocation] == '\n')
     {
         bufferLocation--;

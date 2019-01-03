@@ -81,11 +81,11 @@ public:
 protected:
     std::stack<std::shared_ptr<ZepCommand>> m_undoStack;
     std::stack<std::shared_ptr<ZepCommand>> m_redoStack;
-    EditorMode m_currentMode;
+    EditorMode m_currentMode = EditorMode::Normal;
     bool m_lineWise = false;
-    BufferLocation m_insertBegin;
-    BufferLocation m_visualBegin;
-    BufferLocation m_visualEnd;
+    BufferLocation m_insertBegin = 0;
+    BufferLocation m_visualBegin = 0;
+    BufferLocation m_visualEnd = 0;
 };
 
 } // namespace Zep
