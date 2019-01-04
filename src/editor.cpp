@@ -155,6 +155,39 @@ void ZepEditor::ResetCursorTimer()
     timer_restart(m_cursorTimer);
 }
 
+void ZepEditor::NextTabWindow()
+{
+    auto itr = std::find(m_tabWindows.begin(), m_tabWindows.end(), m_pActiveTabWindow);
+    if (itr != m_tabWindows.end())
+        itr++;
+
+    if (itr == m_tabWindows.end())
+    {
+        itr = m_tabWindows.begin();
+    }
+    m_pActiveTabWindow = *itr;
+}
+
+void ZepEditor::PreviousTabWindow()
+{
+    auto itr = std::find(m_tabWindows.begin(), m_tabWindows.end(), m_pActiveTabWindow);
+    if (itr == m_tabWindows.end())
+    {
+        return;
+    }
+
+    if (itr == m_tabWindows.begin())
+    {
+        itr = m_tabWindows.end() - 1;
+    }
+    else
+    {
+        itr--;
+    }
+
+    m_pActiveTabWindow = *itr;
+}
+
 void ZepEditor::SetCurrentTabWindow(ZepTabWindow* pTabWindow)
 {
     m_pActiveTabWindow = pTabWindow;

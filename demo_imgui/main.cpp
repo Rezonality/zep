@@ -115,6 +115,7 @@ struct ZepContainer : public IZepComponent
         {
             ZepBuffer* pBuffer = spEditor->AddBuffer("shader.vert");
             pBuffer->SetText(shader.c_str());
+
         }
     }
 

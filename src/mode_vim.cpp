@@ -405,6 +405,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
 {
     auto bufferCursor = GetCurrentWindow()->GetBufferCursor();
     auto pWindow = GetCurrentWindow();
+    auto& buffer = GetCurrentWindow()->GetBuffer();
 
     // Motion
     if (context.command == "$")
@@ -420,6 +421,17 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     else if (context.command == "^")
     {
         GetCurrentWindow()->SetBufferCursor(context.buffer.GetLinePos(bufferCursor, LineLocation::LineFirstGraphChar));
+        return true;
+    }
+    // Moving between tabs
+    else if (context.command == "H" && (context.modifierKeys & ModifierKey::Shift))
+    {
+        GetEditor().PreviousTabWindow();
+        return true;
+    }
+    else if (context.command == "L" && (context.modifierKeys & ModifierKey::Shift))
+    {
+        GetEditor().NextTabWindow();
         return true;
     }
     // Moving between splits
@@ -999,10 +1011,29 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
                 GetEditor().SetCommandText(str.str());
                 return true;
             }
-            else if (context.command == ":tabedit")
+            else if (context.command.find(":tabedit") == 0)
             {
                 auto pTab = GetEditor().AddTabWindow();
-                pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), nullptr, true);
+                auto strTok = string_split(context.command, " ");
+                if (strTok.size() > 1)
+                {
+                    if (strTok[1] == "%")
+                    {
+                        pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), nullptr, true);
+                    }
+                    else
+                    {
+                        auto fname = strTok[1];
+                        auto pBuffer = GetEditor().AddBuffer(fname);
+                        pBuffer->Load(fname);
+                        pTab->AddWindow(pBuffer, nullptr, true);
+                    }
+                }
+                else
+                {
+                    pTab->AddWindow(GetEditor().AddBuffer("Empty"), nullptr, true);
+                }
+                GetEditor().SetCurrentTabWindow(pTab);
             }
             else if (context.command == ":vsplit")
             {
@@ -1050,6 +1081,34 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
             else if (context.command == ":ZWhiteSpace")
             {
                 pWindow->ToggleFlag(WindowFlags::ShowCR);
+            }
+            else if (context.command.find(":ZTestMarkers") == 0)
+            {
+                int markerType = 0;
+                auto strTok = string_split(context.command, " ");
+                if (strTok.size() > 1)
+                {
+                    markerType = std::stoi(strTok[1]);
+                }
+                RangeMarker marker;
+                long start, end;
+                start = buffer.GetLinePos(bufferCursor, LineLocation::LineFirstGraphChar);
+                end = buffer.GetLinePos(bufferCursor, LineLocation::LineLastGraphChar) + 1;
+                marker.range = BufferRange{start, end};
+                switch (markerType)
+                {
+                case 1:
+                    marker.color = ThemeColor::Warning;
+                    marker.name = "Warning";
+                    marker.name = "This is an example warning mark";
+                    break;
+                case 0:
+                default:
+                    marker.color = ThemeColor::Error;
+                    marker.name = "Error";
+                    marker.name = "This is an example error mark";
+                }
+                buffer.AddRangeMarker(marker);
             }
             else if (context.command == ":ZThemeToggle")
             {
@@ -1206,7 +1265,7 @@ void ZepMode_Vim::UpdateVisualSelection()
         {
             m_visualEnd = GetCurrentWindow()->GetBuffer().LocationFromOffsetByChars(GetCurrentWindow()->GetBufferCursor(), 1);
         }
-        GetCurrentWindow()->SetSelectionRange(m_visualBegin, m_visualEnd);
+        GetCurrentWindow()->GetBuffer().SetSelection(BufferRange{m_visualBegin, m_visualEnd});
     }
 }
 void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "editor.h"
-#include "syntax.h"
+#include "math/math.h"
 
 namespace Zep
 {
@@ -31,7 +30,10 @@ enum class ThemeColor
     Comment,
     Whitespace,
     HiddenChar,
-    Parenthesis
+    Parenthesis,
+    Error,
+    Warning,
+    Info
 };
 
 enum class ThemeType

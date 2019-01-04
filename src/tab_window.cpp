@@ -186,7 +186,11 @@ void ZepTabWindow::CloseActiveWindow()
     {
         RemoveWindow(m_pActiveWindow);
     }
-    SetDisplayRegion(m_lastRegionRect, true);
+
+    if (!m_windows.empty())
+    {
+        SetDisplayRegion(m_lastRegionRect, true);
+    }
 }
 
 void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
