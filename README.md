@@ -8,10 +8,10 @@
 
 Zep is a simple embeddable editor, with a rendering agnostic design and optional Vim mode.  Out of the box it can draw to a Qt Widget
 or an an ImGui window - useful for embedding in a game engine.  A simple syntax highlighting engine is provided, and can easily be extended. 
-Basic theming support is also included, and window tabs and splits are almost done.  Zep is 'opinionated' in how it does things, but is easy to
-modify and supports many common features.
+Basic theming support is included, and window tabs and vertical/horizontal splits are also available.  Zep is 'opinionated' in how it does
+things, but is easy to modify and supports many common features.  It is heavliy influenced by Vim, but has a good notepad-style editing mode too.
 
-![Qt](screenshots/sample-qt.png)
+![ImGui](screenshots/sample.png)
 
 Zep supports the standard editing keystrokes you'll find in most editors, along with a reasonable subset of modal Vim editing as an option.
 The demo project lets you switch between the editing modes on the fly.
@@ -26,10 +26,11 @@ Mac OS.  If you're a Vim user, you might often suffer the frustration of not bei
 Key Features:
 * Modal 'vim' or modeless 'standard' editing styles.
 * Qt or ImGui rendering (and extensible) 
-* Terminal-style text wrapping, as an option
+* Terminal-style text wrapping
 * Splits and tabs
 * A simple syntax highlighting engine, with pluggable secondary highlighters
 * Theme support
+* Text Markers for highlighing errors, etc.
 * No dependencies, cross platform, small library
 * Builds on VC 2017, GCC 6, Clang. C++14 is the basic requirement
 
@@ -38,8 +39,9 @@ Limitations:
 * Utf8 is not supported, and may not be, though the code has some placeholders for it as a future possibility
 * Vim mode is limited to common operations
 
-Though I have limited time to work on Zep, I do try to move it forward at our regular Code and Coffee sessions.
-There are over 100 unit tests for the Vim mode, and more on the way for the 'notepad'-like editing mode.  This project started mainly as an experiment
+Though I have limited time to work on Zep, I do try to move it forward at York Developer's regular Code and Coffee sessions. Zep was my 2018 project
+but has already proved quite popular, and I try to throw more features in when I can.
+There are over 150 unit tests for the editing modes.  This project started mainly as an experiment
 and a learning exercise.  I like the idea of a programmer building programmer tools for their own use, just as carpenters used to build their toolbox.
 
 Pull requests are appreciated and encouraged ;) 
