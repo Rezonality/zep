@@ -62,6 +62,11 @@ public:
         return path(name + ext);
     }
 
+    bool has_filename() const
+    {
+        return !filename().string().empty();
+    }
+
     bool is_absolute() const
     {
         return false;
