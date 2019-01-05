@@ -85,8 +85,6 @@ void ZepWindow::SetCursorType(CursorType mode)
 {
     m_cursorType = mode;
     GetEditor().ResetCursorTimer();
-
-    UpdateAirline();
 }
 
 void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
@@ -652,6 +650,8 @@ void ZepWindow::Display()
     ScrollToCursor();
 
     auto cursorCL = BufferToDisplay(m_bufferCursor);
+
+    UpdateAirline();
 
     GetEditor().GetDisplay().DrawRectFilled(m_textRegion->rect, m_pBuffer->GetTheme().GetColor(ThemeColor::Background));
     GetEditor().GetDisplay().DrawRectFilled(m_numberRegion->rect, m_pBuffer->GetTheme().GetColor(ThemeColor::LineNumberBackground));

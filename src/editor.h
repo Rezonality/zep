@@ -169,7 +169,8 @@ public:
     const tBuffers& GetBuffers() const;
     ZepBuffer* GetMRUBuffer() const;
     void SaveBuffer(ZepBuffer& buffer);
-    ZepBuffer* GetBuffer(const fs::path& filePath);
+    ZepBuffer* GetFileBuffer(const fs::path& filePath, uint32_t fileFlags = 0);
+    ZepBuffer* GetBuffer(const std::string& name, uint32_t fileFlags = 0);
 
     void SetRegister(const std::string& reg, const Register& val);
     void SetRegister(const char reg, const Register& val);
@@ -261,6 +262,7 @@ private:
     std::shared_ptr<Region> m_commandRegion;
     std::shared_ptr<Region> m_tabRegion;
     bool m_bRegionsChanged = false;
+    fs::path m_currentRootPath;
 };
 
 } // namespace Zep

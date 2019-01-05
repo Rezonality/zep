@@ -185,7 +185,7 @@ std::vector<fs::path> file_gather_files(const fs::path& root)
                 }
 
                 // Keep paths nice and absolute/canonical
-                filePath = fs::canonical(fs::absolute(filePath));
+                filePath = fs::canonical(filePath);
                 if (checkedPaths.find(filePath) != checkedPaths.end())
                 {
                     LOG(INFO) << "Already checked: " << filePath.string();
@@ -200,7 +200,7 @@ std::vector<fs::path> file_gather_files(const fs::path& root)
                     if (tinydir_open(&subDir, filePath.string().c_str()) != -1)
                     {
                         fs::path newPath(subDir.path);
-                        newPath = fs::canonical(fs::absolute(newPath));
+                        newPath = fs::canonical(newPath);
                         dirs.push(subDir);
                     }
                 }

@@ -445,7 +445,6 @@ void ZepBuffer::ProcessInput(const std::string& text)
     m_gapBuffer.clear();
     m_lineEnds.clear();
 
-    m_fileFlags = 0;
     if (text.empty())
     {
         m_fileFlags |= FileFlags::TerminatedWithZero;
@@ -535,17 +534,48 @@ void ZepBuffer::LockRead()
 // the file path in case you want to write later
 void ZepBuffer::Load(const fs::path& path)
 {
-    m_filePath = fs::canonical(path);
-
-    auto read = file_read(path);
-    if (!read.empty())
+    if (fs::exists(path))
     {
-        SetText(read);
+        m_filePath = fs::canonical(path);
+        auto read = file_read(path);
+        if (!read.empty())
+        {
+            SetText(read);
+
+            // It was loaded, so no need to remember it hasn't been written to the location yet!
+            ClearFlags(FileFlags::NotYetSaved);
+        }
+    }
+    else
+    {
+        // Can't canonicalize a non-existent path.
+        // But we may have a path we haven't save to yet!
+        m_filePath = path;
+        SetFlags(FileFlags::NotYetSaved);
+    }
+
+    if (path.has_filename())
+    {
+        m_strName = path.filename().string();
+    }
+    else
+    {
+        m_strName = m_filePath.string();
     }
 }
 
 bool ZepBuffer::Save(int64_t& size)
 {
+    if (TestFlags(FileFlags::Locked))
+    {
+        return false;
+    }
+
+    if (TestFlags(FileFlags::ReadOnly))
+    {
+        return false;
+    }
+    
     auto str = GetText().string();
 
     // Put back /r/n if necessary while writing the file
@@ -571,7 +601,13 @@ bool ZepBuffer::Save(int64_t& size)
         return true;
     }
 
-    return Zep::file_write(m_filePath, &str[0], size);
+    if (Zep::file_write(m_filePath, &str[0], size))
+    {
+        ClearFlags(FileFlags::NotYetSaved);
+        ClearFlags(FileFlags::Dirty);
+        return true;
+    }
+    return false;
 }
 
 std::string ZepBuffer::GetDisplayName() const
@@ -588,6 +624,19 @@ fs::path ZepBuffer::GetFilePath() const
     return m_filePath;
 }
 
+void ZepBuffer::SetFilePath(const fs::path& path)
+{
+    if (path != m_filePath)
+    {
+        m_filePath = path;
+        if (fs::exists(m_filePath))
+        {
+            m_filePath = fs::canonical(m_filePath);
+        }
+        SetFlags(FileFlags::NotYetSaved);
+    }
+}
+
 // Replace the buffer buffer with the text
 void ZepBuffer::SetText(const std::string& text)
 {
@@ -601,7 +650,7 @@ void ZepBuffer::SetText(const std::string& text)
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextAdded, BufferLocation{0}, BufferLocation{long(m_gapBuffer.size())}));
 
     // Doc is not dirty
-    m_dirty = 0;
+    ClearFlags(FileFlags::Dirty);
 }
 
 // TODO: This can be cleaner
@@ -782,6 +831,8 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
 
     //LOG(DEBUG) << m_gapBuffer.string();
 
+    SetFlags(FileFlags::Dirty);
+
     return true;
 }
 
@@ -831,6 +882,8 @@ bool ZepBuffer::Delete(const BufferLocation& startOffset, const BufferLocation& 
 
     // This is the range we deleted (not valid any more in the buffer)
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextDeleted, startOffset, endOffset));
+
+    SetFlags(FileFlags::Dirty);
 
     return true;
 }

@@ -294,7 +294,7 @@ void ZepMode_Vim::SwitchMode(EditorMode mode)
     if (mode == EditorMode::None)
         return;
 
-    if (mode == EditorMode::Insert && GetCurrentWindow() && GetCurrentWindow()->GetBuffer().IsViewOnly())
+    if (mode == EditorMode::Insert && GetCurrentWindow() && GetCurrentWindow()->GetBuffer().TestFlags(FileFlags::Locked))
     {
         mode = EditorMode::Normal;
     }
@@ -451,8 +451,7 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
                 else
                 {
                     auto fname = strTok[1];
-                    auto pBuffer = GetEditor().GetBuffer(fname);
-                    pBuffer->Load(fname);
+                    auto pBuffer = GetEditor().GetFileBuffer(fname);
                     pTab->AddWindow(pBuffer, nullptr, true);
                 }
             }
@@ -462,20 +461,48 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
             }
             GetEditor().SetCurrentTabWindow(pTab);
         }
-        else if (strCommand == ":vsplit")
+        else if (strCommand.find(":vsplit") == 0)
         {
             auto pTab = GetEditor().GetActiveTabWindow();
-            if (pTab)
+            auto strTok = string_split(strCommand, " ");
+            if (strTok.size() > 1)
             {
-                pTab->AddWindow(&pWindow->GetBuffer(), pTab->GetActiveWindow(), true);
+                if (strTok[1] == "%")
+                {
+                    pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pWindow, true);
+                }
+                else
+                {
+                    auto fname = strTok[1];
+                    auto pBuffer = GetEditor().GetFileBuffer(fname);
+                    pTab->AddWindow(pBuffer, pWindow, true);
+                }
+            }
+            else
+            {
+                pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pWindow, true);
             }
         }
-        else if (strCommand == ":hsplit" || strCommand == ":split")
+        else if (strCommand.find(":hsplit") == 0 || strCommand.find(":split") == 0)
         {
             auto pTab = GetEditor().GetActiveTabWindow();
-            if (pTab)
+            auto strTok = string_split(strCommand, " ");
+            if (strTok.size() > 1)
             {
-                pTab->AddWindow(&pWindow->GetBuffer(), pTab->GetActiveWindow(), false);
+                if (strTok[1] == "%")
+                {
+                    pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pWindow, false);
+                }
+                else
+                {
+                    auto fname = strTok[1];
+                    auto pBuffer = GetEditor().GetFileBuffer(fname);
+                    pTab->AddWindow(pBuffer, pWindow, false);
+                }
+            }
+            else
+            {
+                pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pWindow, false);
             }
         }
         else if (strCommand.find(":e") == 0)
@@ -484,12 +511,18 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
             if (strTok.size() > 1)
             {
                 auto fname = strTok[1];
-                auto pBuffer = GetEditor().GetBuffer(fname);
+                auto pBuffer = GetEditor().GetFileBuffer(fname);
                 pWindow->SetBuffer(pBuffer);
             }
         }
-        else if (strCommand == ":w")
+        else if (strCommand.find(":w") == 0)
         {
+            auto strTok = string_split(strCommand, " ");
+            if (strTok.size() > 1)
+            {
+                auto fname = strTok[1];
+                GetCurrentWindow()->GetBuffer().SetFilePath(fname);
+            }
             GetEditor().SaveBuffer(pWindow->GetBuffer());
         }
         else if (strCommand == ":close" || strCommand == ":clo")
@@ -566,6 +599,14 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
                     if (&GetCurrentWindow()->GetBuffer() == buffer.get())
                     {
                         str << "*";
+                    }
+                    else
+                    {
+                        str << " ";
+                    }
+                    if (buffer->TestFlags(FileFlags::Dirty))
+                    {
+                        str << "+";
                     }
                     else
                     {

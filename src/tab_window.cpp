@@ -175,6 +175,8 @@ ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, bool 
         m_windowRegions[pWin] = r;
     }
 
+    m_pActiveWindow = pWin;
+
     SetDisplayRegion(m_lastRegionRect, true);
     
     return pWin;

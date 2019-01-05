@@ -41,7 +41,11 @@ namespace FileFlags
 enum : uint32_t
 {
     StrippedCR = (1 << 0),
-    TerminatedWithZero = (1 << 1)
+    TerminatedWithZero = (1 << 1),
+    ReadOnly = (1 << 2),
+    Locked = (1 << 3), // Can this file path ever be written to?
+    Dirty = (1 << 4), // Has the file been changed?
+    NotYetSaved = (1 << 5)
 };
 };
 
@@ -86,6 +90,7 @@ public:
     bool Save(int64_t& size);
 
     fs::path GetFilePath() const;
+    void SetFilePath(const fs::path& path);
 
     BufferLocation Search(const std::string& str, BufferLocation start, SearchDirection dir = SearchDirection::Forward, BufferLocation end = BufferLocation{-1l}) const;
 
@@ -136,27 +141,28 @@ public:
     {
         return m_lineEnds;
     }
-    bool IsDirty() const
+
+    bool TestFlags(uint32_t flags)
     {
-        return m_dirty;
-    }
-    bool IsReadOnly() const
-    {
-        return m_readOnly;
-    }
-    bool IsViewOnly() const
-    {
-        return m_viewOnly;
-    }
-    void SetReadOnly(bool ro)
-    {
-        m_readOnly = ro;
-    }
-    void SetViewOnly(bool ro)
-    {
-        m_viewOnly = ro;
+        return ((m_fileFlags & flags) == flags) ? true : false;
     }
 
+    void ClearFlags(uint32_t flag)
+    {
+        SetFlags(flag, false);
+    }
+
+    void SetFlags(uint32_t flag, bool set = true)
+    {
+        if (set)
+        {
+            m_fileFlags |= flag;
+        }
+        else
+        {
+            m_fileFlags &= ~flag;
+        }
+    }
     void SetSyntax(std::shared_ptr<ZepSyntax> spSyntax)
     {
         m_spSyntax = spSyntax;
@@ -192,15 +198,12 @@ private:
 
 private:
     bool m_dirty = false;         // Is the text modified?
-    bool m_readOnly = false;      // Is the text read only?
-    bool m_viewOnly = false;      // Is the text not editable, only view?
     GapBuffer<utf8> m_gapBuffer;  // Storage for the text - a gap buffer for efficiency
     std::vector<long> m_lineEnds; // End of each line
     ThreadPool m_threadPool;
-    uint32_t m_flags = 0;
+    uint32_t m_fileFlags = FileFlags::NotYetSaved;
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::string m_strName;
-    uint32_t m_fileFlags = 0;
     fs::path m_filePath;
     std::shared_ptr<ZepTheme> m_spOverrideTheme;
 

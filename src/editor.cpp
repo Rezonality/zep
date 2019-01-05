@@ -65,6 +65,8 @@ ZepEditor::ZepEditor(IZepDisplay* pDisplay, uint32_t flags)
     m_editorRegion->children.push_back(m_tabRegion);
     m_editorRegion->children.push_back(m_tabContentRegion);
     m_editorRegion->children.push_back(m_commandRegion);
+
+    m_currentRootPath = fs::current_path();
 }
 
 ZepEditor::~ZepEditor()
@@ -76,30 +78,58 @@ void ZepEditor::SaveBuffer(ZepBuffer& buffer)
 {
     // TODO:
     // - What if the buffer has no associated file?  Prompt for one.
-    // - Report locked file situations, etc.
     // - We don't check for outside modification yet either, meaning this could overwrite
     std::ostringstream strText;
-    int64_t size;
-    if (!buffer.Save(size))
+    
+    if (buffer.TestFlags(FileFlags::ReadOnly))
     {
-        strText << "Failed to save: " << buffer.GetFilePath().string();
+        strText << "Failed to save, Read Only: " << buffer.GetDisplayName();
+    }
+    else if (buffer.TestFlags(FileFlags::Locked))
+    {
+        strText << "Failed to save, Locked: " << buffer.GetDisplayName();
+    }
+    else if (buffer.GetFilePath().empty())
+    {
+        strText << "Error: No file name";
     }
     else
     {
-        strText << "Wrote " << buffer.GetFilePath().string() << ", " << size << " bytes";
+        int64_t size;
+        if (!buffer.Save(size))
+        {
+            strText << "Failed to save: " << buffer.GetDisplayName() << " at: " << buffer.GetFilePath().string();
+        }
+        else
+        {
+            strText << "Wrote " << buffer.GetFilePath().string() << ", " << size << " bytes";
+        }
     }
     SetCommandText(strText.str());
 }
 
-ZepBuffer* ZepEditor::GetBuffer(const fs::path& filePath)
+ZepBuffer* ZepEditor::GetBuffer(const std::string& name, uint32_t fileFlags)
 {
-    auto path = fs::canonical(filePath);
-    for (auto& pBuffer : m_buffers)
+    auto pBuffer = AddBuffer(name);
+    pBuffer->SetFlags(fileFlags, true);
+    return pBuffer;
+}
+
+ZepBuffer* ZepEditor::GetFileBuffer(const fs::path& filePath, uint32_t fileFlags)
+{
+    auto path = fs::exists(filePath) ? fs::canonical(filePath) : filePath;
+    if (!path.empty())
     {
-        if (fs::equivalent(pBuffer->GetFilePath(), path))
+        for (auto& pBuffer : m_buffers)
         {
-            LOG(DEBUG) << "Found equivalent buffer for file: " << path.string();
-            return pBuffer.get();
+            if (!pBuffer->GetFilePath().empty())
+            {
+                if (fs::equivalent(pBuffer->GetFilePath(), path))
+                {
+                    LOG(DEBUG) << "Found equivalent buffer for file: " << path.string();
+                    return pBuffer.get();
+                }
+            }
         }
     }
 
@@ -108,6 +138,8 @@ ZepBuffer* ZepEditor::GetBuffer(const fs::path& filePath)
     {
         pBuffer->Load(path);
     }
+
+    pBuffer->SetFlags(fileFlags, true);
     return pBuffer;
 }
 
@@ -115,9 +147,14 @@ void ZepEditor::InitWithFileOrDir(const std::string& str)
 {
     fs::path startPath(str);
 
-    // TODO
+    if (fs::exists(startPath))
+    {
+        startPath = fs::canonical(startPath);
+    }
+
     if (fs::is_directory(startPath))
     {
+        m_currentRootPath = startPath;
     }
     else
     {
