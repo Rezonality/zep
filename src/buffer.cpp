@@ -626,13 +626,15 @@ fs::path ZepBuffer::GetFilePath() const
 
 void ZepBuffer::SetFilePath(const fs::path& path)
 {
-    if (path != m_filePath)
+    auto testPath = path;
+    if (fs::exists(testPath))
     {
-        m_filePath = path;
-        if (fs::exists(m_filePath))
-        {
-            m_filePath = fs::canonical(m_filePath);
-        }
+        testPath = fs::canonical(testPath);
+    }
+
+    if (!fs::equivalent(testPath, m_filePath))
+    {
+        m_filePath = testPath;
         SetFlags(FileFlags::NotYetSaved);
     }
 }
