@@ -183,7 +183,7 @@ void ZepEditor::NextTabWindow()
 
     if (itr == m_tabWindows.end())
     {
-        itr = m_tabWindows.begin();
+        itr = m_tabWindows.end() - 1;
     }
     m_pActiveTabWindow = *itr;
 }
@@ -196,11 +196,7 @@ void ZepEditor::PreviousTabWindow()
         return;
     }
 
-    if (itr == m_tabWindows.begin())
-    {
-        itr = m_tabWindows.end() - 1;
-    }
-    else
+    if (itr != m_tabWindows.begin())
     {
         itr--;
     }

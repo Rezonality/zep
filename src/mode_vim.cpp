@@ -418,6 +418,7 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
     {
         auto pWindow = GetEditor().GetActiveTabWindow()->GetActiveWindow();
         auto& buffer = pWindow->GetBuffer();
+        auto bufferCursor = pWindow->GetBufferCursor();
         if (GetEditor().Broadcast(std::make_shared<ZepMessage>(Msg_HandleCommand, strCommand)))
         {
             return true;
@@ -437,10 +438,29 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
             }
             GetEditor().SetCommandText(str.str());
         }
-        else if (strCommand == ":tabedit")
+        else if (strCommand.find(":tabedit") == 0)
         {
             auto pTab = GetEditor().AddTabWindow();
-            pTab->AddWindow(&pWindow->GetBuffer(), nullptr, true);
+            auto strTok = string_split(strCommand, " ");
+            if (strTok.size() > 1)
+            {
+                if (strTok[1] == "%")
+                {
+                    pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), nullptr, true);
+                }
+                else
+                {
+                    auto fname = strTok[1];
+                    auto pBuffer = GetEditor().GetBuffer(fname);
+                    pBuffer->Load(fname);
+                    pTab->AddWindow(pBuffer, nullptr, true);
+                }
+            }
+            else
+            {
+                pTab->AddWindow(GetEditor().GetBuffer("Empty"), nullptr, true);
+            }
+            GetEditor().SetCurrentTabWindow(pTab);
         }
         else if (strCommand == ":vsplit")
         {
@@ -450,8 +470,7 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
                 pTab->AddWindow(&pWindow->GetBuffer(), pTab->GetActiveWindow(), true);
             }
         }
-        else if (strCommand == ":hsplit" ||
-            strCommand == ":split")
+        else if (strCommand == ":hsplit" || strCommand == ":split")
         {
             auto pTab = GetEditor().GetActiveTabWindow();
             if (pTab)
@@ -483,6 +502,34 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
             {
                 GetEditor().GetActiveTabWindow()->CloseActiveWindow();
             }
+        }
+        else if (strCommand.find(":ZTestMarkers") == 0)
+        {
+            int markerType = 0;
+            auto strTok = string_split(strCommand, " ");
+            if (strTok.size() > 1)
+            {
+                markerType = std::stoi(strTok[1]);
+            }
+            RangeMarker marker;
+            long start, end;
+            start = buffer.GetLinePos(bufferCursor, LineLocation::LineFirstGraphChar);
+            end = buffer.GetLinePos(bufferCursor, LineLocation::LineLastGraphChar) + 1;
+            marker.range = BufferRange{start, end};
+            switch (markerType)
+            {
+                case 1:
+                    marker.color = ThemeColor::Warning;
+                    marker.name = "Warning";
+                    marker.name = "This is an example warning mark";
+                    break;
+                case 0:
+                default:
+                    marker.color = ThemeColor::Error;
+                    marker.name = "Error";
+                    marker.name = "This is an example error mark";
+            }
+            buffer.AddRangeMarker(marker);
         }
         else if (strCommand == ":ZWhiteSpace")
         {
