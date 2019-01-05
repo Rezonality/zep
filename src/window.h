@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+#include <string>
+
 #include "buffer.h"
 #include "window_base.h"
 
@@ -111,13 +114,11 @@ public:
     long GetMaxDisplayLines();
     long GetNumDisplayedLines();
 
-    void SetSelectionRange(BufferLocation start, BufferLocation end);
-
     ZepBuffer& GetBuffer() const;
     void SetBuffer(ZepBuffer* pBuffer);
 
-    // Public for the tests!
     NVec2i BufferToDisplay();
+    NVec2i BufferToDisplay(const BufferLocation& location);
 
     NVec2f GetTextSize(const utf8* pCh, const utf8* pEnd = nullptr);
 
@@ -145,18 +146,16 @@ private:
 
     const SpanInfo& GetCursorLineInfo(long y);
 
-    NVec2i BufferToDisplay(const BufferLocation& location);
-
     bool DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int displayPass);
 
 private:
     NVec2f ToBufferRegion(const NVec2f& pos);
-    Region m_bufferRegion;  // region of the display we are showing on.
-    Region m_textRegion;    // region of the display for text.
-    Region m_statusRegion;  // status text / airline
-    Region m_leftRegion;    // Numbers/indicators
-    NVec2f m_topLeftPx;     // Top-left position on screen
-    NVec2f m_bottomRightPx; // Limits of the screen position
+    std::shared_ptr<Region> m_bufferRegion;  // region of the display we are showing on.
+    std::shared_ptr<Region> m_textRegion;    // region of the display for text.
+    std::shared_ptr<Region> m_airlineRegion; // Airline
+    std::shared_ptr<Region> m_numberRegion;     // Numbers
+    std::shared_ptr<Region> m_indicatorRegion;  // Indicators 
+
     bool m_wrap = true;     // Wrap
 
     // The buffer offset is where we are looking, but the cursor is only what you see on the screen
@@ -181,7 +180,6 @@ private:
     long m_lastCursorColumn = 0;      // The last cursor column (could be removed and recalculated)
 
     ZepBuffer* m_pBuffer = nullptr;
-    SelectRegion m_selection = SelectRegion{}; // Selection area
 
     bool m_linesChanged = true;
 

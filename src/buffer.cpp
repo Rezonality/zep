@@ -1,13 +1,12 @@
 #include <cctype>
 #include <cstdint>
 #include <cstdlib>
+#include <algorithm>
+#include <regex>
 
 #include "buffer.h"
 #include "mcommon/file/file.h"
 #include "mcommon/string/stringutils.h"
-
-#include <algorithm>
-#include <regex>
 
 #include "mcommon/logger.h"
 
@@ -854,6 +853,35 @@ ZepTheme& ZepBuffer::GetTheme() const
 void ZepBuffer::SetTheme(std::shared_ptr<ZepTheme> spTheme)
 {
     m_spOverrideTheme = spTheme;
+}
+
+BufferRange ZepBuffer::GetSelection() const
+{
+    return m_selection;
+}
+
+void ZepBuffer::SetSelection(const BufferRange& selection)
+{
+    m_selection = selection;
+    if (m_selection.first > m_selection.second)
+    {
+        std::swap(m_selection.first, m_selection.second);
+    }
+}
+
+void ZepBuffer::AddRangeMarker(const RangeMarker& marker)
+{
+    m_rangeMarkers.emplace_back(marker);
+}
+
+void ZepBuffer::ClearRangeMarkers()
+{
+    m_rangeMarkers.clear();
+}
+    
+const tRangeMarkers& ZepBuffer::GetRangeMarkers() const
+{
+    return m_rangeMarkers;
 }
 
 } // namespace Zep

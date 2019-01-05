@@ -187,6 +187,8 @@ public:
 
     // Tab windows
     using tTabWindows = std::vector<ZepTabWindow*>;
+    void NextTabWindow();
+    void PreviousTabWindow();
     void SetCurrentTabWindow(ZepTabWindow* pTabWindow);
     ZepTabWindow* GetActiveTabWindow() const;
     ZepTabWindow* AddTabWindow();

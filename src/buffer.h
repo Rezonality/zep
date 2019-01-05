@@ -1,7 +1,8 @@
 #pragma once
 
-#include "editor.h"
 #include <mcommon/file/file.h>
+#include "editor.h"
+#include "theme.h"
 
 #include <set>
 #include <shared_mutex>
@@ -15,6 +16,7 @@ namespace Zep
 
 class ZepSyntax;
 class ZepTheme;
+enum class ThemeColor;
 
 enum class SearchDirection
 {
@@ -57,8 +59,18 @@ enum class LineLocation
 using BufferLocation = long;
 using BufferRange = std::pair<BufferLocation, BufferLocation>;
 
-const long InvalidOffset = -1;
+struct RangeMarker
+{
+    long bufferLine = -1;
+    BufferRange range;
+    ThemeColor color;
+    std::string name;
+    std::string description;
+};
 
+using tRangeMarkers = std::vector<RangeMarker>;
+
+const long InvalidOffset = -1;
 extern const char* Msg_Buffer;
 
 // A really big cursor move; which will likely clamp
@@ -165,6 +177,13 @@ public:
     ZepTheme& GetTheme() const;
     void SetTheme(std::shared_ptr<ZepTheme> spTheme);
 
+    void SetSelection(const BufferRange& sel);
+    BufferRange GetSelection() const;
+
+    void AddRangeMarker(const RangeMarker& marker);
+    void ClearRangeMarkers();
+    const tRangeMarkers& GetRangeMarkers() const;
+
 private:
     // Internal
     GapBuffer<utf8>::const_iterator SearchWord(uint32_t searchType, GapBuffer<utf8>::const_iterator itrBegin, GapBuffer<utf8>::const_iterator itrEnd, SearchDirection dir) const;
@@ -184,6 +203,9 @@ private:
     uint32_t m_fileFlags = 0;
     fs::path m_filePath;
     std::shared_ptr<ZepTheme> m_spOverrideTheme;
+
+    BufferRange m_selection;
+    tRangeMarkers m_rangeMarkers;
 };
 
 // Notification payload

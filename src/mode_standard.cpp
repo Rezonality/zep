@@ -390,7 +390,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
 
     if (m_currentMode == EditorMode::Visual)
     {
-        GetCurrentWindow()->SetSelectionRange(m_visualBegin, m_visualEnd);
+        buffer.SetSelection(BufferRange{m_visualBegin, m_visualEnd});
     }
 }
 

@@ -568,6 +568,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
 {
     auto bufferCursor = GetCurrentWindow()->GetBufferCursor();
     auto pWindow = GetCurrentWindow();
+    auto& buffer = GetCurrentWindow()->GetBuffer();
 
     // Motion
     if (context.command == "$")
@@ -583,6 +584,17 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     else if (context.command == "^")
     {
         GetCurrentWindow()->SetBufferCursor(context.buffer.GetLinePos(bufferCursor, LineLocation::LineFirstGraphChar));
+        return true;
+    }
+    // Moving between tabs
+    else if (context.command == "H" && (context.modifierKeys & ModifierKey::Shift))
+    {
+        GetEditor().PreviousTabWindow();
+        return true;
+    }
+    else if (context.command == "L" && (context.modifierKeys & ModifierKey::Shift))
+    {
+        GetEditor().NextTabWindow();
         return true;
     }
     // Moving between splits
@@ -1218,7 +1230,7 @@ void ZepMode_Vim::UpdateVisualSelection()
         {
             m_visualEnd = GetCurrentWindow()->GetBuffer().LocationFromOffsetByChars(GetCurrentWindow()->GetBufferCursor(), 1);
         }
-        GetCurrentWindow()->SetSelectionRange(m_visualBegin, m_visualEnd);
+        GetCurrentWindow()->GetBuffer().SetSelection(BufferRange{m_visualBegin, m_visualEnd});
     }
 }
 void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
