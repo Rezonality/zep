@@ -175,14 +175,14 @@ inline bool exists(const path& path)
     return stat(path.c_str(), &buffer) == 0;
 }
 
-inline bool equivalent(const path& a, const path& b)
-{
-    return canonical(a).string() == canonical(b).string();
-}
-
 inline path canonical(const path& input)
 {
     return path(ReplaceString(input.string(), "\\", "/"));
+}
+
+inline bool equivalent(const path& a, const path& b)
+{
+    return canonical(a).string() == canonical(b).string();
 }
 
 inline path absolute(const path& input)
