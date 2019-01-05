@@ -11,6 +11,10 @@
 #include <sstream>
 #include <fstream>
 
+#include <unistd.h>
+#include <stdio.h>
+#include <limits.h>
+
 namespace COMMON_NAMESPACE
 {
 
@@ -173,6 +177,16 @@ inline bool exists(const path& path)
         return false;
     }
     return stat(path.c_str(), &buffer) == 0;
+}
+
+inline path current_path()
+{
+    char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd)) != NULL)
+    {
+        return path(std::string(cwd));
+    }
+    return path();
 }
 
 inline path canonical(const path& input)
