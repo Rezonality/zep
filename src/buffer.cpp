@@ -536,7 +536,7 @@ void ZepBuffer::LockRead()
 // the file path in case you want to write later
 void ZepBuffer::Load(const fs::path& path)
 {
-    m_filePath = path;
+    m_filePath = fs::canonical(path);
 
     auto read = file_read(path);
     if (!read.empty())

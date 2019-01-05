@@ -317,7 +317,6 @@ void ZepMode_Vim::SwitchMode(EditorMode mode)
             m_pendingEscape = false;
             break;
         default:
-        case EditorMode::Command:
         case EditorMode::None:
             break;
     }
@@ -399,6 +398,170 @@ bool ZepMode_Vim::GetOperationRange(const std::string& op, EditorMode mode, Buff
         endRange = buffer.LocationFromOffsetByChars(bufferCursor, 1);
     }
     return beginRange != -1;
+}
+
+bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
+{
+    if (key == ExtKeys::BACKSPACE && !strCommand.empty())
+    {
+        m_currentCommand.pop_back();
+    }
+    else
+    {
+        if (std::isgraph(key) || std::isblank(key))
+        {
+            m_currentCommand += char(key);
+        }
+    }
+
+    if (key == ExtKeys::RETURN)
+    {
+        auto pWindow = GetEditor().GetActiveTabWindow()->GetActiveWindow();
+        auto& buffer = pWindow->GetBuffer();
+        if (GetEditor().Broadcast(std::make_shared<ZepMessage>(Msg_HandleCommand, strCommand)))
+        {
+            return true;
+        }
+        else if (strCommand == ":reg")
+        {
+            std::ostringstream str;
+            str << "--- Registers ---" << '\n';
+            for (auto& reg : GetEditor().GetRegisters())
+            {
+                if (!reg.second.text.empty())
+                {
+                    std::string displayText = reg.second.text;
+                    displayText = ReplaceString(displayText, "\n", "^J");
+                    str << "\"" << reg.first << "   " << displayText << '\n';
+                }
+            }
+            GetEditor().SetCommandText(str.str());
+        }
+        else if (strCommand == ":tabedit")
+        {
+            auto pTab = GetEditor().AddTabWindow();
+            pTab->AddWindow(&pWindow->GetBuffer(), nullptr, true);
+        }
+        else if (strCommand == ":vsplit")
+        {
+            auto pTab = GetEditor().GetActiveTabWindow();
+            if (pTab)
+            {
+                pTab->AddWindow(&pWindow->GetBuffer(), pTab->GetActiveWindow(), true);
+            }
+        }
+        else if (strCommand == ":hsplit" ||
+            strCommand == ":split")
+        {
+            auto pTab = GetEditor().GetActiveTabWindow();
+            if (pTab)
+            {
+                pTab->AddWindow(&pWindow->GetBuffer(), pTab->GetActiveWindow(), false);
+            }
+        }
+        else if (strCommand.find(":e") == 0)
+        {
+            auto strTok = string_split(strCommand, " ");
+            if (strTok.size() > 1)
+            {
+                auto fname = strTok[1];
+                auto pBuffer = GetEditor().GetBuffer(fname);
+                pWindow->SetBuffer(pBuffer);
+            }
+        }
+        else if (strCommand == ":w")
+        {
+            GetEditor().SaveBuffer(pWindow->GetBuffer());
+        }
+        else if (strCommand == ":close" || strCommand == ":clo")
+        {
+            GetEditor().GetActiveTabWindow()->CloseActiveWindow();
+        }
+        else if (strCommand[1] == 'q')
+        {
+            if (strCommand == ":q")
+            {
+                GetEditor().GetActiveTabWindow()->CloseActiveWindow();
+            }
+        }
+        else if (strCommand == ":ZWhiteSpace")
+        {
+            pWindow->ToggleFlag(WindowFlags::ShowCR);
+        }
+        else if (strCommand == ":ZThemeToggle")
+        {
+            // An easy test command to check per-buffer themeing
+            // Just gets the current theme on the buffer and makes a new
+            // one that is opposite
+            auto theme = pWindow->GetBuffer().GetTheme();
+            auto spNewTheme = std::make_shared<ZepTheme>();
+            if (theme.GetThemeType() == ThemeType::Dark)
+            {
+                spNewTheme->SetThemeType(ThemeType::Light);
+            }
+            else
+            {
+                spNewTheme->SetThemeType(ThemeType::Dark);
+            }
+            pWindow->GetBuffer().SetTheme(spNewTheme);
+        }
+        else if (strCommand == ":ls")
+        {
+            std::ostringstream str;
+            str << "--- buffers ---" << '\n';
+            int index = 0;
+            for (auto& buffer : GetEditor().GetBuffers())
+            {
+                if (!buffer->GetName().empty())
+                {
+                    std::string displayText = buffer->GetName();
+                    displayText = ReplaceString(displayText, "\n", "^J");
+                    if (&GetCurrentWindow()->GetBuffer() == buffer.get())
+                    {
+                        str << "*";
+                    }
+                    else
+                    {
+                        str << " ";
+                    }
+                    str << index++ << " : " << displayText << '\n';
+                }
+            }
+            GetEditor().SetCommandText(str.str());
+        }
+        else if (strCommand.find(":bu") == 0)
+        {
+            auto strTok = string_split(strCommand, " ");
+
+            if (strTok.size() > 1)
+            {
+                try
+                {
+                    auto index = std::stoi(strTok[1]);
+                    auto current = 0;
+                    for (auto& buffer : GetEditor().GetBuffers())
+                    {
+                        if (index == current)
+                        {
+                            GetCurrentWindow()->SetBuffer(buffer.get());
+                        }
+                        current++;
+                    }
+                }
+                catch (std::exception&)
+                {
+                }
+            }
+        }
+        else
+        {
+            GetEditor().SetCommandText("Not a command");
+        }
+
+        m_currentCommand.clear();
+        return true;
+    }
+    return false;
 }
 
 bool ZepMode_Vim::GetCommand(CommandContext& context)
@@ -977,158 +1140,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     }
     else if (context.lastKey == ExtKeys::RETURN)
     {
-        if (context.command[0] == ':')
-        {
-            if (GetEditor().Broadcast(std::make_shared<ZepMessage>(Msg_HandleCommand, context.command)))
-            {
-                return true;
-            }
-            else if (context.command == ":reg")
-            {
-                std::ostringstream str;
-                str << "--- Registers ---" << '\n';
-                for (auto& reg : GetEditor().GetRegisters())
-                {
-                    if (!reg.second.text.empty())
-                    {
-                        std::string displayText = reg.second.text;
-                        displayText = ReplaceString(displayText, "\n", "^J");
-                        str << "\"" << reg.first << "   " << displayText << '\n';
-                    }
-                }
-                GetEditor().SetCommandText(str.str());
-                return true;
-            }
-            else if (context.command == ":tabedit")
-            {
-                auto pTab = GetEditor().AddTabWindow();
-                pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), nullptr, true);
-            }
-            else if (context.command == ":vsplit")
-            {
-                auto pTab = GetEditor().GetActiveTabWindow();
-                if (pTab)
-                {
-                    pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pTab->GetActiveWindow(), true);
-                }
-            }
-            else if (context.command == ":hsplit" || 
-                context.command == ":split")
-            {
-                auto pTab = GetEditor().GetActiveTabWindow();
-                if (pTab)
-                {
-                    pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pTab->GetActiveWindow(), false);
-                }
-            }
-            else if (context.command.find(":e") == 0)
-            {
-                auto strTok = string_split(context.command, " ");
-                if (strTok.size() > 1)
-                {
-                    auto fname = strTok[1];
-                    auto pBuffer = GetEditor().AddBuffer(fname);
-                    pBuffer->Load(fname);
-                    GetEditor().GetActiveTabWindow()->GetActiveWindow()->SetBuffer(pBuffer);
-                }
-            }
-            else if (context.command == ":w")
-            {
-                GetEditor().SaveBuffer(context.buffer);
-            }
-            else if (context.command == ":close" || context.command == ":clo")
-            {
-                GetEditor().GetActiveTabWindow()->CloseActiveWindow();
-            }
-            else if (context.command[1] == 'q')
-            {
-                if (context.command == ":q")
-                {
-                    GetEditor().GetActiveTabWindow()->CloseActiveWindow();
-                }
-            }
-            else if (context.command == ":ZWhiteSpace")
-            {
-                pWindow->ToggleFlag(WindowFlags::ShowCR);
-            }
-            else if (context.command == ":ZThemeToggle")
-            {
-                // An easy test command to check per-buffer themeing
-                // Just gets the current theme on the buffer and makes a new
-                // one that is opposite
-                auto theme = pWindow->GetBuffer().GetTheme();
-                auto spNewTheme = std::make_shared<ZepTheme>();
-                if (theme.GetThemeType() == ThemeType::Dark)
-                {
-                    spNewTheme->SetThemeType(ThemeType::Light);
-                }
-                else
-                {
-                    spNewTheme->SetThemeType(ThemeType::Dark);
-                }
-                pWindow->GetBuffer().SetTheme(spNewTheme);
-            }
-            else if (context.command == ":ls")
-            {
-                std::ostringstream str;
-                str << "--- buffers ---" << '\n';
-                int index = 0;
-                for (auto& buffer : GetEditor().GetBuffers())
-                {
-                    if (!buffer->GetName().empty())
-                    {
-                        std::string displayText = buffer->GetName();
-                        displayText = ReplaceString(displayText, "\n", "^J");
-                        if (&GetCurrentWindow()->GetBuffer() == buffer.get())
-                        {
-                            str << "*";
-                        }
-                        else
-                        {
-                            str << " ";
-                        }
-                        str << index++ << " : " << displayText << '\n';
-                    }
-                }
-                GetEditor().SetCommandText(str.str());
-                return true;
-            }
-            else if (context.command.find(":bu") == 0)
-            {
-                auto strTok = string_split(context.command, " ");
-
-                if (strTok.size() > 1)
-                {
-                    try
-                    {
-                        auto index = std::stoi(strTok[1]);
-                        auto current = 0;
-                        for (auto& buffer : GetEditor().GetBuffers())
-                        {
-                            if (index == current)
-                            {
-                                GetCurrentWindow()->SetBuffer(buffer.get());
-                            }
-                            current++;
-                        }
-                    }
-                    catch (std::exception&)
-                    {
-                    }
-                }
-                return true;
-            }
-            else
-            {
-                GetEditor().SetCommandText("Not a command");
-                m_currentCommand.clear();
-                return false;
-            }
-
-            m_currentCommand.clear();
-            return false;
-        }
-        else if (context.mode == EditorMode::Normal)
+        if (context.mode == EditorMode::Normal)
         {
             // Normal mode - RETURN moves cursor down a line!
             GetCurrentWindow()->MoveCursorY(1);
@@ -1227,7 +1239,18 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         }
 
         // Update the typed command
-        m_currentCommand += char(key);
+        // TODO: Cursor keys on the command line
+        if (key == ':' || m_currentCommand[0] == ':')
+        {
+            if (HandleExCommand(m_currentCommand, key))
+            {
+                if (GetCurrentWindow())
+                {
+                    GetEditor().ResetCursorTimer();
+                }
+                return;
+            }
+        }
 
         // ... and show it in the command bar if desired
         if (m_currentCommand[0] == ':' || m_settings.ShowNormalModeKeyStrokes)
@@ -1235,8 +1258,14 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
             GetEditor().SetCommandText(m_currentCommand);
         }
 
-        CommandContext context(m_currentCommand, *this, key, modifierKeys, m_currentMode);
+        if (m_currentCommand[0] == ':')
+        {
+            return;
+        }
 
+        m_currentCommand += char(key);
+
+        CommandContext context(m_currentCommand, *this, key, modifierKeys, m_currentMode);
         if (GetCommand(context))
         {
             // Remember a new modification command and clear the last dot command string

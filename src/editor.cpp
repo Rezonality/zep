@@ -91,6 +91,26 @@ void ZepEditor::SaveBuffer(ZepBuffer& buffer)
     SetCommandText(strText.str());
 }
 
+ZepBuffer* ZepEditor::GetBuffer(const fs::path& filePath)
+{
+    auto path = fs::canonical(filePath);
+    for (auto& pBuffer : m_buffers)
+    {
+        if (fs::equivalent(pBuffer->GetFilePath(), path))
+        {
+            LOG(DEBUG) << "Found equivalent buffer for file: " << path.string();
+            return pBuffer.get();
+        }
+    }
+
+    auto pBuffer = AddBuffer(path.filename().string());
+    if (fs::exists(path))
+    {
+        pBuffer->Load(path);
+    }
+    return pBuffer;
+}
+
 void ZepEditor::InitWithFileOrDir(const std::string& str)
 {
     fs::path startPath(str);
@@ -298,6 +318,7 @@ ZepBuffer* ZepEditor::AddBuffer(const std::string& str)
     // Adding a buffer immediately updates the window state, in case this is the first one
     UpdateWindowState();
 
+    LOG(DEBUG) << "Added buffer: " << str;
     return pBuffer.get();
 }
 

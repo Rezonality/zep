@@ -47,8 +47,7 @@ enum class EditorMode
     None,
     Normal,
     Insert,
-    Visual,
-    Command
+    Visual
 };
 
 class ZepMode : public ZepComponent

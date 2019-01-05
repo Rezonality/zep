@@ -12,6 +12,7 @@
 #include <vector>
 #include "mcommon/math/math.h"
 #include "mcommon/animation/timer.h"
+#include "mcommon/file/file.h"
 #include "splits.h"
 
 // Basic Architecture
@@ -166,9 +167,9 @@ public:
     }
 
     const tBuffers& GetBuffers() const;
-    ZepBuffer* AddBuffer(const std::string& str);
     ZepBuffer* GetMRUBuffer() const;
     void SaveBuffer(ZepBuffer& buffer);
+    ZepBuffer* GetBuffer(const fs::path& filePath);
 
     void SetRegister(const std::string& reg, const Register& val);
     void SetRegister(const char reg, const Register& val);
@@ -217,6 +218,10 @@ public:
     }
 
     ZepTheme& GetTheme() const;
+
+private:
+    // Call GetBuffer publicly, to stop creation of duplicate buffers refering to the same file
+    ZepBuffer* AddBuffer(const std::string& bufferName);
 
 private:
     IZepDisplay* m_pDisplay;

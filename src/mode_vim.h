@@ -129,6 +129,7 @@ private:
     void ResetCommand();
     void Init();
     bool GetCommand(CommandContext& context);
+    bool HandleExCommand(const std::string& command, const char key);
 
     std::string m_currentCommand;
     std::string m_lastCommand;
