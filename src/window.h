@@ -12,6 +12,7 @@ namespace Zep
 class ZepTabWindow;
 class IZepDisplay;
 struct Region;
+struct Scroller;
 
 struct CharInfo
 {
@@ -188,10 +189,10 @@ private:
     Airline m_airline;
     std::map<Zep::utf8, NVec2f> m_mapCharSizes;
 
-    float m_vScrollVisiblePercent = 1.0f;
-    float m_vScrollPosition = 0.0f;
     bool m_layoutDirty = true;
     bool m_scrollVisibilityChanged = true;
+
+    std::shared_ptr<Scroller> m_vScroller;
 };
 
 } // namespace Zep

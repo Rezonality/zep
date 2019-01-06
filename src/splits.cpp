@@ -53,6 +53,8 @@ void LayoutRegion(Region& region)
                 currentRect.topLeftPx.x += perExpanding;
             }
         }
+        r->rect.topLeftPx += r->margin;
+        r->rect.bottomRightPx -= r->margin;
     }
     
     for (auto& r : region.children)

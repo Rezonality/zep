@@ -9,6 +9,7 @@
 #include "tab_window.h"
 #include "theme.h"
 #include "window.h"
+#include "scroller.h"
 
 #include "mcommon/logger.h"
 #include "mcommon/string/stringutils.h"
@@ -55,6 +56,10 @@ ZepWindow::ZepWindow(ZepTabWindow& window, ZepBuffer* buffer)
     pHorzRegion->children.push_back(m_vScrollRegion);
 
     m_bufferRegion->children.push_back(m_airlineRegion);
+
+    m_vScroller = std::make_shared<Scroller>();
+    m_vScroller->vertical = false;
+    Scroller_Init(*m_vScroller, *m_vScrollRegion);
 }
 
 ZepWindow::~ZepWindow()
@@ -66,17 +71,17 @@ void ZepWindow::UpdateScrollers()
     m_scrollVisibilityChanged = false;
 
     // For now, scrollers are either on or off; and don't disappear
-    auto old_percent = m_vScrollVisiblePercent;
+    auto old_percent = m_vScroller->vScrollVisiblePercent;
     if (m_maxDisplayLines == 0)
     {
-        m_vScrollVisiblePercent = 1.0f;
-        m_scrollVisibilityChanged = (old_percent != m_vScrollVisiblePercent);
+        m_vScroller->vScrollVisiblePercent = 1.0f;
+        m_scrollVisibilityChanged = (old_percent != m_vScroller->vScrollVisiblePercent);
         return;
     }
-    m_vScrollVisiblePercent = std::min(float(m_maxDisplayLines) / float(m_windowLines.size()), 1.0f);
-    m_vScrollPosition = std::abs(m_bufferOffsetYPx) / m_bufferSizeYPx;
-       
-    if (m_vScrollVisiblePercent >= 1.0f)
+    m_vScroller->vScrollVisiblePercent = std::min(float(m_maxDisplayLines) / float(m_windowLines.size()), 1.0f);
+    m_vScroller->vScrollPosition = std::abs(m_bufferOffsetYPx) / m_bufferSizeYPx;
+      
+    if (m_vScroller->vScrollVisiblePercent >= 1.0f)
     {
         m_vScrollRegion->fixed_size = NVec2f(0.0f, 0.0f);
     }
@@ -668,38 +673,11 @@ NVec4f ZepWindow::FilterActiveColor(const NVec4f& col)
 }
 
 void ZepWindow::DisplayScrollers()
-{
+{ 
     if (m_vScrollRegion->rect.Empty())
         return;
 
-    GetEditor().GetDisplay().SetClipRect(m_vScrollRegion->rect);
-
-    // Scroller background
-    GetEditor().GetDisplay().DrawRectFilled(m_vScrollRegion->rect, m_pBuffer->GetTheme().GetColor(ThemeColor::WidgetBackground));
-
-    const float scrollBorder = 4.0f;
-    const float scrollButtonBorder = 2.0f;
-    const float scrollButtonSize = GetEditor().GetDisplay().GetFontSize() + scrollButtonBorder * 2;
-    float mainAreaSize = m_vScrollRegion->rect.Height() - (scrollButtonSize * 2);
-    float thumbSize = mainAreaSize * m_vScrollVisiblePercent;
-
-    // Top button
-    GetEditor().GetDisplay().DrawRectFilled(
-        NRectf(NVec2f(m_vScrollRegion->rect.topLeftPx.x + scrollBorder, m_vScrollRegion->rect.topLeftPx.y + scrollButtonBorder), 
-            NVec2f(m_vScrollRegion->rect.bottomRightPx.x - scrollBorder, m_vScrollRegion->rect.topLeftPx.y + scrollButtonSize - scrollButtonBorder)),
-            m_pBuffer->GetTheme().GetColor(ThemeColor::WidgetActive));
-
-    // Thumb
-    GetEditor().GetDisplay().DrawRectFilled(
-        NRectf(NVec2f(m_vScrollRegion->rect.topLeftPx.x + scrollBorder, m_vScrollRegion->rect.topLeftPx.y + scrollButtonSize + mainAreaSize * m_vScrollPosition), 
-        NVec2f(m_vScrollRegion->rect.bottomRightPx.x - scrollBorder, m_vScrollRegion->rect.topLeftPx.y + scrollButtonSize + mainAreaSize * m_vScrollPosition + thumbSize)),
-        m_pBuffer->GetTheme().GetColor(ThemeColor::WidgetActive));
-   
-    // Bottom button
-    GetEditor().GetDisplay().DrawRectFilled(
-        NRectf(NVec2f(m_vScrollRegion->rect.topLeftPx.x + scrollBorder, m_vScrollRegion->rect.bottomRightPx.y - scrollButtonSize + scrollButtonBorder), 
-            NVec2f(m_vScrollRegion->rect.bottomRightPx.x - scrollBorder, m_vScrollRegion->rect.bottomRightPx.y - scrollButtonBorder)),
-            m_pBuffer->GetTheme().GetColor(ThemeColor::WidgetActive));
+    Scroller_Display(*m_vScroller, GetEditor().GetDisplay(), m_pBuffer->GetTheme());
 
     GetEditor().GetDisplay().SetClipRect(m_bufferRegion->rect);
 }

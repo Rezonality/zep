@@ -29,6 +29,8 @@ ${ZEP_ROOT}/src/window.cpp
 ${ZEP_ROOT}/src/window.h
 ${ZEP_ROOT}/src/window_base.cpp
 ${ZEP_ROOT}/src/window_base.h
+${ZEP_ROOT}/src/scroller.cpp
+${ZEP_ROOT}/src/scroller.h
 ${ZEP_ROOT}/src/syntax.cpp
 ${ZEP_ROOT}/src/syntax.h
 ${ZEP_ROOT}/src/syntax_glsl.cpp
