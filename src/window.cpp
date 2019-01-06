@@ -21,7 +21,7 @@ namespace Zep
 //#define UTF8_CHAR_LEN(byte) ((0xE5000000 >> ((byte >> 3) & 0x1e)) & 3) + 1
 #define UTF8_CHAR_LEN(byte) 1
 
-const float ScrollBarSize = 24.0f;
+const float ScrollBarSize = 17.0f;
 
 ZepWindow::ZepWindow(ZepTabWindow& window, ZepBuffer* buffer)
     : ZepComponent(window.GetEditor())
@@ -677,10 +677,12 @@ void ZepWindow::DisplayScrollers()
     // Scroller background
     GetEditor().GetDisplay().DrawRectFilled(m_vScrollRegion->rect, m_pBuffer->GetTheme().GetColor(ThemeColor::WidgetBackground));
 
-    const float scrollBorder = 6.0f;
+    const float scrollBorder = 4.0f;
+    float mainAreaSize = m_vScrollRegion->rect.Height() - scrollBorder * 2.0f;
+
     GetEditor().GetDisplay().DrawRectFilled(
-        NRectf(NVec2f(m_vScrollRegion->rect.topLeftPx.x + scrollBorder, m_vScrollRegion->rect.topLeftPx.y + m_vScrollRegion->rect.Height() * m_vScrollPosition), 
-        NVec2f(m_vScrollRegion->rect.bottomRightPx.x - scrollBorder, m_vScrollRegion->rect.topLeftPx.y + m_vScrollRegion->rect.Height() * m_vScrollPosition + (m_vScrollRegion->rect.Height() * m_vScrollVisiblePercent))),
+        NRectf(NVec2f(m_vScrollRegion->rect.topLeftPx.x + scrollBorder, m_vScrollRegion->rect.topLeftPx.y + scrollBorder + mainAreaSize * m_vScrollPosition), 
+        NVec2f(m_vScrollRegion->rect.bottomRightPx.x - scrollBorder, m_vScrollRegion->rect.topLeftPx.y + scrollBorder + mainAreaSize * m_vScrollPosition + (mainAreaSize * m_vScrollVisiblePercent))),
         m_pBuffer->GetTheme().GetColor(ThemeColor::WidgetActive));
     
     GetEditor().GetDisplay().SetClipRect(m_bufferRegion->rect);

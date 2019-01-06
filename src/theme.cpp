@@ -71,7 +71,7 @@ void ZepTheme::SetDarkTheme()
     
     m_colors[ThemeColor::WidgetActive] = m_colors[ThemeColor::TabActive];
     m_colors[ThemeColor::WidgetInactive] = m_colors[ThemeColor::TabInactive];
-    m_colors[ThemeColor::WidgetBackground] = m_colors[ThemeColor::AirlineBackground];
+    m_colors[ThemeColor::WidgetBackground] = m_colors[ThemeColor::AirlineBackground] + NVec4f(.1f, .1f, .1f, 0.0f);
 }
 
 void ZepTheme::SetLightTheme()
@@ -107,7 +107,7 @@ void ZepTheme::SetLightTheme()
    
     m_colors[ThemeColor::WidgetActive] = m_colors[ThemeColor::TabActive];
     m_colors[ThemeColor::WidgetInactive] = m_colors[ThemeColor::TabInactive];
-    m_colors[ThemeColor::WidgetBackground] = m_colors[ThemeColor::AirlineBackground];
+    m_colors[ThemeColor::WidgetBackground] = m_colors[ThemeColor::AirlineBackground] - NVec4f(.1f, .1f, .1f, 0.0f);
 }
 NVec4f ZepTheme::GetUniqueColor(uint32_t index) const
 {
