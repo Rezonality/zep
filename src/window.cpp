@@ -21,6 +21,8 @@ namespace Zep
 //#define UTF8_CHAR_LEN(byte) ((0xE5000000 >> ((byte >> 3) & 0x1e)) & 3) + 1
 #define UTF8_CHAR_LEN(byte) 1
 
+const float ScrollBarSize = 24.0f;
+
 ZepWindow::ZepWindow(ZepTabWindow& window, ZepBuffer* buffer)
     : ZepComponent(window.GetEditor())
     , m_pBuffer(buffer)
@@ -31,12 +33,14 @@ ZepWindow::ZepWindow(ZepTabWindow& window, ZepBuffer* buffer)
     m_indicatorRegion = std::make_shared<Region>();
     m_textRegion = std::make_shared<Region>();
     m_airlineRegion = std::make_shared<Region>();
+    m_vScrollRegion = std::make_shared<Region>();
 
     m_bufferRegion->flags = RegionFlags::Expanding;
     m_bufferRegion->vertical = false;
 
     m_numberRegion->flags = RegionFlags::Fixed;
     m_indicatorRegion->flags = RegionFlags::Fixed;
+    m_vScrollRegion->flags = RegionFlags::Fixed;
     m_textRegion->flags = RegionFlags::Expanding;
     m_airlineRegion->flags = RegionFlags::Fixed;
 
@@ -48,12 +52,43 @@ ZepWindow::ZepWindow(ZepTabWindow& window, ZepBuffer* buffer)
     pHorzRegion->children.push_back(m_numberRegion);
     pHorzRegion->children.push_back(m_indicatorRegion);
     pHorzRegion->children.push_back(m_textRegion);
+    pHorzRegion->children.push_back(m_vScrollRegion);
 
     m_bufferRegion->children.push_back(m_airlineRegion);
 }
 
 ZepWindow::~ZepWindow()
 {
+}
+
+void ZepWindow::UpdateScrollers()
+{
+    m_scrollVisibilityChanged = false;
+
+    // For now, scrollers are either on or off; and don't disappear
+    auto old_percent = m_vScrollVisiblePercent;
+    if (m_maxDisplayLines == 0)
+    {
+        m_vScrollVisiblePercent = 1.0f;
+        m_scrollVisibilityChanged = (old_percent != m_vScrollVisiblePercent);
+        return;
+    }
+    m_vScrollVisiblePercent = std::min(float(m_maxDisplayLines) / float(m_windowLines.size()), 1.0f);
+    m_vScrollPosition = std::abs(m_bufferOffsetYPx) / m_bufferSizeYPx;
+       
+    if (m_vScrollVisiblePercent >= 1.0f)
+    {
+        m_vScrollRegion->fixed_size = NVec2f(0.0f, 0.0f);
+    }
+    else
+    {
+        m_vScrollRegion->fixed_size = NVec2f(ScrollBarSize, 0.0f);
+    }
+
+    if (m_vScrollRegion->rect.Width() != m_vScrollRegion->fixed_size.x)
+    {
+        m_scrollVisibilityChanged = true;
+    }
 }
 
 void ZepWindow::UpdateAirline()
@@ -93,6 +128,7 @@ void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
     {
         auto pMsg = std::static_pointer_cast<BufferMessage>(payload);
 
+        m_layoutDirty = true;
         if (pMsg->pBuffer != m_pBuffer)
         {
             return;
@@ -103,8 +139,6 @@ void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
             // Put the cursor where the replaced text was added
             GetEditor().ResetCursorTimer();
         }
-
-        m_linesChanged = true;
     }
 }
 
@@ -135,7 +169,7 @@ void ZepWindow::SetDisplayRegion(const NRectf& region)
         return;
     }
 
-    m_linesChanged = true;
+    m_layoutDirty = true;
     m_bufferRegion->rect = region;
 
     m_airlineRegion->fixed_size = NVec2f(0.0f, GetEditor().GetDisplay().GetFontSize() + textBorder * 2.0f);
@@ -143,53 +177,40 @@ void ZepWindow::SetDisplayRegion(const NRectf& region)
     // Border, and move the text across a bit
     auto textSize = GetEditor().GetDisplay().GetTextSize((utf8*)"A");
     m_numberRegion->fixed_size = NVec2f(float(leftBorderChars) * textSize.x, 0);
-    
-    m_indicatorRegion->fixed_size = NVec2f(textSize.x, 0);
+
+    m_indicatorRegion->fixed_size = NVec2f(textSize.x, 0.0f);
 
     m_defaultLineSize = GetEditor().GetDisplay().GetFontSize();
     m_bufferOffsetYPx = 0;
-
-    UpdateAirline();
-
-    LayoutRegion(*m_bufferRegion);
-    LOG(INFO) << *m_bufferRegion;
 }
 
 void ZepWindow::ScrollToCursor()
 {
-    bool changed = false;
-
+    auto old_offset = m_bufferOffsetYPx;
     auto two_lines = (GetEditor().GetDisplay().GetFontSize() * 2);
     auto& cursorLine = GetCursorLineInfo(BufferToDisplay().y);
 
     if (m_bufferOffsetYPx > (cursorLine.spanYPx - two_lines))
     {
         m_bufferOffsetYPx -= (m_bufferOffsetYPx - (cursorLine.spanYPx - two_lines));
-        changed = true;
     }
     else if ((m_bufferOffsetYPx + m_textRegion->rect.Height() - two_lines) < cursorLine.spanYPx)
     {
         m_bufferOffsetYPx += cursorLine.spanYPx - (m_bufferOffsetYPx + m_textRegion->rect.Height() - two_lines);
-        changed = true;
     }
 
-    if (changed)
+    m_bufferOffsetYPx = std::min(m_bufferOffsetYPx, m_bufferSizeYPx - float(m_maxDisplayLines) * (two_lines * .5f));
+    m_bufferOffsetYPx = std::max(0.f, m_bufferOffsetYPx);
+
+    if (old_offset != m_bufferOffsetYPx)
     {
-        m_bufferOffsetYPx = std::max(0.f, m_bufferOffsetYPx);
         UpdateVisibleLineRange();
     }
 }
 
-void ZepWindow::CheckLineSpans()
+void ZepWindow::UpdateLineSpans()
 {
-    // If changed, update
-    if (!m_linesChanged)
-    {
-        return;
-    }
-    m_linesChanged = false;
-
-    m_maxDisplayLines = (long)std::max(0.0f, std::floor((m_textRegion->rect.bottomRightPx.y - m_textRegion->rect.topLeftPx.y) / m_defaultLineSize));
+    m_maxDisplayLines = (long)std::max(0.0f, std::floor(m_textRegion->rect.Height() / m_defaultLineSize));
 
     float screenPosX = m_textRegion->rect.topLeftPx.x + textBorder;
 
@@ -312,7 +333,10 @@ void ZepWindow::CheckLineSpans()
         m_windowLines.push_back(lineInfo);
     }
 
+    m_bufferSizeYPx = m_windowLines[m_windowLines.size() - 1].spanYPx + GetEditor().GetDisplay().GetFontSize();
+
     UpdateVisibleLineRange();
+    m_layoutDirty = true;
 }
 
 void ZepWindow::UpdateVisibleLineRange()
@@ -337,6 +361,7 @@ void ZepWindow::UpdateVisibleLineRange()
     }
     m_visibleLineRange.y++;
 
+    UpdateScrollers();
     /*
     LOG(DEBUG) << "Line Range: " << std::to_string(m_visibleLineRange.x) + ", " + std::to_string(m_visibleLineRange.y);
     LOG(DEBUG) << "YStart: " << m_windowLines[m_visibleLineRange.x].spanYPx << ", BufferOffset " << m_bufferOffsetYPx << ", font: " << GetEditor().GetDisplay().GetFontSize();
@@ -345,7 +370,7 @@ void ZepWindow::UpdateVisibleLineRange()
 
 const SpanInfo& ZepWindow::GetCursorLineInfo(long y)
 {
-    CheckLineSpans();
+    UpdateLayout();
     y = std::max(0l, y);
     y = std::min(y, long(m_windowLines.size() - 1));
     return m_windowLines[y];
@@ -460,7 +485,7 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
                     }
                 }
             }
-           
+
             // Show any markers
             for (auto& marker : m_pBuffer->GetRangeMarkers())
             {
@@ -595,13 +620,13 @@ void ZepWindow::ToggleFlag(uint32_t flag)
 
 long ZepWindow::GetMaxDisplayLines()
 {
-    CheckLineSpans();
+    UpdateLayout();
     return m_maxDisplayLines;
 }
 
 long ZepWindow::GetNumDisplayedLines()
 {
-    CheckLineSpans();
+    UpdateLayout();
     return std::min((long)m_windowLines.size(), GetMaxDisplayLines());
 }
 
@@ -615,7 +640,7 @@ void ZepWindow::SetBuffer(ZepBuffer* pBuffer)
 {
     assert(pBuffer);
     m_pBuffer = pBuffer;
-    m_linesChanged = true;
+    m_layoutDirty = true;
 }
 
 BufferLocation ZepWindow::GetBufferCursor()
@@ -642,20 +667,66 @@ NVec4f ZepWindow::FilterActiveColor(const NVec4f& col)
     return col;
 }
 
+void ZepWindow::DisplayScrollers()
+{
+    if (m_vScrollRegion->rect.Empty())
+        return;
+
+    GetEditor().GetDisplay().SetClipRect(m_vScrollRegion->rect);
+
+    // Scroller background
+    GetEditor().GetDisplay().DrawRectFilled(m_vScrollRegion->rect, m_pBuffer->GetTheme().GetColor(ThemeColor::WidgetBackground));
+
+    const float scrollBorder = 6.0f;
+    GetEditor().GetDisplay().DrawRectFilled(
+        NRectf(NVec2f(m_vScrollRegion->rect.topLeftPx.x + scrollBorder, m_vScrollRegion->rect.topLeftPx.y + m_vScrollRegion->rect.Height() * m_vScrollPosition), 
+        NVec2f(m_vScrollRegion->rect.bottomRightPx.x - scrollBorder, m_vScrollRegion->rect.topLeftPx.y + m_vScrollRegion->rect.Height() * m_vScrollPosition + (m_vScrollRegion->rect.Height() * m_vScrollVisiblePercent))),
+        m_pBuffer->GetTheme().GetColor(ThemeColor::WidgetActive));
+    
+    GetEditor().GetDisplay().SetClipRect(m_bufferRegion->rect);
+}
+
+void ZepWindow::UpdateLayout()
+{
+    if (m_layoutDirty)
+    {
+        LayoutRegion(*m_bufferRegion);
+
+        UpdateLineSpans();
+
+        m_layoutDirty = false;
+    }
+}
+
 void ZepWindow::Display()
 {
     // Ensure line spans are valid; updated if the text is changed or the window dimensions change
-    CheckLineSpans();
-
+    UpdateLayout();
     ScrollToCursor();
+    UpdateScrollers();
+
+    // Second pass if the scroller visibility changed, since this can change the whole layout!
+    if (m_scrollVisibilityChanged)
+    {
+        m_layoutDirty = true;
+        UpdateLayout();
+        ScrollToCursor();
+        UpdateScrollers();
+        m_scrollVisibilityChanged = false;
+    }
 
     auto cursorCL = BufferToDisplay(m_bufferCursor);
 
+    // Always update
     UpdateAirline();
+
+    UpdateLayout();
 
     GetEditor().GetDisplay().DrawRectFilled(m_textRegion->rect, m_pBuffer->GetTheme().GetColor(ThemeColor::Background));
     GetEditor().GetDisplay().DrawRectFilled(m_numberRegion->rect, m_pBuffer->GetTheme().GetColor(ThemeColor::LineNumberBackground));
     GetEditor().GetDisplay().DrawRectFilled(m_indicatorRegion->rect, m_pBuffer->GetTheme().GetColor(ThemeColor::LineNumberBackground));
+
+    DisplayScrollers();
 
     if (m_numberRegion->rect.topLeftPx.x > m_numberRegion->rect.Width())
     {
@@ -713,7 +784,7 @@ void ZepWindow::Display()
 // *** Motions ***
 void ZepWindow::MoveCursorY(int yDistance, LineLocation clampLocation)
 {
-    CheckLineSpans();
+    UpdateLayout();
 
     // Get the cursor
     auto cursorCL = BufferToDisplay();
@@ -781,7 +852,7 @@ NVec2i ZepWindow::BufferToDisplay()
 
 NVec2i ZepWindow::BufferToDisplay(const BufferLocation& loc)
 {
-    CheckLineSpans();
+    UpdateLayout();
 
     NVec2i ret(0, 0);
     int line_number = 0;

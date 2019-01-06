@@ -33,7 +33,10 @@ enum class ThemeColor
     Parenthesis,
     Error,
     Warning,
-    Info
+    Info,
+    WidgetBackground,
+    WidgetActive,
+    WidgetInactive
 };
 
 enum class ThemeType

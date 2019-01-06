@@ -354,6 +354,10 @@ struct NRect
     {
         return bottomRightPx - topLeftPx;
     }
+    bool Empty() const
+    {
+        return (Height() == 0.0f || Width() == 0.0f) ? true : false;
+    }
     void Clear()
     {
         topLeftPx = NRect<T>();

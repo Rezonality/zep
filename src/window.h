@@ -93,6 +93,7 @@ public:
 
     void SetCursorType(CursorType mode);
     void UpdateAirline();
+    void UpdateScrollers();
 
     ZepTabWindow& GetTabWindow() const;
 
@@ -139,7 +140,8 @@ private:
     };
 
 private:
-    void CheckLineSpans();
+    void UpdateLayout();
+    void UpdateLineSpans();
     void ScrollToCursor();
     void UpdateVisibleLineRange();
     bool IsInsideTextRegion(NVec2i pos) const;
@@ -147,6 +149,7 @@ private:
     const SpanInfo& GetCursorLineInfo(long y);
 
     bool DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int displayPass);
+    void DisplayScrollers();
 
 private:
     NVec2f ToBufferRegion(const NVec2f& pos);
@@ -155,6 +158,7 @@ private:
     std::shared_ptr<Region> m_airlineRegion; // Airline
     std::shared_ptr<Region> m_numberRegion;     // Numbers
     std::shared_ptr<Region> m_indicatorRegion;  // Indicators 
+    std::shared_ptr<Region> m_vScrollRegion;    // Vertical scroller
 
     bool m_wrap = true;     // Wrap
 
@@ -165,7 +169,8 @@ private:
     // Visual stuff
     std::vector<std::string> m_statusLines; // Status information, shown under the buffer
 
-    float m_bufferOffsetYPx = 0;
+    float m_bufferOffsetYPx = 0.0f;
+    float m_bufferSizeYPx = 0.0f;
     NVec2i m_visibleLineRange = {0, 0};  // Offset of the displayed area into the text
     std::vector<SpanInfo> m_windowLines; // Information about the currently displayed lines
 
@@ -180,11 +185,13 @@ private:
     long m_lastCursorColumn = 0;      // The last cursor column (could be removed and recalculated)
 
     ZepBuffer* m_pBuffer = nullptr;
-
-    bool m_linesChanged = true;
-
     Airline m_airline;
     std::map<Zep::utf8, NVec2f> m_mapCharSizes;
+
+    float m_vScrollVisiblePercent = 1.0f;
+    float m_vScrollPosition = 0.0f;
+    bool m_layoutDirty = true;
+    bool m_scrollVisibilityChanged = true;
 };
 
 } // namespace Zep
