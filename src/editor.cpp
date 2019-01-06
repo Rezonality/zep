@@ -570,4 +570,25 @@ ZepTheme& ZepEditor::GetTheme() const
     return *m_spTheme;
 }
 
+void ZepEditor::SetMousePos(const NVec2f& mousePos)
+{
+    m_mousePos = mousePos;
+    m_bPendingRefresh = true;
+}
+
+const NVec2f ZepEditor::GetMousePos() const
+{
+    return m_mousePos;
+}
+
+void ZepEditor::SetPixelScale(float scale)
+{
+    m_pixelScale = scale;
+}
+
+float ZepEditor::GetPixelScale() const
+{
+    return m_pixelScale;
+}
+
 } // namespace Zep

@@ -9,7 +9,7 @@ namespace Zep
 {
 
 
-void Scroller_Init(Scroller& scroller, Region& parent)
+void Scroller_Init(Scroller& scroller, ZepEditor& editor, Region& parent)
 {
     scroller.region = std::make_shared<Region>();
     scroller.topButtonRegion = std::make_shared<Region>();
@@ -23,12 +23,12 @@ void Scroller_Init(Scroller& scroller, Region& parent)
 
     scroller.region->vertical = false;
 
-    scroller.topButtonRegion->margin = NVec2f(4.0f, 3.0f);
-    scroller.bottomButtonRegion->margin = NVec2f(4.0f, 3.0f);
-    scroller.mainRegion->margin = NVec2f(4.0f, 0.0f);
+    const float scrollButtonMargin = 4.0f * editor.GetPixelScale();
+    scroller.topButtonRegion->margin = NVec2f(scrollButtonMargin, scrollButtonMargin);
+    scroller.bottomButtonRegion->margin = NVec2f(scrollButtonMargin, scrollButtonMargin);
+    scroller.mainRegion->margin = NVec2f(scrollButtonMargin, 0.0f);
 
-    const float scrollButtonBorder = 2.0f;
-    const float scrollButtonSize = 16.0f;
+    const float scrollButtonSize = 16.0f * editor.GetPixelScale();
     scroller.topButtonRegion->fixed_size = NVec2f(0.0f, scrollButtonSize);
     scroller.bottomButtonRegion->fixed_size = NVec2f(0.0f, scrollButtonSize);
 
@@ -39,23 +39,29 @@ void Scroller_Init(Scroller& scroller, Region& parent)
     parent.children.push_back(scroller.region);
 }
 
-void Scroller_Display(Scroller& scroller, IZepDisplay& display, ZepTheme& theme)
+void Scroller_Display(Scroller& scroller, ZepEditor& editor, ZepTheme& theme)
 {
+    auto& display = editor.GetDisplay();
+
     display.SetClipRect(scroller.region->rect);
 
     float thumbSize = scroller.mainRegion->rect.Height() * scroller.vScrollVisiblePercent;
 
+    auto mousePos = editor.GetMousePos();
+    auto activeColor = theme.GetColor(ThemeColor::WidgetActive);
+    auto inactiveColor = theme.GetColor(ThemeColor::WidgetInactive);
+
     // Scroller background
     display.DrawRectFilled(scroller.region->rect, theme.GetColor(ThemeColor::WidgetBackground));
 
-    display.DrawRectFilled(scroller.topButtonRegion->rect, theme.GetColor(ThemeColor::WidgetActive));
-    display.DrawRectFilled(scroller.bottomButtonRegion->rect, theme.GetColor(ThemeColor::WidgetActive));
+    display.DrawRectFilled(scroller.topButtonRegion->rect, scroller.topButtonRegion->rect.Contains(mousePos) ? activeColor : inactiveColor);
+    display.DrawRectFilled(scroller.bottomButtonRegion->rect, scroller.bottomButtonRegion->rect.Contains(mousePos) ? activeColor : inactiveColor);
+
+    NRectf thumbRect(NVec2f(scroller.mainRegion->rect.topLeftPx.x, scroller.mainRegion->rect.topLeftPx.y + scroller.mainRegion->rect.Height() * scroller.vScrollPosition),
+        NVec2f(scroller.mainRegion->rect.bottomRightPx.x, scroller.mainRegion->rect.topLeftPx.y + scroller.mainRegion->rect.Height() * scroller.vScrollPosition + thumbSize));
 
     // Thumb
-    display.DrawRectFilled(
-        NRectf(NVec2f(scroller.mainRegion->rect.topLeftPx.x, scroller.mainRegion->rect.topLeftPx.y + scroller.mainRegion->rect.Height() * scroller.vScrollPosition), 
-        NVec2f(scroller.mainRegion->rect.bottomRightPx.x, scroller.mainRegion->rect.topLeftPx.y + scroller.mainRegion->rect.Height() * scroller.vScrollPosition + thumbSize)),
-        theme.GetColor(ThemeColor::WidgetActive));
+    display.DrawRectFilled(thumbRect, thumbRect.Contains(mousePos) ? activeColor : inactiveColor);
 }
 
 }; // namespace Zep

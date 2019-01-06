@@ -5,8 +5,7 @@
 namespace Zep
 {
 class ZepTheme;
-class IZepDisplay;
-
+class ZepEditor;
 struct Scroller
 {
     float vScrollVisiblePercent = 1.0f;
@@ -19,7 +18,7 @@ struct Scroller
     std::shared_ptr<Region> mainRegion;
 };
 
-void Scroller_Init(Scroller& scroller, Region& parent);
-void Scroller_Display(Scroller& scroller, IZepDisplay& display, ZepTheme& theme);
+void Scroller_Init(Scroller& scroller, ZepEditor& editor, Region& parent);
+void Scroller_Display(Scroller& scroller, ZepEditor& editor, ZepTheme& theme);
 
 };

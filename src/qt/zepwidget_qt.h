@@ -15,9 +15,14 @@ public:
     ZepWidget_Qt(QWidget* pParent);
     virtual ~ZepWidget_Qt();
 
-    void resizeEvent(QResizeEvent* pResize) override;
-    void paintEvent(QPaintEvent* pPaint) override;
-    void keyPressEvent(QKeyEvent* ev) override;
+    virtual void resizeEvent(QResizeEvent* pResize) override;
+    virtual void paintEvent(QPaintEvent* pPaint) override;
+    virtual void keyPressEvent(QKeyEvent* ev) override;
+    
+    virtual void mousePressEvent(QMouseEvent *event) override;
+    virtual void mouseReleaseEvent(QMouseEvent *event) override;
+    virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
+    virtual void mouseMoveEvent(QMouseEvent *event) override;
 
     // IZepComponent
     virtual ZepEditor& GetEditor() const override

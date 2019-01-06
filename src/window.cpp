@@ -59,7 +59,7 @@ ZepWindow::ZepWindow(ZepTabWindow& window, ZepBuffer* buffer)
 
     m_vScroller = std::make_shared<Scroller>();
     m_vScroller->vertical = false;
-    Scroller_Init(*m_vScroller, *m_vScrollRegion);
+    Scroller_Init(*m_vScroller, GetEditor(), *m_vScrollRegion);
 }
 
 ZepWindow::~ZepWindow()
@@ -87,7 +87,7 @@ void ZepWindow::UpdateScrollers()
     }
     else
     {
-        m_vScrollRegion->fixed_size = NVec2f(ScrollBarSize, 0.0f);
+        m_vScrollRegion->fixed_size = NVec2f(ScrollBarSize * GetEditor().GetPixelScale(), 0.0f);
     }
 
     if (m_vScrollRegion->rect.Width() != m_vScrollRegion->fixed_size.x)
@@ -677,7 +677,7 @@ void ZepWindow::DisplayScrollers()
     if (m_vScrollRegion->rect.Empty())
         return;
 
-    Scroller_Display(*m_vScroller, GetEditor().GetDisplay(), m_pBuffer->GetTheme());
+    Scroller_Display(*m_vScroller, GetEditor(), m_pBuffer->GetTheme());
 
     GetEditor().GetDisplay().SetClipRect(m_bufferRegion->rect);
 }

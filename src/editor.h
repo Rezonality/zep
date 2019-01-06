@@ -222,6 +222,12 @@ public:
 
     ZepTheme& GetTheme() const;
 
+    void SetMousePos(const NVec2f& mousePos);
+    const NVec2f GetMousePos() const;
+
+    void SetPixelScale(float pt);
+    float GetPixelScale() const;
+
 private:
     // Call GetBuffer publicly, to stop creation of duplicate buffers refering to the same file
     ZepBuffer* AddBuffer(const std::string& bufferName);
@@ -263,6 +269,9 @@ private:
     std::shared_ptr<Region> m_tabRegion;
     bool m_bRegionsChanged = false;
     fs::path m_currentRootPath;
+
+    NVec2f m_mousePos;
+    float m_pixelScale = 1.0f;
 };
 
 } // namespace Zep

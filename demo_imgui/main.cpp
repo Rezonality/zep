@@ -105,6 +105,16 @@ struct ZepContainer : public IZepComponent
         : spEditor(std::make_unique<ZepEditor_ImGui>())
     {
         spEditor->RegisterCallback(this);
+
+        float ddpi = 0.0f;
+        float hdpi = 0.0f;
+        float vdpi = 0.0f;
+        auto res = SDL_GetDisplayDPI(0, &ddpi, &hdpi, &vdpi);
+        if (res == 0 && hdpi != 0)
+        {
+            spEditor->SetPixelScale(hdpi / 96.0f);
+        }
+
         if (!startupFile.empty())
         {
             spEditor->InitWithFileOrDir(startupFile);

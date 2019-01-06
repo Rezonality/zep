@@ -330,6 +330,13 @@ struct NRect
 
     NVec2f topLeftPx;
     NVec2f bottomRightPx;
+
+    bool Contains(const NVec2<T>& pt) const
+    {
+        return topLeftPx.x <= pt.x && topLeftPx.y <= pt.y &&
+            bottomRightPx.x > pt.x && bottomRightPx.y > pt.y;
+    }
+
     NVec2f BottomLeft() const
     {
         return NVec2f(topLeftPx.x, bottomRightPx.y);

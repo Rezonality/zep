@@ -27,6 +27,12 @@ void ZepEditor_ImGui::HandleInput()
 
     uint32_t mod = 0;
 
+    if (io.MouseDelta.x != 0 ||
+        io.MouseDelta.y != 0)
+    {
+        SetMousePos(toNVec2f(io.MousePos));
+    }
+
     if (io.KeyCtrl)
     {
         mod |= ModifierKey::Ctrl;
