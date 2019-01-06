@@ -678,13 +678,29 @@ void ZepWindow::DisplayScrollers()
     GetEditor().GetDisplay().DrawRectFilled(m_vScrollRegion->rect, m_pBuffer->GetTheme().GetColor(ThemeColor::WidgetBackground));
 
     const float scrollBorder = 4.0f;
-    float mainAreaSize = m_vScrollRegion->rect.Height() - scrollBorder * 2.0f;
+    const float scrollButtonBorder = 2.0f;
+    const float scrollButtonSize = GetEditor().GetDisplay().GetFontSize() + scrollButtonBorder * 2;
+    float mainAreaSize = m_vScrollRegion->rect.Height() - (scrollButtonSize * 2);
+    float thumbSize = mainAreaSize * m_vScrollVisiblePercent;
 
+    // Top button
     GetEditor().GetDisplay().DrawRectFilled(
-        NRectf(NVec2f(m_vScrollRegion->rect.topLeftPx.x + scrollBorder, m_vScrollRegion->rect.topLeftPx.y + scrollBorder + mainAreaSize * m_vScrollPosition), 
-        NVec2f(m_vScrollRegion->rect.bottomRightPx.x - scrollBorder, m_vScrollRegion->rect.topLeftPx.y + scrollBorder + mainAreaSize * m_vScrollPosition + (mainAreaSize * m_vScrollVisiblePercent))),
+        NRectf(NVec2f(m_vScrollRegion->rect.topLeftPx.x + scrollBorder, m_vScrollRegion->rect.topLeftPx.y + scrollButtonBorder), 
+            NVec2f(m_vScrollRegion->rect.bottomRightPx.x - scrollBorder, m_vScrollRegion->rect.topLeftPx.y + scrollButtonSize - scrollButtonBorder)),
+            m_pBuffer->GetTheme().GetColor(ThemeColor::WidgetActive));
+
+    // Thumb
+    GetEditor().GetDisplay().DrawRectFilled(
+        NRectf(NVec2f(m_vScrollRegion->rect.topLeftPx.x + scrollBorder, m_vScrollRegion->rect.topLeftPx.y + scrollButtonSize + mainAreaSize * m_vScrollPosition), 
+        NVec2f(m_vScrollRegion->rect.bottomRightPx.x - scrollBorder, m_vScrollRegion->rect.topLeftPx.y + scrollButtonSize + mainAreaSize * m_vScrollPosition + thumbSize)),
         m_pBuffer->GetTheme().GetColor(ThemeColor::WidgetActive));
-    
+   
+    // Bottom button
+    GetEditor().GetDisplay().DrawRectFilled(
+        NRectf(NVec2f(m_vScrollRegion->rect.topLeftPx.x + scrollBorder, m_vScrollRegion->rect.bottomRightPx.y - scrollButtonSize + scrollButtonBorder), 
+            NVec2f(m_vScrollRegion->rect.bottomRightPx.x - scrollBorder, m_vScrollRegion->rect.bottomRightPx.y - scrollButtonBorder)),
+            m_pBuffer->GetTheme().GetColor(ThemeColor::WidgetActive));
+
     GetEditor().GetDisplay().SetClipRect(m_bufferRegion->rect);
 }
 
