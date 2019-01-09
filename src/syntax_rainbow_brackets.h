@@ -2,6 +2,7 @@
 #include "syntax.h"
 #include <list>
 #include <string>
+#include <unordered_map>
 
 namespace Zep
 {

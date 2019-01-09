@@ -228,6 +228,7 @@ public:
     void SetPixelScale(float pt);
     float GetPixelScale() const;
 
+    void SetBufferSyntax(ZepBuffer& buffer) const;
 private:
     // Call GetBuffer publicly, to stop creation of duplicate buffers refering to the same file
     ZepBuffer* AddBuffer(const std::string& bufferName);

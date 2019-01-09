@@ -635,6 +635,7 @@ void ZepBuffer::SetFilePath(const fs::path& path)
     if (!fs::equivalent(testPath, m_filePath))
     {
         m_filePath = testPath;
+        GetEditor().SetBufferSyntax(*this);
         SetFlags(FileFlags::NotYetSaved);
     }
 }

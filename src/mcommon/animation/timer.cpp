@@ -14,6 +14,7 @@ struct TimedSection
 };
 
 timer globalTimer;
+profile_data globalProfiler;
 
 uint64_t timer_get_time_now()
 {
@@ -51,28 +52,28 @@ double timer_to_ms(uint64_t value)
     return double(value / 1000.0);
 }
 
-void profile_begin(const char* pszText)
-{
-}
-
-void profile_marker(const char* pszText)
-{
-}
-
-void profile_end()
-{
-}
-
-TimerBlock::TimerBlock(const std::string& timer)
+ProfileBlock::ProfileBlock(const char* timer)
     : strTimer(timer)
 {
     timer_start(blockTimer);
+    if (globalProfiler.timerData.find(timer) == globalProfiler.timerData.end())
+    {
+        globalProfiler.timerData[timer] = profile_value{};
+    }
 }
 
-TimerBlock::~TimerBlock()
+ProfileBlock::~ProfileBlock()
 {
     elapsed = timer_get_elapsed(blockTimer);
-    LOG(INFO) << "[timer] " << strTimer << " : " << elapsed / 1000 << " msec";
+    profile_add_value(globalProfiler.timerData.find(strTimer)->second, double(elapsed));
 }
+
+void profile_add_value(profile_value& val, double av)
+{
+    val.count++;
+    val.average = val.average * (val.count - 1) / val.count + av / val.count;
+    val.current = av;
+}
+
 
 } // namespace COMMON_NAMESPACE

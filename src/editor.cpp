@@ -4,7 +4,7 @@
 #include "mode_standard.h"
 #include "mode_vim.h"
 #include "syntax.h"
-#include "syntax_glsl.h"
+#include "syntax_providers.h"
 #include "tab_window.h"
 #include "theme.h"
 #include "mcommon/file/file.h"
@@ -51,9 +51,7 @@ ZepEditor::ZepEditor(IZepDisplay* pDisplay, uint32_t flags)
     timer_restart(m_cursorTimer);
     m_commandLines.push_back("");
 
-    RegisterSyntaxFactory("vert", tSyntaxFactory([](ZepBuffer* pBuffer) {
-                              return std::static_pointer_cast<ZepSyntax>(std::make_shared<ZepSyntaxGlsl>(*pBuffer));
-                          }));
+    RegisterSyntaxProviders(*this);
 
     m_editorRegion = std::make_shared<Region>();
     m_editorRegion->vertical = false;
@@ -133,7 +131,7 @@ ZepBuffer* ZepEditor::GetFileBuffer(const fs::path& filePath, uint32_t fileFlags
         }
     }
 
-    auto pBuffer = AddBuffer(path.filename().string());
+    auto pBuffer = AddBuffer(path.has_filename() ? path.filename().string() : path.string());
     if (fs::exists(path))
     {
         pBuffer->Load(path);
@@ -156,11 +154,7 @@ void ZepEditor::InitWithFileOrDir(const std::string& str)
     {
         m_currentRootPath = startPath;
     }
-    else
-    {
-        ZepBuffer* pBuffer = AddBuffer(startPath.filename().string());
-        pBuffer->Load(startPath);
-    }
+    GetFileBuffer(startPath);
 }
 
 // At startup it's possible to be in a state where parts of the window framework are not yet in place.
@@ -329,6 +323,34 @@ ZepMode* ZepEditor::GetCurrentMode()
     return m_pCurrentMode;
 }
 
+void ZepEditor::SetBufferSyntax(ZepBuffer& buffer) const
+{
+    std::string ext;
+    if (buffer.GetFilePath().has_filename() && buffer.GetFilePath().filename().has_extension())
+    {
+        ext = buffer.GetFilePath().filename().extension().string();
+    }
+    else
+    {
+        auto str = buffer.GetName();
+        size_t dot_pos = str.find_last_of(".");
+        if (dot_pos != string::npos)
+        {
+            ext = str.substr(dot_pos, str.length() - dot_pos);
+        }
+    }
+
+    auto itr = m_mapSyntax.find(ext);
+    if (itr != m_mapSyntax.end())
+    {
+        buffer.SetSyntax(itr->second(&buffer));
+    }
+    else
+    {
+        buffer.SetSyntax(nullptr);
+    }
+}
+
 void ZepEditor::RegisterSyntaxFactory(const std::string& extension, tSyntaxFactory factory)
 {
     m_mapSyntax[extension] = factory;
@@ -363,23 +385,7 @@ ZepBuffer* ZepEditor::AddBuffer(const std::string& str)
     auto pBuffer = std::make_shared<ZepBuffer>(*this, str);
     m_buffers.push_front(pBuffer);
 
-    auto extOffset = str.find_last_of('.');
-    if (extOffset != std::string::npos)
-    {
-        auto itrFactory = m_mapSyntax.find(str.substr(extOffset + 1, str.size() - extOffset));
-        if (itrFactory != m_mapSyntax.end())
-        {
-            pBuffer->SetSyntax(itrFactory->second(pBuffer.get()));
-        }
-        else
-        {
-            // For now, the first syntax file is the default
-            if (!m_mapSyntax.empty())
-            {
-                pBuffer->SetSyntax(m_mapSyntax.begin()->second(pBuffer.get()));
-            }
-        }
-    }
+    SetBufferSyntax(*pBuffer);
 
     // Adding a buffer immediately updates the window state, in case this is the first one
     UpdateWindowState();

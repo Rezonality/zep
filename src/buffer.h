@@ -44,7 +44,7 @@ enum : uint32_t
     TerminatedWithZero = (1 << 1),
     ReadOnly = (1 << 2),
     Locked = (1 << 3), // Can this file path ever be written to?
-    Dirty = (1 << 4), // Has the file been changed?
+    Dirty = (1 << 4),  // Has the file been changed?
     NotYetSaved = (1 << 5)
 };
 };

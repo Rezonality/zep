@@ -4,7 +4,7 @@
 #include "editor.h"
 #include "mode_standard.h"
 #include "mode_vim.h"
-#include "syntax_glsl.h"
+#include "syntax.h"
 #include "tab_window.h"
 #include "usb_hid_keys.h"
 #include <imgui.h>

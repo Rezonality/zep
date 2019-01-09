@@ -3,6 +3,7 @@
 #include "common_namespace.h"
 #include <cstdint>
 #include <string>
+#include <unordered_map>
 
 namespace COMMON_NAMESPACE
 {
@@ -27,21 +28,32 @@ double timer_get_elapsed_seconds(const timer& timer);
 double timer_to_seconds(uint64_t value);
 double timer_to_ms(uint64_t value);
 
-void profile_begin(const char* pszText);
-void profile_marker(const char* pszText);
-void profile_end();
+struct profile_value
+{
+    double average = 0;
+    double current = 0;
+    uint64_t count = 0;
+};
 
-class TimerBlock
+struct profile_data
+{
+    std::unordered_map<const char*, profile_value> timerData;
+};
+extern profile_data globalProfiler;
+
+void profile_add_value(profile_value& val, double av);
+
+class ProfileBlock
 {
 public:
-    std::string strTimer;
+    const char* strTimer;
     timer blockTimer;
     uint64_t elapsed = 0;
 
-    TimerBlock(const std::string& timer);
-    ~TimerBlock();
+    ProfileBlock(const char* timer);
+    ~ProfileBlock();
 };
 
-#define TIME_SCOPE(name) TimerBlock name##_timer_block(#name);
+#define TIME_SCOPE(name) ProfileBlock name##_timer_block(#name);
 
 } // namespace COMMON_NAMESPACE

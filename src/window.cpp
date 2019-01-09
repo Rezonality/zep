@@ -213,8 +213,17 @@ void ZepWindow::ScrollToCursor()
     }
 }
 
+// This is the most expensive part of window update; applying line span generation for wrapped text.
+// It can take about a millisecond to do during editing on release buildj; but this is fast enough for now.
+// There are several ways in which this function can be optimized:
+// - Only regenerate spans which have changed, since only the edited line range will change.
+// - Generate blocks of text, based on syntax highlighting, instead of single characters.
+// - Have a no-wrap text mode and save a lot of the wrapping work.
+// - Do some threading
 void ZepWindow::UpdateLineSpans()
 {
+    TIME_SCOPE(UpdateLineSpans);
+
     m_maxDisplayLines = (long)std::max(0.0f, std::floor(m_textRegion->rect.Height() / m_defaultLineSize));
 
     float screenPosX = m_textRegion->rect.topLeftPx.x + textBorder;
@@ -222,9 +231,6 @@ void ZepWindow::UpdateLineSpans()
     BufferLocation loc = 0;
 
     // For now, we are compromising on ASCII; so don't query font fixed_size each time
-    // The performance of the editor currently comes down to this function
-    // It can be improved by incrementally updating the line spans, potentially threading, etc.
-    // but it isn't necessary yet.
     const auto& textBuffer = m_pBuffer->GetText();
 
     long bufferLine = 0;
@@ -346,6 +352,8 @@ void ZepWindow::UpdateLineSpans()
 
 void ZepWindow::UpdateVisibleLineRange()
 {
+    TIME_SCOPE(UpdateVisibleLineRange);
+
     m_visibleLineRange.x = (long)m_windowLines.size();
     m_visibleLineRange.y = 0;
     for (long line = 0; line < long(m_windowLines.size()); line++)
@@ -696,6 +704,7 @@ void ZepWindow::UpdateLayout()
 
 void ZepWindow::Display()
 {
+    TIME_SCOPE(Display);
     // Ensure line spans are valid; updated if the text is changed or the window dimensions change
     UpdateLayout();
     ScrollToCursor();
@@ -744,14 +753,17 @@ void ZepWindow::Display()
         }
     }
 
-    for (int displayPass = 0; displayPass < WindowPass::Max; displayPass++)
     {
-        for (long windowLine = m_visibleLineRange.x; windowLine < m_visibleLineRange.y; windowLine++)
+        TIME_SCOPE(DrawLine);
+        for (int displayPass = 0; displayPass < WindowPass::Max; displayPass++)
         {
-            auto& lineInfo = m_windowLines[windowLine];
-            if (!DisplayLine(lineInfo, m_textRegion->rect, displayPass))
+            for (long windowLine = m_visibleLineRange.x; windowLine < m_visibleLineRange.y; windowLine++)
             {
-                break;
+                auto& lineInfo = m_windowLines[windowLine];
+                if (!DisplayLine(lineInfo, m_textRegion->rect, displayPass))
+                {
+                    break;
+                }
             }
         }
     }

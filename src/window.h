@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 #include "buffer.h"
 #include "window_base.h"
@@ -187,7 +188,7 @@ private:
 
     ZepBuffer* m_pBuffer = nullptr;
     Airline m_airline;
-    std::map<Zep::utf8, NVec2f> m_mapCharSizes;
+    std::unordered_map<Zep::utf8, NVec2f> m_mapCharSizes;
 
     bool m_layoutDirty = true;
     bool m_scrollVisibilityChanged = true;

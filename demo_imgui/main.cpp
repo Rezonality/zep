@@ -191,7 +191,7 @@ int main(int argc, char** argv)
     SDL_GetCurrentDisplayMode(0, &current);
     SDL_Window* window = SDL_CreateWindow("Zep", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
-    SDL_GL_SetSwapInterval(1); // Enable vsync
+    SDL_GL_SetSwapInterval(0); // Enable vsync
 
     // Initialize OpenGL loader
 #if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
@@ -280,6 +280,8 @@ int main(int argc, char** argv)
             }
         }
 
+        TIME_SCOPE(Frame);
+
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame(window);
@@ -327,6 +329,20 @@ int main(int argc, char** argv)
                         zep.GetEditor().GetTheme().SetThemeType(ThemeType::Light);
                     }
                     ImGui::EndMenu();
+                }
+                ImGui::EndMenu();
+            }
+
+            // Helpful for diagnostics
+            // Make sure you run a release build; iterator debugging makes the debug build much slower
+            // Currently on a typical file, editor display time is < 1ms, and editor editor time is < 2ms
+            if (ImGui::BeginMenu("Timings"))
+            {
+                for (auto& p : globalProfiler.timerData)
+                {
+                    std::ostringstream strval;
+                    strval << p.first << " Av: " << p.second.average / 1000.0 << "ms";// << " Last: " << p.second.current / 1000.0 << "ms";
+                    ImGui::MenuItem(strval.str().c_str());
                 }
                 ImGui::EndMenu();
             }
