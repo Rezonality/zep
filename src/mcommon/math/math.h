@@ -20,6 +20,12 @@ struct NVec2
     {
     }
 
+    explicit NVec2(T v)
+        : x(v)
+        , y(v)
+    {
+    }
+
     NVec2()
         : x(0)
         , y(0)
@@ -82,6 +88,16 @@ inline NVec2<T>& operator*=(NVec2<T>& lhs, float val)
     lhs.y *= val;
     return lhs;
 }
+template <class T>
+inline bool operator<(const NVec2<T>& lhs, const NVec2<T>& rhs)
+{
+    if (lhs.x != rhs.x)
+    {
+        return lhs.x < rhs.x;
+    }
+    return lhs.y < rhs.y;
+}
+
 template <class T>
 inline NVec2<T> Clamp(const NVec2<T>& val, const NVec2<T>& min, const NVec2<T>& max)
 {

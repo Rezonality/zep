@@ -339,9 +339,9 @@ int main(int argc, char** argv)
             if (ImGui::BeginMenu("Timings"))
             {
                 for (auto& p : globalProfiler.timerData)
-                {
+                { 
                     std::ostringstream strval;
-                    strval << p.first << " Av: " << p.second.average / 1000.0 << "ms";// << " Last: " << p.second.current / 1000.0 << "ms";
+                    strval << p.first << " : " << p.second.current / 1000.0 << "ms";// << " Last: " << p.second.current / 1000.0 << "ms";
                     ImGui::MenuItem(strval.str().c_str());
                 }
                 ImGui::EndMenu();

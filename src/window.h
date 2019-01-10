@@ -15,14 +15,6 @@ class IZepDisplay;
 struct Region;
 struct Scroller;
 
-struct CharInfo
-{
-    float screenPosXPx = 0.0f;
-    BufferLocation bufferLocation = 0;
-    BufferLocation bufferLocationEnd = 0;
-    NVec2f textSize;
-};
-
 // Line information, calculated during display update.
 // A collection of spans that show split lines on the display
 struct SpanInfo
@@ -33,8 +25,6 @@ struct SpanInfo
     long bufferLineNumber = 0;            // Line in the original buffer, not the screen line
     int lineIndex = 0;
 
-    std::vector<CharInfo> charInfo;
-
     long Length() const
     {
         return columnOffsets.y - columnOffsets.x;
@@ -44,6 +34,15 @@ struct SpanInfo
         return offset >= columnOffsets.x && offset < columnOffsets.y;
     }
 };
+
+inline bool operator < (const SpanInfo& lhs, const SpanInfo& rhs)
+{
+    if (lhs.columnOffsets.x != rhs.columnOffsets.x)
+    {
+        return lhs.columnOffsets.x < rhs.columnOffsets.x;
+    }
+    return lhs.columnOffsets.y < rhs.columnOffsets.y;
+}
 
 enum class CursorType
 {
@@ -80,6 +79,7 @@ struct Airline
     std::vector<AirBox> leftBoxes;
     std::vector<AirBox> rightBoxes;
 };
+
 
 // Display state for a single pane of text.
 // Window shows a buffer, and is parented by a TabWindow
@@ -174,7 +174,8 @@ private:
     float m_bufferOffsetYPx = 0.0f;
     float m_bufferSizeYPx = 0.0f;
     NVec2i m_visibleLineRange = {0, 0};  // Offset of the displayed area into the text
-    std::vector<SpanInfo> m_windowLines; // Information about the currently displayed lines
+
+    std::vector<SpanInfo*> m_windowLines; // Information about the currently displayed lines
 
     ZepTabWindow& m_tabWindow;
 
