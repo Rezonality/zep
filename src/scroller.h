@@ -2,17 +2,18 @@
 
 #include "splits.h"
 #include "editor.h"
+#include "mcommon/animation/timer.h"
 
 namespace Zep
 {
 class ZepTheme;
 class ZepEditor;
 
-struct Scroller : public ZepComponent
+class Scroller : public ZepComponent
 {
 public:
     Scroller(ZepEditor& editor, Region& parent);
-    
+
     virtual void Display(ZepTheme& theme);
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
@@ -23,14 +24,36 @@ public:
     bool vertical = true;
 
 private:
+    void CheckState();
     void ClickUp();
     void ClickDown();
+    void PageUp();
+    void PageDown();
+    void DoMove(NVec2f pos);
+
+    float ThumbSize() const;
+    float ThumbExtra() const;
+    NRectf ThumbRect() const;
 
 private:
-    std::shared_ptr<Region> region;
-    std::shared_ptr<Region> topButtonRegion;
-    std::shared_ptr<Region> bottomButtonRegion;
-    std::shared_ptr<Region> mainRegion;
+    std::shared_ptr<Region> m_region;
+    std::shared_ptr<Region> m_topButtonRegion;
+    std::shared_ptr<Region> m_bottomButtonRegion;
+    std::shared_ptr<Region> m_mainRegion;
+    timer m_start_delay_timer;
+    timer m_reclick_timer;
+    enum class ScrollState
+    {
+        None,
+        ScrollDown,
+        ScrollUp,
+        PageUp,
+        PageDown,
+        Drag
+    };
+    ScrollState m_scrollState = ScrollState::None;
+    NVec2f m_mouseDownPos;
+    float m_mouseDownPercent;
 };
 
-};
+}; // namespace Zep

@@ -82,6 +82,7 @@ enum class Msg
     MouseUp,
     Buffer,
     ComponentChanged,
+    Tick
 };
 
 struct IZepComponent;
@@ -233,7 +234,7 @@ public:
     bool GetCursorBlinkState() const;
 
     void RequestRefresh();
-    bool RefreshRequired() const;
+    bool RefreshRequired();
 
     void SetCommandText(const std::string& strCommand);
 
@@ -258,6 +259,7 @@ public:
     void OnMouseMove(const NVec2f& mousePos);
     void OnMouseDown(const NVec2f& mousePos, ZepMouseButton button);
     void OnMouseUp(const NVec2f& mousePos, ZepMouseButton button);
+    void TickInputState();
     const NVec2f GetMousePos() const;
 
     void SetPixelScale(float pt);

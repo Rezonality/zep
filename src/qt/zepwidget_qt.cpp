@@ -26,7 +26,7 @@ ZepWidget_Qt::ZepWidget_Qt(QWidget* pParent)
     setFocusPolicy(Qt::FocusPolicy::StrongFocus);
     setMouseTracking(true);
 
-    m_refreshTimer.setInterval(10);
+    m_refreshTimer.setInterval(1);
     m_refreshTimer.setSingleShot(false);
     m_refreshTimer.start();
     connect(&m_refreshTimer, &QTimer::timeout, this, &ZepWidget_Qt::OnTimer);

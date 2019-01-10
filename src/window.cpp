@@ -19,8 +19,7 @@ namespace Zep
 {
 
 // UTF8 Not supported yet.
-//#define UTF8_CHAR_LEN(byte) ((0xE5000000 >> ((byte >> 3) & 0x1e)) & 3) + 1
-#define UTF8_CHAR_LEN(byte) 1
+#define UTF8_CHAR_LEN(byte) ((0xE5000000 >> ((byte >> 3) & 0x1e)) & 3) + 1
 
 const float ScrollBarSize = 17.0f;
 
@@ -80,7 +79,7 @@ void ZepWindow::UpdateScrollers()
     m_vScroller->vScrollVisiblePercent = std::min(float(m_maxDisplayLines) / float(m_windowLines.size()), 1.0f);
     m_vScroller->vScrollPosition = std::abs(m_bufferOffsetYPx) / m_bufferSizeYPx;
     m_vScroller->vScrollLinePercent = 1.0f / m_windowLines.size();
-    m_vScroller->vScrollPagePercent = 1.0f;
+    m_vScroller->vScrollPagePercent = m_vScroller->vScrollVisiblePercent;
 
     if (m_vScroller->vScrollVisiblePercent >= 1.0f)
     {
@@ -153,8 +152,9 @@ void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
         {
             auto pScroller = dynamic_cast<Scroller*>(payload->pComponent);
             m_bufferOffsetYPx = pScroller->vScrollPosition * (m_windowLines.size() * GetEditor().GetDisplay().GetFontSize());
-            m_layoutDirty = true;
-            UpdateLayout();
+            //m_layoutDirty = true;
+            //UpdateLayout();
+            UpdateVisibleLineRange();
             EnsureCursorVisible();
     
             /*auto& cursorLine = GetCursorLineInfo(BufferToDisplay().y);
@@ -169,17 +169,6 @@ NVec2f ZepWindow::GetTextSize(const utf8* pCh, const utf8* pEnd)
     if (pEnd == nullptr)
     {
         pEnd = pCh + strlen((const char*)pCh);
-    }
-    if ((pEnd - pCh) == 1)
-    {
-        auto itr = m_mapCharSizes.find(*pCh);
-        if (itr == end(m_mapCharSizes))
-        {
-            auto sz = GetEditor().GetDisplay().GetTextSize(pCh, pEnd);
-            m_mapCharSizes[*pCh] = sz;
-            return sz;
-        }
-        return itr->second;
     }
     return GetEditor().GetDisplay().GetTextSize(pCh, pEnd);
 }
@@ -279,7 +268,6 @@ void ZepWindow::UpdateLineSpans()
     const auto& textBuffer = m_pBuffer->GetText();
 
     long bufferLine = 0;
-    long endBufferLine = -1;
     long spanLine = 0;
     float bufferPosYPx = 0;
 
@@ -357,10 +345,6 @@ void ZepWindow::UpdateLineSpans()
         spanLine++;
         screenPosX = m_textRegion->rect.topLeftPx.x;
         bufferPosYPx += GetEditor().GetDisplay().GetFontSize();
-
-        if (endBufferLine != -1 &&
-            bufferLine >= endBufferLine)
-            break;
     }
 
     // Sanity
@@ -484,12 +468,11 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
 
     char invalidChar;
 
+    auto pSyntax = m_pBuffer->GetSyntax();
+
     // Walk from the start of the line to the end of the line (in buffer chars)
     for (auto ch = lineInfo.columnOffsets.x; ch < lineInfo.columnOffsets.y; ch++)
     {
-        auto pSyntax = m_pBuffer->GetSyntax();
-        auto col = pSyntax != nullptr ? pSyntax->GetSyntaxColorAt(ch) : m_pBuffer->GetTheme().GetColor(ThemeColor::Text);
-
         const utf8* pCh = &m_pBuffer->GetText()[ch];
 
         // Visible white space
@@ -510,11 +493,12 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
             {
                 pCh = (const utf8*)&blankSpace;
             }
-            col = m_pBuffer->GetTheme().GetColor(ThemeColor::HiddenText);
         }
+
+        // Note: We don't really support UTF8, but our whitespace symbol is UTF8!
         const utf8* pEnd = pCh + UTF8_CHAR_LEN(*pCh);
 
-        auto textSize = GetTextSize(pCh, pCh + 1);
+        auto textSize = GetTextSize(pCh, pEnd);
         if (displayPass == 0)
         {
             if (IsActiveWindow())
@@ -548,6 +532,15 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
             }
             else
             {
+                NVec4f col;
+                if (*pCh == '\n' || *pCh == 0)
+                {
+                    col = m_pBuffer->GetTheme().GetColor(ThemeColor::HiddenText);
+                }
+                else
+                {
+                    col = pSyntax != nullptr ? pSyntax->GetSyntaxColorAt(ch) : m_pBuffer->GetTheme().GetColor(ThemeColor::Text);
+                }
                 GetEditor().GetDisplay().DrawChars(NVec2f(screenPosX, ToWindowY(lineInfo.spanYPx)), col, pCh, pEnd);
             }
         }

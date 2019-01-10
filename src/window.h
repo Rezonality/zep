@@ -12,8 +12,9 @@ namespace Zep
 
 class ZepTabWindow;
 class IZepDisplay;
+class Scroller;
+
 struct Region;
-struct Scroller;
 
 // Line information, calculated during display update.
 // A collection of spans that show split lines on the display
@@ -190,7 +191,6 @@ private:
 
     ZepBuffer* m_pBuffer = nullptr;
     Airline m_airline;
-    std::unordered_map<Zep::utf8, NVec2f> m_mapCharSizes;
 
     bool m_layoutDirty = true;
     bool m_scrollVisibilityChanged = true;

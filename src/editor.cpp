@@ -370,9 +370,6 @@ void ZepEditor::RegisterSyntaxFactory(const std::vector<std::string>& mappings, 
 // Inform clients of an event in the buffer
 bool ZepEditor::Broadcast(std::shared_ptr<ZepMessage> message)
 {
-    // Better place for this?
-    ResetCursorTimer();
-
     Notify(message);
     if (message->handled)
         return true;
@@ -469,10 +466,14 @@ void ZepEditor::SetCommandText(const std::string& strCommand)
 
 void ZepEditor::RequestRefresh()
 {
+    m_bPendingRefresh = true;
 }
 
-bool ZepEditor::RefreshRequired() const
+bool ZepEditor::RefreshRequired() 
 {
+    // Allow any components to update themselves
+    Broadcast(std::make_shared<ZepMessage>(Msg::Tick));
+
     if (m_bPendingRefresh || m_lastCursorBlink != GetCursorBlinkState())
     {
         m_bPendingRefresh = false;
@@ -553,9 +554,11 @@ void ZepEditor::Display()
     auto screenPosYPx = m_commandRegion->rect.topLeftPx + NVec2f(0.0f, textBorder);
     for (int i = 0; i < commandSpace; i++)
     {
-        auto textSize = m_pDisplay->GetTextSize((const utf8*)commandLines[i].c_str(), (const utf8*)commandLines[i].c_str() + commandLines[i].size());
-
-        m_pDisplay->DrawChars(screenPosYPx, GetTheme().GetColor(ThemeColor::Text), (const utf8*)commandLines[i].c_str());
+        if (!commandLines[i].empty())
+        {
+            auto textSize = m_pDisplay->GetTextSize((const utf8*)commandLines[i].c_str(), (const utf8*)commandLines[i].c_str() + commandLines[i].size());
+            m_pDisplay->DrawChars(screenPosYPx, GetTheme().GetColor(ThemeColor::Text), (const utf8*)commandLines[i].c_str());
+        }
 
         screenPosYPx.y += m_pDisplay->GetFontSize();
         screenPosYPx.x = m_commandRegion->rect.topLeftPx.x;
