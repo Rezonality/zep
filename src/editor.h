@@ -54,23 +54,65 @@ struct Region;
 
 using utf8 = uint8_t;
 
-extern const char* Msg_HandleCommand;
-extern const char* Msg_Quit;
-extern const char* Msg_GetClipBoard;
-extern const char* Msg_SetClipBoard;
+namespace ZepEditorFlags
+{
+enum
+{
+    None = (0),
+    DisableThreads = (1 << 0)
+};
+};
 
+enum class ZepMouseButton
+{
+    Left,
+    Middle,
+    Right,
+    Unknown
+};
+
+enum class Msg
+{
+    HandleCommand,
+    Quit,
+    GetClipBoard,
+    SetClipBoard,
+    MouseMove,
+    MouseDown,
+    MouseUp,
+    Buffer,
+    ComponentChanged,
+};
+
+struct IZepComponent;
 class ZepMessage
 {
 public:
-    ZepMessage(const char* id, const std::string& strIn = std::string())
+    ZepMessage(Msg id, const std::string& strIn = std::string())
         : messageId(id)
         , str(strIn)
     {
     }
+    
+    ZepMessage(Msg id, const NVec2f& p, ZepMouseButton b = ZepMouseButton::Unknown)
+        : messageId(id)
+        , pos(p)
+        , button(b)
+    {
+    }
 
-    const char* messageId; // Message ID
+    ZepMessage(Msg id, IZepComponent* pComp)
+        : messageId(id)
+        , pComponent(pComp)
+    {
+    }
+
+    Msg messageId; // Message ID
     std::string str;       // Generic string for simple messages
     bool handled = false;  // If the message was handled
+    NVec2f pos;
+    ZepMouseButton button;
+    IZepComponent* pComponent = nullptr;
 };
 
 struct IZepComponent
@@ -125,15 +167,6 @@ using tRegisters = std::map<std::string, Register>;
 using tBuffers = std::deque<std::shared_ptr<ZepBuffer>>;
 using tSyntaxFactory = std::function<std::shared_ptr<ZepSyntax>(ZepBuffer*)>;
 
-namespace ZepEditorFlags
-{
-enum
-{
-    None = (0),
-    DisableThreads = (1 << 0)
-};
-};
-
 const float bottomBorder = 4.0f;
 const float textBorder = 4.0f;
 const float leftBorderChars = 3;
@@ -155,7 +188,7 @@ public:
     void SetMode(const std::string& mode);
     ZepMode* GetCurrentMode();
 
-    void RegisterSyntaxFactory(const std::string& extension, tSyntaxFactory factory);
+    void RegisterSyntaxFactory(const std::vector<std::string>& mappings, tSyntaxFactory factory);
     bool Broadcast(std::shared_ptr<ZepMessage> payload);
     void RegisterCallback(IZepComponent* pClient)
     {
@@ -170,7 +203,7 @@ public:
     ZepBuffer* GetMRUBuffer() const;
     void SaveBuffer(ZepBuffer& buffer);
     ZepBuffer* GetFileBuffer(const fs::path& filePath, uint32_t fileFlags = 0);
-    ZepBuffer* GetBuffer(const std::string& name, uint32_t fileFlags = 0);
+    ZepBuffer* GetEmptyBuffer(const std::string& name, uint32_t fileFlags = 0);
 
     void SetRegister(const std::string& reg, const Register& val);
     void SetRegister(const char reg, const Register& val);
@@ -222,7 +255,9 @@ public:
 
     ZepTheme& GetTheme() const;
 
-    void SetMousePos(const NVec2f& mousePos);
+    void OnMouseMove(const NVec2f& mousePos);
+    void OnMouseDown(const NVec2f& mousePos, ZepMouseButton button);
+    void OnMouseUp(const NVec2f& mousePos, ZepMouseButton button);
     const NVec2f GetMousePos() const;
 
     void SetPixelScale(float pt);
@@ -231,7 +266,7 @@ public:
     void SetBufferSyntax(ZepBuffer& buffer) const;
 private:
     // Call GetBuffer publicly, to stop creation of duplicate buffers refering to the same file
-    ZepBuffer* AddBuffer(const std::string& bufferName);
+    ZepBuffer* CreateNewBuffer(const std::string& bufferName);
 
 private:
     IZepDisplay* m_pDisplay;

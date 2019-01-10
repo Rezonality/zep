@@ -45,7 +45,8 @@ enum : uint32_t
     ReadOnly = (1 << 2),
     Locked = (1 << 3), // Can this file path ever be written to?
     Dirty = (1 << 4),  // Has the file been changed?
-    NotYetSaved = (1 << 5)
+    NotYetSaved = (1 << 5),
+    FirstInit = (1 << 6)
 };
 };
 
@@ -75,7 +76,6 @@ struct RangeMarker
 using tRangeMarkers = std::vector<RangeMarker>;
 
 const long InvalidOffset = -1;
-extern const char* Msg_Buffer;
 
 // A really big cursor move; which will likely clamp
 static const long MaxCursorMove = long(0xFFFFFFF);
@@ -201,7 +201,7 @@ private:
     GapBuffer<utf8> m_gapBuffer;  // Storage for the text - a gap buffer for efficiency
     std::vector<long> m_lineEnds; // End of each line
     ThreadPool m_threadPool;
-    uint32_t m_fileFlags = FileFlags::NotYetSaved;
+    uint32_t m_fileFlags = FileFlags::NotYetSaved | FileFlags::FirstInit;
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::string m_strName;
     fs::path m_filePath;
@@ -218,11 +218,12 @@ enum class BufferMessageType
     TextChanged,
     TextDeleted,
     TextAdded,
+    Initialized
 };
 struct BufferMessage : public ZepMessage
 {
     BufferMessage(ZepBuffer* pBuff, BufferMessageType messageType, const BufferLocation& startLoc, const BufferLocation& endLoc, const BufferLocation& cursor = BufferLocation{-1})
-        : ZepMessage(Msg_Buffer)
+        : ZepMessage(Msg::Buffer)
         , pBuffer(pBuff)
         , type(messageType)
         , startLocation(startLoc)

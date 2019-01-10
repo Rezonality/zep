@@ -419,7 +419,7 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
         auto pWindow = GetEditor().GetActiveTabWindow()->GetActiveWindow();
         auto& buffer = pWindow->GetBuffer();
         auto bufferCursor = pWindow->GetBufferCursor();
-        if (GetEditor().Broadcast(std::make_shared<ZepMessage>(Msg_HandleCommand, strCommand)))
+        if (GetEditor().Broadcast(std::make_shared<ZepMessage>(Msg::HandleCommand, strCommand)))
         {
             return true;
         }
@@ -432,7 +432,7 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
                 if (!reg.second.text.empty())
                 {
                     std::string displayText = reg.second.text;
-                    displayText = ReplaceString(displayText, "\n", "^J");
+                    displayText = string_replace(displayText, "\n", "^J");
                     str << "\"" << reg.first << "   " << displayText << '\n';
                 }
             }
@@ -457,7 +457,7 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
             }
             else
             {
-                pTab->AddWindow(GetEditor().GetBuffer("Empty"), nullptr, true);
+                pTab->AddWindow(GetEditor().GetEmptyBuffer("Empty"), nullptr, true);
             }
             GetEditor().SetCurrentTabWindow(pTab);
         }
@@ -595,7 +595,7 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
                 if (!buffer->GetName().empty())
                 {
                     std::string displayText = buffer->GetName();
-                    displayText = ReplaceString(displayText, "\n", "^J");
+                    displayText = string_replace(displayText, "\n", "^J");
                     if (&GetCurrentWindow()->GetBuffer() == buffer.get())
                     {
                         str << "*";

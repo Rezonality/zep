@@ -56,15 +56,21 @@ static std::set<std::string> hlsl_identifiers = {
     "tex3D", "tex3D", "tex3Dbias", "tex3Dgrad", "tex3Dlod", "tex3Dproj", "texCUBE", "texCUBE", "texCUBEbias", "texCUBEgrad", "texCUBElod", "texCUBEproj", "transpose", "trunc"
 };
 
+// From here: https://stackoverflow.com/a/6232367/18942
 static std::set<std::string> glsl_keywords {
-    "auto", "break", "case", "char", "const", "continue", "default", "do", "double", "else", "enum", "extern", "float", "for", "goto", "if", "inline", "int", "long", "register", "restrict", "return", "short",
-    "signed", "sizeof", "static", "struct", "switch", "typedef", "union", "unsigned", "void", "volatile", "while", "_Alignas", "_Alignof", "_Atomic", "_Bool", "_Complex", "_Generic", "_Imaginary",
-    "_Noreturn", "_Static_assert", "_Thread_local"
+    "void", "#version", "attribute","uniform","varying","layout","centroid","flat","smooth","noperspective","patch","sample","subroutine","in","out","inout","invariant","discard","mat2","mat3","mat4","dmat2","dmat3","dmat4",
+    "mat2x2","mat2x3","mat2x4","dmat2x2","dmat2x3","dmat2x4","mat3x2","mat3x3","mat3x4","dmat3x2","dmat3x3","dmat3x4","mat4x2","mat4x3","mat4x4","dmat4x2","dmat4x3","dmat4x4","vec2","vec3",
+    "vec4","ivec2","ivec3","ivec4","bvec2","bvec3","bvec4","dvec2","dvec3","dvec4","uvec2","uvec3","uvec4","lowp","mediump","highp","precision","sampler1D","sampler2D","sampler3D",
+    "samplerCube","sampler1DShadow","sampler2DShadow","samplerCubeShadow","sampler1DArray","sampler2DArray","sampler1DArrayShadow","sampler2DArrayShadow","isampler1D","isampler2D",
+    "isampler3D","isamplerCube","isampler1DArray","isampler2DArray","usampler1D","usampler2D","usampler3D","usamplerCube","usampler1DArray","usampler2DArray",
+    "sampler2DRect","sampler2DRectShadow","isampler2DRect","usampler2DRect","samplerBuffer","isamplerBuffer","usamplerBuffer","sampler2DMS","isampler2DMS",
+    "usampler2DMS","sampler2DMSArray","isampler2DMSArray","usampler2DMSArray","samplerCubeArray","samplerCubeArrayShadow","isamplerCubeArray","usamplerCubeArray"
 };
 
 static std::set<std::string> glsl_identifiers = {
-    "abort", "abs", "acos", "asin", "atan", "atexit", "atof", "atoi", "atol", "ceil", "clock", "cosh", "ctime", "div", "exit", "fabs", "floor", "fmod", "getchar", "getenv", "isalnum", "isalpha", "isdigit", "isgraph",
-    "ispunct", "isspace", "isupper", "kbhit", "log10", "log2", "log", "memcmp", "modf", "pow", "putchar", "putenv", "puts", "rand", "remove", "rename", "sinh", "sqrt", "srand", "strcat", "strcmp", "strerror", "time", "tolower", "toupper"
+    "abort", "abs","acos","asin", "atan", "atexit","atof","atoi", "atol", "ceil", "clock", "cosh", "ctime", "div", "exit", "fabs", "floor", "fmod", "getchar", "getenv", "isalnum", "isalpha", "isdigit", "isgraph",
+    "ispunct", "isspace", "isupper", "kbhit", "log10", "log2", "log", "memcmp", "modf", "pow", "putchar", "putenv", "puts", "rand", "remove", "rename", "sinh", "sqrt", "srand", "strcat", "strcmp", "strerror", "time", "tolower", "toupper",
+    "gl_Position"
 };
 
 static std::set<std::string> c_keywords = {
@@ -90,17 +96,11 @@ static std::set<std::string> sql_keywords = {
     "DUMMY", "OPENXML", "WAITFOR", "DUMP", "OPTION", "WHEN", "ELSE", "OR", "WHERE", "END", "ORDER", "WHILE", "ERRLVL", "OUTER", "WITH", "ESCAPE", "OVER", "WRITETEXT"
 };
 
-static std::set<std::string> sql_identifiers = {
-    "ABS",  "ACOS",  "ADD_MONTHS",  "ASCII",  "ASCIISTR",  "ASIN",  "ATAN",  "ATAN2",  "AVG",  "BFILENAME",  "BIN_TO_NUM",  "BITAND",  "CARDINALITY",  "CASE",  "CAST",  "CEIL",
-    "CHARTOROWID",  "CHR",  "COALESCE",  "COMPOSE",  "CONCAT",  "CONVERT",  "CORR",  "COS",  "COSH",  "COUNT",  "COVAR_POP",  "COVAR_SAMP",  "CUME_DIST",  "CURRENT_DATE",
-    "CURRENT_TIMESTAMP",  "DBTIMEZONE",  "DECODE",  "DECOMPOSE",  "DENSE_RANK",  "DUMP",  "EMPTY_BLOB",  "EMPTY_CLOB",  "EXP",  "EXTRACT",  "FIRST_VALUE",  "FLOOR",  "FROM_TZ",  "GREATEST",
-    "GROUP_ID",  "HEXTORAW",  "INITCAP",  "INSTR",  "INSTR2",  "INSTR4",  "INSTRB",  "INSTRC",  "LAG",  "LAST_DAY",  "LAST_VALUE",  "LEAD",  "LEAST",  "LENGTH",  "LENGTH2",  "LENGTH4",
-    "LENGTHB",  "LENGTHC",  "LISTAGG",  "LN",  "LNNVL",  "LOCALTIMESTAMP",  "LOG",  "LOWER",  "LPAD",  "LTRIM",  "MAX",  "MEDIAN",  "MIN",  "MOD",  "MONTHS_BETWEEN",  "NANVL",  "NCHR",
-    "NEW_TIME",  "NEXT_DAY",  "NTH_VALUE",  "NULLIF",  "NUMTODSINTERVAL",  "NUMTOYMINTERVAL",  "NVL",  "NVL2",  "POWER",  "RANK",  "RAWTOHEX",  "REGEXP_COUNT",  "REGEXP_INSTR",
-    "REGEXP_REPLACE",  "REGEXP_SUBSTR",  "REMAINDER",  "REPLACE",  "ROUND",  "ROWNUM",  "RPAD",  "RTRIM",  "SESSIONTIMEZONE",  "SIGN",  "SIN",  "SINH",
-    "SOUNDEX",  "SQRT",  "STDDEV",  "SUBSTR",  "SUM",  "SYS_CONTEXT",  "SYSDATE",  "SYSTIMESTAMP",  "TAN",  "TANH",  "TO_CHAR",  "TO_CLOB",  "TO_DATE",  "TO_DSINTERVAL",  "TO_LOB",
-    "TO_MULTI_BYTE",  "TO_NCLOB",  "TO_NUMBER",  "TO_SINGLE_BYTE",  "TO_TIMESTAMP",  "TO_TIMESTAMP_TZ",  "TO_YMINTERVAL",  "TRANSLATE",  "TRIM",  "TRUNC", "TZ_OFFSET",  "UID",  "UPPER",
-    "USER",  "USERENV",  "VAR_POP",  "VAR_SAMP",  "VARIANCE",  "VSIZE "
+static std::set<std::string> cmake_keywords = {
+    "option", "cmake_minimum_required", "project", "message", "add_dependencies", "add_test", "find_package", "include_directories", "configure_file", "target_link_libraries", "source_group", "set", "set_property", "include", "add_executable", "add_library", "if", "elseif", "endif", "find", "glob"
+};
+
+static std::set<std::string> cmake_identifiers = {
 };
 
 static std::set<std::string> lua_keywords = {
@@ -130,40 +130,24 @@ static std::set<std::string> lisp_identifiers = {
 
 void RegisterSyntaxProviders(ZepEditor& editor)
 {
-    editor.RegisterSyntaxFactory(".vert", tSyntaxFactory([] (ZepBuffer* pBuffer) {
+    editor.RegisterSyntaxFactory({".vert", ".frag"}, tSyntaxFactory([](ZepBuffer* pBuffer) {
         return std::make_shared<ZepSyntax>(*pBuffer, glsl_keywords, glsl_identifiers);
     }));
 
-    editor.RegisterSyntaxFactory(".frag", tSyntaxFactory([] (ZepBuffer* pBuffer) {
-        return std::make_shared<ZepSyntax>(*pBuffer, glsl_keywords, glsl_identifiers);
-    }));
-
-    editor.RegisterSyntaxFactory(".hlsl", tSyntaxFactory([] (ZepBuffer* pBuffer) {
+    editor.RegisterSyntaxFactory({".hlsl", ".hlsli"}, tSyntaxFactory([](ZepBuffer* pBuffer) {
         return std::make_shared<ZepSyntax>(*pBuffer, hlsl_keywords, hlsl_identifiers);
+    }));
+
+    editor.RegisterSyntaxFactory({".cpp", ".cxx", ".h", ".c"}, tSyntaxFactory([](ZepBuffer* pBuffer) {
+        return std::make_shared<ZepSyntax>(*pBuffer, cpp_keywords, cpp_identifiers);
+    }));
+
+    editor.RegisterSyntaxFactory({".lisp", ".lsp"}, tSyntaxFactory([](ZepBuffer* pBuffer) {
+        return std::make_shared<ZepSyntax>(*pBuffer, lisp_keywords, lisp_identifiers);
     }));
     
-    editor.RegisterSyntaxFactory(".hlsli", tSyntaxFactory([] (ZepBuffer* pBuffer) {
-        return std::make_shared<ZepSyntax>(*pBuffer, hlsl_keywords, hlsl_identifiers);
-    }));
-
-    editor.RegisterSyntaxFactory(".cpp", tSyntaxFactory([] (ZepBuffer* pBuffer) {
-        return std::make_shared<ZepSyntax>(*pBuffer, cpp_keywords, cpp_identifiers);
-    }));
-
-    editor.RegisterSyntaxFactory(".cxx", tSyntaxFactory([] (ZepBuffer* pBuffer) {
-        return std::make_shared<ZepSyntax>(*pBuffer, cpp_keywords, cpp_identifiers);
-    }));
-
-    editor.RegisterSyntaxFactory(".c", tSyntaxFactory([] (ZepBuffer* pBuffer) {
-        return std::make_shared<ZepSyntax>(*pBuffer, cpp_keywords, cpp_identifiers);
-    }));
-
-    editor.RegisterSyntaxFactory(".h", tSyntaxFactory([] (ZepBuffer* pBuffer) {
-        return std::make_shared<ZepSyntax>(*pBuffer, cpp_keywords, cpp_identifiers);
-    }));
-
-    editor.RegisterSyntaxFactory(".lisp", tSyntaxFactory([] (ZepBuffer* pBuffer) {
-        return std::make_shared<ZepSyntax>(*pBuffer, lisp_keywords, lisp_identifiers);
+    editor.RegisterSyntaxFactory({".cmake", "CMakeLists.txt"}, tSyntaxFactory([](ZepBuffer* pBuffer) {
+        return std::make_shared<ZepSyntax>(*pBuffer, cmake_keywords, cmake_identifiers, ZepSyntaxFlags::CaseInsensitive);
     }));
 }
 

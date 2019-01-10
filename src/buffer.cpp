@@ -50,7 +50,6 @@ using fnMatch = std::function<bool>(const char);
 namespace Zep
 {
 
-const char* Msg_Buffer = "Buffer";
 ZepBuffer::ZepBuffer(ZepEditor& editor, const std::string& strName)
     : ZepComponent(editor)
     , m_strName(strName)
@@ -534,6 +533,15 @@ void ZepBuffer::LockRead()
 // the file path in case you want to write later
 void ZepBuffer::Load(const fs::path& path)
 {
+    if (path.has_filename())
+    {
+        m_strName = path.filename().string();
+    }
+    else
+    {
+        m_strName = m_filePath.string();
+    }
+
     if (fs::exists(path))
     {
         m_filePath = fs::canonical(path);
@@ -554,14 +562,6 @@ void ZepBuffer::Load(const fs::path& path)
         SetFlags(FileFlags::NotYetSaved);
     }
 
-    if (path.has_filename())
-    {
-        m_strName = path.filename().string();
-    }
-    else
-    {
-        m_strName = m_filePath.string();
-    }
 }
 
 bool ZepBuffer::Save(int64_t& size)
@@ -586,7 +586,7 @@ bool ZepBuffer::Save(int64_t& size)
     if (m_fileFlags & FileFlags::StrippedCR)
     {
         // TODO: faster way to replace newlines
-        ReplaceStringInPlace(str, "\n", "\r\n");
+        string_replace_in_place(str, "\n", "\r\n");
     }
 
     // Remove the appended 0 if necessary
@@ -635,12 +635,12 @@ void ZepBuffer::SetFilePath(const fs::path& path)
     if (!fs::equivalent(testPath, m_filePath))
     {
         m_filePath = testPath;
-        GetEditor().SetBufferSyntax(*this);
         SetFlags(FileFlags::NotYetSaved);
     }
 }
 
 // Replace the buffer buffer with the text
+// This is also called on Load
 void ZepBuffer::SetText(const std::string& text)
 {
     if (m_gapBuffer.size() != 0)
@@ -654,6 +654,14 @@ void ZepBuffer::SetText(const std::string& text)
 
     // Doc is not dirty
     ClearFlags(FileFlags::Dirty);
+  
+    // On first init, send the initialized message to say we've initialized the buffer with something
+    // Make sure the buffer has more than the closing 0 in it
+    if (TestFlags(FileFlags::FirstInit) && m_gapBuffer.size() > 1)
+    {
+        ClearFlags(FileFlags::FirstInit);
+        GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::Initialized, BufferLocation{0}, BufferLocation{long(m_gapBuffer.size())}));
+    }
 }
 
 // TODO: This can be cleaner
@@ -835,6 +843,12 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
     //LOG(DEBUG) << m_gapBuffer.string();
 
     SetFlags(FileFlags::Dirty);
+    
+    if (TestFlags(FileFlags::FirstInit) && m_gapBuffer.size() > 1)
+    {
+        ClearFlags(FileFlags::FirstInit);
+        GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::Initialized, BufferLocation{0}, BufferLocation{long(m_gapBuffer.size())}));
+    }
 
     return true;
 }

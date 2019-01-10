@@ -1,64 +1,108 @@
 #include "common_namespace.h"
 #include "editor.h"
 #include "theme.h"
-#include "scroller.h"
 #include "display.h"
 #include "logger.h"
+#include "scroller.h"
 
 namespace Zep
 {
 
-
-void Scroller_Init(Scroller& scroller, ZepEditor& editor, Region& parent)
+Scroller::Scroller(ZepEditor& editor, Region& parent)
+    : ZepComponent(editor)
 {
-    scroller.region = std::make_shared<Region>();
-    scroller.topButtonRegion = std::make_shared<Region>();
-    scroller.bottomButtonRegion = std::make_shared<Region>();
-    scroller.mainRegion = std::make_shared<Region>();
+    region = std::make_shared<Region>();
+    topButtonRegion = std::make_shared<Region>();
+    bottomButtonRegion = std::make_shared<Region>();
+    mainRegion = std::make_shared<Region>();
 
-    scroller.region->flags = RegionFlags::Expanding;
-    scroller.topButtonRegion->flags = RegionFlags::Fixed;
-    scroller.bottomButtonRegion->flags = RegionFlags::Fixed;
-    scroller.mainRegion->flags = RegionFlags::Expanding;
+    region->flags = RegionFlags::Expanding;
+    topButtonRegion->flags = RegionFlags::Fixed;
+    bottomButtonRegion->flags = RegionFlags::Fixed;
+    mainRegion->flags = RegionFlags::Expanding;
 
-    scroller.region->vertical = false;
+    region->vertical = false;
 
     const float scrollButtonMargin = 4.0f * editor.GetPixelScale();
-    scroller.topButtonRegion->margin = NVec2f(scrollButtonMargin, scrollButtonMargin);
-    scroller.bottomButtonRegion->margin = NVec2f(scrollButtonMargin, scrollButtonMargin);
-    scroller.mainRegion->margin = NVec2f(scrollButtonMargin, 0.0f);
+    topButtonRegion->margin = NVec2f(scrollButtonMargin, scrollButtonMargin);
+    bottomButtonRegion->margin = NVec2f(scrollButtonMargin, scrollButtonMargin);
+    mainRegion->margin = NVec2f(scrollButtonMargin, 0.0f);
 
     const float scrollButtonSize = 16.0f * editor.GetPixelScale();
-    scroller.topButtonRegion->fixed_size = NVec2f(0.0f, scrollButtonSize);
-    scroller.bottomButtonRegion->fixed_size = NVec2f(0.0f, scrollButtonSize);
+    topButtonRegion->fixed_size = NVec2f(0.0f, scrollButtonSize);
+    bottomButtonRegion->fixed_size = NVec2f(0.0f, scrollButtonSize);
 
-    scroller.region->children.push_back(scroller.topButtonRegion);
-    scroller.region->children.push_back(scroller.mainRegion);
-    scroller.region->children.push_back(scroller.bottomButtonRegion);
+    region->children.push_back(topButtonRegion);
+    region->children.push_back(mainRegion);
+    region->children.push_back(bottomButtonRegion);
 
-    parent.children.push_back(scroller.region);
+    parent.children.push_back(region);
 }
 
-void Scroller_Display(Scroller& scroller, ZepEditor& editor, ZepTheme& theme)
+void Scroller::ClickUp()
 {
-    auto& display = editor.GetDisplay();
+    vScrollPosition -= vScrollLinePercent;
+    vScrollPosition = std::max(0.0f, vScrollPosition);
+    GetEditor().Broadcast(std::make_shared<ZepMessage>(Msg::ComponentChanged, this));
+    
+}
 
-    display.SetClipRect(scroller.region->rect);
+void Scroller::ClickDown()
+{
+    vScrollPosition += vScrollLinePercent;
+    vScrollPosition = std::min(1.0f - vScrollVisiblePercent, vScrollPosition);
+    GetEditor().Broadcast(std::make_shared<ZepMessage>(Msg::ComponentChanged, this));
+}
 
-    float thumbSize = scroller.mainRegion->rect.Height() * scroller.vScrollVisiblePercent;
+void Scroller::Notify(std::shared_ptr<ZepMessage> message)
+{
+    switch (message->messageId)
+    {
+    case Msg::MouseDown:
+        if (message->button == ZepMouseButton::Left)
+        {
+            if (bottomButtonRegion->rect.Contains(message->pos))
+            {
+                ClickDown();
+            }
+        }
+        break;
+    case Msg::MouseUp:
+        if (message->button == ZepMouseButton::Left)
+        {
+            if (topButtonRegion->rect.Contains(message->pos))
+            {
+                ClickUp();
+            }
+        }
+        break;
+    case Msg::MouseMove:
+        break;
+    default:
+        break;
+    }
+}
 
-    auto mousePos = editor.GetMousePos();
+void Scroller::Display(ZepTheme& theme)
+{
+    auto& display = GetEditor().GetDisplay();
+
+    display.SetClipRect(region->rect);
+
+    float thumbSize = mainRegion->rect.Height() * vScrollVisiblePercent;
+
+    auto mousePos = GetEditor().GetMousePos();
     auto activeColor = theme.GetColor(ThemeColor::WidgetActive);
     auto inactiveColor = theme.GetColor(ThemeColor::WidgetInactive);
 
     // Scroller background
-    display.DrawRectFilled(scroller.region->rect, theme.GetColor(ThemeColor::WidgetBackground));
+    display.DrawRectFilled(region->rect, theme.GetColor(ThemeColor::WidgetBackground));
 
-    display.DrawRectFilled(scroller.topButtonRegion->rect, scroller.topButtonRegion->rect.Contains(mousePos) ? activeColor : inactiveColor);
-    display.DrawRectFilled(scroller.bottomButtonRegion->rect, scroller.bottomButtonRegion->rect.Contains(mousePos) ? activeColor : inactiveColor);
+    display.DrawRectFilled(topButtonRegion->rect, topButtonRegion->rect.Contains(mousePos) ? activeColor : inactiveColor);
+    display.DrawRectFilled(bottomButtonRegion->rect, bottomButtonRegion->rect.Contains(mousePos) ? activeColor : inactiveColor);
 
-    NRectf thumbRect(NVec2f(scroller.mainRegion->rect.topLeftPx.x, scroller.mainRegion->rect.topLeftPx.y + scroller.mainRegion->rect.Height() * scroller.vScrollPosition),
-        NVec2f(scroller.mainRegion->rect.bottomRightPx.x, scroller.mainRegion->rect.topLeftPx.y + scroller.mainRegion->rect.Height() * scroller.vScrollPosition + thumbSize));
+    NRectf thumbRect(NVec2f(mainRegion->rect.topLeftPx.x, mainRegion->rect.topLeftPx.y + mainRegion->rect.Height() * vScrollPosition),
+        NVec2f(mainRegion->rect.bottomRightPx.x, mainRegion->rect.topLeftPx.y + mainRegion->rect.Height() * vScrollPosition + thumbSize));
 
     // Thumb
     display.DrawRectFilled(thumbRect, thumbRect.Contains(mousePos) ? activeColor : inactiveColor);

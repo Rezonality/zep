@@ -57,9 +57,8 @@ ZepWindow::ZepWindow(ZepTabWindow& window, ZepBuffer* buffer)
 
     m_bufferRegion->children.push_back(m_airlineRegion);
 
-    m_vScroller = std::make_shared<Scroller>();
+    m_vScroller = std::make_shared<Scroller>(GetEditor(), *m_vScrollRegion);
     m_vScroller->vertical = false;
-    Scroller_Init(*m_vScroller, GetEditor(), *m_vScrollRegion);
 }
 
 ZepWindow::~ZepWindow()
@@ -80,7 +79,9 @@ void ZepWindow::UpdateScrollers()
     }
     m_vScroller->vScrollVisiblePercent = std::min(float(m_maxDisplayLines) / float(m_windowLines.size()), 1.0f);
     m_vScroller->vScrollPosition = std::abs(m_bufferOffsetYPx) / m_bufferSizeYPx;
-      
+    m_vScroller->vScrollLinePercent = 1.0f / m_windowLines.size();
+    m_vScroller->vScrollPagePercent = 1.0f;
+
     if (m_vScroller->vScrollVisiblePercent >= 1.0f)
     {
         m_vScrollRegion->fixed_size = NVec2f(0.0f, 0.0f);
@@ -129,7 +130,7 @@ void ZepWindow::SetCursorType(CursorType mode)
 
 void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
 {
-    if (payload->messageId == Msg_Buffer)
+    if (payload->messageId == Msg::Buffer)
     {
         auto pMsg = std::static_pointer_cast<BufferMessage>(payload);
 
@@ -144,6 +145,21 @@ void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
         {
             // Put the cursor where the replaced text was added
             GetEditor().ResetCursorTimer();
+        }
+    }
+    else if (payload->messageId == Msg::ComponentChanged)
+    {
+        if (payload->pComponent == m_vScroller.get())
+        {
+            auto pScroller = dynamic_cast<Scroller*>(payload->pComponent);
+            m_bufferOffsetYPx = pScroller->vScrollPosition * (m_windowLines.size() * GetEditor().GetDisplay().GetFontSize());
+            m_layoutDirty = true;
+            UpdateLayout();
+            EnsureCursorVisible();
+    
+            /*auto& cursorLine = GetCursorLineInfo(BufferToDisplay().y);
+            if (cursorLine
+            */
         }
     }
 }
@@ -190,8 +206,36 @@ void ZepWindow::SetDisplayRegion(const NRectf& region)
     m_bufferOffsetYPx = 0;
 }
 
+void ZepWindow::EnsureCursorVisible()
+{
+    UpdateLayout();
+    BufferLocation loc = m_bufferCursor;
+    for (auto& line : m_windowLines)
+    {
+        if (line->columnOffsets.x <= loc && line->columnOffsets.y > loc)
+        {
+            auto cursorLine = line->lineIndex;
+            if (cursorLine < m_visibleLineRange.x)
+            {
+                MoveCursorY(std::abs(m_visibleLineRange.x - cursorLine));
+            }
+            else if (cursorLine >= m_visibleLineRange.y)
+            {
+                MoveCursorY((long(m_visibleLineRange.y) - cursorLine) - 1);
+            }
+            m_cursorMoved = false;
+            return;
+        }
+    }
+}
+
 void ZepWindow::ScrollToCursor()
 {
+    if (!m_cursorMoved)
+    {
+        return;
+    }
+
     auto old_offset = m_bufferOffsetYPx;
     auto two_lines = (GetEditor().GetDisplay().GetFontSize() * 2);
     auto& cursorLine = GetCursorLineInfo(BufferToDisplay().y);
@@ -212,6 +256,7 @@ void ZepWindow::ScrollToCursor()
     {
         UpdateVisibleLineRange();
     }
+    m_cursorMoved = false;
 }
 
 // This is the most expensive part of window update; applying line span generation for wrapped text.
@@ -387,7 +432,7 @@ float ZepWindow::ToWindowY(float pos) const
 bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int displayPass)
 {
     // A middle-dot whitespace character
-    static const auto whiteSpace = makeStr(std::wstring(L"\x00b7"));
+    static const auto whiteSpace = string_from_wstring(std::wstring(L"\x00b7"));
     static const auto blankSpace = ' ';
 
     auto cursorCL = BufferToDisplay();
@@ -631,6 +676,7 @@ void ZepWindow::SetBufferCursor(BufferLocation location)
 {
     m_bufferCursor = m_pBuffer->Clamp(location);
     m_lastCursorColumn = BufferToDisplay(m_bufferCursor).x;
+    m_cursorMoved = true;
 }
 
 void ZepWindow::SetBuffer(ZepBuffer* pBuffer)
@@ -669,7 +715,7 @@ void ZepWindow::DisplayScrollers()
     if (m_vScrollRegion->rect.Empty())
         return;
 
-    Scroller_Display(*m_vScroller, GetEditor(), m_pBuffer->GetTheme());
+    m_vScroller->Display(m_pBuffer->GetTheme());
 
     GetEditor().GetDisplay().SetClipRect(m_bufferRegion->rect);
 }
@@ -698,9 +744,11 @@ void ZepWindow::Display()
     if (m_scrollVisibilityChanged)
     {
         m_layoutDirty = true;
+        m_cursorMoved = true;
         UpdateLayout();
         ScrollToCursor();
         UpdateScrollers();
+
         m_scrollVisibilityChanged = false;
     }
 
@@ -834,6 +882,7 @@ void ZepWindow::MoveCursorY(int yDistance, LineLocation clampLocation)
     }
     m_bufferCursor = std::min(m_bufferCursor, clampOffset);
 
+    m_cursorMoved = true;
     GetEditor().ResetCursorTimer();
 }
 

@@ -21,11 +21,6 @@ structlog LOGCFG = {true, DEBUG};
 namespace Zep
 {
 
-const char* Msg_Quit = "Quit";
-const char* Msg_GetClipBoard = "GetClipBoard";
-const char* Msg_SetClipBoard = "SetClipBoard";
-const char* Msg_HandleCommand = "HandleCommand";
-
 ZepComponent::ZepComponent(ZepEditor& editor)
     : m_editor(editor)
 {
@@ -106,9 +101,9 @@ void ZepEditor::SaveBuffer(ZepBuffer& buffer)
     SetCommandText(strText.str());
 }
 
-ZepBuffer* ZepEditor::GetBuffer(const std::string& name, uint32_t fileFlags)
+ZepBuffer* ZepEditor::GetEmptyBuffer(const std::string& name, uint32_t fileFlags)
 {
-    auto pBuffer = AddBuffer(name);
+    auto pBuffer = CreateNewBuffer(name);
     pBuffer->SetFlags(fileFlags, true);
     return pBuffer;
 }
@@ -131,7 +126,7 @@ ZepBuffer* ZepEditor::GetFileBuffer(const fs::path& filePath, uint32_t fileFlags
         }
     }
 
-    auto pBuffer = AddBuffer(path.has_filename() ? path.filename().string() : path.string());
+    auto pBuffer = CreateNewBuffer(path.has_filename() ? path.filename().string() : path.string());
     if (fs::exists(path))
     {
         pBuffer->Load(path);
@@ -190,7 +185,7 @@ void ZepEditor::UpdateWindowState()
             }
             else
             {
-                m_pActiveTabWindow->AddWindow(AddBuffer("[Empty]"), nullptr, true);
+                m_pActiveTabWindow->AddWindow(CreateNewBuffer("[Empty]"), nullptr, true);
             }
         }
     }
@@ -260,7 +255,7 @@ ZepTabWindow* ZepEditor::AddTabWindow()
 
 void ZepEditor::Quit()
 {
-    Broadcast(std::make_shared<ZepMessage>(Msg_Quit, "Quit"));
+    Broadcast(std::make_shared<ZepMessage>(Msg::Quit, "Quit"));
 }
 
 void ZepEditor::RemoveTabWindow(ZepTabWindow* pTabWindow)
@@ -326,9 +321,11 @@ ZepMode* ZepEditor::GetCurrentMode()
 void ZepEditor::SetBufferSyntax(ZepBuffer& buffer) const
 {
     std::string ext;
+    std::string fileName;
     if (buffer.GetFilePath().has_filename() && buffer.GetFilePath().filename().has_extension())
     {
-        ext = buffer.GetFilePath().filename().extension().string();
+        ext = string_tolower(buffer.GetFilePath().filename().extension().string());
+        fileName = string_tolower(buffer.GetFilePath().filename().string());
     }
     else
     {
@@ -336,7 +333,18 @@ void ZepEditor::SetBufferSyntax(ZepBuffer& buffer) const
         size_t dot_pos = str.find_last_of(".");
         if (dot_pos != string::npos)
         {
-            ext = str.substr(dot_pos, str.length() - dot_pos);
+            ext = string_tolower(str.substr(dot_pos, str.length() - dot_pos));
+        }
+    }
+
+    // first check file name
+    if (!fileName.empty())
+    {
+        auto itr = m_mapSyntax.find(fileName);
+        if (itr != m_mapSyntax.end())
+        {
+            buffer.SetSyntax(itr->second(&buffer));
+            return;
         }
     }
 
@@ -345,15 +353,18 @@ void ZepEditor::SetBufferSyntax(ZepBuffer& buffer) const
     {
         buffer.SetSyntax(itr->second(&buffer));
     }
-    else
+    else 
     {
         buffer.SetSyntax(nullptr);
     }
 }
 
-void ZepEditor::RegisterSyntaxFactory(const std::string& extension, tSyntaxFactory factory)
+void ZepEditor::RegisterSyntaxFactory(const std::vector<std::string>& mappings, tSyntaxFactory factory)
 {
-    m_mapSyntax[extension] = factory;
+    for (auto& m : mappings)
+    {
+        m_mapSyntax[string_tolower(m)] = factory;
+    }
 }
 
 // Inform clients of an event in the buffer
@@ -380,12 +391,10 @@ const std::deque<std::shared_ptr<ZepBuffer>>& ZepEditor::GetBuffers() const
     return m_buffers;
 }
 
-ZepBuffer* ZepEditor::AddBuffer(const std::string& str)
+ZepBuffer* ZepEditor::CreateNewBuffer(const std::string& str)
 {
     auto pBuffer = std::make_shared<ZepBuffer>(*this, str);
     m_buffers.push_front(pBuffer);
-
-    SetBufferSyntax(*pBuffer);
 
     // Adding a buffer immediately updates the window state, in case this is the first one
     UpdateWindowState();
@@ -438,6 +447,14 @@ const tRegisters& ZepEditor::GetRegisters() const
 
 void ZepEditor::Notify(std::shared_ptr<ZepMessage> message)
 {
+    if (message->messageId == Msg::Buffer)
+    {
+        auto pMsg = std::static_pointer_cast<BufferMessage>(message);
+        if (pMsg->type == BufferMessageType::Initialized)
+        {
+            SetBufferSyntax(*pMsg->pBuffer);
+        }
+    }
 }
 
 void ZepEditor::SetCommandText(const std::string& strCommand)
@@ -576,9 +593,24 @@ ZepTheme& ZepEditor::GetTheme() const
     return *m_spTheme;
 }
 
-void ZepEditor::SetMousePos(const NVec2f& mousePos)
+void ZepEditor::OnMouseMove(const NVec2f& mousePos)
 {
     m_mousePos = mousePos;
+    Broadcast(std::make_shared<ZepMessage>(Msg::MouseMove, mousePos));
+    m_bPendingRefresh = true;
+}
+
+void ZepEditor::OnMouseDown(const NVec2f& mousePos, ZepMouseButton button)
+{
+    m_mousePos = mousePos;
+    Broadcast(std::make_shared<ZepMessage>(Msg::MouseDown, mousePos, button));
+    m_bPendingRefresh = true;
+}
+
+void ZepEditor::OnMouseUp(const NVec2f& mousePos, ZepMouseButton button)
+{
+    m_mousePos = mousePos;
+    Broadcast(std::make_shared<ZepMessage>(Msg::MouseUp, mousePos, button));
     m_bPendingRefresh = true;
 }
 

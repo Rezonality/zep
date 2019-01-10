@@ -41,8 +41,8 @@ inline size_t Utf8Length(const char* s)
     return stringLength;
 }
 
-std::string ReplaceString(std::string subject, const std::string& search, const std::string& replace);
-void ReplaceStringInPlace(std::string& subject, const std::string& search, const std::string& replace);
+std::string string_replace(std::string subject, const std::string& search, const std::string& replace);
+void string_replace_in_place(std::string& subject, const std::string& search, const std::string& replace);
 
 // trim from beginning of string (left)
 inline std::string& LTrim(std::string& s, const char* t = " \t\n\r\f\v")
@@ -86,8 +86,8 @@ inline std::wstring makeWStr(const std::string& str)
     return std::wstring(str.begin(), str.end());
 }
 
-std::string makeStr(const std::wstring& str);
-std::string toLower(const std::string& str);
+std::string string_from_wstring(const std::wstring& str);
+std::string string_tolower(const std::string& str);
 
 struct StringId
 {

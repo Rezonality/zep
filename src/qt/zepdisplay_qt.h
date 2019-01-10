@@ -11,6 +11,10 @@ inline NVec2f toNVec2f(const QPoint& im)
 {
     return NVec2f(im.x(), im.y());
 }
+inline NVec2f toNVec2f(const QPointF& im)
+{
+    return NVec2f(im.x(), im.y());
+}
 inline QPoint toQPoint(const NVec2f& im)
 {
     return QPoint(im.x, im.y);

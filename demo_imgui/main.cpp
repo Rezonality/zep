@@ -123,7 +123,7 @@ struct ZepContainer : public IZepComponent
         // Add a shader, as a default when no file - for the demo
         if (spEditor->GetBuffers().size() == 0)
         {
-            ZepBuffer* pBuffer = spEditor->GetBuffer("shader.vert");
+            ZepBuffer* pBuffer = spEditor->GetEmptyBuffer("shader.vert");
             pBuffer->SetText(shader.c_str());
 
         }
@@ -137,7 +137,7 @@ struct ZepContainer : public IZepComponent
     // Inherited via IZepComponent
     virtual void Notify(std::shared_ptr<ZepMessage> message) override
     {
-        if (message->messageId == Msg_Quit)
+        if (message->messageId == Msg::Quit)
         {
             quit = true;
         }

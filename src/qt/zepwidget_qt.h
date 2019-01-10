@@ -15,6 +15,7 @@ public:
     ZepWidget_Qt(QWidget* pParent);
     virtual ~ZepWidget_Qt();
 
+    virtual ZepMouseButton GetMouseButton(QMouseEvent* ev);
     virtual void resizeEvent(QResizeEvent* pResize) override;
     virtual void paintEvent(QPaintEvent* pPaint) override;
     virtual void keyPressEvent(QKeyEvent* ev) override;

@@ -30,7 +30,27 @@ void ZepEditor_ImGui::HandleInput()
     if (io.MouseDelta.x != 0 ||
         io.MouseDelta.y != 0)
     {
-        SetMousePos(toNVec2f(io.MousePos));
+        OnMouseMove(toNVec2f(io.MousePos));
+    }
+
+    if (io.MouseClicked[0])
+    {
+        OnMouseDown(toNVec2f(io.MousePos), ZepMouseButton::Left);
+    }
+
+    if (io.MouseClicked[1])
+    {
+        OnMouseDown(toNVec2f(io.MousePos), ZepMouseButton::Right);
+    }
+
+    if (io.MouseReleased[0])
+    {
+        OnMouseUp(toNVec2f(io.MousePos), ZepMouseButton::Left);
+    }
+
+    if (io.MouseReleased[1])
+    {
+        OnMouseUp(toNVec2f(io.MousePos), ZepMouseButton::Right);
     }
 
     if (io.KeyCtrl)

@@ -22,7 +22,7 @@ public:
         // TODO : Fix/understand test failures with threading
         spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZepEditorFlags::DisableThreads);
         spMode = std::make_shared<ZepMode_Vim>(*spEditor);
-        pBuffer = spEditor->GetBuffer("Test Buffer");
+        pBuffer = spEditor->GetEmptyBuffer("Test Buffer");
 
         pTabWindow = spEditor->GetActiveTabWindow();
         pWindow = spEditor->GetActiveTabWindow()->GetActiveWindow();

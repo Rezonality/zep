@@ -145,6 +145,7 @@ private:
     void UpdateLayout();
     void UpdateLineSpans();
     void ScrollToCursor();
+    void EnsureCursorVisible();
     void UpdateVisibleLineRange();
     bool IsInsideTextRegion(NVec2i pos) const;
 
@@ -193,6 +194,7 @@ private:
 
     bool m_layoutDirty = true;
     bool m_scrollVisibilityChanged = true;
+    bool m_cursorMoved = true;
 
     std::shared_ptr<Scroller> m_vScroller;
 };

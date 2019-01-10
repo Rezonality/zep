@@ -41,7 +41,7 @@ ZepWidget_Qt::~ZepWidget_Qt()
 
 void ZepWidget_Qt::Notify(std::shared_ptr<ZepMessage> message)
 {
-    if (message->messageId == Msg_Quit)
+    if (message->messageId == Msg::Quit)
     {
         qApp->quit();
     }
@@ -167,23 +167,49 @@ void ZepWidget_Qt::keyPressEvent(QKeyEvent* ev)
     update();
 }
 
-void ZepWidget_Qt::mousePressEvent(QMouseEvent *event)
+ZepMouseButton ZepWidget_Qt::GetMouseButton(QMouseEvent* ev)
 {
+    switch (ev->button())
+    {
+    case Qt::MouseButton::MiddleButton:
+        return ZepMouseButton::Middle;
+        break;
+    case Qt::MouseButton::LeftButton:
+        return ZepMouseButton::Left;
+        break;
+    case Qt::MouseButton::RightButton:
+        return ZepMouseButton::Right;
+    default:
+        return ZepMouseButton::Unknown;
+        break;
+    }
+
 }
-void ZepWidget_Qt::mouseReleaseEvent(QMouseEvent *event)
+
+void ZepWidget_Qt::mousePressEvent(QMouseEvent *ev)
 {
+    if (m_spEditor)
+    {
+        m_spEditor->OnMouseDown(toNVec2f(ev->localPos()), GetMouseButton(ev));
+    }
 }
+void ZepWidget_Qt::mouseReleaseEvent(QMouseEvent *ev)
+{
+    if (m_spEditor)
+    {
+        m_spEditor->OnMouseUp(toNVec2f(ev->localPos()), GetMouseButton(ev));
+    }
+}
+
 void ZepWidget_Qt::mouseDoubleClickEvent(QMouseEvent *event)
 {
 }
+
 void ZepWidget_Qt::mouseMoveEvent(QMouseEvent *ev)
 {
     if (m_spEditor)
     {
-        NVec2f pt;
-        pt.x = ev->localPos().x();
-        pt.y = ev->localPos().y();
-        m_spEditor->SetMousePos(pt);
+        m_spEditor->OnMouseMove(toNVec2f(ev->localPos()));
     }
 }
 } // namespace Zep

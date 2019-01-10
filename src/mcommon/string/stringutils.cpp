@@ -10,14 +10,14 @@ namespace COMMON_NAMESPACE
 {
 
 std::unordered_map<uint32_t, std::string> StringId::stringLookup;
-std::string toLower(const std::string& str)
+std::string string_tolower(const std::string& str)
 {
     std::string copy = str;
     std::transform(copy.begin(), copy.end(), copy.begin(), ::tolower);
     return copy;
 }
 
-std::string ReplaceString(std::string subject, const std::string& search, const std::string& replace)
+std::string string_replace(std::string subject, const std::string& search, const std::string& replace)
 {
     size_t pos = 0;
     while ((pos = subject.find(search, pos)) != std::string::npos)
@@ -28,7 +28,7 @@ std::string ReplaceString(std::string subject, const std::string& search, const 
     return subject;
 }
 
-void ReplaceStringInPlace(std::string& subject, const std::string& search, const std::string& replace)
+void string_replace_in_place(std::string& subject, const std::string& search, const std::string& replace)
 {
     size_t pos = 0;
     while ((pos = subject.find(search, pos)) != std::string::npos)
@@ -40,7 +40,7 @@ void ReplaceStringInPlace(std::string& subject, const std::string& search, const
 
 #pragma warning(disable : 4996)
 //https://stackoverflow.com/questions/4804298/how-to-convert-wstring-into-string
-std::string makeStr(const std::wstring& str)
+std::string string_from_wstring(const std::wstring& str)
 {
     using convert_type = std::codecvt_utf8<wchar_t>;
     std::wstring_convert<convert_type, wchar_t> converter;

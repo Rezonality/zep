@@ -180,7 +180,7 @@ public:
 
     std::vector<std::string>::const_iterator begin()
     {
-        std::string can = ReplaceString(m_strPath, "\\", "/");
+        std::string can = string_replace(m_strPath, "\\", "/");
         m_components = string_split(can, "/");
         return m_components.begin();
     }
@@ -217,7 +217,7 @@ inline path current_path()
 
 inline path canonical(const path& input)
 {
-    return path(ReplaceString(input.string(), "\\", "/"));
+    return path(string_replace(input.string(), "\\", "/"));
 }
 
 inline bool equivalent(const path& a, const path& b)
@@ -230,7 +230,7 @@ inline path absolute(const path& input)
     // Read the comments at the top of this file; this is certainly incorrect, and doesn't handle ../
     // It is sufficient for what we need though
     auto p = canonical(input);
-    auto strAbs = ReplaceString(p.string(), "/.", "");
+    auto strAbs = string_replace(p.string(), "/.", "");
     return path(strAbs);
 }
 
