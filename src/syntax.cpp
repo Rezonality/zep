@@ -2,17 +2,30 @@
 #include "editor.h"
 #include "syntax_rainbow_brackets.h"
 #include "theme.h"
+#include "mcommon/string/stringutils.h"
+
+#include <string>
+#include <vector>
 
 namespace Zep
 {
 
-ZepSyntax::ZepSyntax(ZepBuffer& buffer)
+
+ZepSyntax::ZepSyntax(
+    ZepBuffer& buffer,
+    const std::set<std::string>& keywords,
+    const std::set<std::string>& identifiers,
+    uint32_t flags)
     : ZepComponent(buffer.GetEditor())
     , m_buffer(buffer)
     , m_stop(false)
+    , m_keywords(keywords)
+    , m_identifiers(identifiers)
+    , m_flags(flags)
 {
     m_syntax.resize(m_buffer.GetText().size());
     m_adornments.push_back(std::make_shared<ZepSyntaxAdorn_RainbowBrackets>(*this, m_buffer));
+    QueueUpdateSyntax(0, BufferLocation(m_buffer.GetText().size()));
 }
 
 ZepSyntax::~ZepSyntax()
@@ -95,7 +108,7 @@ void ZepSyntax::QueueUpdateSyntax(BufferLocation startLocation, BufferLocation e
 void ZepSyntax::Notify(std::shared_ptr<ZepMessage> spMsg)
 {
     // Handle any interesting buffer messages
-    if (spMsg->messageId == Msg_Buffer)
+    if (spMsg->messageId == Msg::Buffer)
     {
         auto spBufferMsg = std::static_pointer_cast<BufferMessage>(spMsg);
         if (spBufferMsg->pBuffer != &m_buffer)
@@ -136,7 +149,7 @@ void ZepSyntax::UpdateSyntax()
     assert(std::distance(itrCurrent, itrEnd) < int(m_syntax.size()));
     assert(m_syntax.size() == buffer.size());
 
-    std::string delim(" \t.\n;(){}=");
+    std::string delim(" \t.\n;(){}=:");
     std::string lineEnd("\n");
 
     // Walk backwards to previous delimiter
@@ -200,7 +213,16 @@ void ZepSyntax::UpdateSyntax()
 
         // Do I need to make a string here?
         auto token = std::string(itrFirst, itrLast);
-        if (keywords.find(token) != keywords.end())
+        if (m_flags & ZepSyntaxFlags::CaseInsensitive)
+        {
+            token = string_tolower(token);
+        }
+
+        if (m_keywords.find(token) != m_keywords.end())
+        {
+            mark(itrFirst, itrLast, ThemeColor::Keyword);
+        }
+        else if (m_identifiers.find(token) != m_identifiers.end())
         {
             mark(itrFirst, itrLast, ThemeColor::Keyword);
         }
@@ -231,6 +253,7 @@ void ZepSyntax::UpdateSyntax()
                 }
             }
         }
+        
         itrCurrent = itrLast;
     }
 

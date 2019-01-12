@@ -4,7 +4,7 @@
 #include "editor.h"
 #include "mode_standard.h"
 #include "mode_vim.h"
-#include "syntax_glsl.h"
+#include "syntax.h"
 #include "tab_window.h"
 #include "usb_hid_keys.h"
 #include <imgui.h>
@@ -13,8 +13,8 @@
 namespace Zep
 {
 
-ZepEditor_ImGui::ZepEditor_ImGui()
-    : ZepEditor(new ZepDisplay_ImGui())
+ZepEditor_ImGui::ZepEditor_ImGui(const fs::path& root)
+    : ZepEditor(new ZepDisplay_ImGui(), root)
 {
 }
 
@@ -26,6 +26,32 @@ void ZepEditor_ImGui::HandleInput()
     bool handled = false;
 
     uint32_t mod = 0;
+
+    if (io.MouseDelta.x != 0 ||
+        io.MouseDelta.y != 0)
+    {
+        OnMouseMove(toNVec2f(io.MousePos));
+    }
+
+    if (io.MouseClicked[0])
+    {
+        OnMouseDown(toNVec2f(io.MousePos), ZepMouseButton::Left);
+    }
+
+    if (io.MouseClicked[1])
+    {
+        OnMouseDown(toNVec2f(io.MousePos), ZepMouseButton::Right);
+    }
+
+    if (io.MouseReleased[0])
+    {
+        OnMouseUp(toNVec2f(io.MousePos), ZepMouseButton::Left);
+    }
+
+    if (io.MouseReleased[1])
+    {
+        OnMouseUp(toNVec2f(io.MousePos), ZepMouseButton::Right);
+    }
 
     if (io.KeyCtrl)
     {

@@ -48,6 +48,7 @@ INCLUDE(m3rdparty/cmake/copy_files.cmake)
 # config_app.h checks
 # This makes a config_shared.h file which can be included for system settings
 #  Must be after setting up the platforms
+SET (ZEP_ROOT ${CMAKE_CURRENT_LIST_DIR})
 CONFIGURE_FILE(${CMAKE_CURRENT_LIST_DIR}/cmake/config_app.h.cmake ${CMAKE_BINARY_DIR}/config_app.h)
 
 INCLUDE(m3rdparty/list.cmake)

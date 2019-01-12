@@ -1,8 +1,6 @@
 #pragma once
 
 #include "common_namespace.h"
-#include <sys/stat.h>
-#include <sys/types.h>
 #include "mcommon/string/stringutils.h"
 #include "mcommon/file/file.h"
 
@@ -11,7 +9,18 @@
 #include <sstream>
 #include <fstream>
 
+// For testing, we _can_ compile these functions as part of a 
+// PC build, but it shouldn't be used typically.
+// They will all go away when the Mac side has std::filesystem!
+#if !(TARGET_PC)
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#else
+#include "direct.h"
+#define PATH_MAX 1024
+#endif
+
 #include <stdio.h>
 #include <limits.h>
 
@@ -67,6 +76,11 @@ public:
         return !filename().string().empty();
     }
 
+    bool has_extension() const
+    {
+        return !extension().string().empty();
+    }
+
     bool is_absolute() const
     {
         return false;
@@ -74,9 +88,16 @@ public:
 
     path extension() const
     {
-        std::string name, ext;
-        split(name, ext);
-        return ext;
+        if (!has_filename())
+            return path();
+
+        auto str = filename().string();
+        size_t dot = str.find_last_of(".");
+        if (dot != std::string::npos)
+        {
+            return str.substr(dot, str.length() - dot);
+        }
+        return path();
     }
 
     path parent_path() const
@@ -159,7 +180,7 @@ public:
 
     std::vector<std::string>::const_iterator begin()
     {
-        std::string can = ReplaceString(m_strPath, "\\", "/");
+        std::string can = string_replace(m_strPath, "\\", "/");
         m_components = string_split(can, "/");
         return m_components.begin();
     }
@@ -196,7 +217,7 @@ inline path current_path()
 
 inline path canonical(const path& input)
 {
-    return path(ReplaceString(input.string(), "\\", "/"));
+    return path(string_replace(input.string(), "\\", "/"));
 }
 
 inline bool equivalent(const path& a, const path& b)
@@ -209,7 +230,7 @@ inline path absolute(const path& input)
     // Read the comments at the top of this file; this is certainly incorrect, and doesn't handle ../
     // It is sufficient for what we need though
     auto p = canonical(input);
-    auto strAbs = ReplaceString(p.string(), "/.", "");
+    auto strAbs = string_replace(p.string(), "/.", "");
     return path(strAbs);
 }
 

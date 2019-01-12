@@ -29,10 +29,12 @@ ${ZEP_ROOT}/src/window.cpp
 ${ZEP_ROOT}/src/window.h
 ${ZEP_ROOT}/src/window_base.cpp
 ${ZEP_ROOT}/src/window_base.h
+${ZEP_ROOT}/src/scroller.cpp
+${ZEP_ROOT}/src/scroller.h
 ${ZEP_ROOT}/src/syntax.cpp
 ${ZEP_ROOT}/src/syntax.h
-${ZEP_ROOT}/src/syntax_glsl.cpp
-${ZEP_ROOT}/src/syntax_glsl.h
+${ZEP_ROOT}/src/syntax_providers.cpp
+${ZEP_ROOT}/src/syntax_providers.h
 ${ZEP_ROOT}/src/syntax_rainbow_brackets.cpp
 ${ZEP_ROOT}/src/syntax_rainbow_brackets.h
 ${ZEP_ROOT}/src/mode.cpp

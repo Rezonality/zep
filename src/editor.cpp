@@ -4,13 +4,17 @@
 #include "mode_standard.h"
 #include "mode_vim.h"
 #include "syntax.h"
-#include "syntax_glsl.h"
+#include "syntax_providers.h"
 #include "tab_window.h"
 #include "theme.h"
 #include "mcommon/file/file.h"
 #include "mcommon/string/stringutils.h"
 #include "mcommon/animation/timer.h"
 #include "mcommon/logger.h"
+#include "mcommon/file/archive.h"
+#include "mcommon/string/stringutils.h"
+#include "mcommon/string/murmur_hash.h"
+
 #include "window.h"
 
 namespace COMMON_NAMESPACE
@@ -20,11 +24,6 @@ structlog LOGCFG = {true, DEBUG};
 
 namespace Zep
 {
-
-const char* Msg_Quit = "Quit";
-const char* Msg_GetClipBoard = "GetClipBoard";
-const char* Msg_SetClipBoard = "SetClipBoard";
-const char* Msg_HandleCommand = "HandleCommand";
 
 ZepComponent::ZepComponent(ZepEditor& editor)
     : m_editor(editor)
@@ -37,10 +36,13 @@ ZepComponent::~ZepComponent()
     m_editor.UnRegisterCallback(this);
 }
 
-ZepEditor::ZepEditor(IZepDisplay* pDisplay, uint32_t flags)
+ZepEditor::ZepEditor(IZepDisplay* pDisplay, const fs::path& root, uint32_t flags)
     : m_flags(flags)
     , m_pDisplay(pDisplay)
+    , m_rootPath(root)
 {
+    LoadConfig(root / "zep.cfg");
+
     m_spTheme = std::make_shared<ZepTheme>();
 
     assert(m_pDisplay != nullptr);
@@ -51,9 +53,7 @@ ZepEditor::ZepEditor(IZepDisplay* pDisplay, uint32_t flags)
     timer_restart(m_cursorTimer);
     m_commandLines.push_back("");
 
-    RegisterSyntaxFactory("vert", tSyntaxFactory([](ZepBuffer* pBuffer) {
-                              return std::static_pointer_cast<ZepSyntax>(std::make_shared<ZepSyntaxGlsl>(*pBuffer));
-                          }));
+    RegisterSyntaxProviders(*this);
 
     m_editorRegion = std::make_shared<Region>();
     m_editorRegion->vertical = false;
@@ -71,7 +71,36 @@ ZepEditor::ZepEditor(IZepDisplay* pDisplay, uint32_t flags)
 
 ZepEditor::~ZepEditor()
 {
+    file_destroy_dir_watch();
     delete m_pDisplay;
+}
+
+// If you pass a valid path to a 'zep.cfg' file, then editor settings will serialize from that
+// You can even edit it inside zep for immediate changes :)
+void ZepEditor::LoadConfig(const fs::path& config_path)
+{
+    if (!fs::exists(config_path))
+    {
+        return;
+    }
+    m_spConfig = archive_load(config_path);
+    if (m_spConfig)
+    {
+        archive_bind(*m_spConfig, "editor", "show_scrollbar", m_showScrollBar);
+
+        file_init_dir_watch(config_path.parent_path(), [&](const fs::path& path)
+        {
+            if (path.filename() == "zep.cfg")
+            {
+                if (m_spConfig)
+                {
+                    LOG(INFO) << "Reloading global vars";
+                    archive_reload(*m_spConfig);
+                    Broadcast(std::make_shared<ZepMessage>(Msg::ConfigChanged));
+                }
+            }
+        });
+    }
 }
 
 void ZepEditor::SaveBuffer(ZepBuffer& buffer)
@@ -108,9 +137,9 @@ void ZepEditor::SaveBuffer(ZepBuffer& buffer)
     SetCommandText(strText.str());
 }
 
-ZepBuffer* ZepEditor::GetBuffer(const std::string& name, uint32_t fileFlags)
+ZepBuffer* ZepEditor::GetEmptyBuffer(const std::string& name, uint32_t fileFlags)
 {
-    auto pBuffer = AddBuffer(name);
+    auto pBuffer = CreateNewBuffer(name);
     pBuffer->SetFlags(fileFlags, true);
     return pBuffer;
 }
@@ -133,7 +162,7 @@ ZepBuffer* ZepEditor::GetFileBuffer(const fs::path& filePath, uint32_t fileFlags
         }
     }
 
-    auto pBuffer = AddBuffer(path.filename().string());
+    auto pBuffer = CreateNewBuffer(path.has_filename() ? path.filename().string() : path.string());
     if (fs::exists(path))
     {
         pBuffer->Load(path);
@@ -156,11 +185,7 @@ void ZepEditor::InitWithFileOrDir(const std::string& str)
     {
         m_currentRootPath = startPath;
     }
-    else
-    {
-        ZepBuffer* pBuffer = AddBuffer(startPath.filename().string());
-        pBuffer->Load(startPath);
-    }
+    GetFileBuffer(startPath);
 }
 
 // At startup it's possible to be in a state where parts of the window framework are not yet in place.
@@ -196,7 +221,7 @@ void ZepEditor::UpdateWindowState()
             }
             else
             {
-                m_pActiveTabWindow->AddWindow(AddBuffer("[Empty]"), nullptr, true);
+                m_pActiveTabWindow->AddWindow(CreateNewBuffer("[Empty]"), nullptr, true);
             }
         }
     }
@@ -266,7 +291,7 @@ ZepTabWindow* ZepEditor::AddTabWindow()
 
 void ZepEditor::Quit()
 {
-    Broadcast(std::make_shared<ZepMessage>(Msg_Quit, "Quit"));
+    Broadcast(std::make_shared<ZepMessage>(Msg::Quit, "Quit"));
 }
 
 void ZepEditor::RemoveTabWindow(ZepTabWindow* pTabWindow)
@@ -329,17 +354,58 @@ ZepMode* ZepEditor::GetCurrentMode()
     return m_pCurrentMode;
 }
 
-void ZepEditor::RegisterSyntaxFactory(const std::string& extension, tSyntaxFactory factory)
+void ZepEditor::SetBufferSyntax(ZepBuffer& buffer) const
 {
-    m_mapSyntax[extension] = factory;
+    std::string ext;
+    std::string fileName;
+    if (buffer.GetFilePath().has_filename() && buffer.GetFilePath().filename().has_extension())
+    {
+        ext = string_tolower(buffer.GetFilePath().filename().extension().string());
+        fileName = string_tolower(buffer.GetFilePath().filename().string());
+    }
+    else
+    {
+        auto str = buffer.GetName();
+        size_t dot_pos = str.find_last_of(".");
+        if (dot_pos != string::npos)
+        {
+            ext = string_tolower(str.substr(dot_pos, str.length() - dot_pos));
+        }
+    }
+
+    // first check file name
+    if (!fileName.empty())
+    {
+        auto itr = m_mapSyntax.find(fileName);
+        if (itr != m_mapSyntax.end())
+        {
+            buffer.SetSyntax(itr->second(&buffer));
+            return;
+        }
+    }
+
+    auto itr = m_mapSyntax.find(ext);
+    if (itr != m_mapSyntax.end())
+    {
+        buffer.SetSyntax(itr->second(&buffer));
+    }
+    else 
+    {
+        buffer.SetSyntax(nullptr);
+    }
+}
+
+void ZepEditor::RegisterSyntaxFactory(const std::vector<std::string>& mappings, tSyntaxFactory factory)
+{
+    for (auto& m : mappings)
+    {
+        m_mapSyntax[string_tolower(m)] = factory;
+    }
 }
 
 // Inform clients of an event in the buffer
 bool ZepEditor::Broadcast(std::shared_ptr<ZepMessage> message)
 {
-    // Better place for this?
-    ResetCursorTimer();
-
     Notify(message);
     if (message->handled)
         return true;
@@ -358,28 +424,10 @@ const std::deque<std::shared_ptr<ZepBuffer>>& ZepEditor::GetBuffers() const
     return m_buffers;
 }
 
-ZepBuffer* ZepEditor::AddBuffer(const std::string& str)
+ZepBuffer* ZepEditor::CreateNewBuffer(const std::string& str)
 {
     auto pBuffer = std::make_shared<ZepBuffer>(*this, str);
     m_buffers.push_front(pBuffer);
-
-    auto extOffset = str.find_last_of('.');
-    if (extOffset != std::string::npos)
-    {
-        auto itrFactory = m_mapSyntax.find(str.substr(extOffset + 1, str.size() - extOffset));
-        if (itrFactory != m_mapSyntax.end())
-        {
-            pBuffer->SetSyntax(itrFactory->second(pBuffer.get()));
-        }
-        else
-        {
-            // For now, the first syntax file is the default
-            if (!m_mapSyntax.empty())
-            {
-                pBuffer->SetSyntax(m_mapSyntax.begin()->second(pBuffer.get()));
-            }
-        }
-    }
 
     // Adding a buffer immediately updates the window state, in case this is the first one
     UpdateWindowState();
@@ -432,6 +480,14 @@ const tRegisters& ZepEditor::GetRegisters() const
 
 void ZepEditor::Notify(std::shared_ptr<ZepMessage> message)
 {
+    if (message->messageId == Msg::Buffer)
+    {
+        auto pMsg = std::static_pointer_cast<BufferMessage>(message);
+        if (pMsg->type == BufferMessageType::Initialized)
+        {
+            SetBufferSyntax(*pMsg->pBuffer);
+        }
+    }
 }
 
 void ZepEditor::SetCommandText(const std::string& strCommand)
@@ -446,10 +502,16 @@ void ZepEditor::SetCommandText(const std::string& strCommand)
 
 void ZepEditor::RequestRefresh()
 {
+    m_bPendingRefresh = true;
 }
 
-bool ZepEditor::RefreshRequired() const
+bool ZepEditor::RefreshRequired() 
 {
+    file_update_dir_watch();
+
+    // Allow any components to update themselves
+    Broadcast(std::make_shared<ZepMessage>(Msg::Tick));
+
     if (m_bPendingRefresh || m_lastCursorBlink != GetCursorBlinkState())
     {
         m_bPendingRefresh = false;
@@ -530,9 +592,11 @@ void ZepEditor::Display()
     auto screenPosYPx = m_commandRegion->rect.topLeftPx + NVec2f(0.0f, textBorder);
     for (int i = 0; i < commandSpace; i++)
     {
-        auto textSize = m_pDisplay->GetTextSize((const utf8*)commandLines[i].c_str(), (const utf8*)commandLines[i].c_str() + commandLines[i].size());
-
-        m_pDisplay->DrawChars(screenPosYPx, GetTheme().GetColor(ThemeColor::Text), (const utf8*)commandLines[i].c_str());
+        if (!commandLines[i].empty())
+        {
+            auto textSize = m_pDisplay->GetTextSize((const utf8*)commandLines[i].c_str(), (const utf8*)commandLines[i].c_str() + commandLines[i].size());
+            m_pDisplay->DrawChars(screenPosYPx, GetTheme().GetColor(ThemeColor::Text), (const utf8*)commandLines[i].c_str());
+        }
 
         screenPosYPx.y += m_pDisplay->GetFontSize();
         screenPosYPx.x = m_commandRegion->rect.topLeftPx.x;
@@ -568,6 +632,42 @@ void ZepEditor::Display()
 ZepTheme& ZepEditor::GetTheme() const
 {
     return *m_spTheme;
+}
+
+void ZepEditor::OnMouseMove(const NVec2f& mousePos)
+{
+    m_mousePos = mousePos;
+    Broadcast(std::make_shared<ZepMessage>(Msg::MouseMove, mousePos));
+    m_bPendingRefresh = true;
+}
+
+void ZepEditor::OnMouseDown(const NVec2f& mousePos, ZepMouseButton button)
+{
+    m_mousePos = mousePos;
+    Broadcast(std::make_shared<ZepMessage>(Msg::MouseDown, mousePos, button));
+    m_bPendingRefresh = true;
+}
+
+void ZepEditor::OnMouseUp(const NVec2f& mousePos, ZepMouseButton button)
+{
+    m_mousePos = mousePos;
+    Broadcast(std::make_shared<ZepMessage>(Msg::MouseUp, mousePos, button));
+    m_bPendingRefresh = true;
+}
+
+const NVec2f ZepEditor::GetMousePos() const
+{
+    return m_mousePos;
+}
+
+void ZepEditor::SetPixelScale(float scale)
+{
+    m_pixelScale = scale;
+}
+
+float ZepEditor::GetPixelScale() const
+{
+    return m_pixelScale;
 }
 
 } // namespace Zep

@@ -9,8 +9,11 @@
 #include "examples/imgui_impl_sdl.h"
 #include <SDL.h>
 #include <stdio.h>
+#include <thread>
 
 #include <m3rdparty/tclap/include/tclap/CmdLine.h>
+
+#include "config_app.h"
 
 // About OpenGL function loaders: modern OpenGL doesn't have a standard header file and requires individual function pointers to be loaded manually.
 // Helper libraries are often used for this purpose! Here we are supporting a few common ones: gl3w, glew, glad.
@@ -102,9 +105,19 @@ bool ReadCommandLine(int argc, char** argv, int& exitCode)
 struct ZepContainer : public IZepComponent
 {
     ZepContainer(const std::string& startupFile)
-        : spEditor(std::make_unique<ZepEditor_ImGui>())
+        : spEditor(std::make_unique<ZepEditor_ImGui>(ZEP_ROOT))
     {
         spEditor->RegisterCallback(this);
+
+        float ddpi = 0.0f;
+        float hdpi = 0.0f;
+        float vdpi = 0.0f;
+        auto res = SDL_GetDisplayDPI(0, &ddpi, &hdpi, &vdpi);
+        if (res == 0 && hdpi != 0)
+        {
+            spEditor->SetPixelScale(hdpi / 96.0f);
+        }
+
         if (!startupFile.empty())
         {
             spEditor->InitWithFileOrDir(startupFile);
@@ -113,7 +126,7 @@ struct ZepContainer : public IZepComponent
         // Add a shader, as a default when no file - for the demo
         if (spEditor->GetBuffers().size() == 0)
         {
-            ZepBuffer* pBuffer = spEditor->GetBuffer("shader.vert");
+            ZepBuffer* pBuffer = spEditor->GetEmptyBuffer("shader.vert");
             pBuffer->SetText(shader.c_str());
 
         }
@@ -127,7 +140,7 @@ struct ZepContainer : public IZepComponent
     // Inherited via IZepComponent
     virtual void Notify(std::shared_ptr<ZepMessage> message) override
     {
-        if (message->messageId == Msg_Quit)
+        if (message->messageId == Msg::Quit)
         {
             quit = true;
         }
@@ -181,7 +194,7 @@ int main(int argc, char** argv)
     SDL_GetCurrentDisplayMode(0, &current);
     SDL_Window* window = SDL_CreateWindow("Zep", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
-    SDL_GL_SetSwapInterval(1); // Enable vsync
+    SDL_GL_SetSwapInterval(0); // Enable vsync
 
     // Initialize OpenGL loader
 #if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
@@ -252,7 +265,7 @@ int main(int argc, char** argv)
         // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
         // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
         SDL_Event event;
-        if (SDL_WaitEventTimeout(&event, 10))
+        if (SDL_WaitEventTimeout(&event, 0))
         {
             ImGui_ImplSDL2_ProcessEvent(&event);
             if (event.type == SDL_QUIT)
@@ -266,9 +279,12 @@ int main(int argc, char** argv)
             // This will check for cursor flash, for example, to keep that updated.
             if (!zep.spEditor->RefreshRequired())
             {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 continue;
             }
         }
+
+        TIME_SCOPE(Frame);
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -317,6 +333,20 @@ int main(int argc, char** argv)
                         zep.GetEditor().GetTheme().SetThemeType(ThemeType::Light);
                     }
                     ImGui::EndMenu();
+                }
+                ImGui::EndMenu();
+            }
+
+            // Helpful for diagnostics
+            // Make sure you run a release build; iterator debugging makes the debug build much slower
+            // Currently on a typical file, editor display time is < 1ms, and editor editor time is < 2ms
+            if (ImGui::BeginMenu("Timings"))
+            {
+                for (auto& p : globalProfiler.timerData)
+                { 
+                    std::ostringstream strval;
+                    strval << p.first << " : " << p.second.current / 1000.0 << "ms";// << " Last: " << p.second.current / 1000.0 << "ms";
+                    ImGui::MenuItem(strval.str().c_str());
                 }
                 ImGui::EndMenu();
             }

@@ -30,6 +30,7 @@ struct Region
     NVec2f min_size = NVec2f(0.0f, 0.0f);
     NVec2f fixed_size = NVec2f(0.0f, 0.0f);
     bool vertical = true;
+    NVec2f margin = NVec2f(0.0f, 0.0f);
 
     std::shared_ptr<Region> pParent;
     std::vector<std::shared_ptr<Region>> children;

@@ -20,6 +20,12 @@ struct NVec2
     {
     }
 
+    explicit NVec2(T v)
+        : x(v)
+        , y(v)
+    {
+    }
+
     NVec2()
         : x(0)
         , y(0)
@@ -81,6 +87,15 @@ inline NVec2<T>& operator*=(NVec2<T>& lhs, float val)
     lhs.x *= val;
     lhs.y *= val;
     return lhs;
+}
+template <class T>
+inline bool operator<(const NVec2<T>& lhs, const NVec2<T>& rhs)
+{
+    if (lhs.x != rhs.x)
+    {
+        return lhs.x < rhs.x;
+    }
+    return lhs.y < rhs.y;
 }
 template <class T>
 inline NVec2<T> Clamp(const NVec2<T>& val, const NVec2<T>& min, const NVec2<T>& max)
@@ -330,6 +345,13 @@ struct NRect
 
     NVec2f topLeftPx;
     NVec2f bottomRightPx;
+
+    bool Contains(const NVec2<T>& pt) const
+    {
+        return topLeftPx.x <= pt.x && topLeftPx.y <= pt.y &&
+            bottomRightPx.x > pt.x && bottomRightPx.y > pt.y;
+    }
+
     NVec2f BottomLeft() const
     {
         return NVec2f(topLeftPx.x, bottomRightPx.y);
@@ -353,6 +375,10 @@ struct NRect
     NVec2f Size() const
     {
         return bottomRightPx - topLeftPx;
+    }
+    bool Empty() const
+    {
+        return (Height() == 0.0f || Width() == 0.0f) ? true : false;
     }
     void Clear()
     {

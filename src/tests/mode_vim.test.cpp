@@ -1,9 +1,9 @@
 #include "m3rdparty.h"
+#include "config_app.h"
 #include "src/buffer.h"
 #include "src/display.h"
 #include "src/editor.h"
 #include "src/mode_vim.h"
-#include "src/syntax_glsl.h"
 #include "src/tab_window.h"
 #include "src/window.h"
 #include <gtest/gtest.h>
@@ -21,14 +21,9 @@ public:
     {
         // Disable threads for consistent tests, at the expense of not catching thread errors!
         // TODO : Fix/understand test failures with threading
-        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZepEditorFlags::DisableThreads);
+        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZEP_ROOT, ZepEditorFlags::DisableThreads);
         spMode = std::make_shared<ZepMode_Vim>(*spEditor);
-        pBuffer = spEditor->GetBuffer("Test Buffer");
-
-        // Add a syntax highlighting checker, to increase test coverage
-        // (seperate tests to come)
-        auto spSyntax = std::make_shared<ZepSyntaxGlsl>(*pBuffer);
-        pBuffer->SetSyntax(std::static_pointer_cast<ZepSyntax>(spSyntax));
+        pBuffer = spEditor->GetEmptyBuffer("Test Buffer");
 
         pTabWindow = spEditor->GetActiveTabWindow();
         pWindow = spEditor->GetActiveTabWindow()->GetActiveWindow();

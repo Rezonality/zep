@@ -15,6 +15,7 @@
 #include <queue>
 #include <set>
 #include "mcommon/logger.h"
+#include "mcommon/string/stringutils.h"
 
 #undef ERROR
 
@@ -134,7 +135,7 @@ fs::path file_get_documents_path()
     HRESULT hr = SHGetKnownFolderPath(FOLDERID_Documents, 0, NULL, &path);
     if (SUCCEEDED(hr))
     {
-        fs::path ret(path);
+        fs::path ret(toString(path));
         CoTaskMemFree(path);
         return ret;
     }

@@ -20,7 +20,7 @@ ZepSyntaxAdorn_RainbowBrackets::~ZepSyntaxAdorn_RainbowBrackets()
 void ZepSyntaxAdorn_RainbowBrackets::Notify(std::shared_ptr<ZepMessage> spMsg)
 {
     // Handle any interesting buffer messages
-    if (spMsg->messageId == Msg_Buffer)
+    if (spMsg->messageId == Msg::Buffer)
     {
         auto spBufferMsg = std::static_pointer_cast<BufferMessage>(spMsg);
         if (spBufferMsg->pBuffer != &m_buffer)

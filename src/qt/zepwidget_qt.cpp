@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <QKeyEvent>
+#include <QDesktopWidget>
 #include <string>
 
 #include "editor.h"
@@ -15,15 +16,17 @@
 namespace Zep
 {
 
-ZepWidget_Qt::ZepWidget_Qt(QWidget* pParent)
+ZepWidget_Qt::ZepWidget_Qt(QWidget* pParent, const fs::path& root)
     : QWidget(pParent)
 {
-    m_spEditor = std::make_unique<ZepEditor>(new ZepDisplay_Qt());
+    m_spEditor = std::make_unique<ZepEditor>(new ZepDisplay_Qt(), root);
     m_spEditor->RegisterCallback(this);
+    m_spEditor->SetPixelScale(float(qApp->desktop()->logicalDpiX() / 96.0f));
 
     setFocusPolicy(Qt::FocusPolicy::StrongFocus);
+    setMouseTracking(true);
 
-    m_refreshTimer.setInterval(250);
+    m_refreshTimer.setInterval(1);
     m_refreshTimer.setSingleShot(false);
     m_refreshTimer.start();
     connect(&m_refreshTimer, &QTimer::timeout, this, &ZepWidget_Qt::OnTimer);
@@ -38,7 +41,7 @@ ZepWidget_Qt::~ZepWidget_Qt()
 
 void ZepWidget_Qt::Notify(std::shared_ptr<ZepMessage> message)
 {
-    if (message->messageId == Msg_Quit)
+    if (message->messageId == Msg::Quit)
     {
         qApp->quit();
     }
@@ -164,4 +167,49 @@ void ZepWidget_Qt::keyPressEvent(QKeyEvent* ev)
     update();
 }
 
+ZepMouseButton ZepWidget_Qt::GetMouseButton(QMouseEvent* ev)
+{
+    switch (ev->button())
+    {
+    case Qt::MouseButton::MiddleButton:
+        return ZepMouseButton::Middle;
+        break;
+    case Qt::MouseButton::LeftButton:
+        return ZepMouseButton::Left;
+        break;
+    case Qt::MouseButton::RightButton:
+        return ZepMouseButton::Right;
+    default:
+        return ZepMouseButton::Unknown;
+        break;
+    }
+
+}
+
+void ZepWidget_Qt::mousePressEvent(QMouseEvent *ev)
+{
+    if (m_spEditor)
+    {
+        m_spEditor->OnMouseDown(toNVec2f(ev->localPos()), GetMouseButton(ev));
+    }
+}
+void ZepWidget_Qt::mouseReleaseEvent(QMouseEvent *ev)
+{
+    if (m_spEditor)
+    {
+        m_spEditor->OnMouseUp(toNVec2f(ev->localPos()), GetMouseButton(ev));
+    }
+}
+
+void ZepWidget_Qt::mouseDoubleClickEvent(QMouseEvent *event)
+{
+}
+
+void ZepWidget_Qt::mouseMoveEvent(QMouseEvent *ev)
+{
+    if (m_spEditor)
+    {
+        m_spEditor->OnMouseMove(toNVec2f(ev->localPos()));
+    }
+}
 } // namespace Zep
