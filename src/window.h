@@ -124,7 +124,7 @@ public:
     NVec2i BufferToDisplay();
     NVec2i BufferToDisplay(const BufferLocation& location);
 
-    NVec2f GetTextSize(const utf8* pCh, const utf8* pEnd = nullptr);
+    NVec2f GetTextSize(const utf8* pCh, const utf8* pEnd);
 
     float ToWindowY(float pos) const;
 
@@ -154,6 +154,7 @@ private:
 
     bool DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int displayPass);
     void DisplayScrollers();
+    void BuildCharCache();
 
 private:
     NVec2f ToBufferRegion(const NVec2f& pos);
@@ -197,6 +198,8 @@ private:
     bool m_cursorMoved = true;
 
     std::shared_ptr<Scroller> m_vScroller;
+    NVec2f m_charCache[256];
+    bool m_charCacheDirty = true;
 };
 
 } // namespace Zep

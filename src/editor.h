@@ -13,6 +13,7 @@
 #include "mcommon/math/math.h"
 #include "mcommon/animation/timer.h"
 #include "mcommon/file/file.h"
+#include "mcommon/file/archive.h"
 #include "splits.h"
 
 // Basic Architecture
@@ -82,7 +83,8 @@ enum class Msg
     MouseUp,
     Buffer,
     ComponentChanged,
-    Tick
+    Tick,
+    ConfigChanged
 };
 
 struct IZepComponent;
@@ -175,9 +177,11 @@ const float leftBorderChars = 3;
 class ZepEditor
 {
 public:
-    ZepEditor(IZepDisplay* pDisplay, uint32_t flags = 0);
+    // Root path is the path to search for a config file
+    ZepEditor(IZepDisplay* pDisplay, const fs::path& root, uint32_t flags = 0);
     ~ZepEditor();
 
+    void LoadConfig(const fs::path& config_path);
     void Quit();
 
     void InitWithFileOrDir(const std::string& str);
@@ -266,6 +270,11 @@ public:
     float GetPixelScale() const;
 
     void SetBufferSyntax(ZepBuffer& buffer) const;
+
+    uint32_t GetShowScrollBar() const
+    {
+        return m_showScrollBar;
+    }
 private:
     // Call GetBuffer publicly, to stop creation of duplicate buffers refering to the same file
     ZepBuffer* CreateNewBuffer(const std::string& bufferName);
@@ -275,6 +284,7 @@ private:
     std::set<IZepComponent*> m_notifyClients;
     mutable tRegisters m_registers;
 
+    std::shared_ptr<Archive> m_spConfig;
     std::shared_ptr<ZepTheme> m_spTheme;
     std::shared_ptr<ZepMode_Vim> m_spVimMode;
     std::shared_ptr<ZepMode_Standard> m_spStandardMode;
@@ -310,6 +320,10 @@ private:
 
     NVec2f m_mousePos;
     float m_pixelScale = 1.0f;
+    fs::path m_rootPath;
+
+    // Config
+    uint32_t m_showScrollBar = 1;
 };
 
 } // namespace Zep

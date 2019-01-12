@@ -22,6 +22,7 @@ namespace Zep
 #define UTF8_CHAR_LEN(byte) ((0xE5000000 >> ((byte >> 3) & 0x1e)) & 3) + 1
 
 const float ScrollBarSize = 17.0f;
+NVec2f DefaultCharSize;
 
 ZepWindow::ZepWindow(ZepTabWindow& window, ZepBuffer* buffer)
     : ZepComponent(window.GetEditor())
@@ -81,13 +82,20 @@ void ZepWindow::UpdateScrollers()
     m_vScroller->vScrollLinePercent = 1.0f / m_windowLines.size();
     m_vScroller->vScrollPagePercent = m_vScroller->vScrollVisiblePercent;
 
-    if (m_vScroller->vScrollVisiblePercent >= 1.0f)
+    if (GetEditor().GetShowScrollBar() == 0)
     {
-        m_vScrollRegion->fixed_size = NVec2f(0.0f, 0.0f);
+        m_vScrollRegion->fixed_size = NVec2f(0.0f);
     }
     else
     {
-        m_vScrollRegion->fixed_size = NVec2f(ScrollBarSize * GetEditor().GetPixelScale(), 0.0f);
+        if (m_vScroller->vScrollVisiblePercent >= 1.0f && GetEditor().GetShowScrollBar() != 2)
+        {
+            m_vScrollRegion->fixed_size = NVec2f(0.0f, 0.0f);
+        }
+        else
+        {
+            m_vScrollRegion->fixed_size = NVec2f(ScrollBarSize * GetEditor().GetPixelScale(), 0.0f);
+        }
     }
 
     if (m_vScrollRegion->rect.Width() != m_vScrollRegion->fixed_size.x)
@@ -152,23 +160,18 @@ void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
         {
             auto pScroller = dynamic_cast<Scroller*>(payload->pComponent);
             m_bufferOffsetYPx = pScroller->vScrollPosition * (m_windowLines.size() * GetEditor().GetDisplay().GetFontSize());
-            //m_layoutDirty = true;
-            //UpdateLayout();
             UpdateVisibleLineRange();
             EnsureCursorVisible();
-    
-            /*auto& cursorLine = GetCursorLineInfo(BufferToDisplay().y);
-            if (cursorLine
-            */
         }
     }
 }
 
 NVec2f ZepWindow::GetTextSize(const utf8* pCh, const utf8* pEnd)
 {
-    if (pEnd == nullptr)
+    assert(pEnd != nullptr);
+    if ((pEnd - pCh) == 1)
     {
-        pEnd = pCh + strlen((const char*)pCh);
+        return m_charCache[*pCh];
     }
     return GetEditor().GetDisplay().GetTextSize(pCh, pEnd);
 }
@@ -180,19 +183,19 @@ void ZepWindow::SetDisplayRegion(const NRectf& region)
         return;
     }
 
+    BuildCharCache();
+
     m_layoutDirty = true;
     m_bufferRegion->rect = region;
 
     m_airlineRegion->fixed_size = NVec2f(0.0f, GetEditor().GetDisplay().GetFontSize() + textBorder * 2.0f);
 
     // Border, and move the text across a bit
-    auto textSize = GetEditor().GetDisplay().GetTextSize((utf8*)"A");
-    m_numberRegion->fixed_size = NVec2f(float(leftBorderChars) * textSize.x, 0);
+    m_numberRegion->fixed_size = NVec2f(float(leftBorderChars) * DefaultCharSize.x, 0);
 
-    m_indicatorRegion->fixed_size = NVec2f(textSize.x, 0.0f);
+    m_indicatorRegion->fixed_size = NVec2f(DefaultCharSize.x, 0.0f);
 
     m_defaultLineSize = GetEditor().GetDisplay().GetFontSize();
-    m_bufferOffsetYPx = 0;
 }
 
 void ZepWindow::EnsureCursorVisible()
@@ -595,7 +598,7 @@ void ZepWindow::DisplayCursor()
     }
     if (!found)
     {
-        cursorSize = GetEditor().GetDisplay().GetTextSize((Zep::utf8*)"A");
+        cursorSize = DefaultCharSize;
         xPos += cursorSize.x;
     }
 
@@ -677,6 +680,7 @@ void ZepWindow::SetBuffer(ZepBuffer* pBuffer)
     assert(pBuffer);
     m_pBuffer = pBuffer;
     m_layoutDirty = true;
+    m_bufferOffsetYPx = 0;
 }
 
 BufferLocation ZepWindow::GetBufferCursor()
@@ -717,11 +721,30 @@ void ZepWindow::UpdateLayout()
 {
     if (m_layoutDirty)
     {
+        BuildCharCache();
+
         LayoutRegion(*m_bufferRegion);
 
         UpdateLineSpans();
 
         m_layoutDirty = false;
+    }
+}
+
+void ZepWindow::BuildCharCache()
+{
+    if (m_charCacheDirty == false)
+    {
+        return;
+    }
+    m_charCacheDirty = false;
+   
+    const char chA = 'A';
+    DefaultCharSize = GetEditor().GetDisplay().GetTextSize((utf8*)&chA, (utf8*)&chA + 1);
+    for (int i = 0; i < 256; i++)
+    {
+        utf8 ch = (utf8)i;
+        m_charCache[i] = GetEditor().GetDisplay().GetTextSize(&ch, &ch + 1);
     }
 }
 
@@ -802,7 +825,8 @@ void ZepWindow::Display()
     NVec2f screenPosYPx = m_airlineRegion->rect.topLeftPx;
     for (int i = 0; i < m_airline.leftBoxes.size(); i++)
     {
-        auto textSize = GetEditor().GetDisplay().GetTextSize((const utf8*)m_airline.leftBoxes[i].text.c_str());
+        auto pText = (const utf8*)m_airline.leftBoxes[i].text.c_str();
+        auto textSize = GetTextSize(pText, pText + m_airline.leftBoxes[i].text.size());
         textSize.x += border * 2;
 
         auto col = FilterActiveColor(m_airline.leftBoxes[i].background);

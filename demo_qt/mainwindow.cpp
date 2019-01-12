@@ -12,6 +12,8 @@
 #include "src/mode_standard.h"
 #include "src/mode_vim.h"
 
+#include "config_app.h"
+
 using namespace Zep;
 
 const std::string shader = R"R(
@@ -47,7 +49,7 @@ MainWindow::MainWindow()
 
     parser.process(*qApp);
 
-    auto* pWidget = new ZepWidget_Qt(this);
+    auto* pWidget = new ZepWidget_Qt(this, ZEP_ROOT);
 
     const QStringList args = parser.positionalArguments();
     if (args.size() > 0)

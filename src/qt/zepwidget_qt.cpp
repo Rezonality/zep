@@ -16,10 +16,10 @@
 namespace Zep
 {
 
-ZepWidget_Qt::ZepWidget_Qt(QWidget* pParent)
+ZepWidget_Qt::ZepWidget_Qt(QWidget* pParent, const fs::path& root)
     : QWidget(pParent)
 {
-    m_spEditor = std::make_unique<ZepEditor>(new ZepDisplay_Qt());
+    m_spEditor = std::make_unique<ZepEditor>(new ZepDisplay_Qt(), root);
     m_spEditor->RegisterCallback(this);
     m_spEditor->SetPixelScale(float(qApp->desktop()->logicalDpiX() / 96.0f));
 

@@ -13,7 +13,8 @@ namespace COMMON_NAMESPACE
 enum class BindingType
 {
     Float,
-    Bool
+    Bool,
+    UInt32
 };
 
 struct Binding
@@ -73,6 +74,7 @@ void archive_value(Archive& ar, StringId key, float& val);
 void archive_value(Archive& ar, StringId key, double& val);
 void archive_value(Archive& ar, StringId key, uint32_t& val);
 void archive_value(Archive& ar, StringId key, uint64_t& val);
+void archive_value(Archive& ar, StringId key, bool& val);
 #ifdef USE_GLM
 void archive_value(Archive& ar, StringId key, glm::uvec2& val);
 void archive_value(Archive& ar, StringId key, glm::vec2& val);
@@ -83,7 +85,6 @@ void archive_value(Archive& ar, StringId key, glm::vec4& val);
 void archive_value(Archive& ar, StringId key, glm::ivec3& val);
 void archive_value(Archive& ar, StringId key, glm::quat& val);
 #endif
-void archive_value(Archive& ar, StringId key, bool& val);
 
 void archive_parse_values(Archive& ar);
 ArchiveSection* archive_current_section(Archive& ar);
@@ -96,5 +97,6 @@ void archive_reload(Archive& ar);
 
 void archive_bind(Archive& archive, StringId section, StringId key, float& val);
 void archive_bind(Archive& archive, StringId section, StringId key, bool& val);
+void archive_bind(Archive& archive, StringId section, StringId key, uint32_t& val);
 
 } // namespace COMMON_NAMESPACE

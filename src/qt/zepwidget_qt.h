@@ -12,7 +12,7 @@ class ZepWidget_Qt : public QWidget
     , public IZepComponent
 {
 public:
-    ZepWidget_Qt(QWidget* pParent);
+    ZepWidget_Qt(QWidget* pParent, const fs::path& zepRoot);
     virtual ~ZepWidget_Qt();
 
     virtual ZepMouseButton GetMouseButton(QMouseEvent* ev);

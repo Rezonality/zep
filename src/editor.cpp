@@ -11,6 +11,10 @@
 #include "mcommon/string/stringutils.h"
 #include "mcommon/animation/timer.h"
 #include "mcommon/logger.h"
+#include "mcommon/file/archive.h"
+#include "mcommon/string/stringutils.h"
+#include "mcommon/string/murmur_hash.h"
+
 #include "window.h"
 
 namespace COMMON_NAMESPACE
@@ -32,10 +36,13 @@ ZepComponent::~ZepComponent()
     m_editor.UnRegisterCallback(this);
 }
 
-ZepEditor::ZepEditor(IZepDisplay* pDisplay, uint32_t flags)
+ZepEditor::ZepEditor(IZepDisplay* pDisplay, const fs::path& root, uint32_t flags)
     : m_flags(flags)
     , m_pDisplay(pDisplay)
+    , m_rootPath(root)
 {
+    LoadConfig(root / "zep.cfg");
+
     m_spTheme = std::make_shared<ZepTheme>();
 
     assert(m_pDisplay != nullptr);
@@ -64,7 +71,36 @@ ZepEditor::ZepEditor(IZepDisplay* pDisplay, uint32_t flags)
 
 ZepEditor::~ZepEditor()
 {
+    file_destroy_dir_watch();
     delete m_pDisplay;
+}
+
+// If you pass a valid path to a 'zep.cfg' file, then editor settings will serialize from that
+// You can even edit it inside zep for immediate changes :)
+void ZepEditor::LoadConfig(const fs::path& config_path)
+{
+    if (!fs::exists(config_path))
+    {
+        return;
+    }
+    m_spConfig = archive_load(config_path);
+    if (m_spConfig)
+    {
+        archive_bind(*m_spConfig, "editor", "show_scrollbar", m_showScrollBar);
+
+        file_init_dir_watch(config_path.parent_path(), [&](const fs::path& path)
+        {
+            if (path.filename() == "zep.cfg")
+            {
+                if (m_spConfig)
+                {
+                    LOG(INFO) << "Reloading global vars";
+                    archive_reload(*m_spConfig);
+                    Broadcast(std::make_shared<ZepMessage>(Msg::ConfigChanged));
+                }
+            }
+        });
+    }
 }
 
 void ZepEditor::SaveBuffer(ZepBuffer& buffer)
@@ -471,6 +507,8 @@ void ZepEditor::RequestRefresh()
 
 bool ZepEditor::RefreshRequired() 
 {
+    file_update_dir_watch();
+
     // Allow any components to update themselves
     Broadcast(std::make_shared<ZepMessage>(Msg::Tick));
 

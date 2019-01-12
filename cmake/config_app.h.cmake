@@ -1,4 +1,3 @@
-#cmakedefine APPLICATION_NAME "${APPLICATION_NAME}"
-#cmakedefine APPLICATION_VERSION "${APPLICATION_VERSION}"
+#cmakedefine ZEP_ROOT "${ZEP_ROOT}"
 
 

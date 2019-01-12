@@ -13,8 +13,8 @@
 namespace Zep
 {
 
-ZepEditor_ImGui::ZepEditor_ImGui()
-    : ZepEditor(new ZepDisplay_ImGui())
+ZepEditor_ImGui::ZepEditor_ImGui(const fs::path& root)
+    : ZepEditor(new ZepDisplay_ImGui(), root)
 {
 }
 

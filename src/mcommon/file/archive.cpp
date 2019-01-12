@@ -708,6 +708,9 @@ void archive_update_binding(Archive& ar, Binding& binding)
         case BindingType::Bool:
             archive_value(ar, binding.name, *(bool*)binding.pData);
             break;
+        case BindingType::UInt32:
+            archive_value(ar, binding.name, *(uint32_t*)binding.pData);
+            break;
     }
 }
 
@@ -720,6 +723,12 @@ void archive_bind(Archive& ar, StringId section, StringId key, float& val)
 void archive_bind(Archive& ar, StringId section, StringId key, bool& val)
 {
     ar.bindings.push_back(Binding{section, key, BindingType::Bool, &val});
+    archive_update_binding(ar, ar.bindings[ar.bindings.size() - 1]);
+}
+
+void archive_bind(Archive& ar, StringId section, StringId key, uint32_t& val)
+{
+    ar.bindings.push_back(Binding{section, key, BindingType::UInt32, &val});
     archive_update_binding(ar, ar.bindings[ar.bindings.size() - 1]);
 }
 

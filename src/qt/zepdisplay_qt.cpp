@@ -1,5 +1,6 @@
 #include "zepdisplay_qt.h"
 #include <qapplication.h>
+#include <Windows.h>
 
 // This is an ImGui specific renderer for Zep.  Simple interface for drawing chars, rects, lines.
 // Implement a new display for a different rendering type - e.g. terminal or windows Gui.jj
@@ -31,6 +32,7 @@ NVec2f ZepDisplay_Qt::GetTextSize(const utf8* pBegin, const utf8* pEnd) const
     {
         pEnd = pBegin + strlen((const char*)pBegin);
     }
+    
     auto rc = met.size(Qt::TextSingleLine, QString::fromUtf8((char*)pBegin, pEnd - pBegin));
     return NVec2f(rc.width(), rc.height());
 }
