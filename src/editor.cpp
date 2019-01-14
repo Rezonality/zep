@@ -88,6 +88,7 @@ void ZepEditor::LoadConfig(const fs::path& config_path)
     {
         archive_bind(*m_spConfig, "editor", "show_scrollbar", m_showScrollBar);
 
+#if !(TARGET_MAC)
         file_init_dir_watch(config_path.parent_path(), [&](const fs::path& path)
         {
             if (path.filename() == "zep.cfg")
@@ -100,6 +101,7 @@ void ZepEditor::LoadConfig(const fs::path& config_path)
                 }
             }
         });
+#endif
     }
 }
 
