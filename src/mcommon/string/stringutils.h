@@ -11,7 +11,7 @@
 namespace COMMON_NAMESPACE
 {
 
-inline size_t CountUtf8BytesFromChar(const char c)
+inline size_t CountUtf8BytesFromChar(unsigned int c)
 {
     if (c < 0x80)
         return 1;
