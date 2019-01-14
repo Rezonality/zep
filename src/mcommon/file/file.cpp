@@ -221,4 +221,19 @@ std::vector<fs::path> file_gather_files(const fs::path& root)
     return ret;
 }
 
+bool file_exists(const fs::path& path)
+{
+    std::error_code c;
+    if (!fs::exists(path, c))
+    {
+        return false;
+    }
+    if (c.value() != 0)
+    {
+        return false;
+    }
+    return true;
+}
+
+
 } // namespace COMMON_NAMESPACE
