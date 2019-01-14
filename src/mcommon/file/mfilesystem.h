@@ -197,12 +197,8 @@ private:
 
 inline bool exists(const path& path)
 {
-    struct stat buffer;
-    if (path.string().empty())
-    {
-        return false;
-    }
-    return stat(path.c_str(), &buffer) == 0;
+    std::ifstream ifile(path.string());
+    return (bool)ifile;
 }
 
 inline path current_path()

@@ -79,7 +79,7 @@ ZepEditor::~ZepEditor()
 // You can even edit it inside zep for immediate changes :)
 void ZepEditor::LoadConfig(const fs::path& config_path)
 {
-    if (!file_exists(config_path))
+    if (!fs::exists(config_path))
     {
         return;
     }
