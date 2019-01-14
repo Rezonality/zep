@@ -196,6 +196,9 @@ private:
 
     void ProcessInput(const std::string& str);
 
+    void UpdateForInsert(const BufferLocation& startOffset, const BufferLocation& endOffset);
+    void UpdateForDelete(const BufferLocation& startOffset, const BufferLocation& endOffset);
+
 private:
     bool m_dirty = false;         // Is the text modified?
     GapBuffer<utf8> m_gapBuffer;  // Storage for the text - a gap buffer for efficiency

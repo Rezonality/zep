@@ -484,7 +484,6 @@ void ZepBuffer::ProcessInput(const std::string& text)
     }
 
     m_lineEnds.push_back(long(m_gapBuffer.size()));
-    //LOG(DEBUG) << m_gapBuffer.string();
 }
 
 BufferLocation ZepBuffer::Clamp(BufferLocation in) const
@@ -519,16 +518,6 @@ bool ZepBuffer::GetLineOffsets(const long line, long& lineStart, long& lineEnd) 
     return true;
 }
 
-/* TODO:
-void ZepBuffer::LockRead()
-{
-    // Wait for line counter
-    if (m_lineCountResult.valid())
-    {
-        m_lineCountResult.get();
-    }
-}*/
-
 // Basic load suppot; read a file if it's present, but keep
 // the file path in case you want to write later
 void ZepBuffer::Load(const fs::path& path)
@@ -561,7 +550,6 @@ void ZepBuffer::Load(const fs::path& path)
         m_filePath = path;
         SetFlags(FileFlags::NotYetSaved);
     }
-
 }
 
 bool ZepBuffer::Save(int64_t& size)
@@ -575,7 +563,7 @@ bool ZepBuffer::Save(int64_t& size)
     {
         return false;
     }
-    
+
     auto str = GetText().string();
 
     // Put back /r/n if necessary while writing the file
@@ -654,7 +642,7 @@ void ZepBuffer::SetText(const std::string& text)
 
     // Doc is not dirty
     ClearFlags(FileFlags::Dirty);
-  
+
     // On first init, send the initialized message to say we've initialized the buffer with something
     // Make sure the buffer has more than the closing 0 in it
     if (TestFlags(FileFlags::FirstInit) && m_gapBuffer.size() > 1)
@@ -778,6 +766,54 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
     return bufferLocation;
 }
 
+void ZepBuffer::UpdateForDelete(const BufferLocation& startOffset, const BufferLocation& endOffset)
+{
+    auto distance = endOffset - startOffset;
+    for (auto& marker : m_rangeMarkers)
+    {
+        if (startOffset >= marker.range.second)
+        {
+            continue;
+        }
+        else if (endOffset <= marker.range.first)
+        {
+            marker.range.first -= distance;
+            marker.range.second -= distance;
+        }
+        else
+        {
+            auto overlapStart = std::max(startOffset, marker.range.first);
+            auto overlapEnd = std::min(endOffset, marker.range.second);
+            auto dist = overlapEnd - overlapStart;
+            marker.range.second -= dist;
+        }
+    }
+}
+
+void ZepBuffer::UpdateForInsert(const BufferLocation& startOffset, const BufferLocation& endOffset)
+{
+    // Move the markers after the insert point forwards, or
+    // expand the marker range if inserting inside it (that's a guess!)
+    auto distance = endOffset - startOffset;
+    for (auto& marker : m_rangeMarkers)
+    {
+        if (marker.range.second <= startOffset)
+        {
+            continue;
+        }
+
+        if (marker.range.first >= startOffset)
+        {
+            marker.range.first += distance;
+            marker.range.second += distance;
+        }
+        else
+        {
+            marker.range.second += distance;
+        }
+    }
+}
+
 bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str)
 {
     if (startOffset > m_gapBuffer.size())
@@ -789,6 +825,8 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
 
     // We are about to modify this range
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, startOffset, startOffset + changeRange));
+
+    UpdateForInsert(startOffset, startOffset + changeRange);
 
     // abcdef\r\nabc<insert>dfdf\r\n
     auto itrLine = std::lower_bound(m_lineEnds.begin(), m_lineEnds.end(), startOffset);
@@ -840,10 +878,8 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
     // This is the range we added (not valid any more in the buffer)
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextAdded, startOffset, startOffset + changeRange));
 
-    //LOG(DEBUG) << m_gapBuffer.string();
-
     SetFlags(FileFlags::Dirty);
-    
+
     if (TestFlags(FileFlags::FirstInit) && m_gapBuffer.size() > 1)
     {
         ClearFlags(FileFlags::FirstInit);
@@ -868,6 +904,8 @@ bool ZepBuffer::Delete(const BufferLocation& startOffset, const BufferLocation& 
 
     // We are about to modify this range
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, startOffset, endOffset));
+
+    UpdateForDelete(startOffset, endOffset);
 
     auto itrLine = std::lower_bound(m_lineEnds.begin(), m_lineEnds.end(), startOffset);
     if (itrLine == m_lineEnds.end())
@@ -948,7 +986,7 @@ void ZepBuffer::ClearRangeMarkers()
 {
     m_rangeMarkers.clear();
 }
-    
+
 const tRangeMarkers& ZepBuffer::GetRangeMarkers() const
 {
     return m_rangeMarkers;
