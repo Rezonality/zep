@@ -288,6 +288,15 @@ void ZepMode_Vim::ResetCommand()
     m_currentCommand.clear();
 }
 
+void ZepMode_Vim::ClampCursorForMode()
+{
+    // Normal mode cursor is never on a CR/0
+    if (m_currentMode == EditorMode::Normal)
+    {
+        GetCurrentWindow()->SetBufferCursor(GetCurrentWindow()->GetBuffer().ClampToVisibleLine(GetCurrentWindow()->GetBufferCursor()));
+    }
+}
+
 void ZepMode_Vim::SwitchMode(EditorMode mode)
 {
     // Don't switch to invalid mode
@@ -303,9 +312,13 @@ void ZepMode_Vim::SwitchMode(EditorMode mode)
     switch (mode)
     {
         case EditorMode::Normal:
+        {
             GetCurrentWindow()->SetCursorType(CursorType::Normal);
+            auto cursor = GetCurrentWindow()->GetBufferCursor();
+            ClampCursorForMode();
             ResetCommand();
-            break;
+        }
+        break;
         case EditorMode::Insert:
             m_insertBegin = GetCurrentWindow()->GetBufferCursor();
             GetCurrentWindow()->SetCursorType(CursorType::Insert);
@@ -1471,6 +1484,8 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         HandleInsert(key);
         ResetCommand();
     }
+
+    ClampCursorForMode();
 }
 
 void ZepMode_Vim::HandleInsert(uint32_t key)

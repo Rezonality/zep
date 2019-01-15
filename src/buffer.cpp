@@ -334,7 +334,7 @@ BufferLocation ZepBuffer::WordMotion(BufferLocation start, uint32_t searchType, 
         if (Skip(IsWord, start, dir))
         {
             // Skipped a word, skip spaces then done
-            Skip(IsSpace, start, dir);
+            Skip(IsSpaceOrTerminal, start, dir);
         }
         else
         {

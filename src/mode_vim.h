@@ -122,6 +122,7 @@ public:
     virtual void PreDisplay() override;
 
 private:
+    void ClampCursorForMode();
     void UpdateVisualSelection();
     void HandleInsert(uint32_t key);
     bool GetOperationRange(const std::string& op, EditorMode mode, BufferLocation& beginRange, BufferLocation& endRange) const;

@@ -485,6 +485,7 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
         }
 
         // Shown only one char for end of line
+        bool hiddenChar = false;
         if (*pCh == '\n' || *pCh == 0)
         {
             invalidChar = '@' + *pCh;
@@ -496,6 +497,7 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
             {
                 pCh = (const utf8*)&blankSpace;
             }
+            hiddenChar = true;
         }
 
         // Note: We don't really support UTF8, but our whitespace symbol is UTF8!
@@ -509,7 +511,7 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
                 if (GetEditor().GetCurrentMode()->GetEditorMode() == EditorMode::Visual)
                 {
                     auto sel = m_pBuffer->GetSelection();
-                    if (ch >= sel.first && ch < sel.second)
+                    if (ch >= sel.first && ch < sel.second && !hiddenChar)
                     {
                         GetEditor().GetDisplay().DrawRectFilled(NRectf(NVec2f(screenPosX, ToWindowY(lineInfo.spanYPx)), NVec2f(screenPosX + textSize.x, ToWindowY(lineInfo.spanYPx) + textSize.y)), m_pBuffer->GetTheme().GetColor(ThemeColor::VisualSelectBackground));
                     }
