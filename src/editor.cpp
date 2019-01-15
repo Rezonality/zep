@@ -270,7 +270,12 @@ void ZepEditor::PreviousTabWindow()
 
 void ZepEditor::SetCurrentTabWindow(ZepTabWindow* pTabWindow)
 {
-    m_pActiveTabWindow = pTabWindow;
+    // Sanity
+    auto itr = std::find(m_tabWindows.begin(), m_tabWindows.end(), pTabWindow);
+    if (itr != m_tabWindows.end())
+    {
+        m_pActiveTabWindow = pTabWindow;
+    }
 }
 
 ZepTabWindow* ZepEditor::GetActiveTabWindow() const
@@ -311,6 +316,7 @@ void ZepEditor::RemoveTabWindow(ZepTabWindow* pTabWindow)
 
     delete pTabWindow;
     m_tabWindows.erase(itrFound);
+    m_tabRects.clear();
 
     if (m_tabWindows.empty())
     {
@@ -480,14 +486,24 @@ const tRegisters& ZepEditor::GetRegisters() const
     return m_registers;
 }
 
-void ZepEditor::Notify(std::shared_ptr<ZepMessage> message)
+void ZepEditor::Notify(std::shared_ptr<ZepMessage> pMsg)
 {
-    if (message->messageId == Msg::Buffer)
+    if (pMsg->messageId == Msg::Buffer)
     {
-        auto pMsg = std::static_pointer_cast<BufferMessage>(message);
-        if (pMsg->type == BufferMessageType::Initialized)
+        auto pBufferMsg = std::static_pointer_cast<BufferMessage>(pMsg);
+        if (pBufferMsg->type == BufferMessageType::Initialized)
         {
-            SetBufferSyntax(*pMsg->pBuffer);
+            SetBufferSyntax(*pBufferMsg->pBuffer);
+        }
+    }
+    else if (pMsg->messageId == Msg::MouseDown)
+    {
+        for (auto& windowRect : m_tabRects)
+        {
+            if (windowRect.second.Contains(pMsg->pos))
+            {
+                SetCurrentTabWindow(windowRect.first);
+            }
         }
     }
 }
@@ -604,6 +620,7 @@ void ZepEditor::Display()
         screenPosYPx.x = m_commandRegion->rect.topLeftPx.x;
     }
 
+    m_tabRects.clear();
     if (GetTabWindows().size() > 1)
     {
         // Tab region
@@ -616,11 +633,14 @@ void ZepEditor::Display()
             auto& buffer = window->GetActiveWindow()->GetBuffer();
             auto tabColor = (window == GetActiveTabWindow()) ? GetTheme().GetColor(ThemeColor::TabActive) : GetTheme().GetColor(ThemeColor::TabInactive);
             auto tabLength = m_pDisplay->GetTextSize((utf8*)buffer.GetName().c_str()).x + textBorder * 2;
-            m_pDisplay->DrawRectFilled(NRectf(currentTab, currentTab + NVec2f(tabLength, m_tabRegion->rect.Height())), tabColor);
+
+            NRectf tabRect(currentTab, currentTab + NVec2f(tabLength, m_tabRegion->rect.Height()));
+            m_pDisplay->DrawRectFilled(tabRect, tabColor);
 
             m_pDisplay->DrawChars(currentTab + NVec2f(textBorder, textBorder), NVec4f(1.0f), (utf8*)buffer.GetName().c_str());
 
             currentTab.x += tabLength + textBorder;
+            m_tabRects[window] = tabRect;
         }
     }
 

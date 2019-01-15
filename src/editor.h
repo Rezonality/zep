@@ -315,6 +315,7 @@ private:
     std::shared_ptr<Region> m_tabContentRegion;
     std::shared_ptr<Region> m_commandRegion;
     std::shared_ptr<Region> m_tabRegion;
+    std::map<ZepTabWindow*, NRectf> m_tabRects;
     bool m_bRegionsChanged = false;
     fs::path m_currentRootPath;
 

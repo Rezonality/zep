@@ -313,6 +313,10 @@ COMMAND_TEST_RET(invalid_command, "one", ":invalid", "one")
 COMMAND_TEST(visual_switch_v, "one", "lvlv", "one");
 COMMAND_TEST(visual_switch_V, "one", "lVlV", "one");
 
+COMMAND_TEST(chage_to, "one two", "ctthey", "heytwo");
+
+COMMAND_TEST(chage_to_digit, "one 1wo", "ct1hey", "hey1wo");
+
 #define CURSOR_TEST(name, source, command, xcoord, ycoord) \
     TEST_F(VimTest, name)                                  \
     {                                                      \
@@ -358,7 +362,7 @@ CURSOR_TEST(motion_2w, "one two three", "2w", 8, 0);
 CURSOR_TEST(motion_w, "one! two three", "w", 3, 0);
 CURSOR_TEST(motion_w_space, "one two three", "lllw", 4, 0);
 CURSOR_TEST(motion_W, "one! two three", "W", 5, 0);
-CURSOR_TEST(motion_W_over_line, "one;\ntwo", "W", 5, 0);
+CURSOR_TEST(motion_W_over_line, "one;\ntwo", "W", 0, 1);
 
 CURSOR_TEST(motion_b, "one! two three", "wwb", 3, 0);
 CURSOR_TEST(motion_b_from_non_word, "one! two three", "wwbb", 0, 0);
@@ -379,3 +383,10 @@ CURSOR_TEST(motion_gg, "one two", "llllgg", 0, 0);
 CURSOR_TEST(motion_dollar, "one two", "ll$", 6, 0);
 CURSOR_TEST(motion_cr_then_escape, "one", "$a\njk", 0, 1);
 CURSOR_TEST(cursor_copy_yy_paste_line, "one\ntwo", "yyp", 0, 1);
+
+CURSOR_TEST(find_a_char, "one two", "ft", 4, 0);
+CURSOR_TEST(find_a_char_fail, "one two", "fz", 0, 0);
+CURSOR_TEST(find_a_char_stay_on_line, "one two\nthree", "fefe", 2, 0);
+CURSOR_TEST(find_a_char_repeat, "one one one", "fo;", 8, 0);
+CURSOR_TEST(find_a_char_num, "one2 one2", "2f2", 8, 0);
+CURSOR_TEST(find_a_char_beside, "ooo", "fo;", 2, 0);

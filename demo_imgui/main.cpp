@@ -37,6 +37,11 @@
 #include "src/mode_standard.h"
 #include "src/mode_vim.h"
 #include "src/theme.h"
+#include "src/tab_window.h"
+#include "src/window.h"
+
+#include "m3rdparty/tfd/tinyfiledialogs.h"
+
 using namespace Zep;
 
 #include "src/tests/longtext.tt"
@@ -295,11 +300,21 @@ int main(int argc, char** argv)
         {
             if (ImGui::BeginMenu("File"))
             {
-                /*
                 if (ImGui::MenuItem("Open"))
                 {
+                    auto openFileName = tinyfd_openFileDialog(
+                        "Choose a file",
+                        "",
+                        0,
+                        nullptr,
+                        nullptr,
+                        0);
+                    if (openFileName != nullptr)
+                    {
+                        auto pBuffer = zep.GetEditor().GetFileBuffer(openFileName);
+                        zep.GetEditor().GetActiveTabWindow()->GetActiveWindow()->SetBuffer(pBuffer);
+                    }
                 }
-                */
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Settings"))
@@ -333,6 +348,20 @@ int main(int argc, char** argv)
                         zep.GetEditor().GetTheme().SetThemeType(ThemeType::Light);
                     }
                     ImGui::EndMenu();
+                }
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Window"))
+            {
+                auto pTabWindow = zep.GetEditor().GetActiveTabWindow();
+                if (ImGui::MenuItem("Horizontal Split"))
+                {
+                    pTabWindow->AddWindow(&pTabWindow->GetActiveWindow()->GetBuffer(), pTabWindow->GetActiveWindow(), false);
+                }
+                else if (ImGui::MenuItem("Vertical Split"))
+                {
+                    pTabWindow->AddWindow(&pTabWindow->GetActiveWindow()->GetBuffer(), pTabWindow->GetActiveWindow(), true);
                 }
                 ImGui::EndMenu();
             }

@@ -137,6 +137,9 @@ private:
     int m_lastCount = 0;
     std::string m_lastInsertString;
 
+    std::string m_lastFind;
+    SearchDirection m_lastFindDirection = SearchDirection::Forward;
+
     bool m_pendingEscape = false;
     timer m_insertEscapeTimer;
     VimSettings m_settings;

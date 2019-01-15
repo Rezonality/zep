@@ -187,6 +187,20 @@ bool ZepBuffer::Skip(fnMatch IsToken, BufferLocation& start, SearchDirection dir
     return moved;
 }
 
+bool ZepBuffer::SkipOne(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const
+{
+    if (!Valid(start))
+        return false;
+
+    bool moved = false;
+    if (Valid(start) && IsToken(m_gapBuffer[start]))
+    {
+        Move(start, dir);
+        moved = true;
+    }
+    return moved;
+}
+
 bool ZepBuffer::SkipNot(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const
 {
     if (!Valid(start))
@@ -321,6 +335,40 @@ BufferRange ZepBuffer::InnerWordMotion(BufferLocation start, uint32_t searchType
         r.first = start + 1;
     }
     return r;
+}
+
+BufferLocation ZepBuffer::FindOnLineMotion(BufferLocation start, utf8* pCh, SearchDirection dir) const
+{
+    auto entry = start;
+    auto IsMatch = [pCh](const char ch)
+    {
+        if (*pCh == ch)
+            return true;
+        return false;
+    };
+    auto NotMatchNotEnd = [pCh](const char ch)
+    {
+        if (*pCh != ch && ch != '\n')
+            return true;
+        return false;
+    };
+
+    if (dir == SearchDirection::Forward)
+    {
+        SkipOne(IsMatch, start, dir);
+        Skip(NotMatchNotEnd, start, dir);
+    }
+    else
+    {
+        SkipOne(IsMatch, start, dir);
+        Skip(NotMatchNotEnd, start, dir);
+    }
+
+    if(Valid(start) && *pCh == m_gapBuffer[start])
+    {
+        return start;
+    }
+    return entry;
 }
 
 BufferLocation ZepBuffer::WordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const

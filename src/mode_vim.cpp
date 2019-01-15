@@ -157,15 +157,34 @@ void CommandContext::GetCommandAndCount()
         itr++;
     }
 
-    while (itr != commandText.end()
-           && std::isgraph(*itr) && !std::isdigit(*itr))
+    // Special case; 'f3' is a find for the character '3', not a count of 3!
+    // But 2f3 is 'find the second 3'....
+    if (itr != commandText.end())
     {
-        command1 += *itr;
-        itr++;
+        if (*itr == 'f' || *itr == 'F' || *itr == 'c')
+        {
+            while (itr != commandText.end()
+                && std::isgraph(*itr))
+            {
+                command1 += *itr;
+                itr++;
+            }
+        }
+        else
+        {
+            while (itr != commandText.end()
+                && std::isgraph(*itr) && !std::isdigit(*itr))
+            {
+                command1 += *itr;
+                itr++;
+            }
+        }
     }
 
     // If not a register target, then another count
-    if (command1[0] != '\"' && command1[0] != ':')
+    if (command1[0] != '\"' &&
+        command1[0] != ':' &&
+        command1[0] != '/')
     {
         while (itr != commandText.end()
                && std::isdigit(*itr))
@@ -1138,6 +1157,19 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
                 context.op = CommandOperation::Delete;
             }
         }
+        else if (context.command.find("ct") == 0)
+        {
+            if (context.command.length() == 3)
+            {
+                context.beginRange = bufferCursor;
+                context.endRange = buffer.FindOnLineMotion(bufferCursor, (utf8*)&context.command[2], SearchDirection::Forward);
+                context.op = CommandOperation::Delete;
+            }
+            else
+            {
+                context.commandResult.flags |= CommandResultFlags::NeedMoreChars;
+            }
+        }
 
         if (context.op != CommandOperation::None)
         {
@@ -1251,6 +1283,36 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         context.commandResult.modeSwitch = EditorMode::Insert;
         return true;
     }
+    else if (context.command == ";")
+    {
+        if (!m_lastFind.empty())
+        {
+            GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (utf8*)m_lastFind.c_str(), m_lastFindDirection));
+            return true;
+        }
+    }
+    else if (context.command[0] == 'f')
+    {
+        if (context.command.length() > 1)
+        {
+            GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (utf8*)&context.command[1], SearchDirection::Forward));
+            m_lastFind = context.command[1];
+            m_lastFindDirection = SearchDirection::Forward;
+            return true;
+        }
+        context.commandResult.flags |= CommandResultFlags::NeedMoreChars;
+    }
+    else if (context.command[0] == 'F')
+    {
+        if (context.command.length() > 1)
+        {
+            GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (utf8*)&context.command[1], SearchDirection::Backward));
+            m_lastFind = context.command[1];
+            m_lastFindDirection = SearchDirection::Backward;
+            return true;
+        }
+        context.commandResult.flags |= CommandResultFlags::NeedMoreChars;
+    }
     else if (context.lastKey == ExtKeys::RETURN)
     {
         if (context.mode == EditorMode::Normal)
@@ -1353,7 +1415,8 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
 
         // Update the typed command
         // TODO: Cursor keys on the command line
-        if (key == ':' || m_currentCommand[0] == ':')
+        if (key == ':' || m_currentCommand[0] == ':' ||
+            key =='/' || m_currentCommand[0] == '/')
         {
             if (HandleExCommand(m_currentCommand, key))
             {
@@ -1366,13 +1429,11 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         }
 
         // ... and show it in the command bar if desired
-        if (m_currentCommand[0] == ':' || m_settings.ShowNormalModeKeyStrokes)
+        if (m_currentCommand[0] == ':' || 
+            m_currentCommand[0] == '/' ||
+            m_settings.ShowNormalModeKeyStrokes)
         {
             GetEditor().SetCommandText(m_currentCommand);
-        }
-
-        if (m_currentCommand[0] == ':')
-        {
             return;
         }
 

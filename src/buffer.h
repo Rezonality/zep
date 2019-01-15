@@ -111,8 +111,10 @@ public:
     bool Valid(BufferLocation locataion) const;
     bool MotionBegin(BufferLocation& start, uint32_t searchType, SearchDirection dir) const;
     bool Skip(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const;
+    bool SkipOne(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const;
     bool SkipNot(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const;
 
+    BufferLocation FindOnLineMotion(BufferLocation start, utf8* pCh, SearchDirection dir) const;
     BufferLocation WordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
     BufferLocation EndWordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
     BufferLocation ChangeWordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
