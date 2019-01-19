@@ -1,7 +1,8 @@
 #pragma once
 
+#include <mcommon/file/file.h>
 #include "editor.h"
-#include <utils/file.h>
+#include "theme.h"
 
 #include <set>
 #include <shared_mutex>
@@ -14,6 +15,8 @@ namespace Zep
 {
 
 class ZepSyntax;
+class ZepTheme;
+enum class ThemeColor;
 
 enum class SearchDirection
 {
@@ -38,26 +41,41 @@ namespace FileFlags
 enum : uint32_t
 {
     StrippedCR = (1 << 0),
-    TerminatedWithZero = (1 << 1)
+    TerminatedWithZero = (1 << 1),
+    ReadOnly = (1 << 2),
+    Locked = (1 << 3), // Can this file path ever be written to?
+    Dirty = (1 << 4),  // Has the file been changed?
+    NotYetSaved = (1 << 5),
+    FirstInit = (1 << 6)
 };
 };
 
 enum class LineLocation
 {
+    None,               // Not any specific location
     LineFirstGraphChar, // First non blank character
-    LineLastGraphChar, // Last non blank character
-    LineLastNonCR, // Last character before the carriage return
-    LineBegin, // Beginning of line
-    BeyondLineEnd, // The line end of the buffer line (for wrapped lines).
-    LineCRBegin, // The first carriage return character
+    LineLastGraphChar,  // Last non blank character
+    LineLastNonCR,      // Last character before the carriage return
+    LineBegin,          // Beginning of line
+    BeyondLineEnd,      // The line end of the buffer line (for wrapped lines).
+    LineCRBegin,        // The first carriage return character
 };
 
 using BufferLocation = long;
 using BufferRange = std::pair<BufferLocation, BufferLocation>;
 
-const long InvalidOffset = -1;
+struct RangeMarker
+{
+    long bufferLine = -1;
+    BufferRange range;
+    ThemeColor color;
+    std::string name;
+    std::string description;
+};
 
-extern const char* Msg_Buffer;
+using tRangeMarkers = std::vector<RangeMarker>;
+
+const long InvalidOffset = -1;
 
 // A really big cursor move; which will likely clamp
 static const long MaxCursorMove = long(0xFFFFFFF);
@@ -72,15 +90,14 @@ public:
     bool Save(int64_t& size);
 
     fs::path GetFilePath() const;
+    void SetFilePath(const fs::path& path);
 
-    BufferLocation Search(const std::string& str,
-        BufferLocation start,
-        SearchDirection dir = SearchDirection::Forward,
-        BufferLocation end = BufferLocation{ -1l }) const;
+    BufferLocation Search(const std::string& str, BufferLocation start, SearchDirection dir = SearchDirection::Forward, BufferLocation end = BufferLocation{-1l}) const;
 
     BufferLocation GetLinePos(BufferLocation bufferLocation, LineLocation lineLocation) const;
     bool GetLineOffsets(const long line, long& charStart, long& charEnd) const;
     BufferLocation Clamp(BufferLocation location) const;
+    BufferLocation ClampToVisibleLine(BufferLocation in) const;
     long GetBufferColumn(BufferLocation location) const;
 
     ThreadPool& GetThreadPool()
@@ -94,16 +111,19 @@ public:
     bool Valid(BufferLocation locataion) const;
     bool MotionBegin(BufferLocation& start, uint32_t searchType, SearchDirection dir) const;
     bool Skip(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const;
+    bool SkipOne(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const;
     bool SkipNot(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const;
 
+    BufferLocation FindOnLineMotion(BufferLocation start, utf8* pCh, SearchDirection dir) const;
     BufferLocation WordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
     BufferLocation EndWordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
     BufferLocation ChangeWordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
     BufferRange AWordMotion(BufferLocation start, uint32_t searchType) const;
     BufferRange InnerWordMotion(BufferLocation start, uint32_t searchType) const;
+    BufferRange StandardCtrlMotion(BufferLocation cursor, SearchDirection searchDir) const;
 
-    bool Delete(const BufferLocation& startOffset, const BufferLocation& endOffset, const BufferLocation& cursorAfter = BufferLocation{ -1 });
-    bool Insert(const BufferLocation& startOffset, const std::string& str, const BufferLocation& cursorAfter = BufferLocation{ -1 });
+    bool Delete(const BufferLocation& startOffset, const BufferLocation& endOffset);
+    bool Insert(const BufferLocation& startOffset, const std::string& str);
 
     long GetLineCount() const
     {
@@ -112,7 +132,7 @@ public:
     long GetBufferLine(BufferLocation offset) const;
     BufferLocation LocationFromOffset(const BufferLocation& location, long offset) const;
     BufferLocation LocationFromOffset(long offset) const;
-    BufferLocation LocationFromOffsetByChars(const BufferLocation& location, long offset) const;
+    BufferLocation LocationFromOffsetByChars(const BufferLocation& location, long offset, LineLocation loc = LineLocation::None) const;
     BufferLocation EndLocation() const;
 
     const GapBuffer<utf8>& GetText() const
@@ -123,27 +143,28 @@ public:
     {
         return m_lineEnds;
     }
-    bool IsDirty() const
+
+    bool TestFlags(uint32_t flags)
     {
-        return m_dirty;
-    }
-    bool IsReadOnly() const
-    {
-        return m_readOnly;
-    }
-    bool IsViewOnly() const
-    {
-        return m_viewOnly;
-    }
-    void SetReadOnly(bool ro)
-    {
-        m_readOnly = ro;
-    }
-    void SetViewOnly(bool ro)
-    {
-        m_viewOnly = ro;
+        return ((m_fileFlags & flags) == flags) ? true : false;
     }
 
+    void ClearFlags(uint32_t flag)
+    {
+        SetFlags(flag, false);
+    }
+
+    void SetFlags(uint32_t flag, bool set = true)
+    {
+        if (set)
+        {
+            m_fileFlags |= flag;
+        }
+        else
+        {
+            m_fileFlags &= ~flag;
+        }
+    }
     void SetSyntax(std::shared_ptr<ZepSyntax> spSyntax)
     {
         m_spSyntax = spSyntax;
@@ -158,7 +179,18 @@ public:
         return m_strName;
     }
 
+    std::string GetDisplayName() const;
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
+
+    ZepTheme& GetTheme() const;
+    void SetTheme(std::shared_ptr<ZepTheme> spTheme);
+
+    void SetSelection(const BufferRange& sel);
+    BufferRange GetSelection() const;
+
+    void AddRangeMarker(const RangeMarker& marker);
+    void ClearRangeMarkers();
+    const tRangeMarkers& GetRangeMarkers() const;
 
 private:
     // Internal
@@ -166,18 +198,22 @@ private:
 
     void ProcessInput(const std::string& str);
 
+    void UpdateForInsert(const BufferLocation& startOffset, const BufferLocation& endOffset);
+    void UpdateForDelete(const BufferLocation& startOffset, const BufferLocation& endOffset);
+
 private:
-    bool m_dirty; // Is the text modified?
-    bool m_readOnly = false; // Is the text read only?
-    bool m_viewOnly = false; // Is the text not editable, only view?
-    GapBuffer<utf8> m_gapBuffer; // Storage for the text - a gap buffer for efficiency
+    bool m_dirty = false;         // Is the text modified?
+    GapBuffer<utf8> m_gapBuffer;  // Storage for the text - a gap buffer for efficiency
     std::vector<long> m_lineEnds; // End of each line
     ThreadPool m_threadPool;
-    uint32_t m_flags;
+    uint32_t m_fileFlags = FileFlags::NotYetSaved | FileFlags::FirstInit;
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::string m_strName;
-    uint32_t m_fileFlags;
     fs::path m_filePath;
+    std::shared_ptr<ZepTheme> m_spOverrideTheme;
+
+    BufferRange m_selection;
+    tRangeMarkers m_rangeMarkers;
 };
 
 // Notification payload
@@ -187,16 +223,16 @@ enum class BufferMessageType
     TextChanged,
     TextDeleted,
     TextAdded,
+    Initialized
 };
 struct BufferMessage : public ZepMessage
 {
-    BufferMessage(ZepBuffer* pBuff, BufferMessageType messageType, const BufferLocation& startLoc, const BufferLocation& endLoc, const BufferLocation& cursor = BufferLocation{ -1 })
-        : ZepMessage(Msg_Buffer)
+    BufferMessage(ZepBuffer* pBuff, BufferMessageType messageType, const BufferLocation& startLoc, const BufferLocation& endLoc, const BufferLocation& cursor = BufferLocation{-1})
+        : ZepMessage(Msg::Buffer)
         , pBuffer(pBuff)
         , type(messageType)
         , startLocation(startLoc)
         , endLocation(endLoc)
-        , cursorAfter(cursor)
     {
     }
 
@@ -204,6 +240,5 @@ struct BufferMessage : public ZepMessage
     BufferMessageType type;
     BufferLocation startLocation;
     BufferLocation endLocation;
-    BufferLocation cursorAfter;
 };
 } // namespace Zep

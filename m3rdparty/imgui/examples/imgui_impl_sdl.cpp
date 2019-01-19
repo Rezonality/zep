@@ -264,7 +264,7 @@ void ImGui_ImplSDL2_NewFrame(SDL_Window* window)
     ImGuiIO& io = ImGui::GetIO();
     IM_ASSERT(io.Fonts->IsBuilt());     // Font atlas needs to be built, call renderer _NewFrame() function e.g. ImGui_ImplOpenGL3_NewFrame() 
 
-    // Setup display size (every frame to accommodate for window resizing)
+    // Setup display fixed_size (every frame to accommodate for window resizing)
     int w, h;
     int display_w, display_h;
     SDL_GetWindowSize(window, &w, &h);

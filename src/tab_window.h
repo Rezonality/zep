@@ -7,43 +7,59 @@ namespace Zep
 {
 
 class ZepWindow;
+class IZepDisplay;
+struct Region;
 
-struct IZepDisplay;
+enum class WindowMotion
+{
+    Left,
+    Right,
+    Up,
+    Down
+};
 
 // Display state for a single pane of text.
 // Editor operations such as select and change are local to a displayed pane
 class ZepTabWindow : public ZepComponent
 {
 public:
-
     ZepTabWindow(ZepEditor& editor);
     virtual ~ZepTabWindow();
 
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
-
-    ZepWindow* AddWindow(ZepBuffer* pBuffer);
+    ZepWindow* DoMotion(WindowMotion motion);
+    ZepWindow* AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, bool vsplit);
     void RemoveWindow(ZepWindow* pWindow);
-    void SetActiveWindow(ZepWindow* pBuffer) { m_pActiveWindow = pBuffer; }
-    ZepWindow* GetActiveWindow() const { return m_pActiveWindow; }
+    void SetActiveWindow(ZepWindow* pBuffer)
+    {
+        m_pActiveWindow = pBuffer;
+    }
+    ZepWindow* GetActiveWindow() const
+    {
+        return m_pActiveWindow;
+    }
     void CloseActiveWindow();
-    
-    using tWindows = std::vector<ZepWindow*>;
-    const tWindows& GetWindows() const { return m_windows; }
 
-    void SetDisplayRegion(const DisplayRegion& region);
+    using tWindows = std::vector<ZepWindow*>;
+    using tWindowRegions = std::map<ZepWindow*, std::shared_ptr<Region>>;
+    const tWindows& GetWindows() const
+    {
+        return m_windows;
+    }
+
+    void SetDisplayRegion(const NRectf& region, bool force = false);
 
     void Display();
 
 private:
-    ZepEditor& m_editor;                            // Editor that owns this window
-    DisplayRegion m_windowRegion;                 // region of the display we are showing on.
-    DisplayRegion m_buffersRegion;                   // region of the display for text.
-
-    DisplayRegion m_lastRegion;
+    ZepEditor& m_editor;    // Editor that owns this window
+    NRectf m_lastRegionRect;
 
     tWindows m_windows;
+    tWindowRegions m_windowRegions;
+    std::shared_ptr<Region> m_spRootRegion;
     ZepWindow* m_pActiveWindow = nullptr;
 };
 
-} // Zep
+} // namespace Zep

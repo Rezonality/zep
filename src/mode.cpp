@@ -10,7 +10,6 @@ namespace Zep
 
 ZepMode::ZepMode(ZepEditor& editor)
     : ZepComponent(editor)
-    , m_currentMode(EditorMode::Normal)
 {
 }
 
@@ -27,6 +26,11 @@ ZepWindow* ZepMode::GetCurrentWindow() const
     return nullptr;
 }
 
+EditorMode ZepMode::GetEditorMode() const
+{
+    return m_currentMode;
+}
+
 void ZepMode::AddCommandText(std::string strText)
 {
     for (auto& ch : strText)
@@ -37,7 +41,7 @@ void ZepMode::AddCommandText(std::string strText)
 
 void ZepMode::AddCommand(std::shared_ptr<ZepCommand> spCmd)
 {
-    if (GetCurrentWindow() && GetCurrentWindow()->GetBuffer().IsViewOnly())
+    if (GetCurrentWindow() && GetCurrentWindow()->GetBuffer().TestFlags(FileFlags::Locked))
     {
         // Ignore commands on buffers because we are view only,
         // and all commands currently modify the buffer!
@@ -50,7 +54,7 @@ void ZepMode::AddCommand(std::shared_ptr<ZepCommand> spCmd)
     // Can't redo anything beyond this point
     std::stack<std::shared_ptr<ZepCommand>> empty;
     m_redoStack.swap(empty);
-                
+
     if (spCmd->GetCursorAfter() != -1)
     {
         GetCurrentWindow()->SetBufferCursor(spCmd->GetCursorAfter());
@@ -70,6 +74,11 @@ void ZepMode::Redo()
             if (spCommand->GetFlags() & CommandFlags::GroupBoundary)
             {
                 inGroup = !inGroup;
+            }
+
+            if (spCommand->GetCursorAfter() != -1)
+            {
+                GetCurrentWindow()->SetBufferCursor(spCommand->GetCursorAfter());
             }
 
             m_undoStack.push(spCommand);
@@ -97,6 +106,11 @@ void ZepMode::Undo()
                 inGroup = !inGroup;
             }
 
+            if (spCommand->GetCursorBefore() != -1)
+            {
+                GetCurrentWindow()->SetBufferCursor(spCommand->GetCursorBefore());
+            }
+
             m_redoStack.push(spCommand);
             m_undoStack.pop();
         }
@@ -107,21 +121,9 @@ void ZepMode::Undo()
     } while (inGroup);
 }
 
-void ZepMode::UpdateVisualSelection()
+NVec2i ZepMode::GetVisualRange() const
 {
-    // Visual mode update - after a command
-    if (m_currentMode == EditorMode::Visual)
-    {
-        // Update the visual range
-        if (m_lineWise)
-        {
-            m_visualEnd = GetCurrentWindow()->GetBuffer().GetLinePos(GetCurrentWindow()->GetBufferCursor(), LineLocation::BeyondLineEnd) - 1;
-        }
-        else
-        {
-            m_visualEnd = GetCurrentWindow()->GetBufferCursor();
-        }
-        GetCurrentWindow()->SetSelectionRange(m_visualBegin, m_visualEnd);
-    }
+    return NVec2i(m_visualBegin, m_visualEnd);
 }
+
 } // namespace Zep

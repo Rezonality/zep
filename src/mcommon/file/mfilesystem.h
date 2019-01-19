@@ -1,32 +1,41 @@
 #pragma once
 
-#include "config_shared.h"
-#include "utils/stringutils.h"
-#include <vector>
+#include "common_namespace.h"
+#include "mcommon/string/stringutils.h"
+#include "mcommon/file/file.h"
 
-#if TARGET_MAC == 1
-
+#include <system_error>
+#include <chrono>
+#include <sstream>
 #include <fstream>
-#include <iostream>
+
+// For testing, we _can_ compile these functions as part of a 
+// PC build, but it shouldn't be used typically.
+// They will all go away when the Mac side has std::filesystem!
+#if !(TARGET_PC)
+#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <chrono>
+#else
+#include "direct.h"
+#define PATH_MAX 1024
+#endif
 
-namespace fs
+#include <stdio.h>
+#include <limits.h>
+
+namespace COMMON_NAMESPACE
 {
-
-//using namespace Zep;
 
 // NOTE:
 // This is a very simple implementation of the <filesystem> functionality in CPP 14/17.
-// It is not meant to be production code, but is enough to get this code working on a Mac, on which I can't get a 
+// It is not meant to be production code, but is enough to get this code working on a Mac, on which I can't get a
 // working version of <filesystem>.
 // I will remove this when I figure it out, or the compiler catches up ;)
 // I'll also try to make this code more tested/functional until that time
 
 class filesystem_error : public std::system_error
 {
-
 };
 typedef std::chrono::system_clock::time_point file_time_type;
 class path
@@ -36,13 +45,11 @@ public:
     path(const std::string& strPath = std::string())
         : m_strPath(strPath)
     {
-
     }
 
     path(const char* pszPath)
         : m_strPath(pszPath)
     {
-
     }
 
     bool empty() const
@@ -64,9 +71,14 @@ public:
         return path(name + ext);
     }
 
-    bool is_relative() const
+    bool has_filename() const
     {
-        return !is_absolute();
+        return !filename().string().empty();
+    }
+
+    bool has_extension() const
+    {
+        return !extension().string().empty();
     }
 
     bool is_absolute() const
@@ -76,9 +88,16 @@ public:
 
     path extension() const
     {
-        std::string name, ext;
-        split(name, ext);
-        return ext;
+        if (!has_filename())
+            return path();
+
+        auto str = filename().string();
+        size_t dot = str.find_last_of(".");
+        if (dot != std::string::npos)
+        {
+            return str.substr(dot, str.length() - dot);
+        }
+        return path();
     }
 
     path parent_path() const
@@ -91,7 +110,6 @@ public:
         }
         return path("");
     }
-
 
     path& replace_extension(const std::string& extension)
     {
@@ -129,29 +147,41 @@ public:
         }
     }
 
-    const char* c_str() const { return m_strPath.c_str(); }
-    std::string string() const { return m_strPath; }
+    const char* c_str() const
+    {
+        return m_strPath.c_str();
+    }
+    std::string string() const
+    {
+        return m_strPath;
+    }
 
-    bool operator == (const path& rhs) const { return m_strPath == rhs.string(); }
+    bool operator==(const path& rhs) const
+    {
+        return m_strPath == rhs.string();
+    }
 
-    path operator / (const path& rhs) const
+    path operator/(const path& rhs) const
     {
         std::string temp = m_strPath;
-        Zep::StringUtils::RTrim(temp, "\\/");
+        RTrim(temp, "\\/");
         return path(temp + "/" + rhs.string());
     }
 
-    operator std::string() const { return m_strPath; }
+    operator std::string() const
+    {
+        return m_strPath;
+    }
 
-    bool operator < (const path& rhs) const
+    bool operator<(const path& rhs) const
     {
         return m_strPath < rhs.string();
     }
 
     std::vector<std::string>::const_iterator begin()
     {
-        std::string can = Zep::StringUtils::ReplaceString(m_strPath, "\\", "/");
-        m_components = Zep::StringUtils::Split(can, "/");
+        std::string can = string_replace(m_strPath, "\\", "/");
+        m_components = string_split(can, "/");
         return m_components.begin();
     }
 
@@ -159,6 +189,7 @@ public:
     {
         return m_components.end();
     }
+
 private:
     std::vector<std::string> m_components;
     std::string m_strPath;
@@ -166,17 +197,28 @@ private:
 
 inline bool exists(const path& path)
 {
-    struct stat buffer;
-    if (path.string().empty())
+    std::ifstream ifile(path.string());
+    return (bool)ifile;
+}
+
+inline path current_path()
+{
+    char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd)) != NULL)
     {
-        return false;
+        return path(std::string(cwd));
     }
-    return stat(path.c_str(), &buffer) == 0;
+    return path();
 }
 
 inline path canonical(const path& input)
 {
-    return path(Zep::StringUtils::ReplaceString(input.string(), "\\", "/"));
+    return path(string_replace(input.string(), "\\", "/"));
+}
+
+inline bool equivalent(const path& a, const path& b)
+{
+    return canonical(a).string() == canonical(b).string();
 }
 
 inline path absolute(const path& input)
@@ -184,11 +226,11 @@ inline path absolute(const path& input)
     // Read the comments at the top of this file; this is certainly incorrect, and doesn't handle ../
     // It is sufficient for what we need though
     auto p = canonical(input);
-    auto strAbs = Zep::StringUtils::ReplaceString(p.string(), "/.", "");
+    auto strAbs = string_replace(p.string(), "/.", "");
     return path(strAbs);
 }
 
-inline std::ostream& operator << (std::ostream& rhs, const path& p)
+inline std::ostream& operator<<(std::ostream& rhs, const path& p)
 {
     rhs << p.string();
     return rhs;
@@ -204,8 +246,8 @@ enum
 
 inline bool copy_file(const path& source, const path& dest, uint32_t options)
 {
-    std::ifstream  src(source.string(), std::ios::binary);
-    std::ofstream  dst(dest.string(), std::ios::binary);
+    std::ifstream src(source.string(), std::ios::binary);
+    std::ofstream dst(dest.string(), std::ios::binary);
     if (!src.is_open() || !dst.is_open())
     {
         return false;
@@ -223,7 +265,7 @@ inline bool isDirExist(const std::string& path)
         return false;
     }
     return (info.st_mode & _S_IFDIR) != 0;
-#else 
+#else
     struct stat info;
     if (stat(path.c_str(), &info) != 0)
     {
@@ -246,32 +288,32 @@ inline bool makePath(const std::string& path)
 
     switch (errno)
     {
-    case ENOENT:
-        // parent didn't exist, try to create it
-    {
-        auto pos = path.find_last_of('/');
-        if (pos == std::string::npos)
+        case ENOENT:
+            // parent didn't exist, try to create it
+            {
+                auto pos = path.find_last_of('/');
+                if (pos == std::string::npos)
 #if defined(_WIN32)
-            pos = path.find_last_of('\\');
-        if (pos == std::string::npos)
+                    pos = path.find_last_of('\\');
+                if (pos == std::string::npos)
 #endif
-            return false;
-        if (!makePath(path.substr(0, pos)))
-            return false;
-    }
-    // now, try to create again
+                    return false;
+                if (!makePath(path.substr(0, pos)))
+                    return false;
+            }
+            // now, try to create again
 #if defined(_WIN32)
-    return 0 == _mkdir(path.c_str());
-#else 
-    return 0 == mkdir(path.c_str(), mode);
+            return 0 == _mkdir(path.c_str());
+#else
+            return 0 == mkdir(path.c_str(), mode);
 #endif
 
-    case EEXIST:
-        // done!
-        return isDirExist(path);
+        case EEXIST:
+            // done!
+            return isDirExist(path);
 
-    default:
-        return false;
+        default:
+            return false;
     }
 }
 inline bool create_directories(const path& source)
@@ -301,28 +343,5 @@ inline bool is_directory(const path& source)
     }
     return false;
 }
-} // fs namespace
 
-#else
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem::v1;
-#endif
-
-#include <functional>
-
-namespace Zep
-{
-std::string file_read(const fs::path& fileName);
-bool file_write(const fs::path& fileName, const void* pData, size_t size);
-fs::path file_get_relative_path(fs::path from, fs::path to);
-fs::path file_get_documents_path();
-std::vector<fs::path> file_gather_files(const fs::path& root);
-
-// File watcher
-using fileCB = std::function<void(const fs::path&)>;
-void file_init_dir_watch(const fs::path& dir, fileCB callback);
-void file_destroy_dir_watch();
-void file_update_dir_watch();
-
-}
-
+} // namespace COMMON_NAMESPACE

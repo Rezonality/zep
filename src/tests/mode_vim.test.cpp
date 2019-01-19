@@ -1,12 +1,17 @@
 #include "m3rdparty.h"
+#include "config_app.h"
 #include "src/buffer.h"
 #include "src/display.h"
 #include "src/editor.h"
 #include "src/mode_vim.h"
-#include "src/syntax_glsl.h"
 #include "src/tab_window.h"
 #include "src/window.h"
 #include <gtest/gtest.h>
+
+// TESTS
+// TODO:
+// - A check that navigation up/down on wrapped lines is correct.  Needs to setup a window with a long buffer 
+// line that wraps, and that navigation moves correctly
 
 using namespace Zep;
 class VimTest : public testing::Test
@@ -16,19 +21,14 @@ public:
     {
         // Disable threads for consistent tests, at the expense of not catching thread errors!
         // TODO : Fix/understand test failures with threading
-        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZepEditorFlags::DisableThreads);
+        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZEP_ROOT, ZepEditorFlags::DisableThreads);
         spMode = std::make_shared<ZepMode_Vim>(*spEditor);
-        pBuffer = spEditor->AddBuffer("Test Buffer");
-
-        // Add a syntax highlighting checker, to increase test coverage
-        // (seperate tests to come)
-        auto spSyntax = std::make_shared<ZepSyntaxGlsl>(*pBuffer);
-        pBuffer->SetSyntax(std::static_pointer_cast<ZepSyntax>(spSyntax));
+        pBuffer = spEditor->GetEmptyBuffer("Test Buffer");
 
         pTabWindow = spEditor->GetActiveTabWindow();
         pWindow = spEditor->GetActiveTabWindow()->GetActiveWindow();
 
-        // Setup editor with a default size so that text doesn't wrap and confuse the tests!
+        // Setup editor with a default fixed_size so that text doesn't wrap and confuse the tests!
         spEditor->SetDisplayRegion(NVec2f(0.0f, 0.0f), NVec2f(1024.0f, 1024.0f));
 
         pWindow->SetBufferCursor(0);
@@ -130,14 +130,13 @@ TEST_F(VimTest, ESCAPE)
 
 TEST_F(VimTest, RETURN)
 {
-    /*spBuffer->SetText("one\ntwo");
+    pBuffer->SetText("one\ntwo");
     spMode->AddKeyPress(ExtKeys::RETURN);
-    ASSERT_EQ(pWindow->GetCursor().y, 1);
+    ASSERT_EQ(pWindow->BufferToDisplay().y, 1);
 
     spMode->AddCommandText("li");
     spMode->AddKeyPress(ExtKeys::RETURN);
-    ASSERT_STREQ(spBuffer->GetText().string().c_str(), "ne\ntwo");
-    */
+    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "one\nt\nwo");
 }
 
 TEST_F(VimTest, TAB)
@@ -160,7 +159,16 @@ TEST_F(VimTest, BACKSPACE)
     spMode->AddCommandText("lli");
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
     ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hllo");
+   
+    // Check that appending on the line then hitting backspace removes the last char
+    // A bug that showed up at some point
+    pBuffer->SetText("AB");
+    spMode->AddKeyPress(ExtKeys::ESCAPE);
+    spMode->AddCommandText("AC");
+    spMode->AddKeyPress(ExtKeys::BACKSPACE);
+    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "AB");
 }
+
 // The various rules of vim keystrokes are hard to consolidate.
 // diw deletes inner word for example, but also deletes just whitespace if you are on it.
 // daw deletes the whole word, but also the first spaces up to it, or the last spaces after it....
@@ -247,8 +255,8 @@ COMMAND_TEST(delete_cW, "one two! three", "llllcWabc", "one abc three");
 // paste
 COMMAND_TEST(paste_p_at_end_cr, "(one) two three\r\n", "vllllxlllllllllllljp", " two three\n(one)"); // Will replace \r
 COMMAND_TEST(paste_p_at_end, "(one) two three", "vllllxllllllllllllp", " two three(one)");
+COMMAND_TEST(paste_p_middle, "(one) two three", "llllllvlylp", "(one) twtwo three");
 COMMAND_TEST(paste_P_at_end, "(one) two three", "vllllxllllllllllllP", " two thre(one)e");
-COMMAND_TEST(paste_P_middle, "(one) two three", "llllllvlylp", "(one) twtwo three");
 COMMAND_TEST(paste_p_linewise, "(one)\ntwo\n", "Vyjp", "(one)\ntwo\n(one)\n");
 COMMAND_TEST(paste_P_linewise, "(one)\ntwo\n", "VyjP", "(one)\n(one)\ntwo\n");
 
@@ -258,6 +266,7 @@ COMMAND_TEST(copy_to_register_and_append_paste, "(one)", "vll\"rylllv\"Ry\"Rp", 
 COMMAND_TEST(copy_to_null_register_and_paste, "(one)", "vll\"_yllllll\"rp", "(one)");
 
 COMMAND_TEST(copy_yy, "(one)", "yyp", "(one)(one)");
+COMMAND_TEST(copy_yy_paste_line, "one\ntwo", "yyp", "one\none\ntwo");
 COMMAND_TEST(copy_visual_y, "(one)", "vllyp", "((onone)");
 
 // Todo; check syntax highlight result is actually correct during test!
@@ -304,11 +313,27 @@ COMMAND_TEST_RET(invalid_command, "one", ":invalid", "one")
 COMMAND_TEST(visual_switch_v, "one", "lvlv", "one");
 COMMAND_TEST(visual_switch_V, "one", "lVlV", "one");
 
+COMMAND_TEST(chage_to, "one two", "ctthey", "heytwo");
+
+COMMAND_TEST(chage_to_digit, "one 1wo", "ct1hey", "hey1wo");
+
 #define CURSOR_TEST(name, source, command, xcoord, ycoord) \
     TEST_F(VimTest, name)                                  \
     {                                                      \
         pBuffer->SetText(source);                          \
-        spMode->AddCommandText(command);                   \
+        for (auto& ch : command)                           \
+        {                                                  \
+            if (ch == 0)                                   \
+                continue;                                  \
+            if (ch == '\n')                                \
+            {                                              \
+                spMode->AddKeyPress(ExtKeys::RETURN);      \
+            }                                              \
+            else                                           \
+            {                                              \
+                spMode->AddKeyPress(ch);                   \
+            }                                              \
+        }                                                  \
         ASSERT_EQ(pWindow->BufferToDisplay().x, xcoord);   \
         ASSERT_EQ(pWindow->BufferToDisplay().y, ycoord);   \
     };
@@ -329,7 +354,7 @@ CURSOR_TEST(motion_jklh_find_center, "one\ntwo\nthree", "jjlk", 1, 1);
 CURSOR_TEST(motion_goto_endline, "one two", "$", 6, 0);
 CURSOR_TEST(motion_G_goto_enddoc, "one\ntwo", "G", 0, 1);
 CURSOR_TEST(motion_3G, "one\ntwo\nthree\nfour\n", "3G", 0, 2); // Note: Goto line3, offset 2!
-CURSOR_TEST(motion_0G, "one\ntwo\nthree\nfour\n", "0G", 0, 4); // Note: 0 means go to last line 
+CURSOR_TEST(motion_0G, "one\ntwo\nthree\nfour\n", "0G", 0, 4); // Note: 0 means go to last line
 CURSOR_TEST(motion_goto_begindoc, "one\ntwo", "lljgg", 0, 0);
 CURSOR_TEST(motion_goto_beginline, "one two", "lllll0", 0, 0);
 CURSOR_TEST(motion_goto_firstlinechar, "   one two", "^", 3, 0);
@@ -337,6 +362,8 @@ CURSOR_TEST(motion_2w, "one two three", "2w", 8, 0);
 CURSOR_TEST(motion_w, "one! two three", "w", 3, 0);
 CURSOR_TEST(motion_w_space, "one two three", "lllw", 4, 0);
 CURSOR_TEST(motion_W, "one! two three", "W", 5, 0);
+CURSOR_TEST(motion_W_over_line, "one;\ntwo", "W", 0, 1);
+
 CURSOR_TEST(motion_b, "one! two three", "wwb", 3, 0);
 CURSOR_TEST(motion_b_from_non_word, "one! two three", "wwbb", 0, 0);
 CURSOR_TEST(motion_b_endofword, "one! two three", "llb", 0, 0);
@@ -354,3 +381,12 @@ CURSOR_TEST(motion_ge_startspace, "one! two three", "wwjge", 3, 0);
 CURSOR_TEST(motion_0, "one two", "llll0", 0, 0);
 CURSOR_TEST(motion_gg, "one two", "llllgg", 0, 0);
 CURSOR_TEST(motion_dollar, "one two", "ll$", 6, 0);
+CURSOR_TEST(motion_cr_then_escape, "one", "$a\njk", 0, 1);
+CURSOR_TEST(cursor_copy_yy_paste_line, "one\ntwo", "yyp", 0, 1);
+
+CURSOR_TEST(find_a_char, "one two", "ft", 4, 0);
+CURSOR_TEST(find_a_char_fail, "one two", "fz", 0, 0);
+CURSOR_TEST(find_a_char_stay_on_line, "one two\nthree", "fefe", 2, 0);
+CURSOR_TEST(find_a_char_repeat, "one one one", "fo;", 8, 0);
+CURSOR_TEST(find_a_char_num, "one2 one2", "2f2", 8, 0);
+CURSOR_TEST(find_a_char_beside, "ooo", "fo;", 2, 0);

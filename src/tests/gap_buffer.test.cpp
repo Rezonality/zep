@@ -122,7 +122,7 @@ TEST(GapBuffer, Manipulations)
     out = buffer.string(true);
     ASSERT_TRUE(out == "coHello|2|01");
 
-    // This insertion will make more gap space, and pad that with default gap size (4)
+    // This insertion will make more gap space, and pad that with default gap fixed_size (4)
     foo = "A really long string";
     buffer.insert(buffer.begin() + 7, foo.begin(), foo.end());
     out = buffer.string(true);

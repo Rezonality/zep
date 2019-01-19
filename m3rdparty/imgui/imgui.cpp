@@ -278,7 +278,7 @@ CODE
                  //   In a single viewport application, draw_data->DisplayPos will always be (0,0) and draw_data->DisplaySize will always be == io.DisplaySize.
                  //   However, in the interest of supporting multi-viewport applications in the future, always subtract draw_data->DisplayPos from
                  //   clipping bounds to convert them to your viewport space.
-                 // - Note that pcmd->ClipRect contains Min+Max bounds. Some graphics API may use Min+Max, other may use Min+Size (size being Max-Min)
+                 // - Note that pcmd->ClipRect contains Min+Max bounds. Some graphics API may use Min+Max, other may use Min+Size (fixed_size being Max-Min)
                  ImVec2 pos = draw_data->DisplayPos;
                  MyEngineScissor((int)(pcmd->ClipRect.x - pos.x), (int)(pcmd->ClipRect.y - pos.y), (int)(pcmd->ClipRect.z - pos.x), (int)(pcmd->ClipRect.w - pos.y));
 
@@ -417,7 +417,7 @@ CODE
  - 2017/08/09 (1.51) - removed ValueColor() helpers, they are equivalent to calling Text(label) + SameLine() + ColorButton().
  - 2017/08/08 (1.51) - removed ColorEditMode() and ImGuiColorEditMode in favor of ImGuiColorEditFlags and parameters to the various Color*() functions. The SetColorEditOptions() allows to initialize default but the user can still change them with right-click context menu.
                      - changed prototype of 'ColorEdit4(const char* label, float col[4], bool show_alpha = true)' to 'ColorEdit4(const char* label, float col[4], ImGuiColorEditFlags flags = 0)', where passing flags = 0x01 is a safe no-op (hello dodgy backward compatibility!). - check and run the demo window, under "Color/Picker Widgets", to understand the various new options.
-                     - changed prototype of rarely used 'ColorButton(ImVec4 col, bool small_height = false, bool outline_border = true)' to 'ColorButton(const char* desc_id, ImVec4 col, ImGuiColorEditFlags flags = 0, ImVec2 size = ImVec2(0,0))'
+                     - changed prototype of rarely used 'ColorButton(ImVec4 col, bool small_height = false, bool outline_border = true)' to 'ColorButton(const char* desc_id, ImVec4 col, ImGuiColorEditFlags flags = 0, ImVec2 fixed_size = ImVec2(0,0))'
  - 2017/07/20 (1.51) - removed IsPosHoveringAnyWindow(ImVec2), which was partly broken and misleading. ASSERT + redirect user to io.WantCaptureMouse
  - 2017/05/26 (1.50) - removed ImFontConfig::MergeGlyphCenterV in favor of a more multipurpose ImFontConfig::GlyphOffset.
  - 2017/05/01 (1.50) - renamed ImDrawList::PathFill() (rarely used directly) to ImDrawList::PathFillConvex() for clarity.
@@ -470,7 +470,7 @@ CODE
  - 2015/07/02 (1.42) - renamed SetScrollPosHere() to SetScrollFromCursorPos(). Kept inline redirection function (will obsolete).
  - 2015/07/02 (1.42) - renamed GetScrollPosY() to GetScrollY(). Necessary to reduce confusion along with other scrolling functions, because positions (e.g. cursor position) are not equivalent to scrolling amount.
  - 2015/06/14 (1.41) - changed ImageButton() default bg_col parameter from (0,0,0,1) (black) to (0,0,0,0) (transparent) - makes a difference when texture have transparence
- - 2015/06/14 (1.41) - changed Selectable() API from (label, selected, size) to (label, selected, flags, size). Size override should have been rarely be used. Sorry!
+ - 2015/06/14 (1.41) - changed Selectable() API from (label, selected, fixed_size) to (label, selected, flags, fixed_size). Size override should have been rarely be used. Sorry!
  - 2015/05/31 (1.40) - renamed GetWindowCollapsed() to IsWindowCollapsed() for consistency. Kept inline redirection function (will obsolete).
  - 2015/05/31 (1.40) - renamed IsRectClipped() to IsRectVisible() for consistency. Note that return value is opposite! Kept inline redirection function (will obsolete).
  - 2015/05/27 (1.40) - removed the third 'repeat_if_held' parameter from Button() - sorry! it was rarely used and inconsistent. Use PushButtonRepeat(true) / PopButtonRepeat() to enable repeat on desired buttons.
@@ -736,7 +736,7 @@ CODE
       ImGuiIO& io = ImGui::GetIO();
       io.Fonts->AddFontFromFileTTF("myfontfile.ttf", size_in_pixels);
       io.Fonts->GetTexDataAsRGBA32() or GetTexDataAsAlpha8()
-    (default is ProggyClean.ttf, rendered at size 13, embedded in dear imgui's source code)
+    (default is ProggyClean.ttf, rendered at fixed_size 13, embedded in dear imgui's source code)
 
     New programmers: remember that in C/C++ and most programming languages if you want to use a
     backslash \ within a string literal, you need to write it double backslash "\\":
@@ -876,7 +876,7 @@ CODE
 #pragma clang diagnostic ignored "-Wint-to-void-pointer-cast" // warning : cast to 'void *' from smaller integer type 'int'
 #elif defined(__GNUC__)
 #pragma GCC diagnostic ignored "-Wunused-function"          // warning: 'xxxx' defined but not used
-#pragma GCC diagnostic ignored "-Wint-to-pointer-cast"      // warning: cast to pointer from integer of different size
+#pragma GCC diagnostic ignored "-Wint-to-pointer-cast"      // warning: cast to pointer from integer of different fixed_size
 #pragma GCC diagnostic ignored "-Wformat"                   // warning: format '%p' expects argument of type 'void*', but argument 6 has type 'ImGuiWindow*'
 #pragma GCC diagnostic ignored "-Wdouble-promotion"         // warning: implicit conversion from 'float' to 'double' when passing argument to function
 #pragma GCC diagnostic ignored "-Wconversion"               // warning: conversion to 'xxxx' from 'xxxx' may alter its value
@@ -981,7 +981,7 @@ ImGuiStyle::ImGuiStyle()
     WindowPadding           = ImVec2(8,8);      // Padding within a window
     WindowRounding          = 7.0f;             // Radius of window corners rounding. Set to 0.0f to have rectangular windows
     WindowBorderSize        = 1.0f;             // Thickness of border around windows. Generally set to 0.0f or 1.0f. Other values not well tested.
-    WindowMinSize           = ImVec2(32,32);    // Minimum window size
+    WindowMinSize           = ImVec2(32,32);    // Minimum window fixed_size
     WindowTitleAlign        = ImVec2(0.0f,0.5f);// Alignment for title bar text
     ChildRounding           = 0.0f;             // Radius of child window corners rounding. Set to 0.0f to have rectangular child windows
     ChildBorderSize         = 1.0f;             // Thickness of border around child windows. Generally set to 0.0f or 1.0f. Other values not well tested.
@@ -1258,7 +1258,7 @@ void ImStrTrimBlanks(char* buf)
 
 // A) MSVC version appears to return -1 on overflow, whereas glibc appears to return total count (which may be >= buf_size).
 // Ideally we would test for only one of those limits at runtime depending on the behavior the vsnprintf(), but trying to deduct it at compile time sounds like a pandora can of worm.
-// B) When buf==NULL vsnprintf() will return the output size.
+// B) When buf==NULL vsnprintf() will return the output fixed_size.
 #ifndef IMGUI_DISABLE_FORMAT_STRING_FUNCTIONS
 
 #if defined(_MSC_VER) && !defined(vsnprintf)
@@ -1314,7 +1314,7 @@ ImU32 ImHash(const void* data, int data_size, ImU32 seed)
 
     if (data_size > 0)
     {
-        // Known size
+        // Known fixed_size
         while (data_size--)
             crc = (crc >> 8) ^ crc32_lut[(crc & 0xFF) ^ *current++];
     }
@@ -2537,7 +2537,7 @@ static inline bool IsWindowContentHoverable(ImGuiWindow* window, ImGuiHoveredFla
     return true;
 }
 
-// Advance cursor given item size for layout.
+// Advance cursor given item fixed_size for layout.
 void ImGui::ItemSize(const ImVec2& size, float text_offset_y)
 {
     ImGuiContext& g = *GImGui;
@@ -2548,7 +2548,7 @@ void ImGui::ItemSize(const ImVec2& size, float text_offset_y)
     // Always align ourselves on pixel boundaries
     const float line_height = ImMax(window->DC.CurrentLineSize.y, size.y);
     const float text_base_offset = ImMax(window->DC.CurrentLineTextBaseOffset, text_offset_y);
-    //if (g.IO.KeyAlt) window->DrawList->AddRect(window->DC.CursorPos, window->DC.CursorPos + ImVec2(size.x, line_height), IM_COL32(255,0,0,200)); // [DEBUG]
+    //if (g.IO.KeyAlt) window->DrawList->AddRect(window->DC.CursorPos, window->DC.CursorPos + ImVec2(fixed_size.x, line_height), IM_COL32(255,0,0,200)); // [DEBUG]
     window->DC.CursorPosPrevLine = ImVec2(window->DC.CursorPos.x + size.x, window->DC.CursorPos.y);
     window->DC.CursorPos = ImVec2((float)(int)(window->Pos.x + window->DC.Indent.x + window->DC.ColumnsOffset.x), (float)(int)(window->DC.CursorPos.y + line_height + g.Style.ItemSpacing.y));
     window->DC.CursorMaxPos.x = ImMax(window->DC.CursorMaxPos.x, window->DC.CursorPosPrevLine.x);
@@ -2570,8 +2570,8 @@ void ImGui::ItemSize(const ImRect& bb, float text_offset_y)
 }
 
 // Declare item bounding box for clipping and interaction.
-// Note that the size can be different than the one provided to ItemSize(). Typically, widgets that spread over available surface
-// declare their minimum size requirement to ItemSize() and then use a larger region for drawing/interaction, which is passed to ItemAdd().
+// Note that the fixed_size can be different than the one provided to ItemSize(). Typically, widgets that spread over available surface
+// declare their minimum fixed_size requirement to ItemSize() and then use a larger region for drawing/interaction, which is passed to ItemAdd().
 bool ImGui::ItemAdd(const ImRect& bb, ImGuiID id, const ImRect* nav_bb_arg)
 {
     ImGuiContext& g = *GImGui;
@@ -3379,8 +3379,8 @@ static void AddDrawListToDrawData(ImVector<ImDrawList*>* out_list, ImDrawList* d
     // Check that draw_list doesn't use more vertices than indexable (default ImDrawIdx = unsigned short = 2 bytes = 64K vertices per ImDrawList = per window)
     // If this assert triggers because you are drawing lots of stuff manually:
     // A) Make sure you are coarse clipping, because ImDrawList let all your vertices pass. You can use the Metrics window to inspect draw list contents.
-    // B) If you need/want meshes with more than 64K vertices, uncomment the '#define ImDrawIdx unsigned int' line in imconfig.h to set the index size to 4 bytes.
-    //    You'll need to handle the 4-bytes indices to your renderer. For example, the OpenGL example code detect index size at compile-time by doing:
+    // B) If you need/want meshes with more than 64K vertices, uncomment the '#define ImDrawIdx unsigned int' line in imconfig.h to set the index fixed_size to 4 bytes.
+    //    You'll need to handle the 4-bytes indices to your renderer. For example, the OpenGL example code detect index fixed_size at compile-time by doing:
     //      glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, idx_buffer_offset);
     //    Your own engine or render API may use different parameters or function calls to specify index sizes. 2 and 4 bytes indices are generally supported by most API.
     // C) If for some reason you cannot use 4 bytes indices or don't want to, a workaround is to call BeginChild()/EndChild() before reaching the 64K limit to split your draw commands in multiple draw lists.
@@ -3614,7 +3614,7 @@ void ImGui::Render()
 #endif
 }
 
-// Calculate text size. Text can be multi-line. Optionally ignore text after a ## marker.
+// Calculate text fixed_size. Text can be multi-line. Optionally ignore text after a ## marker.
 // CalcTextSize("") should return ImVec2(0.0f, GImGui->FontSize)
 ImVec2 ImGui::CalcTextSize(const char* text, const char* text_end, bool hide_text_after_double_hash, float wrap_width)
 {
@@ -4029,7 +4029,7 @@ static bool ImGui::BeginChildEx(const char* name, ImGuiID id, const ImVec2& size
     ImVec2 size = ImFloor(size_arg);
     const int auto_fit_axises = ((size.x == 0.0f) ? (1 << ImGuiAxis_X) : 0x00) | ((size.y == 0.0f) ? (1 << ImGuiAxis_Y) : 0x00);
     if (size.x <= 0.0f)
-        size.x = ImMax(content_avail.x + size.x, 4.0f); // Arbitrary minimum child size (0.0f causing too much issues)
+        size.x = ImMax(content_avail.x + size.x, 4.0f); // Arbitrary minimum child fixed_size (0.0f causing too much issues)
     if (size.y <= 0.0f)
         size.y = ImMax(content_avail.y + size.y, 4.0f);
     SetNextWindowSize(size);
@@ -4087,7 +4087,7 @@ void ImGui::EndChild()
     else
     {
         ImVec2 sz = window->Size;
-        if (window->AutoFitChildAxises & (1 << ImGuiAxis_X)) // Arbitrary minimum zero-ish child size of 4.0f causes less trouble than a 0.0f
+        if (window->AutoFitChildAxises & (1 << ImGuiAxis_X)) // Arbitrary minimum zero-ish child fixed_size of 4.0f causes less trouble than a 0.0f
             sz.x = ImMax(4.0f, sz.x);
         if (window->AutoFitChildAxises & (1 << ImGuiAxis_Y))
             sz.y = ImMax(4.0f, sz.y);
@@ -4216,7 +4216,7 @@ static ImVec2 CalcSizeAfterConstraint(ImGuiWindow* window, ImVec2 new_size)
     ImGuiContext& g = *GImGui;
     if (g.NextWindowData.SizeConstraintCond != 0)
     {
-        // Using -1,-1 on either X/Y axis to preserve the current size.
+        // Using -1,-1 on either X/Y axis to preserve the current fixed_size.
         ImRect cr = g.NextWindowData.SizeConstraintRect;
         new_size.x = (cr.Min.x >= 0 && cr.Max.x >= 0) ? ImClamp(new_size.x, cr.Min.x, cr.Max.x) : window->SizeFull.x;
         new_size.y = (cr.Min.y >= 0 && cr.Max.y >= 0) ? ImClamp(new_size.y, cr.Min.y, cr.Max.y) : window->SizeFull.y;
@@ -4232,7 +4232,7 @@ static ImVec2 CalcSizeAfterConstraint(ImGuiWindow* window, ImVec2 new_size)
         }
     }
 
-    // Minimum size
+    // Minimum fixed_size
     if (!(window->Flags & (ImGuiWindowFlags_ChildWindow | ImGuiWindowFlags_AlwaysAutoResize)))
     {
         new_size = ImMax(new_size, g.Style.WindowMinSize);
@@ -4260,11 +4260,11 @@ static ImVec2 CalcSizeAutoFit(ImGuiWindow* window, const ImVec2& size_contents)
     }
     else
     {
-        // When the window cannot fit all contents (either because of constraints, either because screen is too small): we are growing the size on the other axis to compensate for expected scrollbar. FIXME: Might turn bigger than DisplaySize-WindowPadding.
+        // When the window cannot fit all contents (either because of constraints, either because screen is too small): we are growing the fixed_size on the other axis to compensate for expected scrollbar. FIXME: Might turn bigger than DisplaySize-WindowPadding.
         const bool is_popup = (window->Flags & ImGuiWindowFlags_Popup) != 0;
         const bool is_menu = (window->Flags & ImGuiWindowFlags_ChildMenu) != 0;
         ImVec2 size_min = style.WindowMinSize;
-        if (is_popup || is_menu) // Popups and menus bypass style.WindowMinSize by default, but we give then a non-zero minimum size to facilitate understanding problematic cases (e.g. empty popups)
+        if (is_popup || is_menu) // Popups and menus bypass style.WindowMinSize by default, but we give then a non-zero minimum fixed_size to facilitate understanding problematic cases (e.g. empty popups)
             size_min = ImMin(size_min, ImVec2(4.0f, 4.0f));
         ImVec2 size_auto_fit = ImClamp(size_contents, size_min, ImMax(size_min, g.IO.DisplaySize - style.DisplaySafeAreaPadding * 2.0f));
         ImVec2 size_auto_fit_after_constraint = CalcSizeAfterConstraint(window, size_auto_fit);
@@ -4411,7 +4411,7 @@ static void ImGui::UpdateManualResize(ImGuiWindow* window, const ImVec2& size_au
         else if (held)
         {
             // Resize from any of the four corners
-            // We don't use an incremental MouseDelta but rather compute an absolute target size based on mouse position
+            // We don't use an incremental MouseDelta but rather compute an absolute target fixed_size based on mouse position
             ImVec2 corner_target = g.IO.MousePos - g.ActiveIdClickOffset + resize_rect.GetSize() * grip.CornerPos; // Corner of the window corresponding to our corner grip
             CalcResizePosSizeFromAnyCorner(window, corner_target, grip.CornerPos, &pos_target, &size_target);
         }
@@ -4458,12 +4458,12 @@ static void ImGui::UpdateManualResize(ImGuiWindow* window, const ImVec2& size_au
             g.NavWindowingToggleLayer = false;
             g.NavDisableMouseHover = true;
             resize_grip_col[0] = GetColorU32(ImGuiCol_ResizeGripActive);
-            // FIXME-NAV: Should store and accumulate into a separate size buffer to handle sizing constraints properly, right now a constraint will make us stuck.
+            // FIXME-NAV: Should store and accumulate into a separate fixed_size buffer to handle sizing constraints properly, right now a constraint will make us stuck.
             size_target = CalcSizeAfterConstraint(window, window->SizeFull + nav_resize_delta);
         }
     }
 
-    // Apply back modified position/size to window
+    // Apply back modified position/fixed_size to window
     if (size_target.x != FLT_MAX)
     {
         window->SizeFull = size_target;
@@ -4570,7 +4570,7 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
         window_pos_set_by_api = (window->SetWindowPosAllowFlags & g.NextWindowData.PosCond) != 0;
         if (window_pos_set_by_api && ImLengthSqr(g.NextWindowData.PosPivotVal) > 0.00001f)
         {
-            // May be processed on the next frame if this is our first frame and we are measuring size
+            // May be processed on the next frame if this is our first frame and we are measuring fixed_size
             // FIXME: Look into removing the branch so everything can go through this same code path for consistency.
             window->SetWindowPosVal = g.NextWindowData.PosVal;
             window->SetWindowPosPivot = g.NextWindowData.PosPivotVal;
@@ -4589,7 +4589,7 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
     }
     if (g.NextWindowData.ContentSizeCond)
     {
-        // Adjust passed "client size" to become a "window size"
+        // Adjust passed "client fixed_size" to become a "window fixed_size"
         window->SizeContentsExplicit = g.NextWindowData.ContentSizeVal;
         if (window->SizeContentsExplicit.y != 0.0f)
             window->SizeContentsExplicit.y += window->TitleBarHeight() + window->MenuBarHeight();
@@ -4622,19 +4622,19 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
 
         // UPDATE CONTENTS SIZE, UPDATE HIDDEN STATUS
 
-        // Update contents size from last frame for auto-fitting (or use explicit size)
+        // Update contents fixed_size from last frame for auto-fitting (or use explicit fixed_size)
         window->SizeContents = CalcSizeContents(window);
         if (window->HiddenFramesRegular > 0)
             window->HiddenFramesRegular--;
         if (window->HiddenFramesForResize > 0)
             window->HiddenFramesForResize--;
 
-        // Hide new windows for one frame until they calculate their size
+        // Hide new windows for one frame until they calculate their fixed_size
         if (window_just_created && (!window_size_x_set_by_api || !window_size_y_set_by_api))
             window->HiddenFramesForResize = 1;
 
-        // Hide popup/tooltip window when re-opening while we measure size (because we recycle the windows)
-        // We reset Size/SizeContents for reappearing popups/tooltips early in this function, so further code won't be tempted to use the old size.
+        // Hide popup/tooltip window when re-opening while we measure fixed_size (because we recycle the windows)
+        // We reset Size/SizeContents for reappearing popups/tooltips early in this function, so further code won't be tempted to use the old fixed_size.
         if (window_just_activated_by_user && (flags & (ImGuiWindowFlags_Popup | ImGuiWindowFlags_Tooltip)) != 0)
         {
             window->HiddenFramesForResize = 1;
@@ -4650,7 +4650,7 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
 
         SetCurrentWindow(window);
 
-        // Lock border size and padding for the frame (so that altering them doesn't cause inconsistencies)
+        // Lock border fixed_size and padding for the frame (so that altering them doesn't cause inconsistencies)
         window->WindowBorderSize = (flags & ImGuiWindowFlags_ChildWindow) ? style.ChildBorderSize : ((flags & (ImGuiWindowFlags_Popup | ImGuiWindowFlags_Tooltip)) && !(flags & ImGuiWindowFlags_Modal)) ? style.PopupBorderSize : style.WindowBorderSize;
         window->WindowPadding = style.WindowPadding;
         if ((flags & ImGuiWindowFlags_ChildWindow) && !(flags & (ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_Popup)) && window->WindowBorderSize == 0.0f)
@@ -4681,7 +4681,7 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
 
         // SIZE
 
-        // Calculate auto-fit size, handle automatic resize
+        // Calculate auto-fit fixed_size, handle automatic resize
         const ImVec2 size_auto_fit = CalcSizeAutoFit(window, window->SizeContents);
         ImVec2 size_full_modified(FLT_MAX, FLT_MAX);
         if ((flags & ImGuiWindowFlags_AlwaysAutoResize) && !window->Collapsed)
@@ -4704,7 +4704,7 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
                 MarkIniSettingsDirty(window);
         }
 
-        // Apply minimum/maximum window size constraints and final size
+        // Apply minimum/maximum window fixed_size constraints and final fixed_size
         window->SizeFull = CalcSizeAfterConstraint(window, window->SizeFull);
         window->Size = window->Collapsed && !(flags & ImGuiWindowFlags_ChildWindow) ? window->TitleBarRect().GetSize() : window->SizeFull;
 
@@ -4713,7 +4713,7 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
         // Update scrollbar status (based on the Size that was effective during last frame or the auto-resized Size).
         if (!window->Collapsed)
         {
-            // When reading the current size we need to read it after size constraints have been applied
+            // When reading the current fixed_size we need to read it after fixed_size constraints have been applied
             float size_x_for_scrollbars = size_full_modified.x != FLT_MAX ? window->SizeFull.x : window->SizeFullAtLastBegin.x;
             float size_y_for_scrollbars = size_full_modified.y != FLT_MAX ? window->SizeFull.y : window->SizeFullAtLastBegin.y;
             window->ScrollbarY = (flags & ImGuiWindowFlags_AlwaysVerticalScrollbar) || ((window->SizeContents.y > size_y_for_scrollbars) && !(flags & ImGuiWindowFlags_NoScrollbar));
@@ -4791,7 +4791,7 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
         if (!window->Collapsed)
             UpdateManualResize(window, size_auto_fit, &border_held, resize_grip_count, &resize_grip_col[0]);
 
-        // Default item width. Make it proportional to window size if window manually resizes
+        // Default item width. Make it proportional to window fixed_size if window manually resizes
         if (window->Size.x > 0.0f && !(flags & ImGuiWindowFlags_Tooltip) && !(flags & ImGuiWindowFlags_AlwaysAutoResize))
             window->ItemWidthDefault = (float)(int)(window->Size.x * 0.65f);
         else
@@ -4862,7 +4862,7 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
             if (flags & ImGuiWindowFlags_MenuBar)
             {
                 ImRect menu_bar_rect = window->MenuBarRect();
-                menu_bar_rect.ClipWith(window->Rect());  // Soft clipping, in particular child window don't have minimum size covering the menu bar so this is useful for them.
+                menu_bar_rect.ClipWith(window->Rect());  // Soft clipping, in particular child window don't have minimum fixed_size covering the menu bar so this is useful for them.
                 window->DrawList->AddRectFilled(menu_bar_rect.Min, menu_bar_rect.Max, GetColorU32(ImGuiCol_MenuBarBg), (flags & ImGuiWindowFlags_NoTitleBar) ? window_rounding : 0.0f, ImDrawCornerFlags_Top);
                 if (style.FrameBorderSize > 0.0f && menu_bar_rect.Max.y < window->Pos.y + window->Size.y)
                     window->DrawList->AddLine(menu_bar_rect.GetBL(), menu_bar_rect.GetBR(), GetColorU32(ImGuiCol_Border), style.FrameBorderSize);
@@ -5012,7 +5012,7 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
             text_r.Min.x += pad_left;
             text_r.Max.x -= pad_right;
             ImRect clip_rect = text_r;
-            clip_rect.Max.x = window->Pos.x + window->Size.x - (p_open ? title_bar_rect.GetHeight() - 3 : style.FramePadding.x); // Match the size of CloseButton()
+            clip_rect.Max.x = window->Pos.x + window->Size.x - (p_open ? title_bar_rect.GetHeight() - 3 : style.FramePadding.x); // Match the fixed_size of CloseButton()
             RenderTextClipped(text_r.Min, text_r.Max, name, NULL, &text_size, style.WindowTitleAlign, &clip_rect);
         }
 
@@ -5092,7 +5092,7 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
 #ifndef IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 bool ImGui::Begin(const char* name, bool* p_open, const ImVec2& size_first_use, float bg_alpha_override, ImGuiWindowFlags flags)
 {
-    // Old API feature: we could pass the initial window size as a parameter. This was misleading because it only had an effect if the window didn't have data in the .ini file.
+    // Old API feature: we could pass the initial window fixed_size as a parameter. This was misleading because it only had an effect if the window didn't have data in the .ini file.
     if (size_first_use.x != 0.0f || size_first_use.y != 0.0f)
         ImGui::SetNextWindowSize(size_first_use, ImGuiCond_FirstUseEver);
 
@@ -5625,7 +5625,7 @@ static void SetWindowPos(ImGuiWindow* window, const ImVec2& pos, ImGuiCond cond)
     const ImVec2 old_pos = window->Pos;
     window->Pos = ImFloor(pos);
     window->DC.CursorPos += (window->Pos - old_pos);    // As we happen to move the window while it is being appended to (which is a bad idea - will smear) let's at least offset the cursor
-    window->DC.CursorMaxPos += (window->Pos - old_pos); // And more importantly we need to adjust this so size calculation doesn't get affected.
+    window->DC.CursorMaxPos += (window->Pos - old_pos); // And more importantly we need to adjust this so fixed_size calculation doesn't get affected.
 }
 
 void ImGui::SetWindowPos(const ImVec2& pos, ImGuiCond cond)
@@ -5770,7 +5770,7 @@ void ImGui::SetNextWindowSizeConstraints(const ImVec2& size_min, const ImVec2& s
 void ImGui::SetNextWindowContentSize(const ImVec2& size)
 {
     ImGuiContext& g = *GImGui;
-    g.NextWindowData.ContentSizeVal = size;  // In Begin() we will add the size of window decorations (title bar, menu etc.) to that to form a SizeContents value.
+    g.NextWindowData.ContentSizeVal = size;  // In Begin() we will add the fixed_size of window decorations (title bar, menu etc.) to that to form a SizeContents value.
     g.NextWindowData.ContentSizeCond = ImGuiCond_Always;
 }
 
@@ -5984,7 +5984,7 @@ void ImGui::SetScrollY(float scroll_y)
 
 void ImGui::SetScrollFromPosY(float pos_y, float center_y_ratio)
 {
-    // We store a target position so centering can occur on the next frame when we are guaranteed to have a known window size
+    // We store a target position so centering can occur on the next frame when we are guaranteed to have a known window fixed_size
     ImGuiWindow* window = GetCurrentWindow();
     IM_ASSERT(center_y_ratio >= 0.0f && center_y_ratio <= 1.0f);
     window->ScrollTarget.y = (float)(int)(pos_y + window->Scroll.y);
@@ -6338,7 +6338,7 @@ void ImGui::OpenPopupEx(ImGuiID id)
     else
     {
         // Gently handle the user mistakenly calling OpenPopup() every frame. It is a programming mistake! However, if we were to run the regular code path, the ui
-        // would become completely unusable because the popup will always be in hidden-while-calculating-size state _while_ claiming focus. Which would be a very confusing
+        // would become completely unusable because the popup will always be in hidden-while-calculating-fixed_size state _while_ claiming focus. Which would be a very confusing
         // situation for the programmer. Instead, we silently allow the popup to proceed, it will keep reappearing and the programming error will be more obvious to understand.
         if (g.OpenPopupStack[current_stack_size].PopupId == id && g.OpenPopupStack[current_stack_size].OpenFrameCount == g.FrameCount - 1)
         {
@@ -6451,7 +6451,7 @@ bool ImGui::BeginPopupEx(ImGuiID id, ImGuiWindowFlags extra_flags)
         ImFormatString(name, IM_ARRAYSIZE(name), "##Popup_%08x", id); // Not recycling, so we can close/open during the same frame
 
     bool is_open = Begin(name, NULL, extra_flags | ImGuiWindowFlags_Popup);
-    if (!is_open) // NB: Begin can return false when the popup is completely clipped (e.g. zero size display)
+    if (!is_open) // NB: Begin can return false when the popup is completely clipped (e.g. zero fixed_size display)
         EndPopup();
 
     return is_open;
@@ -6485,7 +6485,7 @@ bool ImGui::BeginPopupModal(const char* name, bool* p_open, ImGuiWindowFlags fla
         SetNextWindowPos(g.IO.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
     bool is_open = Begin(name, p_open, flags | ImGuiWindowFlags_Popup | ImGuiWindowFlags_Modal | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings);
-    if (!is_open || (p_open && !*p_open)) // NB: is_open can be 'false' when the popup is completely clipped (e.g. zero size display)
+    if (!is_open || (p_open && !*p_open)) // NB: is_open can be 'false' when the popup is completely clipped (e.g. zero fixed_size display)
     {
         EndPopup();
         if (is_open)
@@ -6550,7 +6550,7 @@ ImRect ImGui::GetWindowAllowedExtentRect(ImGuiWindow*)
 }
 
 // r_avoid = the rectangle to avoid (e.g. for tooltip it is a rectangle around the mouse cursor which we want to avoid. for popups it's a small point around the cursor.)
-// r_outer = the visible area rectangle, minus safe area padding. If our popup size won't fit because of safe area padding we ignore it.
+// r_outer = the visible area rectangle, minus safe area padding. If our popup fixed_size won't fit because of safe area padding we ignore it.
 ImVec2 ImGui::FindBestWindowPosForPopupEx(const ImVec2& ref_pos, const ImVec2& size, ImGuiDir* last_dir, const ImRect& r_outer, const ImRect& r_avoid, ImGuiPopupPositionPolicy policy)
 {
     ImVec2 base_pos_clamped = ImClamp(ref_pos, r_outer.Min, r_outer.Max - size);

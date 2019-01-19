@@ -7,7 +7,7 @@ class Timer;
 namespace Zep
 {
 
-struct LineInfo;
+struct SpanInfo;
 
 enum class VimMotion
 {
@@ -52,7 +52,7 @@ enum class CommandOperation
 struct CommandContext
 {
     CommandContext(const std::string& commandIn, ZepMode_Vim& md, uint32_t lastK, uint32_t modifierK, EditorMode editorMode);
-   
+
     // Parse the command into:
     // [count1] opA [count2] opB
     // And generate (count1 * count2), opAopB
@@ -65,14 +65,15 @@ struct CommandContext
     std::string commandText;
     std::string commandWithoutCount;
     std::string command;
-    //const LineInfo* pLineInfo = nullptr;
-    BufferLocation beginRange{ -1 };
-    BufferLocation endRange{ -1 };
+
+    const SpanInfo* pLineInfo = nullptr;
+    BufferLocation beginRange{-1};
+    BufferLocation endRange{-1};
     ZepBuffer& buffer;
 
     // Cursor State
-    BufferLocation bufferCursor{ -1 };
-    BufferLocation cursorAfter{ -1 };
+    BufferLocation bufferCursor{-1};
+    BufferLocation cursorAfterOverride{-1};
 
     // Register state
     std::stack<char> registers;
@@ -100,28 +101,48 @@ public:
     virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
     virtual void Begin() override;
 
-    virtual const char* Name() const override { return "Vim"; }
+    static const char* StaticName()
+    {
+        return "Vim";
+    }
+    virtual const char* Name() const override
+    {
+        return StaticName();
+    }
 
-    const std::string& GetLastCommand() const { return m_lastCommand; }
-    const int GetLastCount() const { return m_lastCount; }
+    const std::string& GetLastCommand() const
+    {
+        return m_lastCommand;
+    }
+    const int GetLastCount() const
+    {
+        return m_lastCount;
+    }
 
     virtual void PreDisplay() override;
+
 private:
+    void ClampCursorForMode();
+    void UpdateVisualSelection();
     void HandleInsert(uint32_t key);
-    bool GetOperationRange(const std::string& op, EditorMode mode, BufferLocation& beginRange, BufferLocation& endRange, BufferLocation& cursorAfter) const;
+    bool GetOperationRange(const std::string& op, EditorMode mode, BufferLocation& beginRange, BufferLocation& endRange) const;
     void SwitchMode(EditorMode mode);
     void ResetCommand();
     void Init();
     bool GetCommand(CommandContext& context);
+    bool HandleExCommand(const std::string& command, const char key);
 
     std::string m_currentCommand;
     std::string m_lastCommand;
-    int m_lastCount;
+    int m_lastCount = 0;
     std::string m_lastInsertString;
 
+    std::string m_lastFind;
+    SearchDirection m_lastFindDirection = SearchDirection::Forward;
+
     bool m_pendingEscape = false;
-    std::shared_ptr<Timer> m_spInsertEscapeTimer;
+    timer m_insertEscapeTimer;
     VimSettings m_settings;
 };
 
-} // Zep
+} // namespace Zep

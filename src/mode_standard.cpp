@@ -1,13 +1,13 @@
-#include "utils/stringutils.h"
 #include "mode_standard.h"
-#include "window.h"
 #include "commands.h"
+#include "mcommon/string/stringutils.h"
+#include "window.h"
 
 // Note:
 // This is a version of the buffer that behaves like notepad.
 // It is basic, but can easily be extended
 
-// STANDARD: 
+// STANDARD:
 //
 // DONE:
 // -----
@@ -32,22 +32,40 @@ ZepMode_Standard::ZepMode_Standard(ZepEditor& editor)
 
 ZepMode_Standard::~ZepMode_Standard()
 {
-
 }
 
 void ZepMode_Standard::Begin()
 {
     SwitchMode(EditorMode::Insert);
+    GetCurrentWindow()->SetCursorType(CursorType::Insert);
 }
 
-void ZepMode_Standard::SwitchMode(EditorMode mode)
+bool ZepMode_Standard::SwitchMode(EditorMode mode)
 {
     assert(mode == EditorMode::Insert || mode == EditorMode::Visual);
+    if (mode == m_currentMode)
+    {
+        return false;
+    }
+
     m_currentMode = mode;
+
     if (GetCurrentWindow())
     {
-        GetCurrentWindow()->SetCursorMode(mode == EditorMode::Insert ? CursorMode::Insert : CursorMode::Visual);
+        // Cursor is always in insert mode for standard
+        GetCurrentWindow()->SetCursorType(CursorType::Insert);
     }
+
+    if (mode == EditorMode::Insert)
+    {
+        m_visualBegin = m_visualEnd = 0;
+    }
+    else
+    {
+        m_visualBegin = GetCurrentWindow()->GetBufferCursor();
+        m_visualEnd = m_visualBegin;
+    }
+    return true;
 }
 
 void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
@@ -58,10 +76,9 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     bool pasteText = false;
     bool lineWise = false;
     auto& buffer = GetCurrentWindow()->GetBuffer();
-    BufferLocation bufferCursor =GetCurrentWindow()->GetBufferCursor();
+    BufferLocation bufferCursor = GetCurrentWindow()->GetBufferCursor();
     BufferLocation startOffset = bufferCursor;
     BufferLocation endOffset = buffer.LocationFromOffsetByChars(bufferCursor, long(ch.length()));
-    BufferLocation cursorAfter = endOffset;
 
     enum class CommandOperation
     {
@@ -73,148 +90,182 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     };
     CommandOperation op = CommandOperation::None;
 
+    auto normalizeOffsets = [&]() {
+        // Clamp and orient the correct way around
+        startOffset = buffer.Clamp(startOffset);
+        endOffset = buffer.Clamp(endOffset);
+        if (startOffset > endOffset)
+        {
+            std::swap(startOffset, endOffset);
+        }
+    };
+
     if (key == ExtKeys::ESCAPE)
     {
         SwitchMode(EditorMode::Insert);
+        return;
     }
-    else if (key == 'x' && (modifierKeys & ModifierKey::Ctrl))
-    {
-        op = CommandOperation::Delete;
-        copyRegion = true;
-        if (m_currentMode == EditorMode::Visual)
-        {
-            startOffset = m_visualBegin;
-            endOffset = m_visualEnd;
-            cursorAfter = startOffset;
-        }
-        else
-        {
-            lineWise = true;
-            cursorAfter = startOffset;
-            startOffset = buffer.GetLinePos(bufferCursor, LineLocation::LineBegin);
-            endOffset = buffer.GetLinePos(bufferCursor, LineLocation::BeyondLineEnd);
-        }
-    }
-    else if (key == 'c' && (modifierKeys & ModifierKey::Ctrl))
-    {
-        copyRegion = true;
-        if (m_currentMode == EditorMode::Visual)
-        {
-            startOffset = m_visualBegin;
-            endOffset = m_visualEnd;
-            cursorAfter = startOffset;
-        }
-        else
-        {
-            lineWise = true;
-            cursorAfter = startOffset;
-            startOffset = buffer.GetLinePos(bufferCursor, LineLocation::LineBegin);
-            endOffset = buffer.GetLinePos(bufferCursor, LineLocation::BeyondLineEnd);
-        }
-    }
-    else if (key == 'v' && (modifierKeys & ModifierKey::Ctrl))
-    {
-        bool boundary = false;
-        if (m_currentMode == EditorMode::Visual)
-        {
-            // Delete existing selection
-            auto cmd = std::make_shared<ZepCommand_DeleteRange>(buffer,
-                m_visualBegin,
-                m_visualEnd,
-                m_visualBegin
-                );
-            cmd->SetFlags(CommandFlags::GroupBoundary);
-            AddCommand(std::static_pointer_cast<ZepCommand>(cmd));
-            boundary = true;
-            startOffset = m_visualBegin;
-        }
 
-        auto pRegister = &GetEditor().GetRegister('"');
-        if (!pRegister->text.empty())
-        {
-            cursorAfter = buffer.LocationFromOffset(startOffset, long(StringUtils::Utf8Length(pRegister->text.c_str())) - 1);
-        
-            // Simple insert
-            auto cmd = std::make_shared<ZepCommand_Insert>(buffer,
-                startOffset,
-                pRegister->text,
-                cursorAfter
-                );
-            if (boundary)
+    bool begin_shift = false;
+    bool return_to_insert = false;
+    switch (key)
+    {
+        case ExtKeys::DOWN:
+        case ExtKeys::UP:
+        case ExtKeys::LEFT:
+        case ExtKeys::RIGHT:
+        case ExtKeys::END:
+        case ExtKeys::HOME:
+        case ExtKeys::PAGEDOWN:
+        case ExtKeys::PAGEUP:
+            if (modifierKeys & ModifierKey::Shift)
             {
-                cmd->SetFlags(CommandFlags::GroupBoundary);
+                begin_shift = SwitchMode(EditorMode::Visual);
             }
-            AddCommand(std::static_pointer_cast<ZepCommand>(cmd));
+            else
+            {
+                // Immediate switch back to insert
+                SwitchMode(EditorMode::Insert);
+            }
+            break;
+        default:
+            return_to_insert = true;
+            break;
+    }
+
+    // CTRL + ...
+    if (modifierKeys & ModifierKey::Ctrl)
+    {
+        // Undo
+        if (key == 'z')
+        {
+            Undo();
+            return;
+        }
+        // Redo
+        else if (key == 'y')
+        {
+            Redo();
+            return;
+        }
+        // Motions fall through to selection code
+        else if (key == ExtKeys::RIGHT)
+        {
+            auto target = buffer.StandardCtrlMotion(bufferCursor, SearchDirection::Forward);
+            GetCurrentWindow()->SetBufferCursor(target.second);
+        }
+        else if (key == ExtKeys::LEFT)
+        {
+            auto target = buffer.StandardCtrlMotion(bufferCursor, SearchDirection::Backward);
+            GetCurrentWindow()->SetBufferCursor(target.second);
+        }
+        else if (key == ExtKeys::HOME)
+        {
+            // CTRL HOME = top of file
+            GetCurrentWindow()->SetBufferCursor(BufferLocation{0});
+        }
+        else if (key == ExtKeys::END)
+        {
+            // CTRL END = end of file
+            GetCurrentWindow()->SetBufferCursor(buffer.EndLocation());
+        }
+        // Cut/Copy
+        else if (key == 'x')
+        {
+            // A delete, but also a copy!
+            op = CommandOperation::Delete;
+            copyRegion = true;
+            if (m_currentMode == EditorMode::Visual)
+            {
+                startOffset = m_visualBegin;
+                endOffset = m_visualEnd;
+                normalizeOffsets();
+            }
+            else
+            {
+                lineWise = true;
+                startOffset = buffer.GetLinePos(bufferCursor, LineLocation::LineBegin);
+                endOffset = buffer.GetLinePos(bufferCursor, LineLocation::BeyondLineEnd);
+            }
+        }
+        // Copy
+        else if (key == 'c')
+        {
+            op = CommandOperation::Copy;
+            if (m_currentMode == EditorMode::Visual)
+            {
+                startOffset = m_visualBegin;
+                endOffset = m_visualEnd;
+                normalizeOffsets();
+                return_to_insert = false;
+            }
+            else
+            {
+                lineWise = true;
+                startOffset = buffer.GetLinePos(bufferCursor, LineLocation::LineBegin);
+                endOffset = buffer.GetLinePos(bufferCursor, LineLocation::BeyondLineEnd);
+            }
+        }
+        // Paste
+        else if (key == 'v')
+        {
+            auto pRegister = &GetEditor().GetRegister('"');
+            if (!pRegister->text.empty())
+            {
+                ch = pRegister->text;
+            }
+            else
+            {
+                ch.clear();
+            }
+            op = CommandOperation::Insert;
+            startOffset = bufferCursor;
+            endOffset = startOffset + BufferLocation(ch.length());
         }
     }
     else if (key == ExtKeys::HOME)
     {
-        if (modifierKeys & ModifierKey::Ctrl)
-        {
-            GetCurrentWindow()->SetBufferCursor(BufferLocation{ 0 });
-        }
-        else
-        {
-            auto pos = buffer.GetLinePos(bufferCursor, LineLocation::LineFirstGraphChar);
-            GetCurrentWindow()->SetBufferCursor(pos);
-        }
+        // Beginning of line
+        auto pos = buffer.GetLinePos(bufferCursor, LineLocation::LineFirstGraphChar);
+        GetCurrentWindow()->SetBufferCursor(pos);
+        GetEditor().ResetCursorTimer();
     }
     else if (key == ExtKeys::END)
     {
-        if (modifierKeys & ModifierKey::Ctrl)
-        {
-            GetCurrentWindow()->SetBufferCursor(buffer.EndLocation());
-        }
-        else
-        {
-            auto pos = buffer.GetLinePos(bufferCursor, LineLocation::BeyondLineEnd);
-            GetCurrentWindow()->SetBufferCursor(pos);
-        }
+        auto pos = buffer.GetLinePos(bufferCursor, LineLocation::LineCRBegin);
+        GetCurrentWindow()->SetBufferCursor(pos);
+        GetEditor().ResetCursorTimer();
     }
     else if (key == ExtKeys::RIGHT)
     {
-        if (modifierKeys & ModifierKey::Ctrl)
-        {
-            auto target = buffer.WordMotion(bufferCursor, SearchType::Word, SearchDirection::Forward);
-            GetCurrentWindow()->SetBufferCursor(target);
-        }
-        else
-        {
-            GetCurrentWindow()->SetBufferCursor(bufferCursor + 1);
-        }
+        GetCurrentWindow()->SetBufferCursor(bufferCursor + 1);
+        GetEditor().ResetCursorTimer();
     }
     else if (key == ExtKeys::LEFT)
     {
-        if (modifierKeys & ModifierKey::Ctrl)
-        {
-            auto target = buffer.WordMotion(bufferCursor, SearchType::Word, SearchDirection::Backward);
-            GetCurrentWindow()->SetBufferCursor(target);
-        }
-        else
-        {
-            GetCurrentWindow()->SetBufferCursor(bufferCursor - 1);
-       }
+        GetCurrentWindow()->SetBufferCursor(bufferCursor - 1);
+        GetEditor().ResetCursorTimer();
     }
     else if (key == ExtKeys::UP)
     {
-        GetCurrentWindow()->MoveCursorY(-1);
+        auto start_x = GetCurrentWindow()->BufferToDisplay().x;
+        GetCurrentWindow()->MoveCursorY(-1, LineLocation::LineCRBegin);
     }
     else if (key == ExtKeys::DOWN)
     {
-        GetCurrentWindow()->MoveCursorY(1);
+        auto start_x = GetCurrentWindow()->BufferToDisplay().x;
+        GetCurrentWindow()->MoveCursorY(1, LineLocation::LineCRBegin);
     }
     else if (key == ExtKeys::RETURN)
     {
         ch = "\n";
         op = CommandOperation::Insert;
-        cursorAfter = buffer.LocationFromOffsetByChars(startOffset, long(ch.length()));
     }
     else if (key == ExtKeys::TAB)
     {
         // 4 Spaces, obviously :)
         ch = "    ";
         op = CommandOperation::Insert;
-        cursorAfter = buffer.LocationFromOffsetByChars(startOffset, long(ch.length()));
     }
     else if (key == ExtKeys::DEL)
     {
@@ -223,12 +274,11 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         {
             startOffset = m_visualBegin;
             endOffset = m_visualEnd;
-            cursorAfter = startOffset;
+            normalizeOffsets();
         }
         else
         {
             endOffset = buffer.LocationFromOffsetByChars(startOffset, 1);
-            cursorAfter = startOffset;
         }
     }
     else if (key == ExtKeys::BACKSPACE)
@@ -238,13 +288,12 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         {
             startOffset = m_visualBegin;
             endOffset = m_visualEnd;
-            cursorAfter = startOffset;
+            normalizeOffsets();
         }
         else
         {
             endOffset = startOffset;
             startOffset = buffer.LocationFromOffsetByChars(startOffset, -1);
-            cursorAfter = startOffset;
         }
     }
     else
@@ -252,41 +301,36 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         op = CommandOperation::Insert;
     }
 
-    if (modifierKeys & ModifierKey::Ctrl)
+    startOffset = buffer.Clamp(startOffset);
+    endOffset = buffer.Clamp(endOffset);
+
+    // Here we handle the logic of wether the visual range starts or ends before or
+    // after the cursor!  It depends on which direction the user moved when they started the selection
+    if (m_currentMode == EditorMode::Visual)
     {
-        if (ch == "z")
+        if (begin_shift)
         {
-            Undo();
-            return;
+            if (GetCurrentWindow()->GetBufferCursor() <= startOffset)
+            {
+                m_visualBegin = startOffset; // buffer.LocationFromOffsetByChars(startOffset, -1);
+            }
+            else
+            {
+                m_visualBegin = startOffset;
+            }
         }
-        else if (ch == "y")
+        if (GetCurrentWindow()->GetBufferCursor() > m_visualBegin)
         {
-            Redo();
-            return;
+            m_visualEnd = GetCurrentWindow()->GetBufferCursor();
+        }
+        else
+        {
+            m_visualEnd = GetCurrentWindow()->GetBufferCursor(); // buffer.LocationFromOffsetByChars(GetCurrentWindow()->GetBufferCursor(), -1);
         }
     }
 
-    if (modifierKeys & ModifierKey::Shift &&
-        op == CommandOperation::None)
-    {
-        if (m_currentMode != EditorMode::Visual)
-        {
-            m_currentMode = EditorMode::Visual;
-            m_visualBegin = startOffset;
-            m_visualEnd = startOffset;
-            GetCurrentWindow()->SetCursorMode(CursorMode::Visual);
-        }
-    }
-    else
-    {
-        if (op == CommandOperation::Insert)
-        {
-            m_currentMode = EditorMode::Insert;
-            GetCurrentWindow()->SetCursorMode(CursorMode::Insert);
-        }
-    }
-
-    if (copyRegion)
+    // Op is a copy or also requires the region to be copied
+    if (copyRegion || op == CommandOperation::Copy)
     {
         // Grab it
         std::string str = std::string(buffer.GetText().begin() + startOffset, buffer.GetText().begin() + endOffset);
@@ -294,37 +338,60 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         GetEditor().GetRegister('"').lineWise = lineWise;
         GetEditor().GetRegister('0').text = str;
         GetEditor().GetRegister('0').lineWise = lineWise;
-        m_currentMode = EditorMode::Insert;
-        GetCurrentWindow()->SetCursorMode(CursorMode::Insert);
-    }
 
-    if (op == CommandOperation::Insert)
-    {
-        // Simple insert
-        auto cmd = std::make_shared<ZepCommand_Insert>(buffer,
-            startOffset,
-            ch,
-            cursorAfter
-            );
-        AddCommand(std::static_pointer_cast<ZepCommand>(cmd));
-        m_currentMode = EditorMode::Insert;
-        GetCurrentWindow()->SetCursorMode(CursorMode::Insert);
+        // Copy doesn't clear the visual seletion
+        return_to_insert = false;
     }
+    // Insert into buffer
+    else if (op == CommandOperation::Insert)
+    {
+        bool boundary = false;
+        if (m_currentMode == EditorMode::Visual)
+        {
+            startOffset = m_visualBegin;
+            endOffset = m_visualEnd;
+            normalizeOffsets();
+
+            // Delete existing selection
+            auto cmd = std::make_shared<ZepCommand_DeleteRange>(buffer, startOffset, endOffset, GetCurrentWindow()->GetBufferCursor());
+            if (!ch.empty())
+            {
+                cmd->SetFlags(CommandFlags::GroupBoundary);
+            }
+            AddCommand(std::static_pointer_cast<ZepCommand>(cmd));
+            boundary = true;
+        }
+
+        // Simple insert
+        if (!ch.empty())
+        {
+            auto cmd = std::make_shared<ZepCommand_Insert>(buffer, startOffset, ch, GetCurrentWindow()->GetBufferCursor());
+            if (boundary)
+            {
+                cmd->SetFlags(CommandFlags::GroupBoundary);
+            }
+            AddCommand(std::static_pointer_cast<ZepCommand>(cmd));
+        }
+        return_to_insert = true;
+    }
+    // Delete from buffer
     else if (op == CommandOperation::Delete)
     {
-
-        // Delete 
-        auto cmd = std::make_shared<ZepCommand_DeleteRange>(buffer,
-            startOffset,
-            endOffset,
-            cursorAfter != -1 ? cursorAfter : startOffset
-            );
+        // Delete
+        auto cmd = std::make_shared<ZepCommand_DeleteRange>(buffer, startOffset, endOffset, GetCurrentWindow()->GetBufferCursor());
         AddCommand(std::static_pointer_cast<ZepCommand>(cmd));
-        m_currentMode = EditorMode::Insert;
-        GetCurrentWindow()->SetCursorMode(CursorMode::Insert);
+        return_to_insert = true;
     }
 
-    UpdateVisualSelection();
+    if (return_to_insert)
+    {
+        SwitchMode(EditorMode::Insert);
+    }
+
+    if (m_currentMode == EditorMode::Visual)
+    {
+        buffer.SetSelection(BufferRange{m_visualBegin, m_visualEnd});
+    }
 }
 
-} // Zep namespace
+} // namespace Zep

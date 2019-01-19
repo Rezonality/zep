@@ -1,5 +1,9 @@
 #pragma once
 
+#include <vector>
+#include <string>
+#include <unordered_map>
+
 #include "buffer.h"
 #include "window_base.h"
 
@@ -7,28 +11,20 @@ namespace Zep
 {
 
 class ZepTabWindow;
+class IZepDisplay;
+class Scroller;
 
-struct IZepDisplay;
-
-struct CharInfo
-{
-    float screenPosXPx;
-    BufferLocation bufferLocation;
-    BufferLocation bufferLocationEnd;
-    NVec2f textSize;
-};
+struct Region;
 
 // Line information, calculated during display update.
-// This is a screen line, not a text buffer line, since we may wrap across multiple lines
-struct LineInfo
+// A collection of spans that show split lines on the display
+struct SpanInfo
 {
-    NVec2i columnOffsets; // Begin/end range of the text buffer for this line, as always end is one beyond the end.
+    NVec2i columnOffsets;                 // Begin/end range of the text buffer for this line, as always end is one beyond the end.
     long lastNonCROffset = InvalidOffset; // The last char that is visible on the line (i.e. not CR/LF)
-    float bufferPosYPx; // Position in the buffer in pixels, if the screen was as big as the buffer.
-    long bufferLineNumber = 0; // Line in the original buffer, not the screen line
-    int lineIndex;
-
-    std::vector<CharInfo> charInfo;
+    float spanYPx = 0.0f;                 // Position in the buffer in pixels, if the screen was as big as the buffer.
+    long bufferLineNumber = 0;            // Line in the original buffer, not the screen line
+    int lineIndex = 0;
 
     long Length() const
     {
@@ -40,7 +36,16 @@ struct LineInfo
     }
 };
 
-enum class CursorMode
+inline bool operator < (const SpanInfo& lhs, const SpanInfo& rhs)
+{
+    if (lhs.columnOffsets.x != rhs.columnOffsets.x)
+    {
+        return lhs.columnOffsets.x < rhs.columnOffsets.x;
+    }
+    return lhs.columnOffsets.y < rhs.columnOffsets.y;
+}
+
+enum class CursorType
 {
     Hidden,
     Normal,
@@ -64,6 +69,19 @@ enum
 };
 }
 
+struct AirBox
+{
+    std::string text;
+    NVec4f background;
+};
+
+struct Airline
+{
+    std::vector<AirBox> leftBoxes;
+    std::vector<AirBox> rightBoxes;
+};
+
+
 // Display state for a single pane of text.
 // Window shows a buffer, and is parented by a TabWindow
 // The buffer can change, but the window must always have an active buffer
@@ -76,12 +94,13 @@ public:
 
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
-    void SetCursorMode(CursorMode mode);
-    void SetStatusText(const std::string& strStatus);
+    void SetCursorType(CursorType mode);
+    void UpdateAirline();
+    void UpdateScrollers();
 
     ZepTabWindow& GetTabWindow() const;
 
-    void SetDisplayRegion(const DisplayRegion& region);
+    void SetDisplayRegion(const NRectf& region);
 
     void Display();
     void DisplayCursor();
@@ -99,13 +118,18 @@ public:
     long GetMaxDisplayLines();
     long GetNumDisplayedLines();
 
-    void SetSelectionRange(BufferLocation start, BufferLocation end);
-
     ZepBuffer& GetBuffer() const;
     void SetBuffer(ZepBuffer* pBuffer);
 
-    // Public for the tests!
     NVec2i BufferToDisplay();
+    NVec2i BufferToDisplay(const BufferLocation& location);
+
+    NVec2f GetTextSize(const utf8* pCh, const utf8* pEnd);
+
+    float ToWindowY(float pos) const;
+
+    bool IsActiveWindow() const;
+    NVec4f FilterActiveColor(const NVec4f& col);
 
 private:
     struct WindowPass
@@ -119,36 +143,42 @@ private:
     };
 
 private:
-    void CheckLineSpans();
+    void UpdateLayout();
+    void UpdateLineSpans();
     void ScrollToCursor();
+    void EnsureCursorVisible();
     void UpdateVisibleLineRange();
     bool IsInsideTextRegion(NVec2i pos) const;
 
-    const LineInfo& GetCursorLineInfo(long y);
+    const SpanInfo& GetCursorLineInfo(long y);
 
-    NVec2i BufferToDisplay(const BufferLocation& location);
-
-    bool DisplayLine(const LineInfo& lineInfo, const DisplayRegion& region, int displayPass);
+    bool DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int displayPass);
+    void DisplayScrollers();
+    void BuildCharCache();
 
 private:
-    DisplayRegion m_bufferRegion; // region of the display we are showing on.
-    DisplayRegion m_textRegion; // region of the display for text.
-    DisplayRegion m_statusRegion; // status text / airline
-    DisplayRegion m_leftRegion; // Numbers/indicators
-    NVec2f m_topLeftPx; // Top-left position on screen
-    NVec2f m_bottomRightPx; // Limits of the screen position
-    bool m_wrap = true; // Wrap
+    NVec2f ToBufferRegion(const NVec2f& pos);
+    std::shared_ptr<Region> m_bufferRegion;  // region of the display we are showing on.
+    std::shared_ptr<Region> m_textRegion;    // region of the display for text.
+    std::shared_ptr<Region> m_airlineRegion; // Airline
+    std::shared_ptr<Region> m_numberRegion;     // Numbers
+    std::shared_ptr<Region> m_indicatorRegion;  // Indicators 
+    std::shared_ptr<Region> m_vScrollRegion;    // Vertical scroller
+
+    bool m_wrap = true;     // Wrap
 
     // The buffer offset is where we are looking, but the cursor is only what you see on the screen
-    CursorMode m_cursorMode = CursorMode::Normal; // Type of cursor
+    CursorType m_cursorType = CursorType::Normal; // Type of cursor
     DisplayMode m_displayMode = DisplayMode::Vim; // Vim editing mode
 
     // Visual stuff
     std::vector<std::string> m_statusLines; // Status information, shown under the buffer
 
-    float m_bufferOffsetYPx = 0;
-    NVec2i m_visibleLineRange = { 0, 0 }; // Offset of the displayed area into the text
-    std::vector<LineInfo> m_windowLines; // Information about the currently displayed lines
+    float m_bufferOffsetYPx = 0.0f;
+    float m_bufferSizeYPx = 0.0f;
+    NVec2i m_visibleLineRange = {0, 0};  // Offset of the displayed area into the text
+
+    std::vector<SpanInfo*> m_windowLines; // Information about the currently displayed lines
 
     ZepTabWindow& m_tabWindow;
 
@@ -157,13 +187,19 @@ private:
     long m_maxDisplayLines = 0;
     float m_defaultLineSize = 0;
 
-    BufferLocation m_bufferCursor{ 0 }; // Location in buffer coordinates.  Each window has a different buffer cursor
-    long m_lastCursorColumn = 0; // The last cursor column (could be removed and recalculated)
+    BufferLocation m_bufferCursor{0}; // Location in buffer coordinates.  Each window has a different buffer cursor
+    long m_lastCursorColumn = 0;      // The last cursor column (could be removed and recalculated)
 
     ZepBuffer* m_pBuffer = nullptr;
-    Region m_selection; // Selection area
+    Airline m_airline;
 
-    bool m_linesChanged = true;
+    bool m_layoutDirty = true;
+    bool m_scrollVisibilityChanged = true;
+    bool m_cursorMoved = true;
+
+    std::shared_ptr<Scroller> m_vScroller;
+    NVec2f m_charCache[256];
+    bool m_charCacheDirty = true;
 };
 
 } // namespace Zep

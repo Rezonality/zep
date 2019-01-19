@@ -713,7 +713,7 @@ DeathTest::TestRole WindowsDeathTest::AssumeRole() {
   HANDLE read_handle, write_handle;
   GTEST_DEATH_TEST_CHECK_(
       ::CreatePipe(&read_handle, &write_handle, &handles_are_inheritable,
-                   0)  // Default buffer size.
+                   0)  // Default buffer fixed_size.
       != FALSE);
   set_read_fd(::_open_osfhandle(reinterpret_cast<intptr_t>(read_handle),
                                 O_RDONLY));
@@ -1077,7 +1077,7 @@ static pid_t ExecDeathTestSpawnChild(char* const* argv, int close_fd) {
     GTEST_DEATH_TEST_CHECK_(stack != MAP_FAILED);
 
     // Maximum stack alignment in bytes:  For a downward-growing stack, this
-    // amount is subtracted from size of the stack space to get an address
+    // amount is subtracted from fixed_size of the stack space to get an address
     // that is within the stack space and is aligned on all systems we care
     // about.  As far as I know there is no ABI with stack alignment greater
     // than 64.  We assume stack and stack_size already have alignment of

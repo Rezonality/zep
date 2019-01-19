@@ -4,7 +4,7 @@ option (BUILD_QT "Make a Qt Demo" OFF)
 option (BUILD_IMGUI "Make an imgui demo" ON)
 option (BUILD_IMGUI_APP "Make the test app" ON)
 
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -48,13 +48,16 @@ INCLUDE(m3rdparty/cmake/copy_files.cmake)
 # config_app.h checks
 # This makes a config_shared.h file which can be included for system settings
 #  Must be after setting up the platforms
+SET (ZEP_ROOT ${CMAKE_CURRENT_LIST_DIR})
 CONFIGURE_FILE(${CMAKE_CURRENT_LIST_DIR}/cmake/config_app.h.cmake ${CMAKE_BINARY_DIR}/config_app.h)
 
 INCLUDE(m3rdparty/list.cmake)
 INCLUDE(src/list.cmake)
 
+MESSAGE(INFO ${SRC_INCLUDE})
 INCLUDE_DIRECTORIES(
     m3rdparty
+    mcommon
     ${M3RDPARTY_INCLUDE}
     ${SRC_INCLUDE}
     ${CMAKE_BINARY_DIR}
@@ -128,6 +131,7 @@ INCLUDE_DIRECTORIES(
 )
 ENDIF()
 
+SOURCE_GROUP (Zep\\common REGULAR_EXPRESSION "src/mcommon/.*")
 SOURCE_GROUP (Zep REGULAR_EXPRESSION "src/.*")
 SOURCE_GROUP (Zep FILES ${DEMO_SOURCE_IMGUI})
 SOURCE_GROUP (Zep FILES ${DEMO_SOURCE_QT})

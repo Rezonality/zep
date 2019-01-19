@@ -47,8 +47,7 @@ enum class EditorMode
     None,
     Normal,
     Insert,
-    Visual,
-    Command
+    Visual
 };
 
 class ZepMode : public ZepComponent
@@ -61,9 +60,11 @@ public:
     virtual void AddCommandText(std::string strText);
     virtual void AddKeyPress(uint32_t key, uint32_t modifierKeys = ModifierKey::None) = 0;
     virtual const char* Name() const = 0;
-    virtual void Notify(std::shared_ptr<ZepMessage> message) override {}
+    virtual void Notify(std::shared_ptr<ZepMessage> message) override
+    {
+    }
     virtual void AddCommand(std::shared_ptr<ZepCommand> spCmd);
-    virtual void UpdateVisualSelection();
+    virtual EditorMode GetEditorMode() const;
 
     // Called when we begin editing in this mode
     virtual void Begin() = 0;
@@ -72,16 +73,18 @@ public:
     virtual void Redo();
 
     virtual ZepWindow* GetCurrentWindow() const;
-    virtual void PreDisplay() {};
+    virtual void PreDisplay(){};
+
+    virtual NVec2i GetVisualRange() const;
 
 protected:
     std::stack<std::shared_ptr<ZepCommand>> m_undoStack;
     std::stack<std::shared_ptr<ZepCommand>> m_redoStack;
-    EditorMode m_currentMode;
+    EditorMode m_currentMode = EditorMode::Normal;
     bool m_lineWise = false;
-    BufferLocation m_insertBegin;
-    BufferLocation m_visualBegin;
-    BufferLocation m_visualEnd;
+    BufferLocation m_insertBegin = 0;
+    BufferLocation m_visualBegin = 0;
+    BufferLocation m_visualEnd = 0;
 };
 
-} // Zep
+} // namespace Zep

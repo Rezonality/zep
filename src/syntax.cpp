@@ -1,15 +1,31 @@
 #include "syntax.h"
 #include "editor.h"
+#include "syntax_rainbow_brackets.h"
+#include "theme.h"
+#include "mcommon/string/stringutils.h"
+
+#include <string>
+#include <vector>
 
 namespace Zep
 {
 
-ZepSyntax::ZepSyntax(ZepBuffer& buffer)
-    : ZepComponent(buffer.GetEditor()),
-    m_buffer(buffer),
-    m_stop(false)
+
+ZepSyntax::ZepSyntax(
+    ZepBuffer& buffer,
+    const std::set<std::string>& keywords,
+    const std::set<std::string>& identifiers,
+    uint32_t flags)
+    : ZepComponent(buffer.GetEditor())
+    , m_buffer(buffer)
+    , m_stop(false)
+    , m_keywords(keywords)
+    , m_identifiers(identifiers)
+    , m_flags(flags)
 {
     m_syntax.resize(m_buffer.GetText().size());
+    m_adornments.push_back(std::make_shared<ZepSyntaxAdorn_RainbowBrackets>(*this, m_buffer));
+    QueueUpdateSyntax(0, BufferLocation(m_buffer.GetText().size()));
 }
 
 ZepSyntax::~ZepSyntax()
@@ -17,12 +33,31 @@ ZepSyntax::~ZepSyntax()
     Interrupt();
 }
 
-uint32_t ZepSyntax::GetSyntaxAt(long offset) const
+NVec4f ZepSyntax::GetSyntaxColorAt(long offset) const
 {
-    if (m_processedChar < offset ||
-        m_syntax.size() <= offset)
+    if (m_processedChar < offset || m_syntax.size() <= offset)
     {
-        return SyntaxType::Normal;
+        return m_buffer.GetTheme().GetColor(ThemeColor::Normal);
+    }
+
+    for (auto& adorn : m_adornments)
+    {
+        bool found = false;
+        auto col = adorn->GetSyntaxColorAt(offset, found);
+        if (found)
+        {
+            return col;
+        }
+    }
+
+    return m_buffer.GetTheme().GetColor(m_syntax[offset]);
+}
+
+ThemeColor ZepSyntax::GetSyntaxAt(long offset) const
+{
+    if (m_processedChar < offset || m_syntax.size() <= offset)
+    {
+        return ThemeColor::Normal;
     }
 
     return m_syntax[offset];
@@ -43,16 +78,16 @@ void ZepSyntax::QueueUpdateSyntax(BufferLocation startLocation, BufferLocation e
 {
     assert(startLocation >= 0);
     assert(endLocation >= startLocation);
-    // Record the max location the syntax is valid up to.  This will 
+    // Record the max location the syntax is valid up to.  This will
     // ensure that multiple calls to restart the thread keep track of where to start
     // This means a small edit at the end of a big file, followed by a small edit at the top
-    // is the worst case scenario, because 
+    // is the worst case scenario, because
     m_processedChar = std::min(startLocation, long(m_processedChar));
     m_targetChar = std::max(endLocation, long(m_targetChar));
 
     // Make sure the syntax buffer is big enough - adding normal syntax to the end
     // This may also 'chop'
-    m_syntax.resize(m_buffer.GetText().size(), SyntaxType::Normal);
+    m_syntax.resize(m_buffer.GetText().size(), ThemeColor::Normal);
 
     m_processedChar = std::min(long(m_processedChar), long(m_buffer.GetText().size() - 1));
     m_targetChar = std::min(long(m_targetChar), long(m_buffer.GetText().size() - 1));
@@ -64,9 +99,8 @@ void ZepSyntax::QueueUpdateSyntax(BufferLocation startLocation, BufferLocation e
     }
     else
     {
-        m_syntaxResult = m_buffer.GetThreadPool().enqueue([=]()
-        {
-            UpdateSyntax(); 
+        m_syntaxResult = m_buffer.GetThreadPool().enqueue([=]() {
+            UpdateSyntax();
         });
     }
 }
@@ -74,7 +108,7 @@ void ZepSyntax::QueueUpdateSyntax(BufferLocation startLocation, BufferLocation e
 void ZepSyntax::Notify(std::shared_ptr<ZepMessage> spMsg)
 {
     // Handle any interesting buffer messages
-    if (spMsg->messageId == Msg_Buffer)
+    if (spMsg->messageId == Msg::Buffer)
     {
         auto spBufferMsg = std::static_pointer_cast<BufferMessage>(spMsg);
         if (spBufferMsg->pBuffer != &m_buffer)
@@ -94,9 +128,7 @@ void ZepSyntax::Notify(std::shared_ptr<ZepMessage> spMsg)
         else if (spBufferMsg->type == BufferMessageType::TextAdded)
         {
             Interrupt();
-            m_syntax.insert(m_syntax.begin() + spBufferMsg->startLocation,
-                spBufferMsg->endLocation - spBufferMsg->startLocation,
-                SyntaxType::Normal);
+            m_syntax.insert(m_syntax.begin() + spBufferMsg->startLocation, spBufferMsg->endLocation - spBufferMsg->startLocation, ThemeColor::Normal);
             QueueUpdateSyntax(spBufferMsg->startLocation, spBufferMsg->endLocation);
         }
         else if (spBufferMsg->type == BufferMessageType::TextChanged)
@@ -115,10 +147,9 @@ void ZepSyntax::UpdateSyntax()
     auto itrEnd = buffer.begin() + m_targetChar;
 
     assert(std::distance(itrCurrent, itrEnd) < int(m_syntax.size()));
-
     assert(m_syntax.size() == buffer.size());
 
-    std::string delim(" \t.\n;(){}=");
+    std::string delim(" \t.\n;(){}=:");
     std::string lineEnd("\n");
 
     // Walk backwards to previous delimiter
@@ -135,21 +166,18 @@ void ZepSyntax::UpdateSyntax()
     }
 
     // Back to the previous line
-    while (itrCurrent > buffer.begin() &&
-        *itrCurrent != '\n')
+    while (itrCurrent > buffer.begin() && *itrCurrent != '\n')
     {
         itrCurrent--;
     }
     itrEnd = buffer.find_first_of(itrEnd, buffer.end(), lineEnd.begin(), lineEnd.end());
 
     // Mark a region of the syntax buffer with the correct marker
-    auto mark = [&](GapBuffer<utf8>::const_iterator itrA, GapBuffer<utf8>::const_iterator itrB, uint32_t type)
-    {
+    auto mark = [&](GapBuffer<utf8>::const_iterator itrA, GapBuffer<utf8>::const_iterator itrB, ThemeColor type) {
         std::fill(m_syntax.begin() + (itrA - buffer.begin()), m_syntax.begin() + (itrB - buffer.begin()), type);
     };
 
-    auto markSingle = [&](GapBuffer<utf8>::const_iterator itrA, uint32_t type)
-    {
+    auto markSingle = [&](GapBuffer<utf8>::const_iterator itrA, ThemeColor type) {
         *(m_syntax.begin() + (itrA - buffer.begin())) = type;
     };
 
@@ -179,23 +207,36 @@ void ZepSyntax::UpdateSyntax()
         {
             if (*itr == ' ')
             {
-                mark(itr, itr + 1, SyntaxType::Whitespace);
+                mark(itr, itr + 1, ThemeColor::Whitespace);
             }
         }
 
         // Do I need to make a string here?
         auto token = std::string(itrFirst, itrLast);
-        if (keywords.find(token) != keywords.end())
+        if (m_flags & ZepSyntaxFlags::CaseInsensitive)
         {
-            mark(itrFirst, itrLast, SyntaxType::Keyword);
+            token = string_tolower(token);
+        }
+
+        if (m_keywords.find(token) != m_keywords.end())
+        {
+            mark(itrFirst, itrLast, ThemeColor::Keyword);
+        }
+        else if (m_identifiers.find(token) != m_identifiers.end())
+        {
+            mark(itrFirst, itrLast, ThemeColor::Keyword);
         }
         else if (token.find_first_not_of("0123456789") == std::string::npos)
         {
-            mark(itrFirst, itrLast, SyntaxType::Integer);
+            mark(itrFirst, itrLast, ThemeColor::Integer);
+        }
+        else if (token.find_first_not_of("{}()[]") == std::string::npos)
+        {
+            mark(itrFirst, itrLast, ThemeColor::Parenthesis);
         }
         else
         {
-            mark(itrFirst, itrLast, SyntaxType::Normal);
+            mark(itrFirst, itrLast, ThemeColor::Normal);
         }
 
         std::string commentStr = "/";
@@ -208,10 +249,11 @@ void ZepSyntax::UpdateSyntax()
                 if (*itrComment == '/')
                 {
                     itrLast = buffer.find_first_of(itrCommentStart, buffer.end(), lineEnd.begin(), lineEnd.end());
-                    mark(itrCommentStart, itrLast, SyntaxType::Comment);
+                    mark(itrCommentStart, itrLast, ThemeColor::Comment);
                 }
             }
         }
+        
         itrCurrent = itrLast;
     }
 
@@ -221,4 +263,4 @@ void ZepSyntax::UpdateSyntax()
     m_processedChar = long(buffer.size() - 1);
 }
 
-} // Zep
+} // namespace Zep

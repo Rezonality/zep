@@ -1,13 +1,20 @@
 #pragma once
 
-#include <vector>
-#include <string>
-#include <map>
-#include <set>
+#include "mcommon/common_namespace.h"
 #include <deque>
+#include <map>
 #include <memory>
-#include <threadpool/ThreadPool.hpp>
+#include <ostream>
+#include <set>
 #include <sstream>
+#include <string>
+#include <threadpool/ThreadPool.hpp>
+#include <vector>
+#include "mcommon/math/math.h"
+#include "mcommon/animation/timer.h"
+#include "mcommon/file/file.h"
+#include "mcommon/file/archive.h"
+#include "splits.h"
 
 // Basic Architecture
 
@@ -30,6 +37,8 @@
 namespace Zep
 {
 
+using namespace COMMON_NAMESPACE;
+
 class ZepBuffer;
 class ZepMode;
 class ZepMode_Vim;
@@ -38,73 +47,75 @@ class ZepEditor;
 class ZepSyntax;
 class ZepTabWindow;
 class ZepWindow;
+class ZepTheme;
 
-struct IZepDisplay;
+class IZepDisplay;
 
-class Timer;
-
-// Helper for 2D operations
-template<class T>
-struct NVec2
-{
-    NVec2(T xVal, T yVal)
-        : x(xVal),
-        y(yVal)
-    {}
-
-    NVec2()
-        : x(0),
-        y(0)
-    {}
-
-    T x;
-    T y;
-
-    bool operator == (const NVec2<T>& rhs) const
-    {
-        if (x == rhs.x &&
-            y == rhs.y)
-            return true;
-        return false;
-    }
-
-    bool operator != (const NVec2<T>& rhs) const
-    {
-        return !(*this = rhs);
-    }
-};
-template<class T> inline NVec2<T> operator+ (const NVec2<T>& lhs, const NVec2<T>& rhs) { return NVec2<T>(lhs.x + rhs.x, lhs.y + rhs.y); }
-template<class T> inline NVec2<T> operator- (const NVec2<T>& lhs, const NVec2<T>& rhs) { return NVec2<T>(lhs.x - rhs.x, lhs.y - rhs.y); }
-template<class T> inline NVec2<T>& operator+= (NVec2<T>& lhs, const NVec2<T>& rhs) { lhs.x += rhs.x; lhs.y += rhs.y; return lhs; }
-template<class T> inline NVec2<T>& operator-= (NVec2<T>& lhs, const NVec2<T>& rhs) { lhs.x -= rhs.x; lhs.y -= rhs.y; return lhs; }
-template<class T> inline NVec2<T> operator* (const NVec2<T>& lhs, float val) { return NVec2<T>(lhs.x * val, lhs.y * val); }
-template<class T> inline NVec2<T>& operator*= (NVec2<T>& lhs, float val) { lhs.x *= val; lhs.y *= val; return lhs; }
-template<class T> inline NVec2<T> Clamp(const NVec2<T>& val, const NVec2<T>& min, const NVec2<T>& max)
-{
-    return NVec2<T>(std::min(max.x, std::max(min.x, val.x)), std::min(max.y, std::max(min.y, val.y)));
-}
-
-using NVec2f = NVec2<float>;
-using NVec2i = NVec2<long>;
+struct Region;
 
 using utf8 = uint8_t;
 
-extern const char* Msg_HandleCommand;
-extern const char* Msg_Quit;
-extern const char* Msg_GetClipBoard;
-extern const char* Msg_SetClipBoard;
+namespace ZepEditorFlags
+{
+enum
+{
+    None = (0),
+    DisableThreads = (1 << 0)
+};
+};
 
+enum class ZepMouseButton
+{
+    Left,
+    Middle,
+    Right,
+    Unknown
+};
+
+enum class Msg
+{
+    HandleCommand,
+    Quit,
+    GetClipBoard,
+    SetClipBoard,
+    MouseMove,
+    MouseDown,
+    MouseUp,
+    Buffer,
+    ComponentChanged,
+    Tick,
+    ConfigChanged
+};
+
+struct IZepComponent;
 class ZepMessage
 {
 public:
-    ZepMessage(const char* id, const std::string& strIn = std::string())
-        : messageId(id),
-        str(strIn)
-    { }
+    ZepMessage(Msg id, const std::string& strIn = std::string())
+        : messageId(id)
+        , str(strIn)
+    {
+    }
+    
+    ZepMessage(Msg id, const NVec2f& p, ZepMouseButton b = ZepMouseButton::Unknown)
+        : messageId(id)
+        , pos(p)
+        , button(b)
+    {
+    }
 
-    const char* messageId;      // Message ID 
-    std::string str;            // Generic string for simple messages
-    bool handled = false;       // If the message was handled
+    ZepMessage(Msg id, IZepComponent* pComp)
+        : messageId(id)
+        , pComponent(pComp)
+    {
+    }
+
+    Msg messageId; // Message ID
+    std::string str;       // Generic string for simple messages
+    bool handled = false;  // If the message was handled
+    NVec2f pos;
+    ZepMouseButton button;
+    IZepComponent* pComponent = nullptr;
 };
 
 struct IZepComponent
@@ -118,7 +129,10 @@ class ZepComponent : public IZepComponent
 public:
     ZepComponent(ZepEditor& editor);
     virtual ~ZepComponent();
-    ZepEditor& GetEditor() const override { return m_editor; }
+    ZepEditor& GetEditor() const override
+    {
+        return m_editor;
+    }
 
 private:
     ZepEditor& m_editor;
@@ -127,10 +141,26 @@ private:
 // Registers are used by the editor to store/retrieve text fragments
 struct Register
 {
-    Register() : text(""), lineWise(false) {}
-    Register(const char* ch, bool lw = false) : text(ch), lineWise(lw) {}
-    Register(utf8* ch, bool lw = false) : text((const char*)ch), lineWise(lw) {}
-    Register(const std::string& str, bool lw = false) : text(str), lineWise(lw) {}
+    Register()
+        : text("")
+        , lineWise(false)
+    {
+    }
+    Register(const char* ch, bool lw = false)
+        : text(ch)
+        , lineWise(lw)
+    {
+    }
+    Register(utf8* ch, bool lw = false)
+        : text((const char*)ch)
+        , lineWise(lw)
+    {
+    }
+    Register(const std::string& str, bool lw = false)
+        : text(str)
+        , lineWise(lw)
+    {
+    }
 
     std::string text;
     bool lineWise = false;
@@ -140,47 +170,18 @@ using tRegisters = std::map<std::string, Register>;
 using tBuffers = std::deque<std::shared_ptr<ZepBuffer>>;
 using tSyntaxFactory = std::function<std::shared_ptr<ZepSyntax>(ZepBuffer*)>;
 
-namespace ZepEditorFlags
-{
-enum
-{
-    None = (0),
-    DisableThreads = (1 << 0)
-};
-};
-
-static const char* VimMode = "vim";
-static const char* StandardMode = "standard";
-
 const float bottomBorder = 4.0f;
 const float textBorder = 4.0f;
-const float leftBorder = 30.0f;
-
-struct DisplayRegion
-{
-    NVec2f topLeftPx;
-    NVec2f bottomRightPx;
-    NVec2f BottomLeft() const { return NVec2f(topLeftPx.x, bottomRightPx.y); }
-    NVec2f TopRight() const { return NVec2f(bottomRightPx.x, topLeftPx.y); }
-    float Height() const { return bottomRightPx.y - topLeftPx.y; }
-    float Width() const { return bottomRightPx.x - topLeftPx.x; }
-    bool operator == (const DisplayRegion& region) const
-    {
-        return (topLeftPx == region.topLeftPx) &&
-            (bottomRightPx == region.bottomRightPx);
-    }
-    bool operator != (const DisplayRegion& region) const
-    {
-        return !(*this == region);
-    }
-};
+const float leftBorderChars = 3;
 
 class ZepEditor
 {
 public:
-    ZepEditor(IZepDisplay* pDisplay, uint32_t flags = 0);
+    // Root path is the path to search for a config file
+    ZepEditor(IZepDisplay* pDisplay, const fs::path& root, uint32_t flags = 0);
     ~ZepEditor();
 
+    void LoadConfig(const fs::path& config_path);
     void Quit();
 
     void InitWithFileOrDir(const std::string& str);
@@ -188,19 +189,26 @@ public:
     ZepMode* GetCurrentMode() const;
     void Display();
 
-    void RegisterMode(const std::string& name, std::shared_ptr<ZepMode> spMode);
+    void RegisterMode(std::shared_ptr<ZepMode> spMode);
     void SetMode(const std::string& mode);
     ZepMode* GetCurrentMode();
 
-    void RegisterSyntaxFactory(const std::string& extension, tSyntaxFactory factory);
+    void RegisterSyntaxFactory(const std::vector<std::string>& mappings, tSyntaxFactory factory);
     bool Broadcast(std::shared_ptr<ZepMessage> payload);
-    void RegisterCallback(IZepComponent* pClient) { m_notifyClients.insert(pClient); }
-    void UnRegisterCallback(IZepComponent* pClient) { m_notifyClients.erase(pClient); }
+    void RegisterCallback(IZepComponent* pClient)
+    {
+        m_notifyClients.insert(pClient);
+    }
+    void UnRegisterCallback(IZepComponent* pClient)
+    {
+        m_notifyClients.erase(pClient);
+    }
 
     const tBuffers& GetBuffers() const;
-    ZepBuffer* AddBuffer(const std::string& str);
     ZepBuffer* GetMRUBuffer() const;
     void SaveBuffer(ZepBuffer& buffer);
+    ZepBuffer* GetFileBuffer(const fs::path& filePath, uint32_t fileFlags = 0);
+    ZepBuffer* GetEmptyBuffer(const std::string& name, uint32_t fileFlags = 0);
 
     void SetRegister(const std::string& reg, const Register& val);
     void SetRegister(const char reg, const Register& val);
@@ -211,10 +219,15 @@ public:
     const tRegisters& GetRegisters() const;
 
     void Notify(std::shared_ptr<ZepMessage> message);
-    uint32_t GetFlags() const { return m_flags; }
+    uint32_t GetFlags() const
+    {
+        return m_flags;
+    }
 
     // Tab windows
     using tTabWindows = std::vector<ZepTabWindow*>;
+    void NextTabWindow();
+    void PreviousTabWindow();
     void SetCurrentTabWindow(ZepTabWindow* pTabWindow);
     ZepTabWindow* GetActiveTabWindow() const;
     ZepTabWindow* AddTabWindow();
@@ -225,32 +238,61 @@ public:
     bool GetCursorBlinkState() const;
 
     void RequestRefresh();
-    bool RefreshRequired() const;
+    bool RefreshRequired();
 
     void SetCommandText(const std::string& strCommand);
 
-    const std::vector<std::string>& GetCommandLines() { return m_commandLines; }
+    const std::vector<std::string>& GetCommandLines()
+    {
+        return m_commandLines;
+    }
 
     void UpdateWindowState();
 
-    // Setup the display size for the editor
+    // Setup the display fixed_size for the editor
     void SetDisplayRegion(const NVec2f& topLeft, const NVec2f& bottomRight);
     void UpdateSize();
 
-    IZepDisplay& GetDisplay() const { return *m_pDisplay; }
+    IZepDisplay& GetDisplay() const
+    {
+        return *m_pDisplay;
+    }
+
+    ZepTheme& GetTheme() const;
+
+    void OnMouseMove(const NVec2f& mousePos);
+    void OnMouseDown(const NVec2f& mousePos, ZepMouseButton button);
+    void OnMouseUp(const NVec2f& mousePos, ZepMouseButton button);
+    void TickInputState();
+    const NVec2f GetMousePos() const;
+
+    void SetPixelScale(float pt);
+    float GetPixelScale() const;
+
+    void SetBufferSyntax(ZepBuffer& buffer) const;
+
+    uint32_t GetShowScrollBar() const
+    {
+        return m_showScrollBar;
+    }
+private:
+    // Call GetBuffer publicly, to stop creation of duplicate buffers refering to the same file
+    ZepBuffer* CreateNewBuffer(const std::string& bufferName);
 
 private:
     IZepDisplay* m_pDisplay;
     std::set<IZepComponent*> m_notifyClients;
     mutable tRegisters m_registers;
-    
+
+    std::shared_ptr<Archive> m_spConfig;
+    std::shared_ptr<ZepTheme> m_spTheme;
     std::shared_ptr<ZepMode_Vim> m_spVimMode;
     std::shared_ptr<ZepMode_Standard> m_spStandardMode;
     std::map<std::string, tSyntaxFactory> m_mapSyntax;
     std::map<std::string, std::shared_ptr<ZepMode>> m_mapModes;
 
     // Blinking cursor
-    std::shared_ptr<Timer> m_spCursorTimer;
+    timer m_cursorTimer;
 
     // Active mode
     ZepMode* m_pCurrentMode = nullptr;
@@ -263,18 +305,26 @@ private:
     // May or may not be visible
     tBuffers m_buffers;
     uint32_t m_flags = 0;
-    
+
     mutable bool m_bPendingRefresh = true;
     mutable bool m_lastCursorBlink = false;
 
-    std::vector<std::string> m_commandLines;        // Command information, shown under the buffer
+    std::vector<std::string> m_commandLines; // Command information, shown under the buffer
 
-    DisplayRegion m_tabContentRegion;
-    DisplayRegion m_commandRegion;
-    DisplayRegion m_tabRegion;
-    NVec2f m_topLeftPx;
-    NVec2f m_bottomRightPx;
+    std::shared_ptr<Region> m_editorRegion;
+    std::shared_ptr<Region> m_tabContentRegion;
+    std::shared_ptr<Region> m_commandRegion;
+    std::shared_ptr<Region> m_tabRegion;
+    std::map<ZepTabWindow*, NRectf> m_tabRects;
     bool m_bRegionsChanged = false;
+    fs::path m_currentRootPath;
+
+    NVec2f m_mousePos;
+    float m_pixelScale = 1.0f;
+    fs::path m_rootPath;
+
+    // Config
+    uint32_t m_showScrollBar = 1;
 };
 
-} // Zep
+} // namespace Zep

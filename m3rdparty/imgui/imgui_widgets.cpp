@@ -586,7 +586,7 @@ bool ImGui::InvisibleButton(const char* str_id, const ImVec2& size_arg)
     if (window->SkipItems)
         return false;
 
-    // Cannot use zero-size for InvisibleButton(). Unlike Button() there is not way to fallback using the label size.
+    // Cannot use zero-fixed_size for InvisibleButton(). Unlike Button() there is not way to fallback using the label fixed_size.
     IM_ASSERT(size_arg.x != 0.0f && size_arg.y != 0.0f);
 
     const ImGuiID id = window->GetID(str_id);
@@ -731,7 +731,7 @@ void ImGui::Scrollbar(ImGuiLayoutType direction)
     float win_size_contents_v = horizontal ? window->SizeContents.x : window->SizeContents.y;
 
     // Calculate the height of our grabbable box. It generally represent the amount visible (vs the total scrollable amount)
-    // But we maintain a minimum size in pixel to allow for the user to still aim inside.
+    // But we maintain a minimum fixed_size in pixel to allow for the user to still aim inside.
     IM_ASSERT(ImMax(win_size_contents_v, win_size_avail_v) > 0.0f); // Adding this assert to check if the ImMax(XXX,1.0f) is still needed. PLEASE CONTACT ME if this triggers.
     const float win_size_v = ImMax(ImMax(win_size_contents_v, win_size_avail_v), 1.0f);
     const float grab_h_pixels = ImClamp(scrollbar_size_v * (win_size_avail_v / win_size_v), style.GrabMinSize, scrollbar_size_v);
@@ -825,7 +825,7 @@ void ImGui::Image(ImTextureID user_texture_id, const ImVec2& size, const ImVec2&
 
 // frame_padding < 0: uses FramePadding from style (default)
 // frame_padding = 0: no framing
-// frame_padding > 0: set framing size
+// frame_padding > 0: set framing fixed_size
 // The color used are the button colors.
 bool ImGui::ImageButton(ImTextureID user_texture_id, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, int frame_padding, const ImVec4& bg_col, const ImVec4& tint_col)
 {
@@ -837,7 +837,7 @@ bool ImGui::ImageButton(ImTextureID user_texture_id, const ImVec2& size, const I
     const ImGuiStyle& style = g.Style;
 
     // Default to using texture ID as ID. User can still push string/integer prefixes.
-    // We could hash the size/uv to create a unique ID but that would prevent the user from animating UV.
+    // We could hash the fixed_size/uv to create a unique ID but that would prevent the user from animating UV.
     PushID((void*)user_texture_id);
     const ImGuiID id = window->GetID("#image");
     PopID();
@@ -998,7 +998,7 @@ bool ImGui::RadioButton(const char* label, int* v, int v_button)
     return pressed;
 }
 
-// size_arg (for each axis) < 0.0f: align to end, 0.0f: auto, > 0.0f: specified size
+// size_arg (for each axis) < 0.0f: align to end, 0.0f: auto, > 0.0f: specified fixed_size
 void ImGui::ProgressBar(float fraction, const ImVec2& size_arg, const char* overlay)
 {
     ImGuiWindow* window = GetCurrentWindow();
@@ -1209,7 +1209,7 @@ bool ImGui::SplitterBehavior(const ImRect& bb, ImGuiID id, ImGuiAxis axis, float
         ImVec2 mouse_delta_2d = g.IO.MousePos - g.ActiveIdClickOffset - bb_interact.Min;
         float mouse_delta = (axis == ImGuiAxis_Y) ? mouse_delta_2d.y : mouse_delta_2d.x;
 
-        // Minimum pane size
+        // Minimum pane fixed_size
         float size_1_maximum_delta = ImMax(0.0f, *size1 - min_size1);
         float size_2_maximum_delta = ImMax(0.0f, *size2 - min_size2);
         if (mouse_delta < -size_1_maximum_delta)
@@ -1331,7 +1331,7 @@ bool ImGui::BeginCombo(const char* label, const char* preview_value, ImGuiComboF
     char name[16];
     ImFormatString(name, IM_ARRAYSIZE(name), "##Combo_%02d", g.CurrentPopupStack.Size); // Recycle windows based on depth
 
-    // Peak into expected window size so we can position it
+    // Peak into expected window fixed_size so we can position it
     if (ImGuiWindow* popup_window = FindWindowByName(name))
         if (popup_window->WasActive)
         {
@@ -2085,7 +2085,7 @@ bool ImGui::SliderBehaviorT(const ImRect& bb, ImGuiID id, ImGuiDataType data_typ
     float grab_sz = style.GrabMinSize;
     SIGNEDTYPE v_range = (v_min < v_max ? v_max - v_min : v_min - v_max);
     if (!is_decimal && v_range >= 0)                                             // v_range < 0 may happen on integer overflows
-        grab_sz = ImMax((float)(slider_sz / (v_range + 1)), style.GrabMinSize);  // For integer sliders: if possible have the grab size represent 1 unit
+        grab_sz = ImMax((float)(slider_sz / (v_range + 1)), style.GrabMinSize);  // For integer sliders: if possible have the grab fixed_size represent 1 unit
     grab_sz = ImMin(grab_sz, slider_sz);
     const float slider_usable_sz = slider_sz - grab_sz;
     const float slider_usable_pos_min = (is_horizontal ? bb.Min.x : bb.Min.y) + grab_padding + grab_sz*0.5f;
@@ -2853,7 +2853,7 @@ static ImVec2 InputTextCalcTextSizeW(const ImWchar* text_begin, const ImWchar* t
     if (out_offset)
         *out_offset = ImVec2(line_width, text_size.y + line_height);  // offset allow for the possibility of sitting after a trailing \n
 
-    if (line_width > 0 || text_size.y == 0.0f)                        // whereas size.y will ignore the trailing \n
+    if (line_width > 0 || text_size.y == 0.0f)                        // whereas fixed_size.y will ignore the trailing \n
         text_size.y += line_height;
 
     if (remaining)
@@ -3580,7 +3580,7 @@ bool ImGui::InputTextEx(const char* label, char* buf, int buf_size, const ImVec2
         RenderFrame(frame_bb.Min, frame_bb.Max, GetColorU32(ImGuiCol_FrameBg), true, style.FrameRounding);
     }
 
-    const ImVec4 clip_rect(frame_bb.Min.x, frame_bb.Min.y, frame_bb.Min.x + size.x, frame_bb.Min.y + size.y); // Not using frame_bb.Max because we have adjusted size
+    const ImVec4 clip_rect(frame_bb.Min.x, frame_bb.Min.y, frame_bb.Min.x + size.x, frame_bb.Min.y + size.y); // Not using frame_bb.Max because we have adjusted fixed_size
     ImVec2 render_pos = is_multiline ? draw_window->DC.CursorPos : frame_bb.Min + style.FramePadding;
     ImVec2 text_size(0.f, 0.f);
     const bool is_currently_scrolling = (edit_state.ID == id && is_multiline && g.ActiveId == draw_window->GetIDNoKeepAlive("#SCROLLY"));
@@ -4532,7 +4532,7 @@ void ImGui::ColorPickerOptionsPopup(const float* ref_col, ImGuiColorEditFlags fl
     ImGuiContext& g = *GImGui;
     if (allow_opt_picker)
     {
-        ImVec2 picker_size(g.FontSize * 8, ImMax(g.FontSize * 8 - (ImGui::GetFrameHeight() + g.Style.ItemInnerSpacing.x), 1.0f)); // FIXME: Picker size copied from main picker function
+        ImVec2 picker_size(g.FontSize * 8, ImMax(g.FontSize * 8 - (ImGui::GetFrameHeight() + g.Style.ItemInnerSpacing.x), 1.0f)); // FIXME: Picker fixed_size copied from main picker function
         ImGui::PushItemWidth(picker_size.x);
         for (int picker_type = 0; picker_type < 2; picker_type++)
         {
@@ -5073,7 +5073,7 @@ bool ImGui::Selectable(const char* label, bool* p_selected, ImGuiSelectableFlags
 //-------------------------------------------------------------------------
 
 // FIXME: Rename to BeginListBox()
-// Helper to calculate the size of a listbox and display a label on the right.
+// Helper to calculate the fixed_size of a listbox and display a label on the right.
 // Tip: To have a list filling the entire window width, PushItemWidth(-1) and pass an empty label "##empty"
 bool ImGui::ListBoxHeader(const char* label, const ImVec2& size_arg)
 {
@@ -5104,7 +5104,7 @@ bool ImGui::ListBoxHeader(const char* label, const ImVec2& size_arg)
 bool ImGui::ListBoxHeader(const char* label, int items_count, int height_in_items)
 {
     // Size default to hold ~7 items. Fractional number of items helps seeing that we can scroll down/up without looking at scrollbar.
-    // We don't add +0.40f if items_count <= height_in_items. It is slightly dodgy, because it means a dynamic list of items will make the widget resize occasionally when it crosses that size.
+    // We don't add +0.40f if items_count <= height_in_items. It is slightly dodgy, because it means a dynamic list of items will make the widget resize occasionally when it crosses that fixed_size.
     // I am expecting that someone will come and complain about this behavior in a remote future, then we can advise on a better solution.
     if (height_in_items < 0)
         height_in_items = ImMin(items_count, 7);
@@ -5126,7 +5126,7 @@ void ImGui::ListBoxFooter()
 
     EndChildFrame();
 
-    // Redeclare item size so that it includes the label (we have stored the full size in LastItemRect)
+    // Redeclare item fixed_size so that it includes the label (we have stored the full fixed_size in LastItemRect)
     // We call SameLine() to restore DC.CurrentLine* data
     SameLine();
     parent_window->DC.CursorPos = bb.Min;
@@ -5649,7 +5649,7 @@ bool ImGui::BeginMenu(const char* label, bool enabled)
         ImGuiWindowFlags flags = ImGuiWindowFlags_ChildMenu | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoNavFocus;
         if (window->Flags & (ImGuiWindowFlags_Popup|ImGuiWindowFlags_ChildMenu))
             flags |= ImGuiWindowFlags_ChildWindow;
-        menu_is_open = BeginPopupEx(id, flags); // menu_is_open can be 'false' when the popup is completely clipped (e.g. zero size display)
+        menu_is_open = BeginPopupEx(id, flags); // menu_is_open can be 'false' when the popup is completely clipped (e.g. zero fixed_size display)
     }
 
     return menu_is_open;

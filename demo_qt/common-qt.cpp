@@ -15,10 +15,10 @@ int GetPixelSize(PixelSize sz)
 {
     switch (sz)
     {
-    case PixelSize::ToolBarIcon:
-        return qApp->style()->pixelMetric(QStyle::PM_ButtonIconSize);
-    default:
-        return 0;
+        case PixelSize::ToolBarIcon:
+            return qApp->style()->pixelMetric(QStyle::PM_ButtonIconSize);
+        default:
+            return 0;
     }
 }
 
@@ -50,4 +50,4 @@ float GetPointSizeFromFontPixelSize(int pixelSize)
     return (pixelSize * 72) / float(qApp->desktop()->logicalDpiX());
 }
 
-} // DPI
+} // namespace DPI

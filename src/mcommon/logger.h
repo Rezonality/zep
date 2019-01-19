@@ -7,16 +7,25 @@
  */
 
 #pragma once
+#include "common_namespace.h"
 #include <iostream>
+#include <sstream>
 
 #if TARGET_PC
 // A reference to the debug API on windows, to help the logger output in VC.  This is better
 // than out to the console sometimes, and as long as you are building on Windows, you are referencing the necessary
 // kernel32.dll....
-extern "C" { __declspec(dllimport) void __stdcall OutputDebugStringA(const char* pszChar); }
+extern "C" {
+__declspec(dllimport) void __stdcall OutputDebugStringA(_In_opt_ const char* pszChar);
+}
 #endif
 
 using namespace std;
+
+#undef ERROR
+
+namespace COMMON_NAMESPACE
+{
 
 enum typelog
 {
@@ -37,7 +46,9 @@ extern structlog LOGCFG;
 class LOG
 {
 public:
-    LOG() {}
+    LOG()
+    {
+    }
     LOG(typelog type)
     {
         msglevel = type;
@@ -78,20 +89,22 @@ private:
         string label;
         switch (type)
         {
-        case DEBUG:
-            label = "DEBUG";
-            break;
-        case INFO:
-            label = "INFO ";
-            break;
-        case WARN:
-            label = "WARN ";
-            break;
-        case ERROR:
-            label = "ERROR";
-            break;
+            case DEBUG:
+                label = "DEBUG";
+                break;
+            case INFO:
+                label = "INFO ";
+                break;
+            case WARN:
+                label = "WARN ";
+                break;
+            case ERROR:
+                label = "ERROR";
+                break;
         }
         return label;
     }
     std::ostringstream out;
 };
+
+} // namespace COMMON_NAMESPACE

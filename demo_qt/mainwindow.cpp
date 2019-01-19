@@ -1,10 +1,18 @@
 #include "mainwindow.h"
 #include <QPainter>
+#include <QMenu>
+#include <QMenuBar>
 #include <QCommandLineParser>
+#include <QWidget>
 
 #include "buffer.h"
+#include "editor.h"
+#include "theme.h"
 #include "zepwidget_qt.h"
+#include "src/mode_standard.h"
+#include "src/mode_vim.h"
 
+#include "config_app.h"
 
 using namespace Zep;
 
@@ -41,7 +49,7 @@ MainWindow::MainWindow()
 
     parser.process(*qApp);
 
-    auto* pWidget = new ZepWidget_Qt(this);
+    auto* pWidget = new ZepWidget_Qt(this, ZEP_ROOT);
 
     const QStringList args = parser.positionalArguments();
     if (args.size() > 0)
@@ -50,13 +58,66 @@ MainWindow::MainWindow()
     }
     else
     {
-        ZepBuffer* pBuffer = pWidget->GetEditor().AddBuffer("shader.vert");
+        ZepBuffer* pBuffer = pWidget->GetEditor().GetEmptyBuffer("shader.vert");
         pBuffer->SetText(shader.c_str());
     }
 
-    setStyleSheet("background-color: darkBlue");
+    //setStyleSheet("background-color: darkBlue");
 
-    setContentsMargins(4, 4, 4, 4);
+    setContentsMargins(2, 2, 2, 2);
+
+    auto menu = new QMenuBar();
+    auto pFile = menu->addMenu("File");
+    auto pSettings = menu->addMenu("Settings");
+    {
+        auto pMode = pSettings->addMenu("Editor Mode");
+        {
+            auto pVim = pMode->addAction("Vim");
+            auto pStandard = pMode->addAction("Standard");
+
+            bool enabledVim = strcmp(pWidget->GetEditor().GetCurrentMode()->Name(), Zep::ZepMode_Vim::StaticName()) == 0;
+            bool enabledNormal = !enabledVim;
+            pVim->setCheckable(true);
+            pStandard->setCheckable(true);
+            pVim->setChecked(enabledVim);
+            pStandard->setChecked(!enabledVim);
+
+            connect(pVim, &QAction::triggered, this, [pWidget, pVim, pStandard]() {
+                pVim->setChecked(true);
+                pStandard->setChecked(false);
+                pWidget->GetEditor().SetMode(ZepMode_Vim::StaticName());
+            });
+            connect(pStandard, &QAction::triggered, this, [pWidget, pStandard, pVim]() {
+                pVim->setChecked(false);
+                pStandard->setChecked(true);
+                pWidget->GetEditor().SetMode(ZepMode_Standard::StaticName());
+            });
+        }
+        auto pTheme = pSettings->addMenu("Theme");
+        {
+            auto pDark = pTheme->addAction("Dark");
+            auto pLight = pTheme->addAction("Light");
+
+            bool enabledDark = pWidget->GetEditor().GetTheme().GetThemeType() == ThemeType::Dark ? true : false;
+            bool enabledLight = !enabledDark;
+            pDark->setCheckable(true);
+            pLight->setCheckable(true);
+            pDark->setChecked(enabledDark);
+            pLight->setChecked(!enabledDark);
+
+            connect(pDark, &QAction::triggered, this, [pWidget, pDark, pLight]() {
+                pDark->setChecked(true);
+                pLight->setChecked(false);
+                pWidget->GetEditor().GetTheme().SetThemeType(ThemeType::Dark);
+            });
+            connect(pLight, &QAction::triggered, this, [pWidget, pLight, pDark]() {
+                pDark->setChecked(false);
+                pLight->setChecked(true);
+                pWidget->GetEditor().GetTheme().SetThemeType(ThemeType::Light);
+            });
+        }
+    }
+
+    setMenuBar(menu);
     setCentralWidget(pWidget);
 }
-

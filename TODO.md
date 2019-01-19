@@ -1,8 +1,5 @@
 ### Bugs
-Delete everything; iterator bug. ?How to repro
-
-#### Window
-- Finish HSplit 
+VIM: Select lines all the way up to the first line should cover all chars
 
 #### General
 - Finish cut/paste to OS buffer
@@ -12,19 +9,15 @@ Delete everything; iterator bug. ?How to repro
 - f (find) / next, previous
 - / Searching
 - visual-repeat (dot command should use last visual selection range)
-- 'R'/'r' overstrike
+- 'R'/'r' overstrikeA
 
 #### Standard Mode
+- SHIFT+UP/DOWN for line selection
+- Insert char over selected text (replaces it)
 
 #### Syntax Highlight
-- Generalize the token matching into the base class for easy 
-implementation of c like languages
-- Add multilinne highlight via a hierarchy table?
+More file types/keywords
 
 #### Tests
-- Add standard mode unit tests
-- Test syntax highlighting
-
-#### Future
-- UTF 8?
-- Standalone editor tool so I can dogfood it
+- Add tests for syntax highlighting
+- Add more standard mode tests

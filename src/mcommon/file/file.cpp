@@ -1,13 +1,67 @@
+#include "common_namespace.h"
+
 #include <fstream>
 
-#include "utils/file.h"
-#include "sdl/include/SDL_filesystem.h"
+#if TARGET_PC
+#include <windows.h>
+#include <shlobj.h>
+#endif
+
+// For logging events to file
+#include "mcommon/FileWatcher/FileWatcher.h"
+#include "mcommon/file/file.h"
+#include "mcommon/file/tinydir.h"
 
 #include <queue>
 #include <set>
+#include "mcommon/logger.h"
+#include "mcommon/string/stringutils.h"
 
-namespace Zep
+#undef ERROR
+
+namespace COMMON_NAMESPACE
 {
+
+// Listen for run_tree updates
+class UpdateListener : public FW::FileWatchListener
+{
+public:
+    UpdateListener(fileCB cb)
+        : callback(cb)
+    {
+    }
+
+    void handleFileAction(FW::WatchID watchid, const FW::String& dir, const FW::String& filename, FW::Action action)
+    {
+        if (action == FW::Action::Modified)
+        {
+            callback(fs::path(filename));
+        }
+    }
+
+    fileCB callback;
+};
+
+std::shared_ptr<UpdateListener> runTreeListener;
+FW::WatchID watchID;
+FW::FileWatcher fileWatcher;
+
+void file_init_dir_watch(const fs::path& dir, fileCB callback)
+{
+    runTreeListener = std::make_shared<UpdateListener>(callback);
+    watchID = fileWatcher.addWatch(dir.string().c_str(), runTreeListener.get(), true);
+}
+
+void file_destroy_dir_watch()
+{
+    fileWatcher.removeWatch(watchID);
+    runTreeListener.reset();
+}
+
+void file_update_dir_watch()
+{
+    fileWatcher.update();
+}
 
 std::string file_read(const fs::path& fileName)
 {
@@ -20,14 +74,12 @@ std::string file_read(const fs::path& fileName)
         in.seekg(0, std::ios::beg);
         in.read(&contents[0], contents.size());
         in.close();
-        return(contents);
+        return (contents);
     }
-    /*
     else
     {
-        LOG(ERROR) << "File Not Found: " << fileName.string();
+        LOG(typelog::ERROR) << "File Not Found: " << fileName.string();
     }
-    */
     return std::string();
 }
 
@@ -76,22 +128,20 @@ fs::path file_get_relative_path(fs::path from, fs::path to)
     return finalPath;
 }
 
-/*#if TARGET_PC
+#if TARGET_PC
 fs::path file_get_documents_path()
 {
     PWSTR path;
     HRESULT hr = SHGetKnownFolderPath(FOLDERID_Documents, 0, NULL, &path);
-    if (SUCCEEDED(hr)) 
+    if (SUCCEEDED(hr))
     {
-        fs::path ret(path);
+        fs::path ret(toString(path));
         CoTaskMemFree(path);
         return ret;
     }
     return fs::path();
 }
 #endif
-*/
-/*
 
 std::vector<fs::path> file_gather_files(const fs::path& root)
 {
@@ -100,7 +150,7 @@ std::vector<fs::path> file_gather_files(const fs::path& root)
     tinydir_dir dir;
     if (tinydir_open(&dir, root.string().c_str()) == -1)
     {
-        //LOG(ERROR) << "Gather Files, Start Path Invalid: " << root.string();
+        LOG(typelog::ERROR) << "Gather Files, Start Path Invalid: " << root.string();
         return ret;
     }
 
@@ -117,7 +167,7 @@ std::vector<fs::path> file_gather_files(const fs::path& root)
             tinydir_file file;
             if (tinydir_readfile(&thisDir, &file) == -1)
             {
-                //LOG(ERROR) << "Couldn't read: " << thisDir.path;
+                LOG(typelog::ERROR) << "Couldn't read: " << thisDir.path;
                 tinydir_next(&thisDir);
                 continue;
             }
@@ -128,8 +178,7 @@ std::vector<fs::path> file_gather_files(const fs::path& root)
 
                 // Ignore . and ..
                 // Otherwise we walk forever.  Do this before absolute path!
-                if (filePath.string().find("\\.") != std::string::npos ||
-                    filePath.string().find("..") != std::string::npos)
+                if (filePath.string().find("\\.") != std::string::npos || filePath.string().find("..") != std::string::npos)
                 {
                     //LOG(INFO) << "Skipping: " << filePath.string();
                     tinydir_next(&thisDir);
@@ -137,10 +186,10 @@ std::vector<fs::path> file_gather_files(const fs::path& root)
                 }
 
                 // Keep paths nice and absolute/canonical
-                filePath = fs::canonical(fs::absolute(filePath));
+                filePath = fs::canonical(filePath);
                 if (checkedPaths.find(filePath) != checkedPaths.end())
                 {
-                    //LOG(INFO) << "Already checked: " << filePath.string();
+                    LOG(INFO) << "Already checked: " << filePath.string();
                     tinydir_next(&thisDir);
                     continue;
                 }
@@ -152,7 +201,7 @@ std::vector<fs::path> file_gather_files(const fs::path& root)
                     if (tinydir_open(&subDir, filePath.string().c_str()) != -1)
                     {
                         fs::path newPath(subDir.path);
-                        newPath = fs::canonical(fs::absolute(newPath));
+                        newPath = fs::canonical(newPath);
                         dirs.push(subDir);
                     }
                 }
@@ -161,9 +210,9 @@ std::vector<fs::path> file_gather_files(const fs::path& root)
                     ret.push_back(filePath);
                 }
             }
-            catch (fs::filesystem_error&)
+            catch (fs::filesystem_error& err)
             {
-                //LOG(ERROR) << err.what();
+                LOG(typelog::ERROR) << err.what();
             }
 
             tinydir_next(&thisDir);
@@ -171,6 +220,5 @@ std::vector<fs::path> file_gather_files(const fs::path& root)
     }
     return ret;
 }
-*/
 
-} // Zep
+} // namespace COMMON_NAMESPACE

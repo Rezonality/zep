@@ -20,14 +20,17 @@ LIST(APPEND M3RDPARTY_INCLUDE
     m3rdparty/imgui/examples/libs/gl3w
     )
 
-#LIST(APPEND M3RDPARTY_SRC)
-
 ENDIF()
 
 LIST(APPEND M3RDPARTY_INCLUDE
     m3rdparty
     ${CMAKE_BINARY_DIR}
     m3rdparty/threadpool
+    )
+
+LIST(APPEND M3RDPARTY_SOURCE
+    m3rdparty/tfd/tinyfiledialogs.h
+    m3rdparty/tfd/tinyfiledialogs.c
     )
 
 SET (M3RDPARTY_DIR ${CMAKE_CURRENT_LIST_DIR})
