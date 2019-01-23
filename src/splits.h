@@ -1,6 +1,5 @@
 #pragma once
 
-#include "mcommon/common_namespace.h"
 #include "mcommon/math/math.h"
 #include <algorithm>
 #include <limits>
@@ -10,7 +9,6 @@
 
 namespace Zep
 {
-using namespace COMMON_NAMESPACE;
 
 namespace RegionFlags
 {

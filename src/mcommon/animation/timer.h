@@ -1,11 +1,10 @@
 #pragma once
 
-#include "common_namespace.h"
 #include <cstdint>
 #include <string>
 #include <unordered_map>
 
-namespace COMMON_NAMESPACE
+namespace Zep
 {
 
 enum class TimerSample : uint32_t
@@ -56,4 +55,4 @@ public:
 
 #define TIME_SCOPE(name) ProfileBlock name##_timer_block(#name);
 
-} // namespace COMMON_NAMESPACE
+} // namespace Zep

@@ -1,11 +1,4 @@
-#include "common_namespace.h"
-
 #include <fstream>
-
-#if TARGET_PC
-#include <windows.h>
-#include <shlobj.h>
-#endif
 
 // For logging events to file
 #include "mcommon/FileWatcher/FileWatcher.h"
@@ -19,7 +12,7 @@
 
 #undef ERROR
 
-namespace COMMON_NAMESPACE
+namespace Zep
 {
 
 // Listen for run_tree updates
@@ -128,21 +121,6 @@ fs::path file_get_relative_path(fs::path from, fs::path to)
     return finalPath;
 }
 
-#if TARGET_PC
-fs::path file_get_documents_path()
-{
-    PWSTR path;
-    HRESULT hr = SHGetKnownFolderPath(FOLDERID_Documents, 0, NULL, &path);
-    if (SUCCEEDED(hr))
-    {
-        fs::path ret(toString(path));
-        CoTaskMemFree(path);
-        return ret;
-    }
-    return fs::path();
-}
-#endif
-
 std::vector<fs::path> file_gather_files(const fs::path& root)
 {
     std::vector<fs::path> ret;
@@ -221,4 +199,4 @@ std::vector<fs::path> file_gather_files(const fs::path& root)
     return ret;
 }
 
-} // namespace COMMON_NAMESPACE
+} // namespace Zep

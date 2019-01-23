@@ -17,7 +17,7 @@
 
 #include "window.h"
 
-namespace COMMON_NAMESPACE
+namespace Zep
 {
 structlog LOGCFG = {true, DEBUG};
 }
@@ -88,7 +88,7 @@ void ZepEditor::LoadConfig(const fs::path& config_path)
     {
         archive_bind(*m_spConfig, "editor", "show_scrollbar", m_showScrollBar);
 
-#if !(TARGET_MAC)
+#ifndef __APPLE__
         file_init_dir_watch(config_path.parent_path(), [&](const fs::path& path)
         {
             if (path.filename() == "zep.cfg")
@@ -375,7 +375,7 @@ void ZepEditor::SetBufferSyntax(ZepBuffer& buffer) const
     {
         auto str = buffer.GetName();
         size_t dot_pos = str.find_last_of(".");
-        if (dot_pos != string::npos)
+        if (dot_pos != std::string::npos)
         {
             ext = string_tolower(str.substr(dot_pos, str.length() - dot_pos));
         }

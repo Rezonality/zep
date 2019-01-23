@@ -6,7 +6,7 @@
 #include <locale>
 #include <cstring>
 
-namespace COMMON_NAMESPACE
+namespace Zep
 {
 
 std::unordered_map<uint32_t, std::string> StringId::stringLookup;
@@ -358,4 +358,4 @@ const StringId& StringId::operator=(const std::string& str)
     return *this;
 }
 
-} // namespace COMMON_NAMESPACE
+} // namespace Zep

@@ -1,16 +1,12 @@
 #pragma once
 
-#include <mcommon/file/file.h>
+#include "mcommon/file/file.h"
 #include "editor.h"
 #include "theme.h"
 
 #include <set>
-#include <shared_mutex>
-
 #include "gap_buffer.h"
-#if !(TARGET_PC)
-#define shared_mutex shared_timed_mutex
-#endif
+
 namespace Zep
 {
 

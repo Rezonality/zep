@@ -8,7 +8,7 @@
 // This just saves using a library like glm (my personal preference)
 // - and it keeps the dependencies of Zep to just the source folder contents
 
-namespace COMMON_NAMESPACE
+namespace Zep
 {
 
 template <class T>

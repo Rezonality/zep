@@ -1,6 +1,5 @@
 #pragma once
 
-#include "common_namespace.h"
 #include <functional>
 #include <string>
 #include <ostream>
@@ -8,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace COMMON_NAMESPACE
+namespace Zep
 {
 
 inline size_t CountUtf8BytesFromChar(unsigned int c)
@@ -144,14 +143,14 @@ inline bool string_equals(const std::string& str, const std::string& str2)
 {
     return str == str2;
 }
-} // namespace COMMON_NAMESPACE
+} // namespace Zep
 
 namespace std
 {
 template <>
-struct hash<COMMON_NAMESPACE::StringId>
+struct hash<Zep::StringId>
 {
-    std::size_t operator()(const COMMON_NAMESPACE::StringId& k) const
+    std::size_t operator()(const Zep::StringId& k) const
     {
         // Compute individual hash values for first,
         // second and third and combine them using XOR
@@ -162,10 +161,10 @@ struct hash<COMMON_NAMESPACE::StringId>
 };
 } // namespace std
 
-namespace COMMON_NAMESPACE
+namespace Zep
 {
 inline bool string_equals(const StringId lhs, const StringId rhs)
 {
     return lhs.id == rhs.id;
 }
-} // namespace COMMON_NAMESPACE
+} // namespace Zep

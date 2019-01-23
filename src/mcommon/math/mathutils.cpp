@@ -1,5 +1,3 @@
-#include "mcommon.h"
-
 #include "glm/glm/gtc/quaternion.hpp"
 
 #include "math/mathutils.h"

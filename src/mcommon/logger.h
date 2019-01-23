@@ -7,11 +7,10 @@
  */
 
 #pragma once
-#include "common_namespace.h"
 #include <iostream>
 #include <sstream>
 
-#if TARGET_PC
+#ifdef WIN32
 // A reference to the debug API on windows, to help the logger output in VC.  This is better
 // than out to the console sometimes, and as long as you are building on Windows, you are referencing the necessary
 // kernel32.dll....
@@ -19,12 +18,9 @@ extern "C" {
 __declspec(dllimport) void __stdcall OutputDebugStringA(_In_opt_ const char* pszChar);
 }
 #endif
-
-using namespace std;
-
 #undef ERROR
 
-namespace COMMON_NAMESPACE
+namespace Zep
 {
 
 enum typelog
@@ -61,8 +57,8 @@ public:
     {
         if (opened)
         {
-            out << endl;
-#if TARGET_PC
+            out << std::endl;
+#ifdef WIN32
             OutputDebugStringA(out.str().c_str());
 #else
             cout << out.str();
@@ -84,9 +80,9 @@ public:
 private:
     bool opened = false;
     typelog msglevel = DEBUG;
-    inline string getLabel(typelog type)
+    inline std::string getLabel(typelog type)
     {
-        string label;
+        std::string label;
         switch (type)
         {
             case DEBUG:
@@ -107,4 +103,4 @@ private:
     std::ostringstream out;
 };
 
-} // namespace COMMON_NAMESPACE
+} // namespace Zep

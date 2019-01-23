@@ -10,8 +10,9 @@
 #include <iomanip>
 #include <cassert>
 #include <algorithm>
+#include <cassert>
 
-namespace COMMON_NAMESPACE
+namespace Zep
 {
 
 // Convert a number to a string, removing trailing 0s to make it as compact as possible
@@ -753,4 +754,4 @@ void archive_reload(Archive& ar)
     }
 }
 
-} // namespace COMMON_NAMESPACE
+} // namespace Zep

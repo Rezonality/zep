@@ -1,13 +1,12 @@
 #pragma once
 
-#include "common_namespace.h"
 #include <sstream>
 #include <unordered_map>
 #include <functional>
 #include "mcommon/file/file.h"
 #include "mcommon/string/stringutils.h"
 
-namespace COMMON_NAMESPACE
+namespace Zep
 {
 
 enum class BindingType
@@ -99,4 +98,4 @@ void archive_bind(Archive& archive, StringId section, StringId key, float& val);
 void archive_bind(Archive& archive, StringId section, StringId key, bool& val);
 void archive_bind(Archive& archive, StringId section, StringId key, uint32_t& val);
 
-} // namespace COMMON_NAMESPACE
+} // namespace Zep

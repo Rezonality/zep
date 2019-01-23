@@ -4,7 +4,7 @@
 
 #include "timer.h"
 
-namespace COMMON_NAMESPACE
+namespace Zep
 {
 
 struct TimedSection
@@ -76,4 +76,4 @@ void profile_add_value(profile_value& val, double av)
 }
 
 
-} // namespace COMMON_NAMESPACE
+} // namespace Zep

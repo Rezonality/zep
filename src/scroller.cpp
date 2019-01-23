@@ -1,8 +1,7 @@
-#include "common_namespace.h"
 #include "editor.h"
 #include "theme.h"
 #include "display.h"
-#include "logger.h"
+#include "mcommon/logger.h"
 #include "scroller.h"
 
 // A scrollbar that is manually drawn and implemented.  This means it is independent of the backend and can be drawn the

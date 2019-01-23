@@ -1,6 +1,5 @@
 #pragma once
 
-#include "common_namespace.h"
 #include "mcommon/string/stringutils.h"
 #include "mcommon/file/file.h"
 
@@ -12,7 +11,7 @@
 // For testing, we _can_ compile these functions as part of a 
 // PC build, but it shouldn't be used typically.
 // They will all go away when the Mac side has std::filesystem!
-#if !(TARGET_PC)
+#ifndef WIN32
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -24,7 +23,7 @@
 #include <stdio.h>
 #include <limits.h>
 
-namespace COMMON_NAMESPACE
+namespace Zep
 {
 
 // NOTE:
@@ -344,4 +343,4 @@ inline bool is_directory(const path& source)
     return false;
 }
 
-} // namespace COMMON_NAMESPACE
+} // namespace Zep

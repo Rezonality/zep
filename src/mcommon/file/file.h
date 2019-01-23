@@ -1,20 +1,19 @@
 #pragma once
 
-#include "common_namespace.h"
-#if TARGET_MAC
-#undef PROJECT_CPP_FILESYSTEM
+#ifndef __APPLE__
+#define PROJECT_CPP_FILESYSTEM
 #endif
 
 #ifdef PROJECT_CPP_FILESYSTEM
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem::v1;
 #else
-#include <mcommon/file/mfilesystem.h>
-namespace fs = COMMON_NAMESPACE;
+#include "mfilesystem.h"
+namespace fs = Zep;
 #endif
 
 #include <functional>
-namespace COMMON_NAMESPACE
+namespace Zep
 {
 std::string file_read(const fs::path& fileName);
 bool file_write(const fs::path& fileName, const void* pData, size_t size);
@@ -28,4 +27,4 @@ void file_init_dir_watch(const fs::path& dir, fileCB callback);
 void file_destroy_dir_watch();
 void file_update_dir_watch();
 
-} // namespace COMMON_NAMESPACE
+} // namespace Zep

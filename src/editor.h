@@ -1,6 +1,5 @@
 #pragma once
 
-#include "mcommon/common_namespace.h"
 #include <deque>
 #include <map>
 #include <memory>
@@ -36,8 +35,6 @@
 // The Modes receive key presses and act on a buffer region
 namespace Zep
 {
-
-using namespace COMMON_NAMESPACE;
 
 class ZepBuffer;
 class ZepMode;

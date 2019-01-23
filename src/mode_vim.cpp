@@ -453,6 +453,7 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
         auto bufferCursor = pWindow->GetBufferCursor();
         if (GetEditor().Broadcast(std::make_shared<ZepMessage>(Msg::HandleCommand, strCommand)))
         {
+            m_currentCommand.clear();
             return true;
         }
         else if (strCommand == ":reg")

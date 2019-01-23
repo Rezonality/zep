@@ -3,7 +3,7 @@
 #include "display.h"
 #include "editor.h"
 #include "window.h"
-#include "logger.h"
+#include "mcommon/logger.h"
 
 // A 'window' is like a Vim Tab
 namespace Zep
