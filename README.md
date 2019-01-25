@@ -6,10 +6,10 @@
 [![codecov](https://codecov.io/gh/cmaughan/zep/branch/master/graph/badge.svg)](https://codecov.io/gh/cmaughan/zep)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/cmaughan/zep/blob/master/LICENSE)
 
-Zep is a simple embeddable editor, with a rendering agnostic design and optional Vim mode.  Out of the box it can draw to a Qt Widget
-or an an ImGui window - useful for embedding in a game engine.  A simple syntax highlighting engine is provided, and can easily be extended. 
-Basic theming support is included, and window tabs and vertical/horizontal splits are also available.  Zep is 'opinionated' in how it does
-things, but is easy to modify and supports many common features.  It is heavliy influenced by Vim, but has a good notepad-style editing mode too.
+Zep is a simple embeddable editor, with a rendering agnostic design and optional Vim mode.  It can be included using a single header.  Out of the
+box it can draw to a Qt Widget or an an ImGui window - useful for embedding in a game engine.  A simple syntax highlighting engine is provided,
+and can easily be extended. Basic theming support is included, and window tabs and vertical/horizontal splits are also available.  Zep is 'opinionated'
+in how it does things, but is easy to modify and supports many common features.  It is heavliy influenced by Vim, but has a good notepad-style editing mode too.
 
 ![ImGui](screenshots/sample.png)
 
@@ -19,9 +19,11 @@ Zep is not meant to replace Vim.  I don't have a lifetime spare to write that, b
 anything missing will be added over time.
 
 Zep is ideally suited to embedding in a game engine, as an in-game editor, or anywhere you need a simple editor without a massive dependency 
-on something more substantial like NeoVim.  The core library is dependency free, small, and requires only a modern C++ compiler.
-The demos for Qt and ImGui require their additional packages, but the core library is easily built and cross platform.  The ImGui demo builds and runs on Windows, Linux and
-Mac OS.  If you're a Vim user, you might often suffer the frustration of not being able to use Vim keystrokes in your tools.  Zep solves that.
+on something more substantial like NeoVim.  The core library is dependency free, small, and requires only a modern C++ compiler.  Zep can 
+be included in your project by setting a define and including zep.h, or building a dependency free library.
+The demos for Qt and ImGui require their additional packages, but the core zep code is easily built and cross platform.  The ImGui demo builds
+and runs on Windows, Linux and Mac OS.  If you're a Vim user, you might often suffer the frustration of not being able to use Vim keystrokes
+in your tools.  Zep solves that.
 
 Key Features:
 * Modal 'vim' or modeless 'standard' editing styles.
@@ -32,6 +34,7 @@ Key Features:
 * Theme support
 * Text Markers for highlighing errors, etc.
 * No dependencies, cross platform, small library
+* Single header compile
 * Builds on VC 2017, GCC 6, Clang. C++14 is the basic requirement
 
 Limitations:
@@ -65,9 +68,6 @@ Embedded in a Game Engine:
 Zep is built from simple interacting layers for simplicity.
 
 ### Text
-Buffer->Commands->Mode->ModeVim 
-      ->Syntax        ->ModeStandard
-
 The text layer manages manipulation of text in a single buffer.  At the bottom level, a gap buffer struture maintains the text information.
 The buffer layer is responsible for saving and loading text, and supporting simple search and navigation within the text.  Much of the higher
 level mode code uses the buffer commands to move around inside the text.
@@ -79,9 +79,6 @@ The Mode layer supports editing text using Vim commands, or using standard notep
 A Syntax layer monitors the buffer and provides file-specific syntax coloring. Syntax highlighting can be easily extended
 
 ### Display
-TabWindow->Window->Display_ImGui
-                 ->Display_Qt
-
 Tab windows are like workspaces, each containing a set of windows arranged in splits.  The window lass arranges the rendering and calls a thin
 display layer to draw the text.  This makes it simple to draw the editor using different rendering code.  Adding Qt took just an hour to do.
 
@@ -99,6 +96,14 @@ and not installed seperately.  It is only used for the demo, not the core editor
 If you have compilation problems, you might need to investigate the compiler you are using.
 Ubuntu 16 & 17 both have a recent enough version for it to work.  On Ubuntu 14 I tend to upgrade to g++6
 The Qt app builds on linux, but is not part of the travis setup yet.
+
+## Single Header
+To start using zep in your project straight away, you can use the single header option.  Add the following to one of your source files:
+```
+#define ZEP_SINGLE_HEADER_BUILD
+#include <zep/src/zep.h>
+```
+This effectively compiles all of the zep code in a single step. Put it in a file you don't modify often, since it will increase the compile time for that file.
 
 ## Linux
 ```
