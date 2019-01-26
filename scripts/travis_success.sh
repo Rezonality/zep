@@ -1,3 +1,5 @@
+#!/bin/sh
+
 if test "${BUILD_TYPE}" = "Coverage"; then
   coveralls-lcov ${TRAVIS_BUILD_DIR}/build/coverage.info
   cd ${TRAVIS_BUILD_DIR}/build

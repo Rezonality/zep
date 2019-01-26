@@ -1,6 +1,8 @@
 #include "zepdisplay_qt.h"
 #include <qapplication.h>
-#include <Windows.h>
+#if _WIN32
+#include <windows.h>
+#endif
 
 // This is an ImGui specific renderer for Zep.  Simple interface for drawing chars, rects, lines.
 // Implement a new display for a different rendering type - e.g. terminal or windows Gui.jj
