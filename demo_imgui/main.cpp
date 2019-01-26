@@ -270,7 +270,7 @@ int main(int argc, char** argv)
         // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
         // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
         SDL_Event event;
-        if (SDL_WaitEventTimeout(&event, 0))
+        if (SDL_WaitEventTimeout(&event, 10))
         {
             ImGui_ImplSDL2_ProcessEvent(&event);
             if (event.type == SDL_QUIT)
@@ -284,7 +284,6 @@ int main(int argc, char** argv)
             // This will check for cursor flash, for example, to keep that updated.
             if (!zep.spEditor->RefreshRequired())
             {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 continue;
             }
         }
