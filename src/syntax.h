@@ -2,6 +2,12 @@
 
 #include "buffer.h"
 
+#include <set>
+#include <vector>
+#include <future>
+#include <atomic>
+#include <memory>
+
 namespace Zep
 {
 
@@ -72,8 +78,8 @@ class ZepSyntaxAdorn : public ZepComponent
 public:
     ZepSyntaxAdorn(ZepSyntax& syntax, ZepBuffer& buffer)
         : ZepComponent(syntax.GetEditor())
-        , m_syntax(syntax)
         , m_buffer(buffer)
+        , m_syntax(syntax)
     {
     }
 

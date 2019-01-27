@@ -18,9 +18,9 @@ ZepSyntax::ZepSyntax(
     uint32_t flags)
     : ZepComponent(buffer.GetEditor())
     , m_buffer(buffer)
-    , m_stop(false)
     , m_keywords(keywords)
     , m_identifiers(identifiers)
+    , m_stop(false)
     , m_flags(flags)
 {
     m_syntax.resize(m_buffer.GetText().size());

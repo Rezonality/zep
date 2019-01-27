@@ -114,7 +114,7 @@ public:
     {
         return m_lastCommand;
     }
-    const int GetLastCount() const
+    int GetLastCount() const
     {
         return m_lastCount;
     }

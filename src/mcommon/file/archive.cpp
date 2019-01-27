@@ -644,7 +644,7 @@ std::string archive_to_file_text(Archive& ar)
                 {
                     if (i == 0)
                     {
-                        for (size_t i = itrKeys->first.ToString().size(); i < 30; i++)
+                        for (size_t j = itrKeys->first.ToString().size(); j < 30; j++)
                         {
                             str << " ";
                         }

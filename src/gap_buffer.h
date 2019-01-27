@@ -83,9 +83,9 @@ public:
 
         GapBuffer<T>& buffer;
 
-        iterator(GapBuffer<T>& buff, size_t ptr, bool skip = true) : buffer(buff), p(ptr), skipGap(skip)  { };
-        iterator(const iterator& rhs) : buffer(rhs.buffer), p(rhs.p), skipGap(rhs.skipGap) { }
-        ~iterator() {};
+        iterator(GapBuffer<T>& buff, size_t ptr, bool skip = true) : skipGap(skip), p(ptr), buffer(buff) { }
+        iterator(const iterator& rhs) : skipGap(rhs.skipGap), p(rhs.p), buffer(rhs.buffer) { }
+        ~iterator() { }
 
         iterator& operator=(const iterator& rhs) { p = rhs.p; return *this; }
         
@@ -127,10 +127,10 @@ public:
         size_t p = 0;
         const GapBuffer<T>& buffer;
 
-        const_iterator(const GapBuffer<T>& buff, size_t ptr, bool skip = true) : buffer(buff), p(ptr), skipGap(skip)  { };
-        const_iterator(const iterator& rhs) : buffer(rhs.buffer), p(rhs.p), skipGap(rhs.skipGap) { }
-        const_iterator(const const_iterator& rhs) : buffer(rhs.buffer), p(rhs.p), skipGap(rhs.skipGap) { }
-        ~const_iterator() {};
+        const_iterator(const GapBuffer<T>& buff, size_t ptr, bool skip = true) : skipGap(skip), p(ptr), buffer(buff) { }
+        const_iterator(const iterator& rhs) : skipGap(rhs.skipGap), p(rhs.p), buffer(rhs.buffer) { }
+        const_iterator(const const_iterator& rhs) : skipGap(rhs.skipGap), p(rhs.p), buffer(rhs.buffer) { }
+        ~const_iterator() { }
 
         const_iterator& operator=(const const_iterator& rhs) { p = rhs.p; return *this; }
         bool operator==(const const_iterator& rhs) const { return (p == rhs.p); }

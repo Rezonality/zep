@@ -20,7 +20,7 @@ NVec2f ZepDisplay_ImGui::GetTextSize(const utf8* pBegin, const utf8* pEnd) const
     if (text_size.x == 0.0)
     {
         // Make invalid characters a default fixed_size
-        return GetTextSize((utf8*)"A");
+        return GetTextSize((const utf8*)"A");
     }
 
     return toNVec2f(text_size);

@@ -49,6 +49,8 @@ class ZepTheme
 {
 public:
     ZepTheme();
+    virtual ~ZepTheme() {}
+
     virtual NVec4f GetColor(ThemeColor themeColor) const;
     virtual NVec4f GetComplement(const NVec4f& col) const;
     virtual NVec4f GetUniqueColor(uint32_t id) const;

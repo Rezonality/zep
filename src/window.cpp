@@ -26,8 +26,8 @@ NVec2f DefaultCharSize;
 
 ZepWindow::ZepWindow(ZepTabWindow& window, ZepBuffer* buffer)
     : ZepComponent(window.GetEditor())
-    , m_pBuffer(buffer)
     , m_tabWindow(window)
+    , m_pBuffer(buffer)
 {
     m_bufferRegion = std::make_shared<Region>();
     m_numberRegion = std::make_shared<Region>();
@@ -742,7 +742,7 @@ void ZepWindow::BuildCharCache()
     m_charCacheDirty = false;
    
     const char chA = 'A';
-    DefaultCharSize = GetEditor().GetDisplay().GetTextSize((utf8*)&chA, (utf8*)&chA + 1);
+    DefaultCharSize = GetEditor().GetDisplay().GetTextSize((const utf8*)&chA, (const utf8*)&chA + 1);
     for (int i = 0; i < 256; i++)
     {
         utf8 ch = (utf8)i;
@@ -937,9 +937,8 @@ NVec2i ZepWindow::BufferToDisplay(const BufferLocation& loc)
 
 } // namespace Zep
 
-/*
+#if 0
     // Ensure we can see the cursor
-    /*
     NVec2i cursor(0, 0);
     cursor.x = m_pBuffer->GetBufferColumn(m_bufferCursor);
     cursor.y = m_pBuffer->GetBufferLine(m_bufferCursor) - m_pBuffer->GetBufferLine(m_dvisibleLineRange.x);
@@ -959,4 +958,5 @@ NVec2i ZepWindow::BufferToDisplay(const BufferLocation& loc)
 
     // Clamp
     m_nvisibleLineRange.x = std::max(0l, (long)m_nvisibleLineRange.x);
-*/
+#endif
+
