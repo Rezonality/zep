@@ -96,9 +96,9 @@ public:
     BufferLocation ClampToVisibleLine(BufferLocation in) const;
     long GetBufferColumn(BufferLocation location) const;
 
-    ThreadPool& GetThreadPool()
+    std::shared_ptr<ThreadPool> GetThreadPool()
     {
-        return m_threadPool;
+        return m_spThreadPool;
     }
 
     using fnMatch = std::function<bool(const char)>;
@@ -201,7 +201,7 @@ private:
     bool m_dirty = false;         // Is the text modified?
     GapBuffer<utf8> m_gapBuffer;  // Storage for the text - a gap buffer for efficiency
     std::vector<long> m_lineEnds; // End of each line
-    ThreadPool m_threadPool;
+    std::shared_ptr<ThreadPool> m_spThreadPool;
     uint32_t m_fileFlags = FileFlags::NotYetSaved | FileFlags::FirstInit;
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::string m_strName;

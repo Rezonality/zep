@@ -93,13 +93,13 @@ void ZepSyntax::QueueUpdateSyntax(BufferLocation startLocation, BufferLocation e
     m_targetChar = std::min(long(m_targetChar), long(m_buffer.GetText().size() - 1));
 
     // Have the thread update the syntax in the new region
-    if (GetEditor().GetFlags() & ZepEditorFlags::DisableThreads)
+    if (!m_buffer.GetThreadPool())
     {
         UpdateSyntax();
     }
     else
     {
-        m_syntaxResult = m_buffer.GetThreadPool().enqueue([=]() {
+        m_syntaxResult = m_buffer.GetThreadPool()->enqueue([=]() {
             UpdateSyntax();
         });
     }

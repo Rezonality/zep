@@ -54,6 +54,17 @@ ZepBuffer::ZepBuffer(ZepEditor& editor, const std::string& strName)
     : ZepComponent(editor)
     , m_strName(strName)
 {
+    if (!(editor.GetFlags() & ZepEditorFlags::DisableThreads))
+    {
+        try
+        {
+            m_spThreadPool = std::make_shared<ThreadPool>();
+        }
+        catch (std::invalid_argument &)
+        {
+            // Threads are not supported on this platform; ignore
+        }
+    }
     SetText("");
 }
 
