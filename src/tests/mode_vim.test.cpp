@@ -291,6 +291,11 @@ COMMAND_TEST(delete_dd, "one three", "dd", "")
 COMMAND_TEST(delete_D, "one three", "lD", "o")
 COMMAND_TEST(undo_redo, "one two three", "vllydur", "one two three")
 
+COMMAND_TEST(delete_to_eol, "hello\nworld", "lll10x", "hel\nworld");
+COMMAND_TEST(delete_x_paste, "hello", "lxp", "hlelo");
+COMMAND_TEST(delete_3x, "hello", "3x", "lo");
+COMMAND_TEST(delete_3x_paste, "hello", "l3xp", "hoell");
+
 COMMAND_TEST(delete_d_visual, "one three", "lvld", "o three")
 
 COMMAND_TEST(change_cc, "one two", "cchellojk", "hello")
