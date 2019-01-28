@@ -13,22 +13,22 @@
 namespace
 {
 // A VIM-like definition of a word.  Actually, in Vim this can be changed, but this editor
-// assumes a word is alphanumberic or underscore for consistency
+// assumes a word is alphanumeric or underscore for consistency
 inline bool IsWordChar(const char ch)
 {
-    return std::isalnum(ch) || ch == '_';
+    return std::isalnum((unsigned int)ch) || ch == '_';
 }
 inline bool IsWordOrSepChar(const char ch)
 {
-    return std::isalnum(ch) || ch == '_' || ch == ' ' || ch == '\n' || ch == 0;
+    return std::isalnum((unsigned int)ch) || ch == '_' || ch == ' ' || ch == '\n' || ch == 0;
 }
 inline bool IsWORDChar(const char ch)
 {
-    return std::isgraph(ch);
+    return std::isgraph((unsigned int)ch);
 }
 inline bool IsWORDOrSepChar(const char ch)
 {
-    return std::isgraph(ch) || ch == ' ' || ch == '\n' || ch == 0;
+    return std::isgraph((unsigned int)ch) || ch == ' ' || ch == '\n' || ch == 0;
 }
 inline bool IsSpace(const char ch)
 {
