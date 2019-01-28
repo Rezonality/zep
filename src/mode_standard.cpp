@@ -36,8 +36,8 @@ ZepMode_Standard::~ZepMode_Standard()
 
 void ZepMode_Standard::Begin()
 {
+    // This will also set the cursor type
     SwitchMode(EditorMode::Insert);
-    GetCurrentWindow()->SetCursorType(CursorType::Insert);
 }
 
 bool ZepMode_Standard::SwitchMode(EditorMode mode)
