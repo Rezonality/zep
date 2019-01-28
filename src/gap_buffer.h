@@ -26,6 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.*/
 
 #include <algorithm>
 #include <iterator>
+#include <memory>
 #include <cassert>
 #include <climits>
 #include <cstring>
@@ -53,11 +54,11 @@ public:
     static const int DEFAULT_GAP = 1000;
 
     typedef A allocator_type;
-    typedef typename A::value_type value_type;
-    typedef typename A::reference reference;
-    typedef typename A::const_reference const_reference;
-    typedef typename A::difference_type difference_type;
-    typedef typename A::size_type size_type;
+    typedef typename std::allocator_traits<A>::value_type value_type;
+    typedef typename std::allocator_traits<A>::difference_type difference_type;
+    typedef typename std::allocator_traits<A>::size_type size_type;
+    typedef value_type& reference;
+    typedef const value_type& const_reference;
 
     T *m_pStart = nullptr;       // Start of the buffer
     T *m_pEnd = nullptr;         // Pointer after the end 
@@ -70,11 +71,11 @@ public:
     class iterator
     {
     public:
-        typedef typename A::difference_type difference_type;
-        typedef typename A::value_type value_type;
-        typedef typename A::reference reference;
-        typedef typename A::pointer pointer;
+        typedef typename std::allocator_traits<A>::difference_type difference_type;
+        typedef typename std::allocator_traits<A>::value_type value_type;
+        typedef typename std::allocator_traits<A>::pointer pointer;
         typedef std::random_access_iterator_tag iterator_category; //or another tag
+        typedef value_type& reference;
 
         bool skipGap = true;
         // Note: p is measured in actual characters, not entire buffer fixed_size.
@@ -117,11 +118,11 @@ public:
     class const_iterator 
     {
     public:
-        typedef typename A::difference_type difference_type;
-        typedef typename A::value_type value_type;
-        typedef typename A::reference reference;
-        typedef typename A::pointer pointer;
+        typedef typename std::allocator_traits<A>::difference_type difference_type;
+        typedef typename std::allocator_traits<A>::value_type value_type;
+        typedef typename std::allocator_traits<A>::pointer pointer;
         typedef std::random_access_iterator_tag iterator_category; //or another tag
+        typedef value_type& reference;
 
         bool skipGap = true;
         size_t p = 0;
