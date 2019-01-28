@@ -71,7 +71,7 @@ uint32_t murmur_hash(const void* key, int len, uint32_t seed)
 #ifdef PLATFORM_BIG_ENDIAN
         unsigned int k = (data[0]) + (data[1] << 8) + (data[2] << 16) + (data[3] << 24);
 #else
-        unsigned int k = *(unsigned int*)data;
+        unsigned int k = (data[3]) + (data[2] << 8) + (data[1] << 16) + (data[0] << 24);
 #endif
 
         k *= m;

@@ -337,7 +337,7 @@ BufferRange ZepBuffer::InnerWordMotion(BufferLocation start, uint32_t searchType
     return r;
 }
 
-BufferLocation ZepBuffer::FindOnLineMotion(BufferLocation start, utf8* pCh, SearchDirection dir) const
+BufferLocation ZepBuffer::FindOnLineMotion(BufferLocation start, const utf8* pCh, SearchDirection dir) const
 {
     auto entry = start;
     auto IsMatch = [pCh](const char ch)

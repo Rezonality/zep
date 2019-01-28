@@ -69,7 +69,6 @@ struct ZepConsole : Zep::IZepComponent
             return;
         }
 
-        auto pos = ImGui::GetWindowPos();
         auto size = ImGui::GetWindowContentRegionMax();
         auto cursor = ImGui::GetCursorScreenPos();
         

@@ -37,8 +37,8 @@ ZepComponent::~ZepComponent()
 }
 
 ZepEditor::ZepEditor(IZepDisplay* pDisplay, const fs::path& root, uint32_t flags)
-    : m_flags(flags)
-    , m_pDisplay(pDisplay)
+    : m_pDisplay(pDisplay)
+    , m_flags(flags)
     , m_rootPath(root)
 {
     LoadConfig(root / "zep.cfg");
@@ -632,12 +632,12 @@ void ZepEditor::Display()
             // Show active buffer in tab as tab name
             auto& buffer = window->GetActiveWindow()->GetBuffer();
             auto tabColor = (window == GetActiveTabWindow()) ? GetTheme().GetColor(ThemeColor::TabActive) : GetTheme().GetColor(ThemeColor::TabInactive);
-            auto tabLength = m_pDisplay->GetTextSize((utf8*)buffer.GetName().c_str()).x + textBorder * 2;
+            auto tabLength = m_pDisplay->GetTextSize((const utf8*)buffer.GetName().c_str()).x + textBorder * 2;
 
             NRectf tabRect(currentTab, currentTab + NVec2f(tabLength, m_tabRegion->rect.Height()));
             m_pDisplay->DrawRectFilled(tabRect, tabColor);
 
-            m_pDisplay->DrawChars(currentTab + NVec2f(textBorder, textBorder), NVec4f(1.0f), (utf8*)buffer.GetName().c_str());
+            m_pDisplay->DrawChars(currentTab + NVec2f(textBorder, textBorder), NVec4f(1.0f), (const utf8*)buffer.GetName().c_str());
 
             currentTab.x += tabLength + textBorder;
             m_tabRects[window] = tabRect;

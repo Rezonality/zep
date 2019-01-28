@@ -50,8 +50,8 @@ public:
 protected:
     ZepBuffer& m_buffer;
     uint32_t m_flags = 0;
-    BufferLocation m_cursorAfter = -1;
     BufferLocation m_cursorBefore = -1;
+    BufferLocation m_cursorAfter = -1;
 };
 
 class ZepCommand_DeleteRange : public ZepCommand

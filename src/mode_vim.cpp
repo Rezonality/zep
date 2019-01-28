@@ -61,14 +61,14 @@ namespace Zep
 {
 
 CommandContext::CommandContext(const std::string& commandIn, ZepMode_Vim& md, uint32_t lastK, uint32_t modifierK, EditorMode editorMode)
-    : commandText(commandIn)
-    , owner(md)
+    : owner(md)
+    , commandText(commandIn)
     , buffer(md.GetCurrentWindow()->GetBuffer())
     , bufferCursor(md.GetCurrentWindow()->GetBufferCursor())
+    , tempReg("", false)
     , lastKey(lastK)
     , modifierKeys(modifierK)
     , mode(editorMode)
-    , tempReg("", false)
 {
     registers.push('"');
     pRegister = &tempReg;
@@ -623,13 +623,13 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
             std::ostringstream str;
             str << "--- buffers ---" << '\n';
             int index = 0;
-            for (auto& buffer : GetEditor().GetBuffers())
+            for (auto& editor_buffer : GetEditor().GetBuffers())
             {
-                if (!buffer->GetName().empty())
+                if (!editor_buffer->GetName().empty())
                 {
-                    std::string displayText = buffer->GetName();
+                    std::string displayText = editor_buffer->GetName();
                     displayText = string_replace(displayText, "\n", "^J");
-                    if (&GetCurrentWindow()->GetBuffer() == buffer.get())
+                    if (&GetCurrentWindow()->GetBuffer() == editor_buffer.get())
                     {
                         str << "*";
                     }
@@ -637,7 +637,7 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
                     {
                         str << " ";
                     }
-                    if (buffer->TestFlags(FileFlags::Dirty))
+                    if (editor_buffer->TestFlags(FileFlags::Dirty))
                     {
                         str << "+";
                     }
@@ -660,11 +660,11 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
                 {
                     auto index = std::stoi(strTok[1]);
                     auto current = 0;
-                    for (auto& buffer : GetEditor().GetBuffers())
+                    for (auto& editor_buffer : GetEditor().GetBuffers())
                     {
                         if (index == current)
                         {
-                            GetCurrentWindow()->SetBuffer(buffer.get());
+                            GetCurrentWindow()->SetBuffer(editor_buffer.get());
                         }
                         current++;
                     }
@@ -1163,7 +1163,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
             if (context.command.length() == 3)
             {
                 context.beginRange = bufferCursor;
-                context.endRange = buffer.FindOnLineMotion(bufferCursor, (utf8*)&context.command[2], SearchDirection::Forward);
+                context.endRange = buffer.FindOnLineMotion(bufferCursor, (const utf8*)&context.command[2], SearchDirection::Forward);
                 context.op = CommandOperation::Delete;
             }
             else
@@ -1288,7 +1288,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     {
         if (!m_lastFind.empty())
         {
-            GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (utf8*)m_lastFind.c_str(), m_lastFindDirection));
+            GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (const utf8*)m_lastFind.c_str(), m_lastFindDirection));
             return true;
         }
     }
@@ -1296,7 +1296,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     {
         if (context.command.length() > 1)
         {
-            GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (utf8*)&context.command[1], SearchDirection::Forward));
+            GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (const utf8*)&context.command[1], SearchDirection::Forward));
             m_lastFind = context.command[1];
             m_lastFindDirection = SearchDirection::Forward;
             return true;
@@ -1307,7 +1307,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     {
         if (context.command.length() > 1)
         {
-            GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (utf8*)&context.command[1], SearchDirection::Backward));
+            GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (const utf8*)&context.command[1], SearchDirection::Backward));
             m_lastFind = context.command[1];
             m_lastFindDirection = SearchDirection::Backward;
             return true;
