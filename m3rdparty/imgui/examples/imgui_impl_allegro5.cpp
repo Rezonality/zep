@@ -1,13 +1,13 @@
-// ImGui Renderer + Platform Binding for: Allegro 5
+// dear imgui: Renderer + Platform Binding for Allegro 5
 // (Info: Allegro 5 is a cross-platform general purpose library for handling windows, inputs, graphics, etc.)
 
 // Implemented features:
 //  [X] Renderer: User texture binding. Use 'ALLEGRO_BITMAP*' as ImTextureID. Read the FAQ about ImTextureID in imgui.cpp.
 //  [X] Platform: Clipboard support (from Allegro 5.1.12)
 //  [X] Platform: Mouse cursor shape and visibility. Disable with 'io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange'.
-
 // Issues:
-//  [ ] Renderer: The renderer is suboptimal as we need to unindex our buffers and convert the format of vertices.
+//  [ ] Renderer: The renderer is suboptimal as we need to unindex our buffers and convert vertices manually.
+//  [ ] Platform: Missing gamepad support.
 
 // You can copy and use unmodified imgui_impl_* files in your project. See main.cpp for an example of using this.
 // If you are new to dear imgui, read examples/README.txt and read the documentation at the top of imgui.cpp.
@@ -15,6 +15,7 @@
 
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
+//  2018-11-30: Misc: Setting up io.BackendPlatformName/io.BackendRendererName so they can be displayed in the About Window.
 //  2018-06-13: Platform: Added clipboard support (from Allegro 5.1.12).
 //  2018-06-13: Renderer: Use draw_data->DisplayPos and draw_data->DisplaySize to setup projection matrix and clipping rectangle.
 //  2018-06-13: Renderer: Backup/restore transform and clipping rectangle.
@@ -74,7 +75,7 @@ void ImGui_ImplAllegro5_RenderDrawData(ImDrawData* draw_data)
     al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
 
     // Setup orthographic projection matrix
-    // Our visible imgui space lies from draw_data->DisplayPps (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right).
+    // Our visible imgui space lies from draw_data->DisplayPos (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right).
     {
         float L = draw_data->DisplayPos.x;
         float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
@@ -108,7 +109,7 @@ void ImGui_ImplAllegro5_RenderDrawData(ImDrawData* draw_data)
         const int* indices = NULL;
         if (sizeof(ImDrawIdx) == 2)
         {
-            // FIXME-OPT: Unfortunately Allegro doesn't support 16-bit indices.. You can '#define ImDrawIdx int' in imconfig.h to request ImGui to output 32-bit indices.
+            // FIXME-OPT: Unfortunately Allegro doesn't support 16-bit indices.. You can '#define ImDrawIdx int' in imconfig.h to request Dear ImGui to output 32-bit indices.
             // Otherwise, we convert them from 16-bit to 32-bit at runtime here, which works perfectly but is a little wasteful.
             static ImVector<int> indices_converted;
             indices_converted.resize(cmd_list->IdxBuffer.Size);
@@ -231,6 +232,7 @@ bool ImGui_ImplAllegro5_Init(ALLEGRO_DISPLAY* display)
     // Setup back-end capabilities flags
     ImGuiIO& io = ImGui::GetIO();
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;       // We can honor GetMouseCursor() values (optional)
+    io.BackendPlatformName = io.BackendRendererName = "imgui_impl_allegro5";
 
     // Create custom vertex declaration.
     // Unfortunately Allegro doesn't support 32-bits packed colors so we have to convert them to 4 floats.
@@ -278,9 +280,14 @@ bool ImGui_ImplAllegro5_Init(ALLEGRO_DISPLAY* display)
 void ImGui_ImplAllegro5_Shutdown()
 {
     ImGui_ImplAllegro5_InvalidateDeviceObjects();
-    g_Display = NULL;
 
-    // Destroy last known clipboard data
+    g_Display = NULL;
+    g_Time = 0.0;
+
+    if (g_VertexDecl)
+        al_destroy_vertex_decl(g_VertexDecl);
+    g_VertexDecl = NULL;
+
     if (g_ClipboardTextData)
         al_free(g_ClipboardTextData);
     g_ClipboardTextData = NULL;

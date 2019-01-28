@@ -1,4 +1,3 @@
-
 #import "ViewController.h"
 #import "Renderer.h"
 #include "imgui.h"
@@ -21,9 +20,9 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    
+
     self.mtkView.device = MTLCreateSystemDefaultDevice();
-    
+
     if (!self.mtkView.device) {
         NSLog(@"Metal is not supported");
         abort();
@@ -42,12 +41,12 @@
                                                                   owner:self
                                                                userInfo:nil];
     [self.view addTrackingArea:trackingArea];
-    
+
     // If we want to receive key events, we either need to be in the responder chain of the key view,
     // or else we can install a local monitor. The consequence of this heavy-handed approach is that
-    // we receive events for all controls, not just ImGui widgets. If we had native controls in our
-    // window, we'd want to be much more careful than just ingesting the complete event stream, though
-    // we do make an effort to be good citizens by passing along events when ImGui doesn't want to capture.
+    // we receive events for all controls, not just Dear ImGui widgets. If we had native controls in our
+    // window, we'd want to be much more careful than just ingesting the complete event stream, though we
+    // do make an effort to be good citizens by passing along events when Dear ImGui doesn't want to capture.
     NSEventMask eventMask = NSEventMaskKeyDown | NSEventMaskKeyUp | NSEventMaskFlagsChanged | NSEventTypeScrollWheel;
     [NSEvent addLocalMonitorForEventsMatchingMask:eventMask handler:^NSEvent * _Nullable(NSEvent *event) {
         BOOL wantsCapture = ImGui_ImplOSX_HandleEvent(event, self.view);
@@ -56,9 +55,9 @@
         } else {
             return event;
         }
-        
+
     }];
-    
+
     ImGui_ImplOSX_Init();
 #endif
 }
@@ -97,7 +96,7 @@
     CGPoint touchLocation = [anyTouch locationInView:self.view];
     ImGuiIO &io = ImGui::GetIO();
     io.MousePos = ImVec2(touchLocation.x, touchLocation.y);
-    
+
     BOOL hasActiveTouch = NO;
     for (UITouch *touch in event.allTouches) {
         if (touch.phase != UITouchPhaseEnded && touch.phase != UITouchPhaseCancelled) {
