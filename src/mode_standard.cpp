@@ -70,7 +70,7 @@ bool ZepMode_Standard::SwitchMode(EditorMode mode)
 
 void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
 {
-    std::string ch((char*)&key);
+    std::string ch(1, (char)key);
 
     bool copyRegion = false;
     bool pasteText = false;
