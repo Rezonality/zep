@@ -1,8 +1,9 @@
-// ImGui Platform Binding for: FreeGLUT
+// dear imgui: Platform Binding for FreeGLUT
 // This needs to be used along with a Renderer (e.g. OpenGL2)
 
 // Issues:
 //  [ ] Platform: GLUT is unable to distinguish e.g. Backspace from CTRL+H or TAB from CTRL+I
+//  [ ] Platform: Missing gamepad support.
 
 // You can copy and use unmodified imgui_impl_* files in your project. See main.cpp for an example of using this.
 // If you are new to dear imgui, read examples/README.txt and read the documentation at the top of imgui.cpp.
@@ -10,6 +11,7 @@
 
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
+//  2018-11-30: Misc: Setting up io.BackendPlatformName so it can be displayed in the About Window.
 //  2018-03-22: Added FreeGLUT Platform binding.
 
 #include "imgui.h"
@@ -25,6 +27,8 @@ static int g_Time = 0;          // Current time, in milliseconds
 bool ImGui_ImplFreeGLUT_Init()
 {
     ImGuiIO& io = ImGui::GetIO();
+    io.BackendPlatformName ="imgui_impl_freeglut";
+
     g_Time = 0;
 
     // Glut has 1 function for characters and one for "special keys". We map the characters in the 0..255 range and the keys above.
@@ -97,9 +101,9 @@ void ImGui_ImplFreeGLUT_KeyboardFunc(unsigned char c, int x, int y)
     //printf("char_down_func %d '%c'\n", c, c);
     ImGuiIO& io = ImGui::GetIO();
     if (c >= 32)
-        io.AddInputCharacter(c);
+        io.AddInputCharacter((unsigned short)c);
 
-    // Store letters in KeysDown[] array as both uppercase and lowercase + Handle GLUT translating CTRL+A..CTRL+Z as 1..26. 
+    // Store letters in KeysDown[] array as both uppercase and lowercase + Handle GLUT translating CTRL+A..CTRL+Z as 1..26.
     // This is a hacky mess but GLUT is unable to distinguish e.g. a TAB key from CTRL+I so this is probably the best we can do here.
     if (c >= 1 && c <= 26)
         io.KeysDown[c] = io.KeysDown[c - 1 + 'a'] = io.KeysDown[c - 1 + 'A'] = true;

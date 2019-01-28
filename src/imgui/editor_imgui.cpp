@@ -147,9 +147,9 @@ void ZepEditor_ImGui::HandleInput()
 
     if (!handled)
     {
-        for (int n = 0; n < (sizeof(io.InputCharacters) / sizeof(*io.InputCharacters)) && io.InputCharacters[n]; n++)
+        for (int n = 0; n < io.InputQueueCharacters.Size && io.InputQueueCharacters[n]; n++)
         {
-            GetCurrentMode()->AddKeyPress(io.InputCharacters[n], mod);
+            GetCurrentMode()->AddKeyPress(io.InputQueueCharacters[n], mod);
         }
     }
 }
