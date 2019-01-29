@@ -102,6 +102,12 @@ inline NVec2<T> Clamp(const NVec2<T>& val, const NVec2<T>& min, const NVec2<T>& 
 {
     return NVec2<T>(std::min(max.x, std::max(min.x, val.x)), std::min(max.y, std::max(min.y, val.y)));
 }
+template <class T>
+inline T ManhattanDistance(const NVec2<T>& l, const NVec2<T>& r)
+{
+    return std::abs(l.x - r.x) + std::abs(r.y - l.y);
+}
+
 template<class T>
 std::ostream& operator << (std::ostream& str, const NVec2<T>& v)
 {
@@ -385,6 +391,23 @@ struct NRect
         topLeftPx = NRect<T>();
         bottomRightPx = NRect<T>();
     }
+
+    void Adjust(float x, float y, float z, float w)
+    {
+        topLeftPx.x += x;
+        topLeftPx.y += y;
+        bottomRightPx.x += z;
+        bottomRightPx.y += w;
+    }
+
+    void Adjust(float x, float y)
+    {
+        topLeftPx.x += x;
+        topLeftPx.y += y;
+        bottomRightPx.x += x;
+        bottomRightPx.y += y;
+    }
+
     bool operator==(const NRect<T>& region) const
     {
         return (topLeftPx == region.topLeftPx) && (bottomRightPx == region.bottomRightPx);

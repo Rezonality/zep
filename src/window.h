@@ -152,9 +152,11 @@ private:
 
     const SpanInfo& GetCursorLineInfo(long y);
 
+    void DisplayToolTip(const NVec2f& pos, const RangeMarker& marker) const;
     bool DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int displayPass);
     void DisplayScrollers();
     void BuildCharCache();
+    void DisableToolTipTillMove();
 
 private:
     NVec2f ToBufferRegion(const NVec2f& pos);
@@ -166,6 +168,8 @@ private:
     std::shared_ptr<Region> m_vScrollRegion;    // Vertical scroller
 
     bool m_wrap = true;     // Wrap
+
+    std::map<NVec2f, const RangeMarker*> m_toolTips;
 
     // The buffer offset is where we are looking, but the cursor is only what you see on the screen
     CursorType m_cursorType = CursorType::Normal; // Type of cursor
@@ -200,6 +204,11 @@ private:
     std::shared_ptr<Scroller> m_vScroller;
     NVec2f m_charCache[256];
     bool m_charCacheDirty = true;
+    
+    timer m_toolTipTimer;
+    NVec2f m_tipStartPos;
+    bool m_tipActive = true;
+    bool m_tipDisabledTillMove = false;
 };
 
 } // namespace Zep

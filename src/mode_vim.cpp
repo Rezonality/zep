@@ -164,7 +164,7 @@ void CommandContext::GetCommandAndCount()
         if (*itr == 'f' || *itr == 'F' || *itr == 'c')
         {
             while (itr != commandText.end()
-                && std::isgraph(*itr))
+                   && std::isgraph(*itr))
             {
                 command1 += *itr;
                 itr++;
@@ -173,7 +173,7 @@ void CommandContext::GetCommandAndCount()
         else
         {
             while (itr != commandText.end()
-                && std::isgraph(*itr) && !std::isdigit(*itr))
+                   && std::isgraph(*itr) && !std::isdigit(*itr))
             {
                 command1 += *itr;
                 itr++;
@@ -182,9 +182,7 @@ void CommandContext::GetCommandAndCount()
     }
 
     // If not a register target, then another count
-    if (command1[0] != '\"' &&
-        command1[0] != ':' &&
-        command1[0] != '/')
+    if (command1[0] != '\"' && command1[0] != ':' && command1[0] != '/')
     {
         while (itr != commandText.end()
                && std::isdigit(*itr))
@@ -579,21 +577,47 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
             }
             RangeMarker marker;
             long start, end;
-            start = buffer.GetLinePos(bufferCursor, LineLocation::LineFirstGraphChar);
-            end = buffer.GetLinePos(bufferCursor, LineLocation::LineLastGraphChar) + 1;
+
+            if (m_currentMode == EditorMode::Visual)
+            {
+                auto range = GetCurrentWindow()->GetBuffer().GetSelection();
+                start = range.first;
+                end = range.second;
+            }
+            else
+            {
+                start = buffer.GetLinePos(bufferCursor, LineLocation::LineFirstGraphChar);
+                end = buffer.GetLinePos(bufferCursor, LineLocation::LineLastGraphChar) + 1;
+            }
             marker.range = BufferRange{start, end};
             switch (markerType)
             {
+                case 3:
+                    marker.highlightColor = ThemeColor::TabActive;
+                    marker.textColor = ThemeColor::Text;
+                    marker.name = "Filled Marker";
+                    marker.description = "This is an example tooltip\nThey can be added to any range of characters";
+                    marker.displayType = RangeMarkerDisplayType::Tooltip | RangeMarkerDisplayType::Underline | RangeMarkerDisplayType::Indicator;
+                    break;
+                case 2:
+                    marker.highlightColor = ThemeColor::Warning;
+                    marker.textColor = ThemeColor::Text;
+                    marker.name = "Tooltip";
+                    marker.description = "This is an example tooltip\nThey can be added to any range of characters";
+                    marker.displayType = RangeMarkerDisplayType::Tooltip;
+                    break;
                 case 1:
-                    marker.color = ThemeColor::Warning;
+                    marker.highlightColor = ThemeColor::Warning;
+                    marker.textColor = ThemeColor::Text;
                     marker.name = "Warning";
-                    marker.name = "This is an example warning mark";
+                    marker.description = "This is an example warning mark";
                     break;
                 case 0:
                 default:
-                    marker.color = ThemeColor::Error;
+                    marker.highlightColor = ThemeColor::Error;
+                    marker.textColor = ThemeColor::Text;
                     marker.name = "Error";
-                    marker.name = "This is an example error mark";
+                    marker.description = "This is an example error mark";
             }
             buffer.AddRangeMarker(marker);
         }
@@ -1416,8 +1440,7 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
 
         // Update the typed command
         // TODO: Cursor keys on the command line
-        if (key == ':' || m_currentCommand[0] == ':' ||
-            key =='/' || m_currentCommand[0] == '/')
+        if (key == ':' || m_currentCommand[0] == ':' || key == '/' || m_currentCommand[0] == '/')
         {
             if (HandleExCommand(m_currentCommand, key))
             {
@@ -1430,9 +1453,7 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         }
 
         // ... and show it in the command bar if desired
-        if (m_currentCommand[0] == ':' || 
-            m_currentCommand[0] == '/' ||
-            m_settings.ShowNormalModeKeyStrokes)
+        if (m_currentCommand[0] == ':' || m_currentCommand[0] == '/' || m_settings.ShowNormalModeKeyStrokes)
         {
             GetEditor().SetCommandText(m_currentCommand);
             return;
