@@ -36,8 +36,8 @@ ZepMode_Standard::~ZepMode_Standard()
 
 void ZepMode_Standard::Begin()
 {
+    // This will also set the cursor type
     SwitchMode(EditorMode::Insert);
-    GetCurrentWindow()->SetCursorType(CursorType::Insert);
 }
 
 bool ZepMode_Standard::SwitchMode(EditorMode mode)
@@ -70,7 +70,7 @@ bool ZepMode_Standard::SwitchMode(EditorMode mode)
 
 void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
 {
-    std::string ch((char*)&key);
+    std::string ch(1, (char)key);
 
     bool copyRegion = false;
     bool pasteText = false;

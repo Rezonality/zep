@@ -1659,7 +1659,7 @@ void ZepMode_Vim::HandleInsert(uint32_t key)
         return;
     }
 
-    std::string ch((char*)&key);
+    std::string ch(1, (char)key);
     if (key == ExtKeys::RETURN)
     {
         ch = "\n";
