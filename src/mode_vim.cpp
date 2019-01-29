@@ -968,8 +968,10 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
             if (context.command != "x" || std::isgraph(context.buffer.GetText()[loc]) || std::isblank(context.buffer.GetText()[loc]))
             {
                 context.beginRange = loc;
-                context.endRange = context.buffer.LocationFromOffsetByChars(loc, 1);
+                context.endRange = std::min(context.buffer.GetLinePos(loc, LineLocation::LineCRBegin),
+                                            context.buffer.LocationFromOffsetByChars(loc, context.count));
                 context.op = CommandOperation::Delete;
+                context.commandResult.flags |= CommandResultFlags::HandledCount;
             }
             else
             {
