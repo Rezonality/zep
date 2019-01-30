@@ -152,26 +152,29 @@ struct ZepContainer : public IZepComponent
         else if (message->messageId == Msg::ToolTip)
         {
             auto spTipMsg = std::static_pointer_cast<ToolTipMessage>(message);
-            if (spTipMsg->location != -1l)
+            if (spTipMsg->location != -1l && spTipMsg->pBuffer)
             {
                 auto pSyntax = spTipMsg->pBuffer->GetSyntax();
-                if (pSyntax->GetSyntaxAt(spTipMsg->location) == ThemeColor::Identifier)
+                if (pSyntax)
                 {
-                    auto spMarker = std::make_shared<RangeMarker>();
-                    spMarker->description = "This is an identifier";
-                    spMarker->highlightColor = ThemeColor::Identifier;
-                    spMarker->textColor = ThemeColor::Text;
-                    spTipMsg->spMarker = spMarker;
-                    spTipMsg->handled = true;
-                }
-                else if (pSyntax->GetSyntaxAt(spTipMsg->location) == ThemeColor::Keyword)
-                {
-                    auto spMarker = std::make_shared<RangeMarker>();
-                    spMarker->description = "This is a keyword";
-                    spMarker->highlightColor = ThemeColor::Keyword;
-                    spMarker->textColor = ThemeColor::Text;
-                    spTipMsg->spMarker = spMarker;
-                    spTipMsg->handled = true;
+                    if (pSyntax->GetSyntaxAt(spTipMsg->location) == ThemeColor::Identifier)
+                    {
+                        auto spMarker = std::make_shared<RangeMarker>();
+                        spMarker->description = "This is an identifier";
+                        spMarker->highlightColor = ThemeColor::Identifier;
+                        spMarker->textColor = ThemeColor::Text;
+                        spTipMsg->spMarker = spMarker;
+                        spTipMsg->handled = true;
+                    }
+                    else if (pSyntax->GetSyntaxAt(spTipMsg->location) == ThemeColor::Keyword)
+                    {
+                        auto spMarker = std::make_shared<RangeMarker>();
+                        spMarker->description = "This is a keyword";
+                        spMarker->highlightColor = ThemeColor::Keyword;
+                        spMarker->textColor = ThemeColor::Text;
+                        spTipMsg->spMarker = spMarker;
+                        spTipMsg->handled = true;
+                    }
                 }
             }
         }
