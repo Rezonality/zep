@@ -1,14 +1,13 @@
 #include "editor_imgui.h"
-#include "SDL.h"
 #include "display_imgui.h"
 #include "editor.h"
 #include "mode_standard.h"
 #include "mode_vim.h"
 #include "syntax.h"
 #include "tab_window.h"
-#include "usb_hid_keys.h"
 #include <imgui.h>
 #include <string>
+#include "usb_hid_keys.h"
 
 namespace Zep
 {
@@ -128,11 +127,11 @@ void ZepEditor_ImGui::HandleInput()
         }
         else
         {
-            for (int ch = SDL_SCANCODE_A; ch <= SDL_SCANCODE_Z; ch++)
+            for (int ch = KEY_A; ch <= KEY_Z; ch++)
             {
                 if (ImGui::IsKeyPressed(ch))
                 {
-                    GetCurrentMode()->AddKeyPress((ch - SDL_SCANCODE_A) + 'a', mod);
+                    GetCurrentMode()->AddKeyPress((ch - KEY_A) + 'a', mod);
                     handled = true;
                 }
             }
