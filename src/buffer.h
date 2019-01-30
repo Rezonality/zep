@@ -83,7 +83,7 @@ struct RangeMarker
     std::string description;
 };
 
-using tRangeMarkers = std::vector<RangeMarker>;
+using tRangeMarkers = std::vector<std::shared_ptr<RangeMarker>>;
 
 const long InvalidOffset = -1;
 
@@ -198,7 +198,7 @@ public:
     void SetSelection(const BufferRange& sel);
     BufferRange GetSelection() const;
 
-    void AddRangeMarker(const RangeMarker& marker);
+    void AddRangeMarker(std::shared_ptr<RangeMarker> spMarker);
     void ClearRangeMarkers();
     const tRangeMarkers& GetRangeMarkers() const;
 
@@ -251,4 +251,5 @@ struct BufferMessage : public ZepMessage
     BufferLocation startLocation;
     BufferLocation endLocation;
 };
+
 } // namespace Zep

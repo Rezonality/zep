@@ -81,7 +81,8 @@ enum class Msg
     Buffer,
     ComponentChanged,
     Tick,
-    ConfigChanged
+    ConfigChanged,
+    ToolTip
 };
 
 struct IZepComponent;

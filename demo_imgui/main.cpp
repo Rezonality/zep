@@ -149,6 +149,32 @@ struct ZepContainer : public IZepComponent
         {
             quit = true;
         }
+        else if (message->messageId == Msg::ToolTip)
+        {
+            auto spTipMsg = std::static_pointer_cast<ToolTipMessage>(message);
+            if (spTipMsg->location != -1l)
+            {
+                auto pSyntax = spTipMsg->pBuffer->GetSyntax();
+                if (pSyntax->GetSyntaxAt(spTipMsg->location) == ThemeColor::Identifier)
+                {
+                    auto spMarker = std::make_shared<RangeMarker>();
+                    spMarker->description = "This is an identifier";
+                    spMarker->highlightColor = ThemeColor::Identifier;
+                    spMarker->textColor = ThemeColor::Text;
+                    spTipMsg->spMarker = spMarker;
+                    spTipMsg->handled = true;
+                }
+                else if (pSyntax->GetSyntaxAt(spTipMsg->location) == ThemeColor::Keyword)
+                {
+                    auto spMarker = std::make_shared<RangeMarker>();
+                    spMarker->description = "This is a keyword";
+                    spMarker->highlightColor = ThemeColor::Keyword;
+                    spMarker->textColor = ThemeColor::Text;
+                    spTipMsg->spMarker = spMarker;
+                    spTipMsg->handled = true;
+                }
+            }
+        }
     }
 
     virtual ZepEditor& GetEditor() const override

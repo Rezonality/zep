@@ -575,7 +575,7 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
             {
                 markerType = std::stoi(strTok[1]);
             }
-            RangeMarker marker;
+            auto spMarker = std::make_shared<RangeMarker>();
             long start, end;
 
             if (m_currentMode == EditorMode::Visual)
@@ -589,37 +589,37 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
                 start = buffer.GetLinePos(bufferCursor, LineLocation::LineFirstGraphChar);
                 end = buffer.GetLinePos(bufferCursor, LineLocation::LineLastGraphChar) + 1;
             }
-            marker.range = BufferRange{start, end};
+            spMarker->range = BufferRange{start, end};
             switch (markerType)
             {
                 case 3:
-                    marker.highlightColor = ThemeColor::TabActive;
-                    marker.textColor = ThemeColor::Text;
-                    marker.name = "Filled Marker";
-                    marker.description = "This is an example tooltip\nThey can be added to any range of characters";
-                    marker.displayType = RangeMarkerDisplayType::Tooltip | RangeMarkerDisplayType::Underline | RangeMarkerDisplayType::Indicator;
+                    spMarker->highlightColor = ThemeColor::TabActive;
+                    spMarker->textColor = ThemeColor::Text;
+                    spMarker->name = "Filled Marker";
+                    spMarker->description = "This is an example tooltip\nThey can be added to any range of characters";
+                    spMarker->displayType = RangeMarkerDisplayType::Tooltip | RangeMarkerDisplayType::Underline | RangeMarkerDisplayType::Indicator;
                     break;
                 case 2:
-                    marker.highlightColor = ThemeColor::Warning;
-                    marker.textColor = ThemeColor::Text;
-                    marker.name = "Tooltip";
-                    marker.description = "This is an example tooltip\nThey can be added to any range of characters";
-                    marker.displayType = RangeMarkerDisplayType::Tooltip;
+                    spMarker->highlightColor = ThemeColor::Warning;
+                    spMarker->textColor = ThemeColor::Text;
+                    spMarker->name = "Tooltip";
+                    spMarker->description = "This is an example tooltip\nThey can be added to any range of characters";
+                    spMarker->displayType = RangeMarkerDisplayType::Tooltip;
                     break;
                 case 1:
-                    marker.highlightColor = ThemeColor::Warning;
-                    marker.textColor = ThemeColor::Text;
-                    marker.name = "Warning";
-                    marker.description = "This is an example warning mark";
+                    spMarker->highlightColor = ThemeColor::Warning;
+                    spMarker->textColor = ThemeColor::Text;
+                    spMarker->name = "Warning";
+                    spMarker->description = "This is an example warning mark";
                     break;
                 case 0:
                 default:
-                    marker.highlightColor = ThemeColor::Error;
-                    marker.textColor = ThemeColor::Text;
-                    marker.name = "Error";
-                    marker.description = "This is an example error mark";
+                    spMarker->highlightColor = ThemeColor::Error;
+                    spMarker->textColor = ThemeColor::Text;
+                    spMarker->name = "Error";
+                    spMarker->description = "This is an example error mark";
             }
-            buffer.AddRangeMarker(marker);
+            buffer.AddRangeMarker(spMarker);
         }
         else if (strCommand == ":ZWhiteSpace")
         {

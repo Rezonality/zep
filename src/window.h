@@ -81,6 +81,21 @@ struct Airline
     std::vector<AirBox> rightBoxes;
 };
 
+// Message to request a tooltip.
+// Clients should return the marker information if appropriate
+struct ToolTipMessage : public ZepMessage
+{
+    ToolTipMessage(ZepBuffer* pBuff, const NVec2f& pos, const BufferLocation& loc = BufferLocation{-1})
+        : ZepMessage(Msg::ToolTip, pos)
+        , pBuffer(pBuff)
+        , location(loc)
+    {
+    }
+
+    ZepBuffer* pBuffer;
+    BufferLocation location;
+    std::shared_ptr<RangeMarker> spMarker;
+};
 
 // Display state for a single pane of text.
 // Window shows a buffer, and is parented by a TabWindow
@@ -169,8 +184,6 @@ private:
 
     bool m_wrap = true;     // Wrap
 
-    std::map<NVec2f, const RangeMarker*> m_toolTips;
-
     // The buffer offset is where we are looking, but the cursor is only what you see on the screen
     CursorType m_cursorType = CursorType::Normal; // Type of cursor
     DisplayMode m_displayMode = DisplayMode::Vim; // Vim editing mode
@@ -205,10 +218,13 @@ private:
     NVec2f m_charCache[256];
     bool m_charCacheDirty = true;
     
-    timer m_toolTipTimer;
-    NVec2f m_tipStartPos;
-    bool m_tipActive = true;
-    bool m_tipDisabledTillMove = false;
+    timer m_toolTipTimer;                   // Timer for when the tip is shown
+    NVec2f m_tipStartPos;                   // Current location for the tip
+    NVec2f m_lastTipQueryPos;               // last query location for the tip
+    bool m_tipDisabledTillMove = false;     // Certain operations will stop the tip until the mouse is moved
+    BufferLocation m_tipBufferLocation;     // The character in the buffer the tip pos is over, or -1
+    std::map<NVec2f, std::shared_ptr<RangeMarker>> m_toolTips;  // All tooltips for a given position, currently only 1 at a time
+
 };
 
 } // namespace Zep

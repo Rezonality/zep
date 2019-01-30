@@ -44,7 +44,7 @@ struct NVec2
 
     bool operator!=(const NVec2<T>& rhs) const
     {
-        return !(*this = rhs);
+        return !(*this == rhs);
     }
 };
 template <class T>

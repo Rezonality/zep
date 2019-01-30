@@ -830,21 +830,21 @@ void ZepBuffer::UpdateForDelete(const BufferLocation& startOffset, const BufferL
     auto distance = endOffset - startOffset;
     for (auto& marker : m_rangeMarkers)
     {
-        if (startOffset >= marker.range.second)
+        if (startOffset >= marker->range.second)
         {
             continue;
         }
-        else if (endOffset <= marker.range.first)
+        else if (endOffset <= marker->range.first)
         {
-            marker.range.first -= distance;
-            marker.range.second -= distance;
+            marker->range.first -= distance;
+            marker->range.second -= distance;
         }
         else
         {
-            auto overlapStart = std::max(startOffset, marker.range.first);
-            auto overlapEnd = std::min(endOffset, marker.range.second);
+            auto overlapStart = std::max(startOffset, marker->range.first);
+            auto overlapEnd = std::min(endOffset, marker->range.second);
             auto dist = overlapEnd - overlapStart;
-            marker.range.second -= dist;
+            marker->range.second -= dist;
         }
     }
 }
@@ -856,19 +856,19 @@ void ZepBuffer::UpdateForInsert(const BufferLocation& startOffset, const BufferL
     auto distance = endOffset - startOffset;
     for (auto& marker : m_rangeMarkers)
     {
-        if (marker.range.second <= startOffset)
+        if (marker->range.second <= startOffset)
         {
             continue;
         }
 
-        if (marker.range.first >= startOffset)
+        if (marker->range.first >= startOffset)
         {
-            marker.range.first += distance;
-            marker.range.second += distance;
+            marker->range.first += distance;
+            marker->range.second += distance;
         }
         else
         {
-            marker.range.second += distance;
+            marker->range.second += distance;
         }
     }
 }
@@ -1036,9 +1036,9 @@ void ZepBuffer::SetSelection(const BufferRange& selection)
     }
 }
 
-void ZepBuffer::AddRangeMarker(const RangeMarker& marker)
+void ZepBuffer::AddRangeMarker(std::shared_ptr<RangeMarker> spMarker)
 {
-    m_rangeMarkers.emplace_back(marker);
+    m_rangeMarkers.emplace_back(spMarker);
 }
 
 void ZepBuffer::ClearRangeMarkers()

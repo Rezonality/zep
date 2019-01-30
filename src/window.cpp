@@ -170,12 +170,12 @@ void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
     }
     else if (payload->messageId == Msg::MouseMove)
     {
-        if (m_tipActive)
+        if (!m_toolTips.empty())
         {
             if (ManhattanDistance(m_tipStartPos, payload->pos) > 4.0f)
             {
                 timer_restart(m_toolTipTimer);
-                m_tipActive = false;
+                m_toolTips.clear();
             }
         }
         else
@@ -525,12 +525,12 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
         // Show any markers in the left indicator region
         for (auto& marker : m_pBuffer->GetRangeMarkers())
         {
-            if (marker.displayType & RangeMarkerDisplayType::Indicator)
+            if (marker->displayType & RangeMarkerDisplayType::Indicator)
             {
-                auto sel = marker.range;
+                auto sel = marker->range;
                 if (lineInfo.columnOffsets.x <= sel.second && lineInfo.columnOffsets.y > sel.first)
                 {
-                    GetEditor().GetDisplay().DrawRectFilled(NRectf(NVec2f(m_indicatorRegion->rect.topLeftPx.x, ToWindowY(lineInfo.spanYPx)), NVec2f(m_indicatorRegion->rect.Center().x, ToWindowY(lineInfo.spanYPx) + GetEditor().GetDisplay().GetFontSize())), m_pBuffer->GetTheme().GetColor(marker.highlightColor));
+                    GetEditor().GetDisplay().DrawRectFilled(NRectf(NVec2f(m_indicatorRegion->rect.topLeftPx.x, ToWindowY(lineInfo.spanYPx)), NVec2f(m_indicatorRegion->rect.Center().x, ToWindowY(lineInfo.spanYPx) + GetEditor().GetDisplay().GetFontSize())), m_pBuffer->GetTheme().GetColor(marker->highlightColor));
                 }
             }
         }
@@ -591,31 +591,38 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
                 }
             }
 
+            NRectf charRect(NVec2f(screenPosX, ToWindowY(lineInfo.spanYPx)), NVec2f(screenPosX + textSize.x, ToWindowY(lineInfo.spanYPx) + textSize.y));
+            if (charRect.Contains(m_tipStartPos))
+            {
+                // Record the mouse-over buffer location
+                m_tipBufferLocation = ch;
+            }
+
             // Show any markers 
             for (auto& marker : m_pBuffer->GetRangeMarkers())
             {
-                auto sel = marker.range;
+                auto sel = marker->range;
                 if (ch >= sel.first && ch < sel.second)
                 {
-                    NRectf charRect(NVec2f(screenPosX, ToWindowY(lineInfo.spanYPx)), NVec2f(screenPosX + textSize.x, ToWindowY(lineInfo.spanYPx) + textSize.y));
-                    
-                    if (marker.displayType & RangeMarkerDisplayType::Underline)
+                    if (marker->displayType & RangeMarkerDisplayType::Underline)
                     {
-                        GetEditor().GetDisplay().DrawRectFilled(NRectf(NVec2f(screenPosX, ToWindowY(lineInfo.spanYPx) + textSize.y - 1), NVec2f(screenPosX + textSize.x, ToWindowY(lineInfo.spanYPx) + textSize.y)), m_pBuffer->GetTheme().GetColor(marker.highlightColor));
+                        GetEditor().GetDisplay().DrawRectFilled(NRectf(NVec2f(screenPosX, ToWindowY(lineInfo.spanYPx) + textSize.y - 1), NVec2f(screenPosX + textSize.x, ToWindowY(lineInfo.spanYPx) + textSize.y)), m_pBuffer->GetTheme().GetColor(marker->highlightColor));
                     }
-                    else if (marker.displayType & RangeMarkerDisplayType::Background)
+                    else if (marker->displayType & RangeMarkerDisplayType::Background)
                     {
-                        GetEditor().GetDisplay().DrawRectFilled(charRect, m_pBuffer->GetTheme().GetColor(marker.highlightColor));
+                        GetEditor().GetDisplay().DrawRectFilled(charRect, m_pBuffer->GetTheme().GetColor(marker->highlightColor));
                     }
 
-                    if (marker.displayType & RangeMarkerDisplayType::Tooltip)
+                    // If this marker has an associated tooltip, pop it up after a time delay
+                    if (marker->displayType & RangeMarkerDisplayType::Tooltip)
                     {
-                        if (!m_tipDisabledTillMove &&
-                            charRect.Contains(m_tipStartPos) &&
+                        if (m_toolTips.empty() &&
+                            !m_tipDisabledTillMove &&
+                            m_tipBufferLocation == ch &&
                             (tipTimeSeconds > 0.5f))
                         {
-                            m_toolTips[NVec2f(m_tipStartPos.x, m_tipStartPos.y + textBorder)] = &marker;
-                            m_tipActive = true;
+                            // Register this tooltip
+                            m_toolTips[NVec2f(m_tipStartPos.x, m_tipStartPos.y + textBorder)] = marker;
                         }
                     }
                 }
@@ -774,6 +781,7 @@ void ZepWindow::SetBufferCursor(BufferLocation location)
 void ZepWindow::DisableToolTipTillMove()
 {
     m_tipDisabledTillMove = true;
+    m_toolTips.clear();
 }
 
 void ZepWindow::SetBuffer(ZepBuffer* pBuffer)
@@ -870,6 +878,7 @@ void ZepWindow::Display()
     }
 
     auto cursorCL = BufferToDisplay(m_bufferCursor);
+    m_tipBufferLocation = BufferLocation{-1};
 
     // Always update
     UpdateAirline();
@@ -902,8 +911,6 @@ void ZepWindow::Display()
         }
     }
 
-    m_toolTips.clear();
-
     {
         TIME_SCOPE(DrawLine);
         for (int displayPass = 0; displayPass < WindowPass::Max; displayPass++)
@@ -917,6 +924,22 @@ void ZepWindow::Display()
                 }
             }
         }
+    }
+
+    // No tooltip, and we can show one, then ask for tooltips
+    if (!m_tipDisabledTillMove &&
+        (timer_get_elapsed_seconds(m_toolTipTimer) > 0.5f) &&
+        m_toolTips.empty() &&
+        m_lastTipQueryPos != m_tipStartPos)
+    {
+        auto spMsg = std::make_shared<ToolTipMessage>(m_pBuffer, m_tipStartPos, m_tipBufferLocation);
+        GetEditor().Broadcast(spMsg);
+        if (spMsg->handled &&
+            spMsg->spMarker != nullptr)
+        {
+            m_toolTips[NVec2f(m_tipStartPos.x, m_tipStartPos.y)] = spMsg->spMarker;
+        }
+        m_lastTipQueryPos = m_tipStartPos;
     }
 
     for (auto& toolTip : m_toolTips)
