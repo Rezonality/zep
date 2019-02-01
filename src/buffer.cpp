@@ -12,34 +12,53 @@
 
 namespace
 {
+
+// Ensure the character is >=0 and <=127 as in the ASCII standard,
+// used by the functions below.
+// isalnum, for example will assert on debug build if not in this range.
+inline int ToASCII(const char ch)
+{
+    auto ret = (unsigned int)ch;
+    ret = std::max(0u, ret);
+    ret = std::min(ret, 127u);
+    return ret;
+}
+
 // A VIM-like definition of a word.  Actually, in Vim this can be changed, but this editor
 // assumes a word is alphanumeric or underscore for consistency
-inline bool IsWordChar(const char ch)
+inline bool IsWordChar(const char c)
 {
-    return std::isalnum((unsigned int)ch) || ch == '_';
+    auto ch = ToASCII(c);
+    return std::isalnum(ch) || ch == '_';
 }
-inline bool IsWordOrSepChar(const char ch)
+inline bool IsWordOrSepChar(const char c)
 {
-    return std::isalnum((unsigned int)ch) || ch == '_' || ch == ' ' || ch == '\n' || ch == 0;
+    auto ch = ToASCII(c);
+    return std::isalnum(ch) || ch == '_' || ch == ' ' || ch == '\n' || ch == 0;
 }
-inline bool IsWORDChar(const char ch)
+inline bool IsWORDChar(const char c)
 {
-    return std::isgraph((unsigned int)ch);
+    auto ch = ToASCII(c);
+    return std::isgraph(ch);
 }
-inline bool IsWORDOrSepChar(const char ch)
+inline bool IsWORDOrSepChar(const char c)
 {
-    return std::isgraph((unsigned int)ch) || ch == ' ' || ch == '\n' || ch == 0;
+    auto ch = ToASCII(c);
+    return std::isgraph(ch) || ch == ' ' || ch == '\n' || ch == 0;
 }
-inline bool IsSpace(const char ch)
+inline bool IsSpace(const char c)
 {
+    auto ch = ToASCII(c);
     return ch == ' ';
 }
-inline bool IsSpaceOrTerminal(const char ch)
+inline bool IsSpaceOrTerminal(const char c)
 {
+    auto ch = ToASCII(c);
     return ch == ' ' || ch == 0 || ch == '\n';
 }
-inline bool IsNewlineOrEnd(const char ch)
+inline bool IsNewlineOrEnd(const char c)
 {
+    auto ch = ToASCII(c);
     return ch == '\n' || ch == 0;
 }
 

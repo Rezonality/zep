@@ -20,7 +20,7 @@ platform:
 
 configuration:
   - Release
-  #- Debug
+  - Debug
 
 environment:
   MSBUILD_FLAGS: /verbosity:minimal /maxcpucount
@@ -60,4 +60,6 @@ after_build:
   # switch to project build folder and zip "tutorials" folder
   - cd C:\projects\build
   - 7z a -tzip -mx9 "zep-%APPVEYOR_BUILD_VERSION%-%COMPILER%.zip" Release
+  - 7z a -tzip -mx9 "zep-Debug-%APPVEYOR_BUILD_VERSION%-%COMPILER%.zip" Release
   - appveyor PushArtifact "zep-%APPVEYOR_BUILD_VERSION%-%COMPILER%.zip"
+  - appveyor PushArtifact "zep-Debug-%APPVEYOR_BUILD_VERSION%-%COMPILER%.zip"
