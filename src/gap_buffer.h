@@ -243,7 +243,7 @@ public:
         auto bufferSize = CurrentSizeWithGap() + sizeIncrease;
 
         // Make the new buffer
-        auto pNewStart = get_allocator().allocate(bufferSize);
+        auto pNewStart = get_allocator().allocate((const size_t)bufferSize);
 
         memcpy(pNewStart, m_pStart, CurrentSizeWithGap() * sizeof(T));
 
@@ -281,7 +281,7 @@ public:
         auto bufferSize = CurrentSizeWithGap() + sizeIncrease;
 
         // Make the new buffer
-        auto pNewStart = get_allocator().allocate(bufferSize);
+        auto pNewStart = get_allocator().allocate((const size_t)bufferSize);
 
         // First section, before gap - copy into place
         if ((m_pGapStart - m_pStart) > 0)
@@ -347,7 +347,7 @@ public:
             spaceRequired = -spaceRequired;
 
         // Make enough entries in the buffer
-        resize(spaceRequired);
+        resize((size_t)spaceRequired);
 
         // Copy directly to our buffer, using raw pointer for speed
         std::copy(srcBegin, srcEnd, m_pStart);
@@ -370,7 +370,7 @@ public:
     void assign(size_type count, const T& value)
     {
         // Make enough entries in the buffer
-        resize(count);
+        resize((size_t)count);
 
         // Copy to the front of the buffer, leave the gap at that back
         T* p = m_pStart;

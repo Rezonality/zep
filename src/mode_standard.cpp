@@ -73,7 +73,6 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     std::string ch(1, (char)key);
 
     bool copyRegion = false;
-    bool pasteText = false;
     bool lineWise = false;
     auto& buffer = GetCurrentWindow()->GetBuffer();
     BufferLocation bufferCursor = GetCurrentWindow()->GetBufferCursor();
@@ -248,12 +247,10 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     }
     else if (key == ExtKeys::UP)
     {
-        auto start_x = GetCurrentWindow()->BufferToDisplay().x;
         GetCurrentWindow()->MoveCursorY(-1, LineLocation::LineCRBegin);
     }
     else if (key == ExtKeys::DOWN)
     {
-        auto start_x = GetCurrentWindow()->BufferToDisplay().x;
         GetCurrentWindow()->MoveCursorY(1, LineLocation::LineCRBegin);
     }
     else if (key == ExtKeys::RETURN)

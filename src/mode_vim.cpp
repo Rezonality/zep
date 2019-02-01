@@ -99,7 +99,7 @@ void CommandContext::UpdateRegisters()
         {
             for (int i = 9; i > 1; i--)
             {
-                owner.GetEditor().SetRegister('0' + i, owner.GetEditor().GetRegister('0' + i - 1));
+                owner.GetEditor().SetRegister('0' + (char)i, owner.GetEditor().GetRegister('0' + (char)i - 1));
             }
             owner.GetEditor().SetRegister('1', Register(str, (op == CommandOperation::DeleteLines)));
         }
@@ -127,8 +127,8 @@ void CommandContext::UpdateRegisters()
             if (registers.top() >= 'A' && registers.top() <= 'Z')
             {
                 auto chlow = std::tolower(registers.top());
-                owner.GetEditor().GetRegister(chlow).text += str;
-                owner.GetEditor().GetRegister(chlow).lineWise = (op == CommandOperation::CopyLines);
+                owner.GetEditor().GetRegister((const char)chlow).text += str;
+                owner.GetEditor().GetRegister((const char)chlow).lineWise = (op == CommandOperation::CopyLines);
             }
             else
             {
@@ -260,7 +260,7 @@ void CommandContext::GetCommandRegisters()
             // Demote capitals to lower registers when pasting (all both)
             if (reg >= 'A' && reg <= 'Z')
             {
-                reg = std::tolower(reg);
+                reg = (char)std::tolower((char)reg);
             }
 
             if (owner.GetEditor().GetRegisters().find(std::string({reg})) != owner.GetEditor().GetRegisters().end())
@@ -295,7 +295,7 @@ void ZepMode_Vim::Init()
     timer_restart(m_insertEscapeTimer);
     for (int i = 0; i <= 9; i++)
     {
-        GetEditor().SetRegister('0' + i, "");
+        GetEditor().SetRegister('0' + (const char)i, "");
     }
     GetEditor().SetRegister('"', "");
 }
@@ -331,7 +331,6 @@ void ZepMode_Vim::SwitchMode(EditorMode mode)
         case EditorMode::Normal:
         {
             GetCurrentWindow()->SetCursorType(CursorType::Normal);
-            auto cursor = GetCurrentWindow()->GetBufferCursor();
             ClampCursorForMode();
             ResetCommand();
         }
@@ -712,7 +711,6 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
 bool ZepMode_Vim::GetCommand(CommandContext& context)
 {
     auto bufferCursor = GetCurrentWindow()->GetBufferCursor();
-    auto pWindow = GetCurrentWindow();
     auto& buffer = GetCurrentWindow()->GetBuffer();
 
     // Motion
@@ -1444,7 +1442,7 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         // TODO: Cursor keys on the command line
         if (key == ':' || m_currentCommand[0] == ':' || key == '/' || m_currentCommand[0] == '/')
         {
-            if (HandleExCommand(m_currentCommand, key))
+            if (HandleExCommand(m_currentCommand, (const char)key))
             {
                 if (GetCurrentWindow())
                 {

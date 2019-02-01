@@ -255,7 +255,7 @@ bool archive_begin_section(Archive& ar, const std::string& name)
 
         if (ar.currentSectionIndex < ar.currentSections.size())
         {
-            ar.currentSection = ar.currentSections[ar.currentSectionIndex];
+            ar.currentSection = ar.currentSections[(const unsigned int)ar.currentSectionIndex];
             return true;
         }
 
@@ -640,7 +640,7 @@ std::string archive_to_file_text(Archive& ar)
 
                 auto pVals = &ar.values[itrKeys->second];
                 auto numVals = *pVals++;
-                for (int i = 0; i < numVals; i++)
+                for (unsigned int i = 0; i < numVals; i++)
                 {
                     if (i == 0)
                     {

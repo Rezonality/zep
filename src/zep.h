@@ -17,7 +17,18 @@
 #include "window.cpp"
 #include "mcommon/file/file.cpp"
 #include "mcommon/file/archive.cpp"
-#include "mcommon/math/mathutils.cpp"
+
+#ifdef ZEP_FEATURE_FILE_WATCHER
+#include "mcommon/FileWatcher/FileWatcher.cpp"
+#if defined(_WIN32)
+#include "mcommon/FileWatcher/FileWatcherWin32.cpp"
+#elif defined(__APPLE_CC__) || defined(BSD)
+#include "mcommon/FileWatcher/FileWatcherOSX.cpp"
+#elif defined(__linux__)
+#include "mcommon/FileWatcher/FileWatcherLinux.cpp"
+#endif
+#endif
+
 #include "mcommon/string/stringutils.cpp"
 #include "mcommon/animation/timer.cpp"
 #ifdef ZEP_QT

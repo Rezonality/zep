@@ -41,6 +41,15 @@ ZepEditor::ZepEditor(IZepDisplay* pDisplay, const fs::path& root, uint32_t flags
     , m_flags(flags)
     , m_rootPath(root)
 {
+    if (m_flags & ZepEditorFlags::DisableThreads)
+    {
+        m_threadPool = std::make_unique<ThreadPool>(1);
+    }
+    else
+    {
+        m_threadPool = std::make_unique<ThreadPool>();
+    }
+
     LoadConfig(root / "zep.cfg");
 
     m_spTheme = std::make_shared<ZepTheme>();
@@ -73,6 +82,11 @@ ZepEditor::~ZepEditor()
 {
     file_destroy_dir_watch();
     delete m_pDisplay;
+}
+
+ThreadPool& ZepEditor::GetThreadPool() const
+{
+    return *m_threadPool;
 }
 
 // If you pass a valid path to a 'zep.cfg' file, then editor settings will serialize from that

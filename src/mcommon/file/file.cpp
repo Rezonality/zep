@@ -1,7 +1,10 @@
 #include <fstream>
 
 // For logging events to file
+#ifdef ZEP_FEATURE_FILE_WATCHER
 #include "mcommon/FileWatcher/FileWatcher.h"
+#endif
+
 #include "mcommon/file/file.h"
 #include "mcommon/file/tinydir.h"
 
@@ -15,6 +18,7 @@
 namespace Zep
 {
 
+#ifdef ZEP_FEATURE_FILE_WATCHER
 // Listen for run_tree updates
 class UpdateListener : public FW::FileWatchListener
 {
@@ -55,6 +59,21 @@ void file_update_dir_watch()
 {
     fileWatcher.update();
 }
+#else
+void file_init_dir_watch(const fs::path& dir, fileCB callback)
+{
+    dir;
+    callback;
+}
+
+void file_destroy_dir_watch()
+{
+}
+
+void file_update_dir_watch()
+{
+}
+#endif
 
 std::string file_read(const fs::path& fileName)
 {
@@ -126,7 +145,7 @@ std::vector<fs::path> file_gather_files(const fs::path& root)
     std::vector<fs::path> ret;
 
     tinydir_dir dir;
-    if (tinydir_open(&dir, root.string().c_str()) == -1)
+    if (tinydir_open(&dir, (const _tinydir_char_t *)root.string().c_str()) == -1)
     {
         LOG(typelog::ERROR) << "Gather Files, Start Path Invalid: " << root.string();
         return ret;
@@ -176,7 +195,7 @@ std::vector<fs::path> file_gather_files(const fs::path& root)
                 if (fs::is_directory(filePath))
                 {
                     tinydir_dir subDir;
-                    if (tinydir_open(&subDir, filePath.string().c_str()) != -1)
+                    if (tinydir_open(&subDir, (const _tinydir_char_t *)filePath.string().c_str()) != -1)
                     {
                         fs::path newPath(subDir.path);
                         newPath = fs::canonical(newPath);

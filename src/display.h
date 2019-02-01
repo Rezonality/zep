@@ -47,11 +47,29 @@ public:
     {
         return 10;
     }
-    virtual void DrawLine(const NVec2f& start, const NVec2f& end, const NVec4f& color = NVec4f(1.0f), float width = 1.0f) const override{};
-    virtual void DrawChars(const NVec2f& pos, const NVec4f& col, const utf8* text_begin, const utf8* text_end = nullptr) const override{};
-    virtual void DrawRectFilled(const NRectf& a, const NVec4f& col = NVec4f(1.0f)) const override{};
+    virtual void DrawLine(const NVec2f& start, const NVec2f& end, const NVec4f& color = NVec4f(1.0f), float width = 1.0f) const override
+    {
+        start;
+        end;
+        color;
+        width;
+    };
+    virtual void DrawChars(const NVec2f& pos, const NVec4f& col, const utf8* text_begin, const utf8* text_end = nullptr) const override
+    {
+        pos;
+        col;
+        text_begin;
+        text_end;
+    }
+    virtual void DrawRectFilled(const NRectf& a, const NVec4f& col = NVec4f(1.0f)) const override
+    {
+        a;
+        col;
+
+    };
     virtual void SetClipRect(const NRectf& rc) override
     {
+        rc;
     }
 };
 

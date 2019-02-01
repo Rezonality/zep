@@ -25,7 +25,6 @@ ENDIF()
 LIST(APPEND M3RDPARTY_INCLUDE
     m3rdparty
     ${CMAKE_BINARY_DIR}
-    m3rdparty/threadpool
     )
 
 LIST(APPEND M3RDPARTY_SOURCE

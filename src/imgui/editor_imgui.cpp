@@ -21,7 +21,6 @@ void ZepEditor_ImGui::HandleInput()
 {
     auto& io = ImGui::GetIO();
 
-    bool inputChanged = false;
     bool handled = false;
 
     uint32_t mod = 0;
@@ -148,6 +147,9 @@ void ZepEditor_ImGui::HandleInput()
     {
         for (int n = 0; n < io.InputQueueCharacters.Size && io.InputQueueCharacters[n]; n++)
         {
+            // Ignore '\r' - sometimes ImGui generates it!
+            if (io.InputQueueCharacters[n] == '\r')
+                continue;
             GetCurrentMode()->AddKeyPress(io.InputQueueCharacters[n], mod);
         }
     }

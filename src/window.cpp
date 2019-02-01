@@ -288,8 +288,6 @@ void ZepWindow::UpdateLineSpans()
     m_maxDisplayLines = (long)std::max(0.0f, std::floor(m_textRegion->rect.Height() / m_defaultLineSize));
     float screenPosX = m_textRegion->rect.topLeftPx.x;
 
-    BufferLocation loc = 0;
-
     // For now, we are compromising on ASCII; so don't query font fixed_size each time
     const auto& textBuffer = m_pBuffer->GetText();
 
@@ -484,7 +482,7 @@ void ZepWindow::DisplayToolTip(const NVec2f& pos, const RangeMarker& marker) con
 // complexity.  Basically, I don't like the current implementation, but it works for now.
 // The text is displayed acorrding to the region bounds and the display lineData
 // Additionally (and perhaps that should be a seperate function), this code draws line numbers
-bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int displayPass)
+bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, int displayPass)
 {
     // A middle-dot whitespace character
     static const auto whiteSpace = string_from_wstring(std::wstring(L"\x00b7"));
@@ -537,7 +535,6 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int 
         showLineNumber();
     }
 
-    bool foundCR = false;
     auto screenPosX = m_textRegion->rect.topLeftPx.x;
 
     char invalidChar;
@@ -918,7 +915,7 @@ void ZepWindow::Display()
             for (long windowLine = m_visibleLineRange.x; windowLine < m_visibleLineRange.y; windowLine++)
             {
                 auto& lineInfo = *m_windowLines[windowLine];
-                if (!DisplayLine(lineInfo, m_textRegion->rect, displayPass))
+                if (!DisplayLine(lineInfo, displayPass))
                 {
                     break;
                 }
@@ -954,7 +951,7 @@ void ZepWindow::Display()
     auto border = 12.0f;
 
     NVec2f screenPosYPx = m_airlineRegion->rect.topLeftPx;
-    for (int i = 0; i < m_airline.leftBoxes.size(); i++)
+    for (int i = 0; i < (int)m_airline.leftBoxes.size(); i++)
     {
         auto pText = (const utf8*)m_airline.leftBoxes[i].text.c_str();
         auto textSize = GetTextSize(pText, pText + m_airline.leftBoxes[i].text.size());

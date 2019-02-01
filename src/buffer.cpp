@@ -73,17 +73,6 @@ ZepBuffer::ZepBuffer(ZepEditor& editor, const std::string& strName)
     : ZepComponent(editor)
     , m_strName(strName)
 {
-    if (!(editor.GetFlags() & ZepEditorFlags::DisableThreads))
-    {
-        try
-        {
-            m_spThreadPool = std::make_shared<ThreadPool>();
-        }
-        catch (std::invalid_argument &)
-        {
-            // Threads are not supported on this platform; ignore
-        }
-    }
     SetText("");
 }
 
@@ -128,12 +117,12 @@ BufferLocation ZepBuffer::LocationFromOffsetByChars(const BufferLocation& locati
         if (dir == -1)
             current += dir;
 
-        if (current >= m_gapBuffer.size())
+        if (current >= (long)m_gapBuffer.size())
             break;
 
         if (m_gapBuffer[current] == '\n')
         {
-            if ((current + dir) >= m_gapBuffer.size())
+            if ((current + dir) >= (long)m_gapBuffer.size())
             {
                 break;
             }
@@ -165,12 +154,16 @@ BufferLocation ZepBuffer::LocationFromOffset(long offset) const
 
 BufferLocation ZepBuffer::Search(const std::string& str, BufferLocation start, SearchDirection dir, BufferLocation end) const
 {
+    end;
+    dir;
+    start;
+    str;
     return BufferLocation{0};
 }
 
 bool ZepBuffer::Valid(BufferLocation location) const
 {
-    if (location < 0 || location >= m_gapBuffer.size())
+    if (location < 0 || location >= (BufferLocation)m_gapBuffer.size())
     {
         return false;
     }
@@ -178,7 +171,7 @@ bool ZepBuffer::Valid(BufferLocation location) const
 }
 
 // Prepare for a motion
-bool ZepBuffer::MotionBegin(BufferLocation& start, uint32_t searchType, SearchDirection dir) const
+bool ZepBuffer::MotionBegin(BufferLocation& start) const
 {
     BufferLocation newStart = start;
 
@@ -254,7 +247,7 @@ BufferRange ZepBuffer::AWordMotion(BufferLocation start, uint32_t searchType) co
     BufferRange r;
     r.first = start;
 
-    MotionBegin(start, searchType, SearchDirection::Forward);
+    MotionBegin(start);
 
     // Already on a word; find the limits, and include the space
     if (Skip(IsWord, start, SearchDirection::Backward))
@@ -292,9 +285,7 @@ BufferRange ZepBuffer::AWordMotion(BufferLocation start, uint32_t searchType) co
 // The unit tests are designed to enforce the behavior here
 BufferRange ZepBuffer::StandardCtrlMotion(BufferLocation cursor, SearchDirection searchDir) const
 {
-    auto IsWord = IsWORDChar;
-    auto searchType = SearchType::WORD;
-    MotionBegin(cursor, searchType, SearchDirection::Forward);
+    MotionBegin(cursor);
 
     auto lineEnd = GetLinePos(cursor, LineLocation::LineLastNonCR);
     auto current = std::min(lineEnd, Clamp(cursor));
@@ -338,7 +329,7 @@ BufferRange ZepBuffer::InnerWordMotion(BufferLocation start, uint32_t searchType
 {
     auto IsWordOrSpace = searchType == SearchType::Word ? IsWordOrSepChar : IsWORDOrSepChar;
     auto IsWord = searchType == SearchType::Word ? IsWordChar : IsWORDChar;
-    MotionBegin(start, searchType, SearchDirection::Forward);
+    MotionBegin(start);
 
     BufferRange r;
 
@@ -405,7 +396,7 @@ BufferLocation ZepBuffer::WordMotion(BufferLocation start, uint32_t searchType, 
 {
     auto IsWord = searchType == SearchType::Word ? IsWordChar : IsWORDChar;
 
-    MotionBegin(start, searchType, dir);
+    MotionBegin(start);
 
     if (dir == SearchDirection::Forward)
     {
@@ -454,7 +445,7 @@ BufferLocation ZepBuffer::EndWordMotion(BufferLocation start, uint32_t searchTyp
 {
     auto IsWord = searchType == SearchType::Word ? IsWordChar : IsWORDChar;
 
-    MotionBegin(start, searchType, dir);
+    MotionBegin(start);
 
     if (dir == SearchDirection::Forward)
     {
@@ -505,7 +496,7 @@ BufferLocation ZepBuffer::ChangeWordMotion(BufferLocation start, uint32_t search
     // Change word is different to work skipping; it will change a string of spaces, for example.
     // Essentially it changes 'what you are over', based on the word rule
     auto IsWord = searchType == SearchType::Word ? IsWordChar : IsWORDChar;
-    MotionBegin(start, searchType, dir);
+    MotionBegin(start);
     if (Skip(IsWord, start, dir))
     {
         return start;
@@ -583,7 +574,7 @@ BufferLocation ZepBuffer::ClampToVisibleLine(BufferLocation in) const
 bool ZepBuffer::GetLineOffsets(const long line, long& lineStart, long& lineEnd) const
 {
     // Not valid
-    if (m_lineEnds.size() <= line)
+    if ((long)m_lineEnds.size() <= line)
     {
         lineStart = 0;
         lineEnd = 0;
@@ -667,7 +658,7 @@ bool ZepBuffer::Save(int64_t& size)
         return true;
     }
 
-    if (Zep::file_write(m_filePath, &str[0], size))
+    if (Zep::file_write(m_filePath, &str[0], (size_t)size))
     {
         ClearFlags(FileFlags::NotYetSaved);
         ClearFlags(FileFlags::Dirty);
@@ -772,7 +763,7 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
         // The point just after the line end
         case LineLocation::BeyondLineEnd:
         {
-            while (bufferLocation < m_gapBuffer.size() && m_gapBuffer[bufferLocation] != '\n' && m_gapBuffer[bufferLocation] != 0)
+            while (bufferLocation < (long)m_gapBuffer.size() && m_gapBuffer[bufferLocation] != '\n' && m_gapBuffer[bufferLocation] != 0)
             {
                 bufferLocation++;
             }
@@ -783,7 +774,7 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
 
         case LineLocation::LineCRBegin:
         {
-            while (bufferLocation < m_gapBuffer.size()
+            while (bufferLocation < (long)m_gapBuffer.size()
                    && m_gapBuffer[bufferLocation] != '\n'
                    && m_gapBuffer[bufferLocation] != 0)
             {
@@ -795,7 +786,7 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
 
         case LineLocation::LineFirstGraphChar:
         {
-            while (bufferLocation < m_gapBuffer.size() && !std::isgraph(m_gapBuffer[bufferLocation]) && m_gapBuffer[bufferLocation] != '\n')
+            while (bufferLocation < (long)m_gapBuffer.size() && !std::isgraph(m_gapBuffer[bufferLocation]) && m_gapBuffer[bufferLocation] != '\n')
             {
                 bufferLocation++;
             }
@@ -807,7 +798,7 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
         {
             auto start = bufferLocation;
 
-            while (bufferLocation < m_gapBuffer.size()
+            while (bufferLocation < (long)m_gapBuffer.size()
                    && m_gapBuffer[bufferLocation] != '\n'
                    && m_gapBuffer[bufferLocation] != 0)
             {
@@ -825,14 +816,14 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
 
         case LineLocation::LineLastGraphChar:
         {
-            while (bufferLocation < m_gapBuffer.size()
+            while (bufferLocation < (long)m_gapBuffer.size()
                    && m_gapBuffer[bufferLocation] != '\n'
                    && m_gapBuffer[bufferLocation] != 0)
             {
                 bufferLocation++;
             }
 
-            while (bufferLocation > 0 && bufferLocation < m_gapBuffer.size() && !std::isgraph(m_gapBuffer[bufferLocation]))
+            while (bufferLocation > 0 && bufferLocation < (long)m_gapBuffer.size() && !std::isgraph(m_gapBuffer[bufferLocation]))
             {
                 bufferLocation--;
             }
@@ -840,8 +831,6 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
         }
         break;
     }
-
-    return bufferLocation;
 }
 
 void ZepBuffer::UpdateForDelete(const BufferLocation& startOffset, const BufferLocation& endOffset)
@@ -894,7 +883,7 @@ void ZepBuffer::UpdateForInsert(const BufferLocation& startOffset, const BufferL
 
 bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str)
 {
-    if (startOffset > m_gapBuffer.size())
+    if (startOffset > (long)m_gapBuffer.size())
     {
         return false;
     }
@@ -978,7 +967,7 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
 // This makes a few things fall out more easily
 bool ZepBuffer::Delete(const BufferLocation& startOffset, const BufferLocation& endOffset)
 {
-    assert(startOffset >= 0 && endOffset <= (m_gapBuffer.size() - 1));
+    assert(startOffset >= 0 && endOffset <= (BufferLocation)(m_gapBuffer.size() - 1));
 
     // We are about to modify this range
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, startOffset, endOffset));

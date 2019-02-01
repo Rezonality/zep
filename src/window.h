@@ -168,7 +168,7 @@ private:
     const SpanInfo& GetCursorLineInfo(long y);
 
     void DisplayToolTip(const NVec2f& pos, const RangeMarker& marker) const;
-    bool DisplayLine(const SpanInfo& lineInfo, const NRectf& region, int displayPass);
+    bool DisplayLine(const SpanInfo& lineInfo, int displayPass);
     void DisplayScrollers();
     void BuildCharCache();
     void DisableToolTipTillMove();

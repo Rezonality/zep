@@ -109,17 +109,11 @@ public:
     BufferLocation Clamp(BufferLocation location) const;
     BufferLocation ClampToVisibleLine(BufferLocation in) const;
     long GetBufferColumn(BufferLocation location) const;
-
-    std::shared_ptr<ThreadPool> GetThreadPool()
-    {
-        return m_spThreadPool;
-    }
-
     using fnMatch = std::function<bool(const char)>;
 
     void Move(BufferLocation& loc, SearchDirection dir) const;
     bool Valid(BufferLocation locataion) const;
-    bool MotionBegin(BufferLocation& start, uint32_t searchType, SearchDirection dir) const;
+    bool MotionBegin(BufferLocation& start) const;
     bool Skip(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const;
     bool SkipOne(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const;
     bool SkipNot(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const;
@@ -215,7 +209,6 @@ private:
     bool m_dirty = false;         // Is the text modified?
     GapBuffer<utf8> m_gapBuffer;  // Storage for the text - a gap buffer for efficiency
     std::vector<long> m_lineEnds; // End of each line
-    std::shared_ptr<ThreadPool> m_spThreadPool;
     uint32_t m_fileFlags = FileFlags::NotYetSaved | FileFlags::FirstInit;
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::string m_strName;
@@ -237,7 +230,7 @@ enum class BufferMessageType
 };
 struct BufferMessage : public ZepMessage
 {
-    BufferMessage(ZepBuffer* pBuff, BufferMessageType messageType, const BufferLocation& startLoc, const BufferLocation& endLoc, const BufferLocation& cursor = BufferLocation{-1})
+    BufferMessage(ZepBuffer* pBuff, BufferMessageType messageType, const BufferLocation& startLoc, const BufferLocation& endLoc)
         : ZepMessage(Msg::Buffer)
         , pBuffer(pBuff)
         , type(messageType)

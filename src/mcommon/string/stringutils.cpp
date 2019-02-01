@@ -13,7 +13,10 @@ std::unordered_map<uint32_t, std::string> StringId::stringLookup;
 std::string string_tolower(const std::string& str)
 {
     std::string copy = str;
-    std::transform(copy.begin(), copy.end(), copy.begin(), ::tolower);
+    std::transform(copy.begin(), copy.end(), copy.begin(), [](char ch)
+    {
+        return (char)::tolower(int(ch));
+    });
     return copy;
 }
 

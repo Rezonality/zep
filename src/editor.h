@@ -7,12 +7,12 @@
 #include <set>
 #include <sstream>
 #include <string>
-#include <threadpool/ThreadPool.hpp>
 #include <vector>
 #include "mcommon/math/math.h"
 #include "mcommon/animation/timer.h"
 #include "mcommon/file/file.h"
 #include "mcommon/file/archive.h"
+#include "mcommon/threadpool.h"
 #include "splits.h"
 
 // Basic Architecture
@@ -273,6 +273,9 @@ public:
     {
         return m_showScrollBar;
     }
+
+    ThreadPool& GetThreadPool() const;
+
 private:
     // Call GetBuffer publicly, to stop creation of duplicate buffers refering to the same file
     ZepBuffer* CreateNewBuffer(const std::string& bufferName);
@@ -323,6 +326,8 @@ private:
 
     // Config
     uint32_t m_showScrollBar = 1;
+
+    std::unique_ptr<ThreadPool> m_threadPool;
 };
 
 } // namespace Zep
