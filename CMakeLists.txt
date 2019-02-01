@@ -4,12 +4,18 @@ option (BUILD_QT "Make a Qt Demo" OFF)
 option (BUILD_IMGUI "Make an imgui demo" ON)
 option (BUILD_IMGUI_APP "Make the test app" ON)
 
+option (ZEP_FEATURE_FILE_WATCHER "File watcher enabled" ON)
+
 set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 PROJECT (ZepDemo)
+
+IF (ZEP_FEATURE_FILE_WATCHER)
+ADD_DEFINITIONS(-DZEP_FEATURE_FILE_WATCHER)
+ENDIF()
 
 MESSAGE(STATUS " CMakeLists: Zep")
 

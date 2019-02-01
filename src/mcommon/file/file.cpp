@@ -30,6 +30,9 @@ public:
 
     void handleFileAction(FW::WatchID watchid, const FW::String& dir, const FW::String& filename, FW::Action action)
     {
+        dir;
+        watchid;
+
         if (action == FW::Action::Modified)
         {
             callback(fs::path(filename));
