@@ -130,7 +130,7 @@ void ZepEditor_ImGui::HandleInput()
         // SDL Remaps to its own scancodes; and since we can't look them up in the standard IMGui list
         // without modifying the ImGui base code, we have special handling here for CTRL.
         // For the Win32 case, we use VK_A (ASCII) is handled below
-#ifdef _SDL_H
+#if defined(_SDL_H) || defined(ZEP_USE_SDL)
         if (ImGui::IsKeyPressed(KEY_1))
         {
             SetMode(ZepMode_Standard::StaticName());
