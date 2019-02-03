@@ -49,6 +49,9 @@ and a learning exercise.  I like the idea of a programmer building programmer to
 
 Pull requests are appreciated and encouraged ;) 
 
+There also is a trivial example of integrating zep into imgui here:
+[Zep Inside ImGui Demo](https://github.com/cmaughan/imgui)
+
 Screenshots
 -----------
 Using the ImGui Renderer:
@@ -88,7 +91,8 @@ The Vim mode has most of the usual word motions, visual mode, etc.  The standard
 See [Vim Mode](https://github.com/cmaughan/zep/wiki/Vim-Mode), or the top of the mode_vim.cpp file for a list of supported operations in Vim
 
 # Building
-You can follow the build buttons above to see build scripts, but the process is fairly simple:
+You can follow the build buttons above to see build scripts, but the process is fairly simple.
+There is also a sister project, [Zep Inside ImGui Demo](https://github.com/cmaughan/imgui), which shows how simple it is to add Zep to the standard ImGui demo
 
 ## Install Packages  
 If you don't have them already, the following packages are required, depending on your system.  Note, that SDL is part of the build,
