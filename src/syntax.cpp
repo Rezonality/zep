@@ -35,6 +35,7 @@ ZepSyntax::~ZepSyntax()
 
 NVec4f ZepSyntax::GetSyntaxColorAt(long offset) const
 {
+    Wait();
     if (m_processedChar < offset || ((long)m_syntax.size()) <= offset)
     {
         return m_buffer.GetTheme().GetColor(ThemeColor::Normal);
@@ -55,12 +56,21 @@ NVec4f ZepSyntax::GetSyntaxColorAt(long offset) const
 
 ThemeColor ZepSyntax::GetSyntaxAt(long offset) const
 {
+    Wait();
     if (m_processedChar < offset || (long)m_syntax.size() <= offset)
     {
         return ThemeColor::Normal;
     }
 
     return m_syntax[offset];
+}
+
+void ZepSyntax::Wait() const
+{
+    if (m_syntaxResult.valid())
+    {
+        m_syntaxResult.wait();
+    }
 }
 
 void ZepSyntax::Interrupt()
@@ -96,7 +106,7 @@ void ZepSyntax::QueueUpdateSyntax(BufferLocation startLocation, BufferLocation e
     // If the pool has no threads, this will end up serial
     m_syntaxResult = GetEditor().GetThreadPool().enqueue([=]() {
             UpdateSyntax();
-        });
+    });
 }
 
 void ZepSyntax::Notify(std::shared_ptr<ZepMessage> spMsg)

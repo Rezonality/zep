@@ -43,6 +43,7 @@ public:
     virtual NVec4f GetSyntaxColorAt(long offset) const;
     virtual void UpdateSyntax();
     virtual void Interrupt();
+    virtual void Wait() const;
 
     virtual long GetProcessedChar() const
     {
