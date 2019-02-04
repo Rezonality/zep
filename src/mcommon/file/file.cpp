@@ -30,8 +30,8 @@ public:
 
     void handleFileAction(FW::WatchID watchid, const FW::String& dir, const FW::String& filename, FW::Action action)
     {
-        dir;
-        watchid;
+        (void)dir;
+        (void)watchid;
 
         if (action == FW::Action::Modified)
         {
@@ -65,8 +65,8 @@ void file_update_dir_watch()
 #else
 void file_init_dir_watch(const fs::path& dir, fileCB callback)
 {
-    dir;
-    callback;
+    (void)dir;
+    (void)callback;
 }
 
 void file_destroy_dir_watch()
