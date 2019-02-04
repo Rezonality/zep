@@ -154,10 +154,10 @@ BufferLocation ZepBuffer::LocationFromOffset(long offset) const
 
 BufferLocation ZepBuffer::Search(const std::string& str, BufferLocation start, SearchDirection dir, BufferLocation end) const
 {
-    end;
-    dir;
-    start;
-    str;
+    (void)end;
+    (void)dir;
+    (void)start;
+    (void)str;
     return BufferLocation{0};
 }
 
