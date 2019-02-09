@@ -762,7 +762,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         GetCurrentWindow()->GetTabWindow().DoMotion(WindowMotion::Right);
         return true;
     }
-    else if (context.command == "P" && (context.modifierKeys & ModifierKey::Ctrl))
+    else if (context.command == "p" && (context.modifierKeys & ModifierKey::Ctrl))
     {
         BeginSecondaryMode(ZepMode_Search::StaticName());
         return true;

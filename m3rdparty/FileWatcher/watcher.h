@@ -57,7 +57,7 @@ public:
         }
     }
 
-    void Watcher::Update()
+    void Update()
     {
         m_watcher.update();
     }
