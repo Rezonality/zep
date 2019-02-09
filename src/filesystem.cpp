@@ -255,5 +255,6 @@ void ZepFileSystemCPP::Update()
 }
 #endif // Filewatcher not on mac
 
-#endif // CPP_FILESYSTEM
 } // namespace Zep
+
+#endif // CPP_FILESYSTEM
