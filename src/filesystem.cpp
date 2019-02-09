@@ -36,12 +36,6 @@ ZepFileSystemCPP::ZepFileSystemCPP()
 
 ZepFileSystemCPP::~ZepFileSystemCPP()
 {
-#if defined(ZEP_FEATURE_FILE_WATCHER)
-    while (!m_watchers.empty())
-    {
-        DestroyDirWatch(std::static_pointer_cast<IDirWatch>(*m_watchers.begin()));
-    }
-#endif
 }
 
 void ZepFileSystemCPP::SetWorkingDirectory(const ZepPath& path)
@@ -207,53 +201,6 @@ ZepPath ZepFileSystemCPP::Canonical(const ZepPath& path) const
     }
 #endif
 }
-
-#if defined(ZEP_FEATURE_FILE_WATCHER)
-std::shared_ptr<IDirWatch> ZepFileSystemCPP::InitDirWatch(const ZepPath& dir, fileCB callback)
-{
-    auto pWatch = std::make_shared<WatchInfo>();
-
-    pWatch->runTreeListener = std::make_shared<UpdateListener>(callback);
-    pWatch->watchID = m_fileWatcher.addWatch(dir.string().c_str(), pWatch->runTreeListener.get(), true);
-    m_watchers.insert(pWatch);
-    return pWatch;
-}
-
-void ZepFileSystemCPP::DestroyDirWatch(std::shared_ptr<IDirWatch> spWatch)
-{
-    auto pWatchInfo = std::static_pointer_cast<WatchInfo>(spWatch);
-    m_fileWatcher.removeWatch(pWatchInfo->watchID);
-    pWatchInfo->runTreeListener.reset();
-    m_watchers.erase(pWatchInfo);
-}
-
-void ZepFileSystemCPP::Update()
-{
-    for (auto& spWatch : m_watchers)
-    {
-        auto pWatchInfo = std::static_pointer_cast<WatchInfo>(spWatch);
-        m_fileWatcher.update();
-    }
-}
-#else
-std::shared_ptr<IDirWatch> ZepFileSystemCPP::InitDirWatch(const ZepPath& dir, fileCB callback)
-{
-    (void)dir;
-    (void)callback;
-
-    auto spRet = std::shared_ptr<IDirWatch>();
-    return spRet;
-}
-
-void ZepFileSystemCPP::DestroyDirWatch(std::shared_ptr<IDirWatch> spWatch)
-{
-    (void)spWatch;
-}
-
-void ZepFileSystemCPP::Update()
-{
-}
-#endif // Filewatcher not on mac
 
 } // namespace Zep
 

@@ -42,6 +42,10 @@
 
 #include "m3rdparty/tfd/tinyfiledialogs.h"
 
+#ifndef __APPLE__
+#include "m3rdparty/filewatcher/watcher.h"
+#endif
+
 using namespace Zep;
 
 #include "src/tests/longtext.tt"
@@ -112,6 +116,15 @@ struct ZepContainer : public IZepComponent
     ZepContainer(const std::string& startupFilePath)
         : spEditor(std::make_unique<ZepEditor_ImGui>(ZEP_ROOT))
     {
+
+        // File watcher not used on apple yet ; needs investigating as to why it doesn't compile/run 
+#ifndef __APPLE__
+        MUtils::Watcher::Instance().AddWatch(ZEP_ROOT, [&](const ZepPath & path)
+        {
+            spEditor->OnFileChanged(path);
+        }, false);
+#endif
+
         spEditor->RegisterCallback(this);
 
         float ddpi = 0.0f;
@@ -145,7 +158,13 @@ struct ZepContainer : public IZepComponent
     // Inherited via IZepComponent
     virtual void Notify(std::shared_ptr<ZepMessage> message) override
     {
-        if (message->messageId == Msg::Quit)
+        if (message->messageId == Msg::Tick)
+        {
+#ifndef __APPLE__
+            MUtils::Watcher::Instance().Update();
+#endif
+        }
+        else if (message->messageId == Msg::Quit)
         {
             quit = true;
         }

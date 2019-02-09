@@ -62,7 +62,6 @@ enum
 {
     None = (0),
     DisableThreads = (1 << 0),
-    DisableFileWatch = (1 << 1)     // For testing, since it opens too many file handles on linux!
 };
 };
 
@@ -285,6 +284,9 @@ public:
     }
 
     ThreadPool& GetThreadPool() const;
+
+    // Used to inform when a file changes - called from outside zep by the platform specific code, if possible
+    virtual void OnFileChanged(const ZepPath& path);
 
 private:
     // Call GetBuffer publicly, to stop creation of duplicate buffers refering to the same file

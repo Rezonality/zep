@@ -105,6 +105,19 @@ ThreadPool& ZepEditor::GetThreadPool() const
     return *m_threadPool;
 }
 
+void ZepEditor::OnFileChanged(const ZepPath& path)
+{
+    if (path.filename() == "zep.cfg")
+    {
+        if (m_spConfig)
+        {
+            LOG(INFO) << "Reloading global vars";
+            archive_reload(*m_spConfig, GetFileSystem().Read(m_spConfig->path));
+            Broadcast(std::make_shared<ZepMessage>(Msg::ConfigChanged));
+        }
+    }
+}
+
 // If you pass a valid path to a 'zep.cfg' file, then editor settings will serialize from that
 // You can even edit it inside zep for immediate changes :)
 void ZepEditor::LoadConfig(const ZepPath& config_path)
@@ -117,23 +130,6 @@ void ZepEditor::LoadConfig(const ZepPath& config_path)
     if (m_spConfig)
     {
         archive_bind(*m_spConfig, "editor", "show_scrollbar", m_showScrollBar);
-
-        // Note, on platforms with no dir watch, this evaluate to nothing....
-        // In which case, files will not be automatically reloaded
-        if (!(m_flags & ZepEditorFlags::DisableFileWatch))
-        {
-            auto pDirWatch = GetFileSystem().InitDirWatch(config_path.parent_path(), [&](const ZepPath& path) {
-                if (path.filename() == "zep.cfg")
-                {
-                    if (m_spConfig)
-                    {
-                        LOG(INFO) << "Reloading global vars";
-                        archive_reload(*m_spConfig, GetFileSystem().Read(m_spConfig->path));
-                        Broadcast(std::make_shared<ZepMessage>(Msg::ConfigChanged));
-                    }
-                }
-            });
-        }
     }
 }
 
@@ -562,8 +558,6 @@ void ZepEditor::RequestRefresh()
 
 bool ZepEditor::RefreshRequired()
 {
-    GetFileSystem().Update();
-
     // Allow any components to update themselves
     Broadcast(std::make_shared<ZepMessage>(Msg::Tick));
 

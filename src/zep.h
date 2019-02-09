@@ -28,18 +28,6 @@
 #include "imgui/editor_imgui.cpp"
 #endif
 
-// File watcher implementation used by the CPP file system here
-#if defined(ZEP_FEATURE_FILE_WATCHER)
-#include "mcommon/FileWatcher/FileWatcher.cpp"
-#if defined(_WIN32)
-#include "mcommon/FileWatcher/FileWatcherWin32.cpp"
-#elif defined(__APPLE__)
-#include "mcommon/FileWatcher/FileWatcherOSX.cpp"
-#elif defined(__linux__)
-#include "mcommon/FileWatcher/FileWatcherLinux.cpp"
-#endif
-#endif
-
 #else
 #include "editor.h"
 #include "syntax.h"

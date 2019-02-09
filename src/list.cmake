@@ -47,19 +47,6 @@ ${ZEP_ROOT}/src/list.cmake
 
 LIST(APPEND SRC_INCLUDE ${ZEP_ROOT}/src ${ZEP_ROOT}/src/mcommon)
 
-IF (ZEP_FEATURE_FILE_WATCHER)
-SET (ZEP_SOURCE ${ZEP_SOURCE} ${ZEP_ROOT}/src/mcommon/FileWatcher/FileWatcher.cpp)
-IF (TARGET_PC)
-SET (ZEP_SOURCE ${ZEP_SOURCE} ${ZEP_ROOT}/src/mcommon/FileWatcher/FileWatcherWin32.cpp)
-ENDIF()
-IF (TARGET_MAC)
-SET (ZEP_SOURCE ${ZEP_SOURCE} ${ZEP_ROOT}/src/mcommon/FileWatcher/FileWatcherOSX.cpp)
-ENDIF()
-IF (TARGET_LINUX)
-SET (ZEP_SOURCE ${ZEP_SOURCE} ${ZEP_ROOT}/src/mcommon/FileWatcher/FileWatcherLinux.cpp)
-ENDIF()
-ENDIF()
-                                                             
 IF (BUILD_QT)
 SET(ZEP_SOURCE_QT
     ${ZEP_ROOT}/src/qt/zepdisplay_qt.cpp
