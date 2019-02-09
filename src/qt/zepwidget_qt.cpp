@@ -16,7 +16,7 @@
 namespace Zep
 {
 
-ZepWidget_Qt::ZepWidget_Qt(QWidget* pParent, const fs::path& root)
+ZepWidget_Qt::ZepWidget_Qt(QWidget* pParent, const ZepPath& root)
     : QWidget(pParent)
 {
     m_spEditor = std::make_unique<ZepEditor>(new ZepDisplay_Qt(), root);
@@ -62,6 +62,8 @@ void ZepWidget_Qt::resizeEvent(QResizeEvent* pResize)
 
 void ZepWidget_Qt::paintEvent(QPaintEvent* pPaint)
 {
+    (void)pPaint;
+
     QPainter painter(this);
     painter.setRenderHint(QPainter::RenderHint::Antialiasing, true);
     painter.fillRect(rect(), QColor::fromRgbF(.1f, .1f, .1f, 1.0f));
@@ -195,6 +197,7 @@ void ZepWidget_Qt::mousePressEvent(QMouseEvent *ev)
 }
 void ZepWidget_Qt::mouseReleaseEvent(QMouseEvent *ev)
 {
+    (void)ev;
     if (m_spEditor)
     {
         m_spEditor->OnMouseUp(toNVec2f(ev->localPos()), GetMouseButton(ev));
@@ -203,6 +206,7 @@ void ZepWidget_Qt::mouseReleaseEvent(QMouseEvent *ev)
 
 void ZepWidget_Qt::mouseDoubleClickEvent(QMouseEvent *event)
 {
+    (void)event;
 }
 
 void ZepWidget_Qt::mouseMoveEvent(QMouseEvent *ev)

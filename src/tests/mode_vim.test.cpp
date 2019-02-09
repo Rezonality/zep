@@ -21,7 +21,7 @@ public:
     {
         // Disable threads for consistent tests, at the expense of not catching thread errors!
         // TODO : Fix/understand test failures with threading
-        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZEP_ROOT, ZepEditorFlags::DisableThreads);
+        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZEP_ROOT, ZepEditorFlags::DisableThreads | ZepEditorFlags::DisableFileWatch);
         spMode = std::make_shared<ZepMode_Vim>(*spEditor);
         pBuffer = spEditor->GetEmptyBuffer("Test Buffer");
 

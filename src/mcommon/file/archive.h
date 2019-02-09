@@ -3,8 +3,10 @@
 #include <sstream>
 #include <unordered_map>
 #include <functional>
-#include "mcommon/file/file.h"
+#include <memory>
+
 #include "mcommon/string/stringutils.h"
+#include "mcommon/file/path.h"
 
 namespace Zep
 {
@@ -42,7 +44,7 @@ struct Archive
     uint64_t currentSectionIndex;
 
     // Path of this file
-    fs::path path;
+    ZepPath path;
 
     // Saving
     std::ostringstream str;
@@ -68,7 +70,7 @@ bool archive_begin_section(Archive& ar, const std::string& name);
 void archive_end_section(Archive& ar);
 
 void archive_value(Archive& ar, StringId key, std::string& val);
-void archive_value(Archive& ar, StringId key, fs::path& val);
+void archive_value(Archive& ar, StringId key, ZepPath& val);
 void archive_value(Archive& ar, StringId key, float& val);
 void archive_value(Archive& ar, StringId key, double& val);
 void archive_value(Archive& ar, StringId key, uint32_t& val);
@@ -91,8 +93,8 @@ void archive_sections(Archive& ar, ArchiveSection* pSection, std::function<void(
 ArchiveSection* archive_find_section(ArchiveSection* pSection, const char* name);
 std::string archive_to_file_text(Archive& ar);
 
-std::shared_ptr<Archive> archive_load(const fs::path& path);
-void archive_reload(Archive& ar);
+std::shared_ptr<Archive> archive_load(const ZepPath& path, const std::string& text);
+void archive_reload(Archive& ar, const std::string& text);
 
 void archive_bind(Archive& archive, StringId section, StringId key, float& val);
 void archive_bind(Archive& archive, StringId section, StringId key, bool& val);

@@ -5,7 +5,9 @@
 #include <regex>
 
 #include "buffer.h"
-#include "mcommon/file/file.h"
+#include "editor.h"
+#include "filesystem.h"
+#include "mcommon/file/path.h"
 #include "mcommon/string/stringutils.h"
 
 #include "mcommon/logger.h"
@@ -589,7 +591,7 @@ bool ZepBuffer::GetLineOffsets(const long line, long& lineStart, long& lineEnd) 
 
 // Basic load suppot; read a file if it's present, but keep
 // the file path in case you want to write later
-void ZepBuffer::Load(const fs::path& path)
+void ZepBuffer::Load(const ZepPath& path)
 {
     if (path.has_filename())
     {
@@ -600,10 +602,10 @@ void ZepBuffer::Load(const fs::path& path)
         m_strName = m_filePath.string();
     }
 
-    if (fs::exists(path))
+    if (GetEditor().GetFileSystem().Exists(path))
     {
-        m_filePath = fs::canonical(path);
-        auto read = file_read(path);
+        m_filePath = GetEditor().GetFileSystem().Canonical(path);
+        auto read = GetEditor().GetFileSystem().Read(path);
         if (!read.empty())
         {
             SetText(read);
@@ -658,7 +660,7 @@ bool ZepBuffer::Save(int64_t& size)
         return true;
     }
 
-    if (Zep::file_write(m_filePath, &str[0], (size_t)size))
+    if (GetEditor().GetFileSystem().Write(m_filePath, &str[0], (size_t)size))
     {
         ClearFlags(FileFlags::NotYetSaved);
         ClearFlags(FileFlags::Dirty);
@@ -676,20 +678,20 @@ std::string ZepBuffer::GetDisplayName() const
     return m_filePath.string();
 }
 
-fs::path ZepBuffer::GetFilePath() const
+ZepPath ZepBuffer::GetFilePath() const
 {
     return m_filePath;
 }
 
-void ZepBuffer::SetFilePath(const fs::path& path)
+void ZepBuffer::SetFilePath(const ZepPath& path)
 {
     auto testPath = path;
-    if (fs::exists(testPath))
+    if (GetEditor().GetFileSystem().Exists(testPath))
     {
-        testPath = fs::canonical(testPath);
+        testPath = GetEditor().GetFileSystem().Canonical(testPath);
     }
 
-    if (!fs::equivalent(testPath, m_filePath))
+    if (!GetEditor().GetFileSystem().Equivalent(testPath, m_filePath))
     {
         m_filePath = testPath;
         SetFlags(FileFlags::NotYetSaved);

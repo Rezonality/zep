@@ -8,11 +8,14 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include "zep_config.h"
+
 #include "mcommon/math/math.h"
 #include "mcommon/animation/timer.h"
-#include "mcommon/file/file.h"
 #include "mcommon/file/archive.h"
 #include "mcommon/threadpool.h"
+#include "mcommon/file/path.h"
+
 #include "splits.h"
 
 // Basic Architecture
@@ -47,6 +50,7 @@ class ZepWindow;
 class ZepTheme;
 
 class IZepDisplay;
+class IZepFileSystem;
 
 struct Region;
 
@@ -57,7 +61,8 @@ namespace ZepEditorFlags
 enum
 {
     None = (0),
-    DisableThreads = (1 << 0)
+    DisableThreads = (1 << 0),
+    DisableFileWatch = (1 << 1)     // For testing, since it opens too many file handles on linux!
 };
 };
 
@@ -176,10 +181,10 @@ class ZepEditor
 {
 public:
     // Root path is the path to search for a config file
-    ZepEditor(IZepDisplay* pDisplay, const fs::path& root, uint32_t flags = 0);
+    ZepEditor(IZepDisplay* pDisplay, const ZepPath& root, uint32_t flags = 0, IZepFileSystem* pFileSystem = nullptr);
     ~ZepEditor();
 
-    void LoadConfig(const fs::path& config_path);
+    void LoadConfig(const ZepPath& config_path);
     void Quit();
 
     void InitWithFileOrDir(const std::string& str);
@@ -205,7 +210,7 @@ public:
     const tBuffers& GetBuffers() const;
     ZepBuffer* GetMRUBuffer() const;
     void SaveBuffer(ZepBuffer& buffer);
-    ZepBuffer* GetFileBuffer(const fs::path& filePath, uint32_t fileFlags = 0);
+    ZepBuffer* GetFileBuffer(const ZepPath& filePath, uint32_t fileFlags = 0, bool create = true);
     ZepBuffer* GetEmptyBuffer(const std::string& name, uint32_t fileFlags = 0);
 
     void SetRegister(const std::string& reg, const Register& val);
@@ -255,6 +260,11 @@ public:
     {
         return *m_pDisplay;
     }
+    
+    IZepFileSystem& GetFileSystem() const
+    {
+        return *m_pFileSystem;
+    }
 
     ZepTheme& GetTheme() const;
 
@@ -282,6 +292,8 @@ private:
 
 private:
     IZepDisplay* m_pDisplay;
+    IZepFileSystem* m_pFileSystem;
+
     std::set<IZepComponent*> m_notifyClients;
     mutable tRegisters m_registers;
 
@@ -318,16 +330,16 @@ private:
     std::shared_ptr<Region> m_tabRegion;
     std::map<ZepTabWindow*, NRectf> m_tabRects;
     bool m_bRegionsChanged = false;
-    fs::path m_currentRootPath;
 
     NVec2f m_mousePos;
     float m_pixelScale = 1.0f;
-    fs::path m_rootPath;
+    ZepPath m_rootPath;
 
     // Config
     uint32_t m_showScrollBar = 1;
 
     std::unique_ptr<ThreadPool> m_threadPool;
+
 };
 
 } // namespace Zep

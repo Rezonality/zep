@@ -4,16 +4,15 @@ SET(ZEP_SOURCE
 ${ZEP_ROOT}/src/mcommon/animation/timer.cpp
 ${ZEP_ROOT}/src/mcommon/animation/timer.h
 ${ZEP_ROOT}/src/mcommon/string/stringutils.cpp
-${ZEP_ROOT}/src/mcommon/file/file.cpp
-${ZEP_ROOT}/src/mcommon/file/file.h
 ${ZEP_ROOT}/src/mcommon/string/stringutils.h
 ${ZEP_ROOT}/src/mcommon/threadutils.h
 ${ZEP_ROOT}/src/mcommon/file/archive.h
 ${ZEP_ROOT}/src/mcommon/file/archive.cpp
+${ZEP_ROOT}/src/mcommon/file/path.h
+${ZEP_ROOT}/src/mcommon/file/path.cpp
 ${ZEP_ROOT}/src/mcommon/logger.h
-${ZEP_ROOT}/src/mcommon/file/mfilesystem.h
-${ZEP_ROOT}/src/mcommon/file/mfilesystem.cpp
-${ZEP_ROOT}/src/mcommon/FileWatcher/FileWatcher.cpp
+${ZEP_ROOT}/src/filesystem.cpp
+${ZEP_ROOT}/src/filesystem.h
 ${ZEP_ROOT}/src/editor.cpp
 ${ZEP_ROOT}/src/editor.h
 ${ZEP_ROOT}/src/splits.cpp
@@ -27,8 +26,6 @@ ${ZEP_ROOT}/src/tab_window.cpp
 ${ZEP_ROOT}/src/tab_window.h
 ${ZEP_ROOT}/src/window.cpp
 ${ZEP_ROOT}/src/window.h
-${ZEP_ROOT}/src/window_base.cpp
-${ZEP_ROOT}/src/window_base.h
 ${ZEP_ROOT}/src/scroller.cpp
 ${ZEP_ROOT}/src/scroller.h
 ${ZEP_ROOT}/src/syntax.cpp
@@ -48,25 +45,21 @@ ${ZEP_ROOT}/src/theme.h
 ${ZEP_ROOT}/src/list.cmake
 )
 
-IF (TARGET_PC)
-SET (ZEP_SOURCE ${ZEP_SOURCE}
-${ZEP_ROOT}/src/mcommon/FileWatcher/FileWatcherWin32.cpp
-)
-ENDIF()
-IF (TARGET_MAC)
-SET (ZEP_SOURCE ${ZEP_SOURCE}
-${ZEP_ROOT}/src/mcommon/FileWatcher/FileWatcherOSX.cpp
-)
-ENDIF()
-IF (TARGET_LINUX)
-SET (ZEP_SOURCE ${ZEP_SOURCE}
-${ZEP_ROOT}/src/mcommon/FileWatcher/FileWatcherLinux.cpp
-)
-ENDIF()
-
-
 LIST(APPEND SRC_INCLUDE ${ZEP_ROOT}/src ${ZEP_ROOT}/src/mcommon)
 
+IF (ZEP_FEATURE_FILE_WATCHER)
+SET (ZEP_SOURCE ${ZEP_SOURCE} ${ZEP_ROOT}/src/mcommon/FileWatcher/FileWatcher.cpp)
+IF (TARGET_PC)
+SET (ZEP_SOURCE ${ZEP_SOURCE} ${ZEP_ROOT}/src/mcommon/FileWatcher/FileWatcherWin32.cpp)
+ENDIF()
+IF (TARGET_MAC)
+SET (ZEP_SOURCE ${ZEP_SOURCE} ${ZEP_ROOT}/src/mcommon/FileWatcher/FileWatcherOSX.cpp)
+ENDIF()
+IF (TARGET_LINUX)
+SET (ZEP_SOURCE ${ZEP_SOURCE} ${ZEP_ROOT}/src/mcommon/FileWatcher/FileWatcherLinux.cpp)
+ENDIF()
+ENDIF()
+                                                             
 IF (BUILD_QT)
 SET(ZEP_SOURCE_QT
     ${ZEP_ROOT}/src/qt/zepdisplay_qt.cpp

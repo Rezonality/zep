@@ -12,6 +12,9 @@
 #include <algorithm>
 #include <cassert>
 
+#undef max
+#undef min
+
 namespace Zep
 {
 
@@ -292,7 +295,7 @@ void archive_value(Archive& ar, StringId key, std::string& val)
     }
 }
 
-void archive_value(Archive& ar, StringId key, fs::path& val)
+void archive_value(Archive& ar, StringId key, ZepPath& val)
 {
     if (ar.saving)
     {
@@ -679,11 +682,11 @@ std::string archive_to_file_text(Archive& ar)
     return str.str();
 }
 
-std::shared_ptr<Archive> archive_load(const fs::path& path)
+std::shared_ptr<Archive> archive_load(const ZepPath& path, const std::string& text)
 {
     TIME_SCOPE(archive_load);
     auto spArchive = std::make_shared<Archive>();
-    spArchive->strText = file_read(path);
+    spArchive->strText = text;
     spArchive->path = path;
     archive_parse_values(*spArchive);
     return spArchive;
@@ -733,7 +736,7 @@ void archive_bind(Archive& ar, StringId section, StringId key, uint32_t& val)
     archive_update_binding(ar, ar.bindings[ar.bindings.size() - 1]);
 }
 
-void archive_reload(Archive& ar)
+void archive_reload(Archive& ar, const std::string& text)
 {
     ar.currentSections.clear();
     ar.currentSection = nullptr;
@@ -744,7 +747,7 @@ void archive_reload(Archive& ar)
     ar.sectionLookup.clear();
 
     // Read the text again and parse it
-    ar.strText = file_read(ar.path);
+    ar.strText = text;
     archive_parse_values(ar);
 
     // Update the bindings

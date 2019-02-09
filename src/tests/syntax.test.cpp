@@ -12,7 +12,7 @@ class SyntaxTest : public testing::Test
 public:
     SyntaxTest()
     {
-        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZEP_ROOT, ZepEditorFlags::DisableThreads);
+        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZEP_ROOT, ZepEditorFlags::DisableThreads | ZepEditorFlags::DisableFileWatch);
     }
 
     ~SyntaxTest()

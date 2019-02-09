@@ -4,5 +4,3 @@ LIST(APPEND PLATFORM_LINKLIBS
     version.lib # SDL - windows keyboard
     imm32.lib   # SDL - windows keyboard
 )
-
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_ITERATOR_DEBUG_LEVEL=0")

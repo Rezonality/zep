@@ -5,7 +5,6 @@
 #include <unordered_map>
 
 #include "buffer.h"
-#include "window_base.h"
 
 namespace Zep
 {

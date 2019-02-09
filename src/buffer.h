@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mcommon/file/file.h"
+#include "mcommon/file/path.h"
 #include "editor.h"
 #include "theme.h"
 
@@ -96,11 +96,11 @@ public:
     ZepBuffer(ZepEditor& editor, const std::string& strName);
     virtual ~ZepBuffer();
     void SetText(const std::string& strText);
-    void Load(const fs::path& path);
+    void Load(const ZepPath& path);
     bool Save(int64_t& size);
 
-    fs::path GetFilePath() const;
-    void SetFilePath(const fs::path& path);
+    ZepPath GetFilePath() const;
+    void SetFilePath(const ZepPath& path);
 
     BufferLocation Search(const std::string& str, BufferLocation start, SearchDirection dir = SearchDirection::Forward, BufferLocation end = BufferLocation{-1l}) const;
 
@@ -212,7 +212,7 @@ private:
     uint32_t m_fileFlags = FileFlags::NotYetSaved | FileFlags::FirstInit;
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::string m_strName;
-    fs::path m_filePath;
+    ZepPath m_filePath;
     std::shared_ptr<ZepTheme> m_spOverrideTheme;
 
     BufferRange m_selection;

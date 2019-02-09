@@ -120,6 +120,7 @@ void ZepWindow::UpdateAirline()
         case EditorMode::Insert:
             m_airline.leftBoxes.push_back(AirBox{"INSERT", m_pBuffer->GetTheme().GetColor(ThemeColor::CursorInsert)});
             break;
+        case EditorMode::None:
         case EditorMode::Normal:
             m_airline.leftBoxes.push_back(AirBox{"NORMAL", m_pBuffer->GetTheme().GetColor(ThemeColor::CursorNormal)});
             break;
@@ -500,7 +501,7 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, int displayPass)
         std::string strNum;
         if (m_displayMode == DisplayMode::Vim)
         {
-            strNum = std::to_string(abs(lineInfo.bufferLineNumber - cursorBufferLine));
+            strNum = std::to_string(std::abs(lineInfo.bufferLineNumber - cursorBufferLine));
         }
         else
         {
