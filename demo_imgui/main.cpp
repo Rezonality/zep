@@ -43,7 +43,7 @@
 #include "m3rdparty/tfd/tinyfiledialogs.h"
 
 #ifndef __APPLE__
-#include "m3rdparty/filewatcher/watcher.h"
+#include "m3rdparty/FileWatcher/watcher.h"
 #endif
 
 using namespace Zep;

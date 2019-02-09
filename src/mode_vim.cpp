@@ -4,6 +4,7 @@
 #include "buffer.h"
 #include "commands.h"
 #include "mode_vim.h"
+#include "mode_search.h"
 #include "tab_window.h"
 #include "mcommon/string/stringutils.h"
 #include "mcommon/animation/timer.h"
@@ -759,6 +760,11 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     else if (context.command == "l" && (context.modifierKeys & ModifierKey::Ctrl))
     {
         GetCurrentWindow()->GetTabWindow().DoMotion(WindowMotion::Right);
+        return true;
+    }
+    else if (context.command == "P" && (context.modifierKeys & ModifierKey::Ctrl))
+    {
+        BeginSecondaryMode(ZepMode_Search::StaticName());
         return true;
     }
     else if (context.command == "j" || context.command == "+" || context.lastKey == ExtKeys::DOWN)

@@ -3,6 +3,7 @@
 #include "display.h"
 #include "mode_standard.h"
 #include "mode_vim.h"
+#include "mode_search.h"
 #include "syntax.h"
 #include "syntax_providers.h"
 #include "tab_window.h"
@@ -75,6 +76,7 @@ ZepEditor::ZepEditor(IZepDisplay* pDisplay,const ZepPath& root, uint32_t flags, 
     assert(m_pDisplay != nullptr);
     RegisterMode(std::make_shared<ZepMode_Vim>(*this));
     RegisterMode(std::make_shared<ZepMode_Standard>(*this));
+    RegisterMode(std::make_shared<ZepMode_Search>(*this));
     SetMode(ZepMode_Vim::StaticName());
 
     timer_restart(m_cursorTimer);

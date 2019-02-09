@@ -77,6 +77,9 @@ public:
 
     virtual NVec2i GetVisualRange() const;
 
+    virtual void BeginSecondaryMode(const char* pszName) { (void)pszName;  };
+    virtual void EndSecondaryMode() {};
+
 protected:
     std::stack<std::shared_ptr<ZepCommand>> m_undoStack;
     std::stack<std::shared_ptr<ZepCommand>> m_redoStack;
