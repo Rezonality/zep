@@ -444,6 +444,9 @@ int main(int argc, char** argv)
         ImGui::Begin("Zep", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar /*| ImGuiWindowFlags_NoScrollbar*/);
         ImGui::PopStyleVar(4);
 
+        // 'hide' the window contents from ImGui, so it doesn't try dragging when we move our scrollbar, etc.
+        ImGui::InvisibleButton("ZepContainer", ImGui::GetWindowSize());
+
         // TODO: Change only when necessray
         zep.spEditor->SetDisplayRegion(toNVec2f(ImGui::GetWindowPos()), toNVec2f(ImGui::GetWindowSize()));
 
