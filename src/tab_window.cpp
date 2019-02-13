@@ -119,6 +119,17 @@ ZepWindow* ZepTabWindow::DoMotion(WindowMotion motion)
     return m_pActiveWindow;
 }
 
+// Note:
+// I added this window region management in one quick coding session, and it worked first time.
+// At that point I should have documented what I did, because when a bug showed up much later, I didn't 
+// understand clearly how it worked.  Having just fixed the bug, I realized a) I should have documented it better, and
+// b) I have probably added too much code to fix the problem, when my earlier self would have known the correct quick fix!
+// So this is a work item to document and clean up the split management.  But given that it now definately works correctly.....
+// Anyway, I've added some more docs to help if this comes up again.
+// The region management is in theory dirt-simple.
+// Each region contains a list of either vertical or horizontally split regions.
+// Any region can have child regions of the same type.
+// If you split a window, you effectively create a stacked region within the parent region.
 ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, bool vsplit)
 {
     // Make a new window
@@ -132,49 +143,90 @@ ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, bool 
 
     m_pActiveWindow = pWin;
 
-    std::shared_ptr<Region> pParentRegion;
+    // No parent, inserting our window on top of whatever is already in the window
     if (pParent == nullptr)
     {
-        // If there is no parent window, then we are adding this window into the root region
-        pParentRegion = m_spRootRegion;
-        pParentRegion->vertical = vsplit;
+        // There is something in the child, so make a good
+        if (m_spRootRegion->children.size() > 1)
+        {
+            // Make a new parent to hold the children at the root, and replace the root region 
+            // with the new parent, putting the old root inside it!
+            auto r1 = std::make_shared<Region>();
+            r1->ratio = 1.0f;
+            r1->flags = RegionFlags::Expanding;
+            r1->vertical = vsplit;
+            r1->children.push_back(m_spRootRegion);
+            m_spRootRegion = r1;
+            r1->children.push_back(r);
+        }
+        else
+        {
+            // The root region has 0 or 1 children, so just set its split type and add our child
+            m_spRootRegion->children.push_back(r);
+            m_spRootRegion->vertical = vsplit;
+        }
+
+        // New region has root as the parent.
+        r->pParent = m_spRootRegion;
+        m_windowRegions[pWin] = r;
     }
     else
     {
         // Get the parent region that holds the parent window!
-        pParentRegion = m_windowRegions[pParent]->pParent;
-    }
+        std::shared_ptr<Region> pParentRegion = m_windowRegions[pParent]->pParent;
+        if (pParentRegion->vertical == vsplit)
+        {
+            // Add our newly created region into the parent region, since it is splitting in the same way as the parent's children
+            // Try to find the right spot, so we effectively split the correct parent
+            auto itrFound = std::find_if(pParentRegion->children.begin(), pParentRegion->children.end(), [&](auto pCurrent)
+            {
+                if (pCurrent == m_windowRegions[pParent])
+                {
+                    return true;
+                }
+                return false;
+            });
 
-    if (pParentRegion->vertical == vsplit)
-    {
-        // Add our newly created region into the parent
-        pParentRegion->children.push_back(r);
-        r->pParent = pParentRegion;
-        m_windowRegions[pWin] = r;
-    }
-    else
-    {
-        auto pSplitRegion = m_windowRegions[pParent];
-        assert(pSplitRegion->children.empty());
+            // Insertion point should be _after_ the location we want
+            if (itrFound != pParentRegion->children.end())
+            {
+                itrFound++;
+            }
+            pParentRegion->children.insert(itrFound, r);
 
-        pSplitRegion->vertical = vsplit;
+            r->pParent = pParentRegion;
+            m_windowRegions[pWin] = r;
+        }
+        else
+        {
+            // We are adding ourselves to a child that isn't the same orientation as us
+            auto pSplitRegion = m_windowRegions[pParent];
+            assert(pSplitRegion->children.empty());
 
-        auto r1 = std::make_shared<Region>();
-        r1->ratio = 1.0f;
-        r1->flags = RegionFlags::Expanding;
-        pSplitRegion->children.push_back(r1);
-        r1->pParent = pSplitRegion;
-        m_windowRegions[pParent] = r1;
+            // Force the region to be of the new split type
+            pSplitRegion->vertical = vsplit;
 
-        pSplitRegion->children.push_back(r);
-        r->pParent = pSplitRegion;
-        m_windowRegions[pWin] = r;
+            // Make a new region and put the existing region in it
+            auto r1 = std::make_shared<Region>();
+            r1->ratio = 1.0f;
+            r1->flags = RegionFlags::Expanding;
+            pSplitRegion->children.push_back(r1);
+            r1->pParent = pSplitRegion;
+            m_windowRegions[pParent] = r1;
+
+            // Put our new window on the end
+            pSplitRegion->children.push_back(r);
+            r->pParent = pSplitRegion;
+            m_windowRegions[pWin] = r;
+        }
     }
 
     m_pActiveWindow = pWin;
 
     SetDisplayRegion(m_lastRegionRect, true);
-    
+
+    //LOG(INFO) << "AddWindow, Regions: ";
+    //LOG(INFO) << *m_spRootRegion;
     return pWin;
 }
 
@@ -191,6 +243,7 @@ void ZepTabWindow::CloseActiveWindow()
     }
 }
 
+// See AddWindow for comments..
 void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
 {
     assert(pWindow);
@@ -205,36 +258,45 @@ void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
     }
 
     auto pRegion = m_windowRegions[pWindow];
-    /*
-    LOG(DEBUG) << *m_spRootRegion;
-    LOG(DEBUG) << "Removing: " << std::hex << pRegion.get();
-    */
 
+    // Remove a child region from a parent, and clean up all children.
+    // Also remove empty regions, cleaning up as we go
     std::function<void(std::shared_ptr<Region>, std::shared_ptr<Region>)> fnRemoveRegion = [&](auto parent, auto child)
     {
-        while (!child->children.empty())
+        // Remove all children
+        while (child && !child->children.empty())
         {
             fnRemoveRegion(child, child->children[0]);
         }
 
-        auto itrFound = std::find_if(parent->children.begin(), parent->children.end(), [&child](auto pCurrent)
+        // Find our child in the parent
+        if (parent)
         {
-            return pCurrent == child;
-        });
+            auto itrFound = std::find_if(parent->children.begin(), parent->children.end(), [&child](auto pCurrent)
+            {
+                return pCurrent == child;
+            });
 
-        if (itrFound == parent->children.end())
-        {
-            return;
+            // Remove our region from the parent
+            assert(itrFound != parent->children.end());
+            if (itrFound != parent->children.end())
+            {
+                parent->children.erase(itrFound);
+            }
         }
 
         child->pParent = nullptr;
-        parent->children.erase(itrFound);
 
         // If we are the last region, remove the last child 
-        if (parent->children.size() == 1)
+        if (parent && parent->children.size() == 1)
         {
             if (parent != m_spRootRegion)
             {
+                // This code runs if you vsplit, hsplit, :clo
+                // What's happening here is that we have a 'parent' region with a child region that has only 1 child in it.
+                // It's a redundant child.
+                // So we find our redundant child in the global list of window regions, 
+                // Then we re-register our window as being owned by parent, and destroy the child.
                 auto itrWin = std::find_if(m_windowRegions.begin(), m_windowRegions.end(), [&](auto pr)
                 {
                     return (pr.second == parent->children[0]);
@@ -258,6 +320,7 @@ void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
     if (m_windows.empty())
     {
         m_pActiveWindow = nullptr;
+        m_spRootRegion.reset();
         GetEditor().RemoveTabWindow(this);
     }
     else
@@ -268,7 +331,12 @@ void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
             m_pActiveWindow = m_windows[m_windows.size() - 1];
         }
         SetDisplayRegion(m_lastRegionRect, true);
+        assert(!m_spRootRegion->children.empty());
+    
+        //LOG(INFO) << "RemoveWindow, Regions: ";
+        //LOG(INFO) << *m_spRootRegion;
     }
+    
 }
 
 void ZepTabWindow::Notify(std::shared_ptr<ZepMessage> pMsg)
