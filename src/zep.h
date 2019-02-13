@@ -15,6 +15,7 @@
 #include "syntax_rainbow_brackets.cpp"
 #include "tab_window.cpp"
 #include "theme.cpp"
+#include "display.cpp"
 #include "window.cpp"
 #include "filesystem.cpp"
 #include "mcommon/file/path.cpp"

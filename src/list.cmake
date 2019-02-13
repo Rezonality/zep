@@ -21,6 +21,7 @@ ${ZEP_ROOT}/src/buffer.cpp
 ${ZEP_ROOT}/src/buffer.h
 ${ZEP_ROOT}/src/commands.cpp
 ${ZEP_ROOT}/src/commands.h
+${ZEP_ROOT}/src/display.cpp
 ${ZEP_ROOT}/src/display.h
 ${ZEP_ROOT}/src/tab_window.cpp
 ${ZEP_ROOT}/src/tab_window.h

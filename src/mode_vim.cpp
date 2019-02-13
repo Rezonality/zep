@@ -717,7 +717,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     // CTRL + keys common to modes
     bool needMoreChars = false;
     if ((context.modifierKeys & ModifierKey::Ctrl) &&
-        HandleGlobalCtrlCommand(context.command, needMoreChars))
+        HandleGlobalCtrlCommand(context.command, context.modifierKeys, needMoreChars))
     {
         if (needMoreChars)
         {

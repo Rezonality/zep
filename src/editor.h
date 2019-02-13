@@ -49,7 +49,7 @@ class ZepTabWindow;
 class ZepWindow;
 class ZepTheme;
 
-class IZepDisplay;
+class ZepDisplay;
 class IZepFileSystem;
 
 struct Region;
@@ -180,7 +180,7 @@ class ZepEditor
 {
 public:
     // Root path is the path to search for a config file
-    ZepEditor(IZepDisplay* pDisplay, const ZepPath& root, uint32_t flags = 0, IZepFileSystem* pFileSystem = nullptr);
+    ZepEditor(ZepDisplay* pDisplay, const ZepPath& root, uint32_t flags = 0, IZepFileSystem* pFileSystem = nullptr);
     ~ZepEditor();
 
     void LoadConfig(const ZepPath& config_path);
@@ -259,7 +259,7 @@ public:
     void SetDisplayRegion(const NVec2f& topLeft, const NVec2f& bottomRight);
     void UpdateSize();
 
-    IZepDisplay& GetDisplay() const
+    ZepDisplay& GetDisplay() const
     {
         return *m_pDisplay;
     }
@@ -297,7 +297,7 @@ private:
     ZepBuffer* CreateNewBuffer(const std::string& bufferName);
 
 private:
-    IZepDisplay* m_pDisplay;
+    ZepDisplay* m_pDisplay;
     IZepFileSystem* m_pFileSystem;
 
     std::set<IZepComponent*> m_notifyClients;

@@ -4,6 +4,8 @@
 #include <windows.h>
 #endif
 
+#include "common-qt.h"
+
 // This is an ImGui specific renderer for Zep.  Simple interface for drawing chars, rects, lines.
 // Implement a new display for a different rendering type - e.g. terminal or windows Gui.jj
 namespace Zep
@@ -11,20 +13,30 @@ namespace Zep
 
 ZepDisplay_Qt::ZepDisplay_Qt()
 {
-    qApp->setFont(QFont("Consolas", 10));
-
-    QFontMetrics met(qApp->font());
-    m_fontSize = met.height();
-    m_fontOffset = met.ascent();
+    SetFontPointSize(10.0f);
 }
 
 ZepDisplay_Qt::~ZepDisplay_Qt()
 {
 }
 
-float ZepDisplay_Qt::GetFontSize() const
+void ZepDisplay_Qt::SetFontPointSize(float fVal)
 {
-    return m_fontSize;
+    qApp->setFont(QFont("Consolas", fVal));
+    QFontMetrics met(qApp->font());
+    m_fontOffset = met.ascent();
+    m_fontHeight = (float)met.height();
+    InvalidateCharCache();
+}
+
+float ZepDisplay_Qt::GetFontPointSize() const
+{
+    return DPI::GetFontPointSize();
+}
+
+float ZepDisplay_Qt::GetFontHeightPixels() const
+{
+    return m_fontHeight;
 }
 
 NVec2f ZepDisplay_Qt::GetTextSize(const utf8* pBegin, const utf8* pEnd) const

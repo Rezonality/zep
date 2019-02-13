@@ -7,7 +7,7 @@ namespace Zep
 {
 
 class ZepWindow;
-class IZepDisplay;
+class ZepDisplay;
 struct Region;
 
 enum class WindowMotion

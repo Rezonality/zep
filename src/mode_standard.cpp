@@ -138,7 +138,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         // CTRL + keys common to modes
         bool needMoreChars = false; // TODO in standard mode!
         keyCache += (const char)key;
-        if (HandleGlobalCtrlCommand(keyCache, needMoreChars))
+        if (HandleGlobalCtrlCommand(keyCache, modifierKeys, needMoreChars))
         {
             if (!needMoreChars)
             {

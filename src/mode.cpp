@@ -130,7 +130,7 @@ NVec2i ZepMode::GetVisualRange() const
     return NVec2i(m_visualBegin, m_visualEnd);
 }
 
-bool ZepMode::HandleGlobalCtrlCommand(const std::string& cmd, bool& needMoreChars) const
+bool ZepMode::HandleGlobalCtrlCommand(const std::string& cmd, uint32_t modifiers, bool& needMoreChars) const
 {
     needMoreChars = false;
     if (cmd[0] == 'k')
@@ -167,6 +167,16 @@ bool ZepMode::HandleGlobalCtrlCommand(const std::string& cmd, bool& needMoreChar
                 });
             }
         }
+        return true;
+    }
+    else if (cmd == "=" || ((cmd == "+") && (modifiers & ModifierKey::Shift)))
+    {
+        GetEditor().GetDisplay().SetFontPointSize(std::min(GetEditor().GetDisplay().GetFontPointSize() + 1.0f, 20.0f));
+        return true;
+    }
+    else if (cmd == "-" || ((cmd == "_") && (modifiers & ModifierKey::Shift)))
+    {
+        GetEditor().GetDisplay().SetFontPointSize(std::max(10.0f, GetEditor().GetDisplay().GetFontPointSize() - 1.0f));
         return true;
     }
     // Moving between splits

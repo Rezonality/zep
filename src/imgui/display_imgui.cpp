@@ -5,8 +5,21 @@
 namespace Zep
 {
 
-float ZepDisplay_ImGui::GetFontSize() const
+float ZepDisplay_ImGui::GetFontPointSize() const
 {
+    return ImGui::GetFontSize();
+}
+
+void ZepDisplay_ImGui::SetFontPointSize(float size)
+{
+    // TODO: Allow change of font size in ImGui
+    // See the Qt demo for functional font size changing with CTRL+/-
+    (void)size;
+}
+
+float ZepDisplay_ImGui::GetFontHeightPixels() const
+{
+    // TODO: Check low DPI monitor for correct behavior
     return ImGui::GetFontSize();
 }
 

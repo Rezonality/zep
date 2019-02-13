@@ -39,7 +39,7 @@ ZepComponent::~ZepComponent()
     m_editor.UnRegisterCallback(this);
 }
 
-ZepEditor::ZepEditor(IZepDisplay* pDisplay,const ZepPath& root, uint32_t flags, IZepFileSystem* pFileSystem)
+ZepEditor::ZepEditor(ZepDisplay* pDisplay,const ZepPath& root, uint32_t flags, IZepFileSystem* pFileSystem)
     : m_pDisplay(pDisplay)
     , m_pFileSystem(pFileSystem)
     , m_flags(flags)
@@ -605,7 +605,7 @@ void ZepEditor::SetDisplayRegion(const NVec2f& topLeft, const NVec2f& bottomRigh
 void ZepEditor::UpdateSize()
 {
     auto commandCount = GetCommandLines().size();
-    const float commandSize = m_pDisplay->GetFontSize() * commandCount + textBorder * 2.0f;
+    const float commandSize = m_pDisplay->GetFontHeightPixels() * commandCount + textBorder * 2.0f;
     auto displaySize = m_editorRegion->rect.Size();
 
     // Regions
@@ -615,7 +615,7 @@ void ZepEditor::UpdateSize()
     // Add tabs for extra windows
     if (GetTabWindows().size() > 1)
     {
-        m_tabRegion->fixed_size = NVec2f(0.0f, m_pDisplay->GetFontSize() + textBorder * 2);
+        m_tabRegion->fixed_size = NVec2f(0.0f, m_pDisplay->GetFontHeightPixels() + textBorder * 2);
         m_tabRegion->flags = RegionFlags::Fixed;
     }
     else
@@ -644,7 +644,7 @@ void ZepEditor::Display()
     auto& commandLines = GetCommandLines();
 
     long commandCount = long(commandLines.size());
-    const float commandSize = m_pDisplay->GetFontSize() * commandCount + textBorder * 2.0f;
+    const float commandSize = m_pDisplay->GetFontHeightPixels() * commandCount + textBorder * 2.0f;
 
     auto displaySize = m_editorRegion->rect.Size();
 
@@ -666,7 +666,7 @@ void ZepEditor::Display()
             m_pDisplay->DrawChars(screenPosYPx, GetTheme().GetColor(ThemeColor::Text), (const utf8*)commandLines[i].c_str());
         }
 
-        screenPosYPx.y += m_pDisplay->GetFontSize();
+        screenPosYPx.y += m_pDisplay->GetFontHeightPixels();
         screenPosYPx.x = m_commandRegion->rect.topLeftPx.x;
     }
 
