@@ -7,6 +7,7 @@
 #include "mode.cpp"
 #include "mode_standard.cpp"
 #include "mode_vim.cpp"
+#include "mode_search.cpp"
 #include "scroller.cpp"
 #include "splits.cpp"
 #include "syntax.cpp"

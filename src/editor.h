@@ -189,6 +189,10 @@ public:
     void InitWithFileOrDir(const std::string& str);
 
     ZepMode* GetCurrentMode() const;
+    void BeginSecondaryMode(std::shared_ptr<ZepMode> spSecondaryMode);
+    void EndSecondaryMode();
+    ZepMode* GetSecondaryMode() const;
+
     void Display();
 
     void RegisterMode(std::shared_ptr<ZepMode> spMode);
@@ -311,6 +315,7 @@ private:
 
     // Active mode
     ZepMode* m_pCurrentMode = nullptr;
+    std::shared_ptr<ZepMode> m_spSecondaryMode;
 
     // Tab windows
     tTabWindows m_tabWindows;

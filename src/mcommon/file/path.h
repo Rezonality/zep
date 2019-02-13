@@ -158,6 +158,10 @@ public:
     {
         std::string temp = m_strPath;
         RTrim(temp, "\\/");
+        if (temp.empty())
+        {
+            return ZepPath(rhs.string());
+        }
         return ZepPath(temp + "/" + rhs.string());
     }
 

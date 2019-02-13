@@ -40,6 +40,8 @@ ${ZEP_ROOT}/src/mode_standard.cpp
 ${ZEP_ROOT}/src/mode_standard.h
 ${ZEP_ROOT}/src/mode_vim.cpp
 ${ZEP_ROOT}/src/mode_vim.h
+${ZEP_ROOT}/src/mode_search.cpp
+${ZEP_ROOT}/src/mode_search.h
 ${ZEP_ROOT}/src/theme.cpp
 ${ZEP_ROOT}/src/theme.h
 ${ZEP_ROOT}/src/list.cmake

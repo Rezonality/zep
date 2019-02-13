@@ -46,6 +46,12 @@ enum : uint32_t
 };
 };
 
+enum class BufferType
+{
+    Normal,
+    Search
+};
+
 enum class LineLocation
 {
     None,               // Not any specific location
@@ -196,6 +202,9 @@ public:
     void ClearRangeMarkers();
     const tRangeMarkers& GetRangeMarkers() const;
 
+    void SetBufferType(BufferType type);
+    BufferType GetBufferType() const;
+
 private:
     // Internal
     GapBuffer<utf8>::const_iterator SearchWord(uint32_t searchType, GapBuffer<utf8>::const_iterator itrBegin, GapBuffer<utf8>::const_iterator itrEnd, SearchDirection dir) const;
@@ -210,6 +219,7 @@ private:
     GapBuffer<utf8> m_gapBuffer;  // Storage for the text - a gap buffer for efficiency
     std::vector<long> m_lineEnds; // End of each line
     uint32_t m_fileFlags = FileFlags::NotYetSaved | FileFlags::FirstInit;
+    BufferType m_bufferType = BufferType::Normal;
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::string m_strName;
     ZepPath m_filePath;

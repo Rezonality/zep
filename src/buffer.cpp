@@ -1061,4 +1061,14 @@ const tRangeMarkers& ZepBuffer::GetRangeMarkers() const
     return m_rangeMarkers;
 }
 
+void ZepBuffer::SetBufferType(BufferType type)
+{
+    m_bufferType = type;
+}
+
+BufferType ZepBuffer::GetBufferType() const
+{
+    return m_bufferType;
+}
+
 } // namespace Zep

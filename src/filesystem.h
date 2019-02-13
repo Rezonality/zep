@@ -28,10 +28,8 @@ public:
     virtual bool IsDirectory(const ZepPath& path) const = 0;
     virtual bool Exists(const ZepPath& path) const = 0;
 
-    // To enable searching for files, zep will query this single API.  It should return a list of files from the root folder
-    // This enables a virtual file system representing, say a set of files in a project.  The searcher here would only return files relevent to the task
-    // It is also a work item for zep to support CTRL+P functionality for quick find/launch of files
-    virtual std::vector<ZepPath> FuzzySearch(const ZepPath& root, const std::string& strFuzzySearch = "", bool recursive = true) = 0;
+    // A callback API for scaning 
+    virtual void ScanDirectory(const ZepPath& path, std::function<bool(const ZepPath& path, bool& dont_recurse)> fnScan) const = 0;
 
     // Equivalent means 'the same file'
     virtual bool Equivalent(const ZepPath& path1, const ZepPath& path2) const = 0;
@@ -51,7 +49,7 @@ public:
     ZepFileSystemCPP();
     virtual std::string Read(const ZepPath& filePath) override;
     virtual bool Write(const ZepPath& filePath, const void* pData, size_t size) override;
-    virtual std::vector<ZepPath> FuzzySearch(const ZepPath& root, const std::string& strFuzzySearch = "", bool recursive = true) override;
+    virtual void ScanDirectory(const ZepPath& path, std::function<bool(const ZepPath& path, bool& dont_recurse)> fnScan) const override;
     virtual void SetWorkingDirectory(const ZepPath& path) override;
     virtual const ZepPath& GetWorkingDirectory() const override;
     virtual bool IsDirectory(const ZepPath& path) const override;

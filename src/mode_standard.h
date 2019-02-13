@@ -25,6 +25,7 @@ public:
 
 private:
     virtual bool SwitchMode(EditorMode mode);
+    std::string keyCache;
 };
 
 } // namespace Zep

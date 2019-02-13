@@ -77,8 +77,7 @@ public:
 
     virtual NVec2i GetVisualRange() const;
 
-    virtual void BeginSecondaryMode(const char* pszName) { (void)pszName;  };
-    virtual void EndSecondaryMode() {};
+    virtual bool HandleGlobalCtrlCommand(const std::string& cmd, bool& needMoreChars) const;
 
 protected:
     std::stack<std::shared_ptr<ZepCommand>> m_undoStack;

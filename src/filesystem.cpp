@@ -100,50 +100,29 @@ bool ZepFileSystemCPP::Write(const ZepPath& fileName, const void* pData, size_t 
     return true;
 }
 
-std::vector<ZepPath> ZepFileSystemCPP::FuzzySearch(const ZepPath& root, const std::string& strFuzzySearch, bool recursive)
+void ZepFileSystemCPP::ScanDirectory(const ZepPath& path, std::function<bool(const ZepPath& path, bool& dont_recurse)> fnScan) const
 {
-    (void)strFuzzySearch;
-
-    std::vector<ZepPath> ret;
-
-#if !defined(__APPLE__)
-    LOG(INFO) << "Search: " << root.string();
-
-    auto addFile = [&ret](const cpp_fs::path& p) {
-        try
-        {
-            if (!cpp_fs::is_directory(p) && cpp_fs::exists(p))
-            {
-                auto c = cpp_fs::canonical(p);
-                LOG(INFO) << c.string();
-                ret.push_back(c.string());
-            }
-        }
-        catch (cpp_fs::filesystem_error& err)
-        {
-            LOG(ERROR) << err.what();
-        }
-    };
-
-    if (recursive)
+    // Not on apple yet!
+#ifndef __APPLE__
+    for (auto itr = cpp_fs::recursive_directory_iterator(path.string());
+        itr != cpp_fs::recursive_directory_iterator();
+        itr++)
     {
-        for (auto& p : cpp_fs::recursive_directory_iterator(root.string()))
+        auto p = ZepPath(itr->path().string());
+
+        bool recurse = true;
+        if (!fnScan(p, recurse))
+            return;
+
+        if (!recurse && itr.recursion_pending())
         {
-            addFile(p);
-        }
-    }
-    else
-    {
-        for (auto& p : cpp_fs::directory_iterator(root.string()))
-        {
-            addFile(p);
+            itr.disable_recursion_pending();
         }
     }
 #else
-    (void)recursive;
-    (void)root;
+    (void)path;
+    (void)fnScan;
 #endif
-    return ret;
 }
 
 bool ZepFileSystemCPP::Exists(const ZepPath& path) const

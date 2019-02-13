@@ -714,8 +714,23 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     auto bufferCursor = GetCurrentWindow()->GetBufferCursor();
     auto& buffer = GetCurrentWindow()->GetBuffer();
 
+    // CTRL + keys common to modes
+    bool needMoreChars = false;
+    if ((context.modifierKeys & ModifierKey::Ctrl) &&
+        HandleGlobalCtrlCommand(context.command, needMoreChars))
+    {
+        if (needMoreChars)
+        {
+            context.commandResult.flags |= CommandResultFlags::NeedMoreChars;
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
     // Motion
-    if (context.command == "$")
+    else if (context.command == "$")
     {
         GetCurrentWindow()->SetBufferCursor(context.buffer.GetLinePos(bufferCursor, LineLocation::LineLastNonCR));
         return true;
@@ -739,32 +754,6 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     else if (context.command == "L" && (context.modifierKeys & ModifierKey::Shift))
     {
         GetEditor().NextTabWindow();
-        return true;
-    }
-    // Moving between splits
-    else if (context.command == "j" && (context.modifierKeys & ModifierKey::Ctrl))
-    {
-        GetCurrentWindow()->GetTabWindow().DoMotion(WindowMotion::Down);
-        return true;
-    }
-    else if (context.command == "k" && (context.modifierKeys & ModifierKey::Ctrl))
-    {
-        GetCurrentWindow()->GetTabWindow().DoMotion(WindowMotion::Up);
-        return true;
-    }
-    else if (context.command == "h" && (context.modifierKeys & ModifierKey::Ctrl))
-    {
-        GetCurrentWindow()->GetTabWindow().DoMotion(WindowMotion::Left);
-        return true;
-    }
-    else if (context.command == "l" && (context.modifierKeys & ModifierKey::Ctrl))
-    {
-        GetCurrentWindow()->GetTabWindow().DoMotion(WindowMotion::Right);
-        return true;
-    }
-    else if (context.command == "p" && (context.modifierKeys & ModifierKey::Ctrl))
-    {
-        BeginSecondaryMode(ZepMode_Search::StaticName());
         return true;
     }
     else if (context.command == "j" || context.command == "+" || context.lastKey == ExtKeys::DOWN)

@@ -135,6 +135,19 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     // CTRL + ...
     if (modifierKeys & ModifierKey::Ctrl)
     {
+        // CTRL + keys common to modes
+        bool needMoreChars = false; // TODO in standard mode!
+        keyCache += (const char)key;
+        if (HandleGlobalCtrlCommand(keyCache, needMoreChars))
+        {
+            if (!needMoreChars)
+            {
+                keyCache.clear();
+            }
+            return;
+        }
+        keyCache.clear();
+       
         // Undo
         if (key == 'z')
         {
@@ -339,8 +352,9 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         // Copy doesn't clear the visual seletion
         return_to_insert = false;
     }
-    // Insert into buffer
-    else if (op == CommandOperation::Insert)
+
+    // check other cases (might copy && delete!)
+    if (op == CommandOperation::Insert)
     {
         bool boundary = false;
         if (m_currentMode == EditorMode::Visual)

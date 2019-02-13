@@ -3,7 +3,6 @@
 #include "display.h"
 #include "mode_standard.h"
 #include "mode_vim.h"
-#include "mode_search.h"
 #include "syntax.h"
 #include "syntax_providers.h"
 #include "tab_window.h"
@@ -76,7 +75,6 @@ ZepEditor::ZepEditor(IZepDisplay* pDisplay,const ZepPath& root, uint32_t flags, 
     assert(m_pDisplay != nullptr);
     RegisterMode(std::make_shared<ZepMode_Vim>(*this));
     RegisterMode(std::make_shared<ZepMode_Standard>(*this));
-    RegisterMode(std::make_shared<ZepMode_Search>(*this));
     SetMode(ZepMode_Vim::StaticName());
 
     timer_restart(m_cursorTimer);
@@ -98,6 +96,8 @@ ZepEditor::ZepEditor(IZepDisplay* pDisplay,const ZepPath& root, uint32_t flags, 
 
 ZepEditor::~ZepEditor()
 {
+    m_spSecondaryMode.reset();
+
     delete m_pDisplay;
     delete m_pFileSystem;
 }
@@ -172,7 +172,7 @@ void ZepEditor::SaveBuffer(ZepBuffer& buffer)
 ZepBuffer* ZepEditor::GetEmptyBuffer(const std::string& name, uint32_t fileFlags)
 {
     auto pBuffer = CreateNewBuffer(name);
-    pBuffer->SetFlags(fileFlags, true);
+    pBuffer->SetFlags(fileFlags | FileFlags::FirstInit, true);
     return pBuffer;
 }
 
@@ -322,11 +322,7 @@ ZepTabWindow* ZepEditor::AddTabWindow()
 {
     auto pTabWindow = new ZepTabWindow(*this);
     m_tabWindows.push_back(pTabWindow);
-
-    if (m_pActiveTabWindow == nullptr)
-    {
-        m_pActiveTabWindow = pTabWindow;
-    }
+    m_pActiveTabWindow = pTabWindow;
 
     return pTabWindow;
 }
@@ -387,6 +383,23 @@ void ZepEditor::SetMode(const std::string& mode)
     }
 }
 
+void ZepEditor::BeginSecondaryMode(std::shared_ptr<ZepMode> spSecondaryMode)
+{
+    m_spSecondaryMode = spSecondaryMode;
+    spSecondaryMode->Begin();
+}
+
+void ZepEditor::EndSecondaryMode()
+{
+    m_spSecondaryMode.reset();
+    SetCommandText("");
+}
+
+ZepMode* ZepEditor::GetSecondaryMode() const
+{
+    return m_spSecondaryMode.get();
+}
+
 ZepMode* ZepEditor::GetCurrentMode()
 {
     if (!m_pCurrentMode && !m_mapModes.empty())
@@ -394,6 +407,10 @@ ZepMode* ZepEditor::GetCurrentMode()
         m_pCurrentMode = m_mapModes.begin()->second.get();
     }
 
+    if (m_spSecondaryMode)
+    {
+        return m_spSecondaryMode.get();
+    }
     return m_pCurrentMode;
 }
 

@@ -130,11 +130,7 @@ ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, bool 
     r->ratio = 1.0f;
     r->flags = RegionFlags::Expanding;
 
-    // No active windows yet, so make this one the active
-    if (m_pActiveWindow == nullptr)
-    {
-        m_pActiveWindow = pWin;
-    }
+    m_pActiveWindow = pWin;
 
     std::shared_ptr<Region> pParentRegion;
     if (pParent == nullptr)

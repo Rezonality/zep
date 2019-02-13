@@ -49,7 +49,8 @@ enum class CursorType
     Hidden,
     Normal,
     Insert,
-    Visual
+    Visual,
+    LineMarker
 };
 
 enum class DisplayMode
@@ -143,7 +144,7 @@ public:
     float ToWindowY(float pos) const;
 
     bool IsActiveWindow() const;
-    NVec4f FilterActiveColor(const NVec4f& col);
+    NVec4f FilterActiveColor(const NVec4f& col, float atten = 1.0f);
 
 private:
     struct WindowPass

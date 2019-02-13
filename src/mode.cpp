@@ -4,7 +4,11 @@
 #include "editor.h"
 #include "tab_window.h"
 #include "window.h"
+#include "editor.h"
+#include "filesystem.h"
+#include "mode_search.h"
 
+#include "mcommon/logger.h"
 namespace Zep
 {
 
@@ -124,6 +128,75 @@ void ZepMode::Undo()
 NVec2i ZepMode::GetVisualRange() const
 {
     return NVec2i(m_visualBegin, m_visualEnd);
+}
+
+bool ZepMode::HandleGlobalCtrlCommand(const std::string& cmd, bool& needMoreChars) const
+{
+    needMoreChars = false;
+    if (cmd[0] == 'k')
+    {
+        if (cmd == "k")
+        {
+            needMoreChars = true;
+        }
+        else if (cmd == "ko")
+        {
+            // This is a quick and easy 'alternate file swap'.  It currently only swaps in the same directory.
+            // An updated version would be to check parent and \Inc folders, etc.
+            // It also only looks for a file with the same name and different extension!
+            // it is good enough for my current needs...
+            auto& buffer = GetCurrentWindow()->GetBuffer();
+            auto path = buffer.GetFilePath();
+            if (!path.empty() && GetEditor().GetFileSystem().Exists(path))
+            {
+                auto ext = path.extension();
+                GetEditor().GetFileSystem().ScanDirectory(path.parent_path(), [&](const ZepPath& currentPath, bool& dont_recurse)
+                {
+                    dont_recurse = true;
+                    if (path.stem() == currentPath.stem() &&
+                        !(currentPath.extension() == path.extension()))
+                    {
+                        auto load = GetEditor().GetFileBuffer(currentPath, 0, true);
+                        if (load != nullptr)
+                        {
+                            GetCurrentWindow()->SetBuffer(load);
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+            }
+        }
+        return true;
+    }
+    // Moving between splits
+    else if(cmd == "j")
+    {
+        GetCurrentWindow()->GetTabWindow().DoMotion(WindowMotion::Down);
+        return true;
+    }
+    else if (cmd == "k")
+    {
+        GetCurrentWindow()->GetTabWindow().DoMotion(WindowMotion::Up);
+        return true;
+    }
+    else if (cmd == "h")
+    {
+        GetCurrentWindow()->GetTabWindow().DoMotion(WindowMotion::Left);
+        return true;
+    }
+    else if (cmd == "l")
+    {
+        GetCurrentWindow()->GetTabWindow().DoMotion(WindowMotion::Right);
+        return true;
+    }
+    // global search
+    else if (cmd == "p" || cmd == ",")
+    {
+        GetEditor().BeginSecondaryMode(std::make_shared<ZepMode_Search>(GetEditor()));
+        return true;
+    }
+    return false;
 }
 
 } // namespace Zep

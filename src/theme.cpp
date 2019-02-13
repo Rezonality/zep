@@ -128,12 +128,12 @@ NVec4f ZepTheme::GetColor(ThemeColor themeColor) const
     return itr->second;
 }
 
-NVec4f ZepTheme::GetComplement(const NVec4f& col) const
+NVec4f ZepTheme::GetComplement(const NVec4f& col, const NVec4f& adjust) const
 {
     auto lum = Luminosity(col);
     if (lum > 0.5f)
-        return GetColor(ThemeColor::Dark);
-    return GetColor(ThemeColor::Light);
+        return GetColor(ThemeColor::Dark) + adjust;
+    return GetColor(ThemeColor::Light) - adjust;
 }
 
 } // namespace Zep
