@@ -179,7 +179,10 @@ private:
     std::shared_ptr<Region> m_indicatorRegion;  // Indicators 
     std::shared_ptr<Region> m_vScrollRegion;    // Vertical scroller
 
-    bool m_wrap = true;     // Wrap
+    // Wrap ; need horizontal offset for this to be turned on.
+    // This will indeed stop lines wrapping though!  You just can't move to the far right and have
+    // the text scroll; which isn't a big deal, but a work item.
+    bool m_wrap = true;     
 
     // The buffer offset is where we are looking, but the cursor is only what you see on the screen
     CursorType m_cursorType = CursorType::Normal; // Type of cursor
