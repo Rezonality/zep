@@ -798,7 +798,7 @@ void ZepWindow::SetBuffer(ZepBuffer* pBuffer)
     m_pBuffer = pBuffer;
     m_layoutDirty = true;
     m_bufferOffsetYPx = 0;
-    m_bufferCursor = 0;
+    m_bufferCursor = pBuffer->Clamp(pBuffer->GetLastLocation());
     m_lastCursorColumn = 0;
     m_cursorMoved = false;
 }
@@ -1022,6 +1022,8 @@ void ZepWindow::MoveCursorY(int yDistance, LineLocation clampLocation)
 
     m_cursorMoved = true;
     GetEditor().ResetCursorTimer();
+
+    m_pBuffer->SetLastLocation(m_bufferCursor);
 }
 
 NVec2i ZepWindow::BufferToDisplay()

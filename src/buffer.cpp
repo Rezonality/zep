@@ -1071,4 +1071,14 @@ BufferType ZepBuffer::GetBufferType() const
     return m_bufferType;
 }
 
+void ZepBuffer::SetLastLocation(BufferLocation loc)
+{
+    m_lastLocation = loc;
+}
+
+BufferLocation ZepBuffer::GetLastLocation() const
+{
+    return m_lastLocation;
+}
+
 } // namespace Zep

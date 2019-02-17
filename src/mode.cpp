@@ -133,13 +133,16 @@ NVec2i ZepMode::GetVisualRange() const
 bool ZepMode::HandleGlobalCtrlCommand(const std::string& cmd, uint32_t modifiers, bool& needMoreChars) const
 {
     needMoreChars = false;
-    if (cmd[0] == 'k')
+
+    // TODO: I prefer 'ko' but I need to put in a keymapper which can see when the user hasn't pressed a second key in a given time
+    // otherwise, this hides 'ctrl+k' for pane navigation!
+    if (cmd[0] == 'i')
     {
-        if (cmd == "k")
+        if (cmd == "i")
         {
             needMoreChars = true;
         }
-        else if (cmd == "ko")
+        else if (cmd == "io")
         {
             // This is a quick and easy 'alternate file swap'.  It currently only swaps in the same directory.
             // An updated version would be to check parent and \Inc folders, etc.

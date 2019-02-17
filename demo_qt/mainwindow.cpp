@@ -58,8 +58,7 @@ MainWindow::MainWindow()
     }
     else
     {
-        ZepBuffer* pBuffer = pWidget->GetEditor().GetEmptyBuffer("shader.vert");
-        pBuffer->SetText(shader.c_str());
+        pWidget->GetEditor().InitWithText("Shader.vert", shader);
     }
 
     //setStyleSheet("background-color: darkBlue");

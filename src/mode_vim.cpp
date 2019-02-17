@@ -477,7 +477,7 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
             {
                 if (strTok[1] == "%")
                 {
-                    pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), nullptr, true);
+                    pTab->AddWindow(&buffer, nullptr, true);
                 }
                 else
                 {

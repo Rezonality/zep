@@ -169,6 +169,41 @@ void ZepEditor::SaveBuffer(ZepBuffer& buffer)
     SetCommandText(strText.str());
 }
 
+void ZepEditor::RemoveBuffer(ZepBuffer* pBuffer)
+{
+    LOG(INFO) << "Removing buffer: " << pBuffer->GetName();
+
+    // Find the windows that contain this buffer
+    std::vector<std::pair<ZepTabWindow*, ZepWindow*>> victims;
+    for (auto& tab : m_tabWindows)
+    {
+        for (auto& win : tab->GetWindows())
+        {
+            if (&win->GetBuffer() == pBuffer)
+            {
+                victims.push_back(std::make_pair(tab, win));
+            }
+        }
+    }
+
+    // .. Remove them
+    for (auto& victim : victims)
+    {
+        victim.first->RemoveWindow(victim.second);
+    }
+
+    // Find the buffer in the list of buffers owned by the editor and remove it
+    auto itr = std::find_if(m_buffers.begin(), m_buffers.end(), [pBuffer](std::shared_ptr<ZepBuffer> spBuffer)
+    {
+        return spBuffer.get() == pBuffer;
+    });
+
+    if (itr != m_buffers.end())
+    {
+        m_buffers.erase(itr);
+    }
+}
+
 ZepBuffer* ZepEditor::GetEmptyBuffer(const std::string& name, uint32_t fileFlags)
 {
     auto pBuffer = CreateNewBuffer(name);
@@ -209,7 +244,21 @@ ZepBuffer* ZepEditor::GetFileBuffer(const ZepPath& filePath, uint32_t fileFlags,
     return pBuffer;
 }
 
-void ZepEditor::InitWithFileOrDir(const std::string& str)
+ZepTabWindow* ZepEditor::EnsureTab()
+{
+    if (m_tabWindows.empty())
+    {
+        return AddTabWindow();
+    }
+    
+    if (m_pActiveTabWindow)
+    {
+        return m_pActiveTabWindow;
+    }
+    return m_tabWindows[0];
+}
+
+ZepBuffer* ZepEditor::InitWithFileOrDir(const std::string& str)
 {
     ZepPath startPath(str);
 
@@ -222,12 +271,31 @@ void ZepEditor::InitWithFileOrDir(const std::string& str)
     {
         GetFileSystem().SetWorkingDirectory(startPath);
     }
-    GetFileBuffer(startPath);
+    auto pFileBuffer = GetFileBuffer(startPath);
+
+    auto pTab = EnsureTab();
+    pTab->AddWindow(pFileBuffer, nullptr, false);
+
+    return pFileBuffer;
+}
+
+ZepBuffer* ZepEditor::InitWithText(const std::string& strName, const std::string& strText)
+{
+    auto pTab = EnsureTab();
+
+    auto pBuffer = GetEmptyBuffer(strName);
+    pBuffer->SetText(strText);
+
+    pTab->AddWindow(pBuffer, nullptr, false);
+
+    return pBuffer;
 }
 
 // At startup it's possible to be in a state where parts of the window framework are not yet in place.
 // That's OK: the editor will just be blank.  But this isn't a 'normal' state, and the user shouldn't be able to close the last window, etc.
 // without exiting the app - just like in Vim.
+// So here we make sure we have set the active tab window and the active window within the tab
+// We don't 'create' anything new here
 void ZepEditor::UpdateWindowState()
 {
     // If there is no active tab window, and we have one, set it.
@@ -237,10 +305,6 @@ void ZepEditor::UpdateWindowState()
         {
             m_pActiveTabWindow = m_tabWindows.back();
         }
-        else
-        {
-            m_pActiveTabWindow = AddTabWindow();
-        }
     }
 
     // If the tab window doesn't contain an active window, and there is one, set it
@@ -249,17 +313,7 @@ void ZepEditor::UpdateWindowState()
         if (!m_pActiveTabWindow->GetWindows().empty())
         {
             m_pActiveTabWindow->SetActiveWindow(m_pActiveTabWindow->GetWindows().back());
-        }
-        else
-        {
-            if (!m_buffers.empty())
-            {
-                m_pActiveTabWindow->AddWindow(m_buffers.back().get(), nullptr, true);
-            }
-            else
-            {
-                m_pActiveTabWindow->AddWindow(CreateNewBuffer("[Empty]"), nullptr, true);
-            }
+            m_bRegionsChanged = true;
         }
     }
 
@@ -489,9 +543,6 @@ ZepBuffer* ZepEditor::CreateNewBuffer(const std::string& str)
     auto pBuffer = std::make_shared<ZepBuffer>(*this, str);
     m_buffers.push_front(pBuffer);
 
-    // Adding a buffer immediately updates the window state, in case this is the first one
-    UpdateWindowState();
-
     LOG(DEBUG) << "Added buffer: " << str;
     return pBuffer.get();
 }
@@ -632,13 +683,13 @@ void ZepEditor::UpdateSize()
 
 void ZepEditor::Display()
 {
+    UpdateWindowState();
+
     if (m_bRegionsChanged)
     {
         m_bRegionsChanged = false;
         UpdateSize();
     }
-    // Ensure window state is good ??
-    UpdateWindowState();
 
     // Command plus output
     auto& commandLines = GetCommandLines();

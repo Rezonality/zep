@@ -140,13 +140,9 @@ struct ZepContainer : public IZepComponent
         {
             spEditor->InitWithFileOrDir(startupFilePath);
         }
-
-        // Add a shader, as a default when no file - for the demo
-        if (spEditor->GetBuffers().size() == 0)
+        else
         {
-            ZepBuffer* pBuffer = spEditor->GetEmptyBuffer("shader.vert");
-            pBuffer->SetText(shader.c_str());
-
+            spEditor->InitWithText("Shader.vert", shader);
         }
     }
 

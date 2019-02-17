@@ -205,6 +205,9 @@ public:
     void SetBufferType(BufferType type);
     BufferType GetBufferType() const;
 
+    void SetLastLocation(BufferLocation loc);
+    BufferLocation GetLastLocation() const;
+
 private:
     // Internal
     GapBuffer<utf8>::const_iterator SearchWord(uint32_t searchType, GapBuffer<utf8>::const_iterator itrBegin, GapBuffer<utf8>::const_iterator itrEnd, SearchDirection dir) const;
@@ -227,6 +230,7 @@ private:
 
     BufferRange m_selection;
     tRangeMarkers m_rangeMarkers;
+    BufferLocation m_lastLocation{0};
 };
 
 // Notification payload

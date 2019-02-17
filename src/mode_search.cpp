@@ -41,6 +41,8 @@ void ZepMode_Search::AddKeyPress(uint32_t key, uint32_t modifiers)
     {
         GetEditor().GetActiveTabWindow()->RemoveWindow(m_pSearchWindow);
         GetEditor().GetActiveTabWindow()->SetActiveWindow(m_pLaunchWindow);
+        GetEditor().RemoveBuffer(m_pSearchBuffer);
+        m_pSearchBuffer = nullptr;
         GetEditor().EndSecondaryMode();
         return;
     }
@@ -322,6 +324,8 @@ void ZepMode_Search::OpenSelection(OpenType type)
 
     GetEditor().GetActiveTabWindow()->RemoveWindow(m_pSearchWindow);
     GetEditor().GetActiveTabWindow()->SetActiveWindow(m_pLaunchWindow);
+    GetEditor().RemoveBuffer(m_pSearchBuffer);
+    m_pSearchBuffer = nullptr;
 
     BufferLocation count = 0;
     for (auto& index : m_indexTree.back()->indices)
