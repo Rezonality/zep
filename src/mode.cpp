@@ -45,7 +45,7 @@ void ZepMode::AddCommandText(std::string strText)
 
 void ZepMode::AddCommand(std::shared_ptr<ZepCommand> spCmd)
 {
-    if (GetCurrentWindow() && GetCurrentWindow()->GetBuffer().TestFlags(FileFlags::Locked))
+    if (GetCurrentWindow() && GetCurrentWindow()->GetBuffer().TestFlags(FileFlags::NotModifiable))
     {
         // Ignore commands on buffers because we are view only,
         // and all commands currently modify the buffer!

@@ -146,7 +146,7 @@ void ZepEditor::SaveBuffer(ZepBuffer& buffer)
     {
         strText << "Failed to save, Read Only: " << buffer.GetDisplayName();
     }
-    else if (buffer.TestFlags(FileFlags::Locked))
+    else if (buffer.TestFlags(FileFlags::NotModifiable))
     {
         strText << "Failed to save, Locked: " << buffer.GetDisplayName();
     }
@@ -238,10 +238,31 @@ ZepBuffer* ZepEditor::GetFileBuffer(const ZepPath& filePath, uint32_t fileFlags,
     if (GetFileSystem().Exists(path))
     {
         pBuffer->Load(path);
+        if (GetFileSystem().IsReadOnly(path))
+        {
+            pBuffer->SetFlags(FileFlags::ReadOnly);
+        }
     }
 
     pBuffer->SetFlags(fileFlags, true);
     return pBuffer;
+}
+
+std::vector<ZepWindow*> ZepEditor::GetBufferWindows(const ZepBuffer& buffer) const
+{
+    std::vector<ZepWindow*> windows;
+
+    for (auto& tab : m_tabWindows)
+    {
+        for (auto& win : tab->GetWindows())
+        {
+            if (&win->GetBuffer() == &buffer)
+            {
+                windows.push_back(win);
+            }
+        }
+    }
+    return windows;
 }
 
 ZepTabWindow* ZepEditor::EnsureTab()

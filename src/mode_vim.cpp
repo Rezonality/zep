@@ -321,7 +321,7 @@ void ZepMode_Vim::SwitchMode(EditorMode mode)
     if (mode == EditorMode::None)
         return;
 
-    if (mode == EditorMode::Insert && GetCurrentWindow() && GetCurrentWindow()->GetBuffer().TestFlags(FileFlags::Locked))
+    if (mode == EditorMode::Insert && GetCurrentWindow() && GetCurrentWindow()->GetBuffer().TestFlags(FileFlags::NotModifiable))
     {
         mode = EditorMode::Normal;
     }
@@ -653,23 +653,46 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
                 {
                     std::string displayText = editor_buffer->GetName();
                     displayText = string_replace(displayText, "\n", "^J");
+
+                    std::ostringstream strFlags;
                     if (&GetCurrentWindow()->GetBuffer() == editor_buffer.get())
                     {
-                        str << "*";
+                        strFlags << "%";
                     }
-                    else
+
+                    auto wins = GetEditor().GetBufferWindows(*editor_buffer);
+                    if (wins.empty())
                     {
-                        str << " ";
+                        strFlags << "h";
                     }
+
                     if (editor_buffer->TestFlags(FileFlags::Dirty))
                     {
-                        str << "+";
+                        strFlags << "+";
                     }
-                    else
+
+                    if (editor_buffer->TestFlags(FileFlags::NotModifiable))
                     {
-                        str << " ";
+                        strFlags << "-";
                     }
-                    str << index++ << " : " << displayText << '\n';
+
+                    if (editor_buffer->TestFlags(FileFlags::ReadOnly))
+                    {
+                        strFlags << "=";
+                    }
+
+                    str << index++ << " " << strFlags.str();
+                  
+                    // TODO: A little helper class to format things like this
+                    const int bufferTab = 8;
+                    int pad = bufferTab - (int)strFlags.str().length();
+                    while (pad > 0)
+                    {
+                        // Pad out in case flags above weren't shown
+                        str << " ";
+                        pad--;
+                    }
+                    str << displayText << std::endl;
                 }
             }
             GetEditor().SetCommandText(str.str());

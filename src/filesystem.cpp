@@ -67,6 +67,30 @@ bool ZepFileSystemCPP::IsDirectory(const ZepPath& path) const
 #endif
 }
 
+bool ZepFileSystemCPP::IsReadOnly(const ZepPath& path) const
+{
+#if defined(__APPLE__)
+    struct stat s;
+    auto strPath = path.string();
+    if (stat(strPath.c_str(), &s) == 0)
+    {
+        if (s.st_mode & S_IWRITE)
+        {
+            // Can write, so not read only!
+            return false;
+        }
+    }
+    return true;
+#else
+    auto perms = cpp_fs::status(path.string()).permissions();
+    if ((perms & cpp_fs::perms::owner_write) == cpp_fs::perms::owner_write)
+    {
+        return false;
+    }
+    return true;
+#endif
+}
+
 std::string ZepFileSystemCPP::Read(const ZepPath& fileName)
 {
     std::ifstream in(fileName, std::ios::in | std::ios::binary);

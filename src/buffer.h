@@ -39,7 +39,7 @@ enum : uint32_t
     StrippedCR = (1 << 0),
     TerminatedWithZero = (1 << 1),
     ReadOnly = (1 << 2),
-    Locked = (1 << 3), // Can this file path ever be written to?
+    NotModifiable = (1 << 3), // Can this file path ever be written to?
     Dirty = (1 << 4),  // Has the file been changed?
     NotYetSaved = (1 << 5),
     FirstInit = (1 << 6)

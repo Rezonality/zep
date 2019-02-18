@@ -26,6 +26,7 @@ public:
     virtual void SetWorkingDirectory(const ZepPath& path) = 0;
 
     virtual bool IsDirectory(const ZepPath& path) const = 0;
+    virtual bool IsReadOnly(const ZepPath& path) const = 0;
     virtual bool Exists(const ZepPath& path) const = 0;
 
     // A callback API for scaning 
@@ -53,6 +54,7 @@ public:
     virtual void SetWorkingDirectory(const ZepPath& path) override;
     virtual const ZepPath& GetWorkingDirectory() const override;
     virtual bool IsDirectory(const ZepPath& path) const override;
+    virtual bool IsReadOnly(const ZepPath& path) const override;
     virtual bool Exists(const ZepPath& path) const override;
     virtual bool Equivalent(const ZepPath& path1, const ZepPath& path2) const override;
     virtual ZepPath Canonical(const ZepPath& path) const override;

@@ -174,7 +174,7 @@ void ZepMode_Search::Begin()
         startPath = workingDir;
     }
 
-    m_pSearchBuffer = GetEditor().GetEmptyBuffer("Search", FileFlags::Locked | FileFlags::ReadOnly);
+    m_pSearchBuffer = GetEditor().GetEmptyBuffer("Search", FileFlags::NotModifiable | FileFlags::ReadOnly);
     m_pSearchBuffer->SetBufferType(BufferType::Search);
     m_pSearchBuffer->SetText(std::string("Indexing: ") + startPath.string());
 
