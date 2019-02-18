@@ -228,6 +228,7 @@ ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, bool 
 
     LOG(INFO) << "AddWindow, Regions: ";
     LOG(INFO) << *m_spRootRegion;
+    LOG(INFO) << m_windowRegions.size() << " regions.";
     return pWin;
 }
 
@@ -289,26 +290,17 @@ void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
         child->pParent = nullptr;
 
         // If we are the last region, remove the last child 
-        if (parent && parent->children.size() == 1)
+        if (parent && parent->children.size() == 0)
         {
-            if (parent != m_spRootRegion)
+            if (parent->pParent != nullptr)
             {
-                // This code runs if you vsplit, hsplit, :clo
-                // What's happening here is that we have a 'parent' region with a child region that has only 1 child in it.
-                // It's a redundant child.
-                // So we find our redundant child in the global list of window regions, 
-                // Then we re-register our window as being owned by parent, and destroy the child.
-                auto itrWin = std::find_if(m_windowRegions.begin(), m_windowRegions.end(), [&](auto pr)
+                auto itrChild = std::find_if(parent->pParent->children.begin(),
+                    parent->pParent->children.end(), [&](auto pr)
                 {
-                    return (pr.second == parent->children[0]);
+                    return pr == parent;
                 });
-                if (itrWin != m_windowRegions.end())
-                {
-                    auto pWin = itrWin->first;
-                    m_windowRegions.erase(itrWin);
-                    m_windowRegions[pWin] = parent;
-                }
-                parent->children.clear();
+                
+                parent->pParent->children.erase(itrChild);
             }
         }
     };
@@ -336,6 +328,7 @@ void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
     
         LOG(INFO) << "RemoveWindow, Regions: ";
         LOG(INFO) << *m_spRootRegion;
+        LOG(INFO) << m_windowRegions.size() << " regions.";
     }
     
 }
