@@ -24,6 +24,7 @@ struct SpanInfo
     float spanYPx = 0.0f;                 // Position in the buffer in pixels, if the screen was as big as the buffer.
     long bufferLineNumber = 0;            // Line in the original buffer, not the screen line
     int lineIndex = 0;
+    NVec2f pixelRenderRange;              // The x limits of where this line was last renderered
 
     long Length() const
     {
@@ -166,9 +167,11 @@ private:
     const SpanInfo& GetCursorLineInfo(long y);
 
     void DisplayToolTip(const NVec2f& pos, const RangeMarker& marker) const;
-    bool DisplayLine(const SpanInfo& lineInfo, int displayPass);
+    bool DisplayLine(SpanInfo& lineInfo, int displayPass);
     void DisplayScrollers();
     void DisableToolTipTillMove();
+
+    void GetCursorInfo(NVec2f& pos, NVec2f& size);
 
 private:
     NVec2f ToBufferRegion(const NVec2f& pos);
@@ -216,10 +219,10 @@ private:
 
     std::shared_ptr<Scroller> m_vScroller;
     timer m_toolTipTimer;                   // Timer for when the tip is shown
-    NVec2f m_tipStartPos;                   // Current location for the tip
+    NVec2f m_mouseHoverPos;                   // Current location for the tip
     NVec2f m_lastTipQueryPos;               // last query location for the tip
     bool m_tipDisabledTillMove = false;     // Certain operations will stop the tip until the mouse is moved
-    BufferLocation m_tipBufferLocation;     // The character in the buffer the tip pos is over, or -1
+    BufferLocation m_mouseBufferLocation;     // The character in the buffer the tip pos is over, or -1
     std::map<NVec2f, std::shared_ptr<RangeMarker>> m_toolTips;  // All tooltips for a given position, currently only 1 at a time
 
 };

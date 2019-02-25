@@ -70,11 +70,14 @@ namespace RangeMarkerDisplayType
 {
 enum
 {
-    Underline = (1 << 0),   // Underline the range
-    Background = (1 << 1),  // Add a background to the range
-    Tooltip = (1 << 2),     // Show a tooltip using the name/description
-    Indicator = (1 << 3),    // Show an indicator on the left side
-    All = Underline | Tooltip | Indicator
+    Underline = (1 << 0),           // Underline the range
+    Background = (1 << 1),          // Add a background to the range
+    Tooltip = (1 << 2),             // Show a tooltip using the name/description
+    TooltipAtLine = (1 << 3),       // Tooltip shown if the user hovers the line
+    CursorTip = (1 << 4),           // Tooltip shown if the user cursor is on the Mark
+    CursorTipAtLine = (1 << 5),     // Tooltip shown if the user cursor is on the Mark line
+    Indicator = (1 << 6),           // Show an indicator on the left side
+    All = Underline | Tooltip | TooltipAtLine | CursorTip | CursorTipAtLine | Indicator
 };
 };
 
