@@ -1,16 +1,17 @@
 #include "utils.h"
-#include "utils/file/runtree.h"
 #include "utils/animation/timer.h"
+#include "utils/file/runtree.h"
 #include "utils/string/stringutils.h"
 
 #include "m3rdparty/threadpool/threadpool.h"
 #include <glm/glm/gtc/matrix_transform.hpp>
 #include <glm/glm/gtx/string_cast.hpp>
 #include <glm/glm/gtx/transform.hpp>
+#include <optional>
 
 #include <imgui/imgui.h>
-#include <imgui_impl_vulkan.h>
 #include <imgui_impl_sdl.h>
+#include <imgui_impl_vulkan.h>
 
 #include "SDL_syswm.h"
 
@@ -20,8 +21,8 @@
 #include "jorvik.h"
 #include "meta_tags.h"
 
-#include "visual/shader_file_asset.h"
 #include "visual/scene.h"
+#include "visual/shader_file_asset.h"
 
 #undef ERROR
 
@@ -32,12 +33,148 @@ uint32_t g_DisplayHeight = 768;
 namespace Mgfx
 {
 
+const std::vector<const char*> validationLayers = {
+    "VK_LAYER_LUNARG_standard_validation"
+};
+
+const std::vector<const char*> deviceExtensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
+
+#ifdef NDEBUG
+const bool enableValidationLayers = false;
+#else
+const bool enableValidationLayers = true;
+#endif
+
+VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
+{
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr)
+    {
+        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+    }
+    else
+    {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+}
+
+void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
+{
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr)
+    {
+        func(instance, debugMessenger, pAllocator);
+    }
+}
+
+struct QueueFamilyIndices
+{
+    std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentFamily;
+
+    bool isComplete()
+    {
+        return graphicsFamily.has_value() && presentFamily.has_value();
+    }
+};
+
+/*std::vector<const char*> getRequiredExtensions() {
+        uint32_t glfwExtensionCount = 0;
+        const char** glfwExtensions;
+        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+        std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+        if (enableValidationLayers) {
+            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        }
+
+        return extensions;
+    }
+
+    */
+bool checkValidationLayerSupport()
+{
+    uint32_t layerCount;
+    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+    std::vector<VkLayerProperties> availableLayers(layerCount);
+    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+    for (const char* layerName : validationLayers)
+    {
+        bool layerFound = false;
+
+        for (const auto& layerProperties : availableLayers)
+        {
+            if (strcmp(layerName, layerProperties.layerName) == 0)
+            {
+                layerFound = true;
+                break;
+            }
+        }
+
+        if (!layerFound)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+struct SwapChainSupportDetails
+{
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> presentModes;
+};
 std::map<std::string, std::string> FileNameToVkShaderType = {
     { "ps", "ps_5_0" },
     { "vs", "vs_5_0" },
     { "gs", "gs_5_0" },
     { "cs", "cs_5_0" }
 };
+
+void DeviceVulkan::CreateInstance()
+{
+    if (enableValidationLayers && !checkValidationLayerSupport())
+    {
+        throw std::runtime_error("validation layers requested, but not available!");
+    }
+
+    VkApplicationInfo appInfo = {};
+    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.pApplicationName = "Hello Triangle";
+    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+    appInfo.pEngineName = "No Engine";
+    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+    appInfo.apiVersion = VK_API_VERSION_1_0;
+
+    VkInstanceCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    createInfo.pApplicationInfo = &appInfo;
+
+    auto extensions = getRequiredExtensions();
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+    createInfo.ppEnabledExtensionNames = extensions.data();
+
+    if (enableValidationLayers)
+    {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.ppEnabledLayerNames = validationLayers.data();
+    }
+    else
+    {
+        createInfo.enabledLayerCount = 0;
+    }
+
+    if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create instance!");
+    }
+}
 
 const char* DeviceVulkan::GetName()
 {
@@ -61,6 +198,7 @@ bool DeviceVulkan::Init(const char* pszWindowName)
 
     g_hWnd = wmInfo.info.win.window;
 
+    CreateInstance();
     /*
     m_deviceResources = std::make_unique<Vulkan::DeviceResources>(DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_D32_FLOAT, 2, D3D_FEATURE_LEVEL_11_0, 0);// DX::DeviceResources::c_AllowTearing);
     m_deviceResources->RegisterDeviceNotify(this);
@@ -266,9 +404,7 @@ std::future<std::shared_ptr<CompileResult>> DeviceVulkan::CompilePass(PassState*
     // TODO: Consider repeated compile; underlying states of these objects
     // Check compiler will wait for repeated compiles of the same thing.
     return jorvik.spThreadPool->enqueue([&, renderState]()
-        -> std::shared_ptr<CompileResult>
-    {
-
+                                            -> std::shared_ptr<CompileResult> {
         auto spResult = std::make_shared<CompiledPassRenderStateAssetVulkan>();
         spResult->state = CompileState::Invalid;
 
@@ -279,13 +415,10 @@ std::future<std::shared_ptr<CompileResult>> DeviceVulkan::CompilePass(PassState*
 
         auto pVResult = renderState->vertex_shader->GetCompileResult();
         auto pPResult = renderState->pixel_shader->GetCompileResult();
-        if (pVResult == nullptr || pPResult == nullptr ||
-            pVResult->state == CompileState::Invalid ||
-            pPResult->state == CompileState::Invalid)
+        if (pVResult == nullptr || pPResult == nullptr || pVResult->state == CompileState::Invalid || pPResult->state == CompileState::Invalid)
         {
             return spResult;
         }
-
 
         auto spVulkanVertexShader = std::static_pointer_cast<CompiledShaderAssetVulkan>(pVResult);
         auto spVulkanPixelShader = std::static_pointer_cast<CompiledShaderAssetVulkan>(pPResult);
@@ -381,7 +514,7 @@ void DeviceVulkan::EndGUI()
 // Update the swap chain for a new client rectangle size (window sized)
 void DeviceVulkan::Resize(int width, int height)
 {
-   // ImGui_ImplVulkan_InvalidateDeviceObjects();
+    // ImGui_ImplVulkan_InvalidateDeviceObjects();
     //if (!m_deviceResources->WindowSizeChanged(width, height))
     //    return;
 
@@ -468,12 +601,11 @@ void DeviceVulkan::OnDeviceRestored()
 void DeviceVulkan::Wait()
 {
     //m_deviceResources->WaitForGpu();
-
 }
 void DeviceVulkan::DrawFSQuad(std::shared_ptr<CompileResult>& state)
 {
     // Use the null vertex buffer trick with a big triangle for now.
-    // 
+    //
     //
     /*
     auto pipeline = std::static_pointer_cast<CompiledPassRenderStateAssetVulkan>(state);
@@ -498,4 +630,3 @@ void DeviceVulkan::DrawFSQuad(std::shared_ptr<CompileResult>& state)
 }
 
 } // namespace Mgfx
-
