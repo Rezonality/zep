@@ -1,0 +1,3 @@
+#cmakedefine PROJECT_DEVICE_GL 1
+#cmakedefine PROJECT_DEVICE_NULL 1
+#cmakedefine PROJECT_DEVICE_DX12 1

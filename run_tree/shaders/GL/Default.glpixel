@@ -1,0 +1,22 @@
+#version 330 core
+
+// Take in a diffuse color map 
+uniform sampler2D albedo_sampler;
+
+in vec2 frag_tex_coord;
+in vec4 frag_color;
+
+// The output color
+out vec4 color;
+
+void main()
+{
+    // Sample the diffuse map
+    vec4 diffuse = texture(albedo_sampler, frag_tex_coord).rgba;
+    color = frag_color * diffuse;
+    if (color.a == 0)
+    {
+        discard;
+    }
+    color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
+}

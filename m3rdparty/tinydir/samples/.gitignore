@@ -1,0 +1,43 @@
+# Object files
+*.o
+
+# Libraries
+*.lib
+*.a
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*_sample
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+*.dir/
+cmake_install.cmake
+
+# Visual Studio
+Debug/
+Win32/
+*.opensdf
+*.sdf
+*.suo
+*.vcxproj.user
+*.vcxproj
+*.vcxproj.filters
+*.VC.*
+*.sln
+
+# Linux
+Makefile
+
+# OS X
+CMakeScripts/
+*.xcodeproj

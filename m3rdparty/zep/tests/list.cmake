@@ -1,0 +1,10 @@
+
+FILE(GLOB_RECURSE FOUND_TEST_SOURCES "*.test.cpp")
+
+LIST(APPEND TEST_SOURCES
+    ${FOUND_TEST_SOURCES}
+    tests/main.cpp
+)
+
+
+    

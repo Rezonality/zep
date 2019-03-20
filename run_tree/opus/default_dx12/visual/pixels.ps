@@ -1,0 +1,34 @@
+// #shader_type ps_5_0
+// #entry_point ps_main
+struct PS_INPUT
+{
+    float4 v_position : SV_POSITION;
+    float3 v_normal   : NORMAL;
+    float2 v_texcoord : TEXCOORD0;
+};
+
+struct PS_OUTPUT
+{
+    float4 color : SV_Target;
+};
+float time;
+
+/*
+float2 resolution;
+float2 mouse;
+float3 spectrum;
+*/
+
+static const float3 spectrum = float3(1.0, 0.0, 0.0);
+
+PS_OUTPUT ps_main(in PS_INPUT In) : SV_TARGET
+{
+    PS_OUTPUT Out;
+    float2 uv = -1. + 2. * In.v_texcoord;
+    Out.color = float4(
+        abs(sin(cos(time+3.*uv.y)*2.*uv.x+time)),
+        abs(cos(sin(time+2.*uv.x)*3.*uv.y+time)),
+        spectrum.x * 100.,
+        1.0);
+    return Out;
+}

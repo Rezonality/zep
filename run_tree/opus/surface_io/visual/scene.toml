@@ -1,0 +1,13 @@
+
+[[pass]]
+name = "render_to_tex"
+target = "render_tex"
+pixel_shader = "pixels_target.ps"
+vertex_shader = "vertices_target.vs"
+geometry = "fs_quad"
+
+[[pass]]
+name = "render_from_tex"
+pixel_shader = "pixels.ps"
+vertex_shader = "vertices.vs"
+geometry = "fs_quad"

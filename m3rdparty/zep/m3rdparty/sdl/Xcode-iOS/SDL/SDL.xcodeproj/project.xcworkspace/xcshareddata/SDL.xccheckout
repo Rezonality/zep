@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>A33FE199-4591-4CBE-ADF8-8F36A36754B5</string>
+	<key>IDESourceControlProjectName</key>
+	<string>SDL</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>52A48B60B20C16BF17C218B40EC7BD81DB998CDB</key>
+		<string>https://github.com/cmaughan/SDL-mirror.git</string>
+		<key>AB620A0A12EDE5A31DFBC9FC80AF9F019B7754B7</key>
+		<string>https://bitbucket.org/mornymorny/mcore2.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>Xcode-iOS/SDL/SDL.xcodeproj</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>52A48B60B20C16BF17C218B40EC7BD81DB998CDB</key>
+		<string>../../../..</string>
+		<key>AB620A0A12EDE5A31DFBC9FC80AF9F019B7754B7</key>
+		<string>../../../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://github.com/cmaughan/SDL-mirror.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>52A48B60B20C16BF17C218B40EC7BD81DB998CDB</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>AB620A0A12EDE5A31DFBC9FC80AF9F019B7754B7</string>
+			<key>IDESourceControlWCCName</key>
+			<string></string>
+		</dict>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>52A48B60B20C16BF17C218B40EC7BD81DB998CDB</string>
+			<key>IDESourceControlWCCName</key>
+			<string>sdl</string>
+		</dict>
+	</array>
+</dict>
+</plist>

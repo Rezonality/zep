@@ -1,0 +1,39 @@
+#version 330 core
+
+// Model * View * Projection matrix, View Matirx and Model matrix
+uniform mat4 MVP;
+uniform mat4 V;
+uniform mat4 M;
+
+// Coordinates  of the geometry
+layout(location = 0) in vec3 in_position;
+layout(location = 1) in vec3 in_normal;
+layout(location = 2) in vec2 in_tex_coord;
+layout(location = 3) in vec4 in_color;
+
+// Outputs to the pixel shader
+out vec3 frag_pos_world;
+out vec3 frag_normal;
+out vec2 frag_tex_coord;
+out vec4 frag_color;
+
+void main()
+{
+    // World space position
+    vec4 world_pos = M * vec4(in_position, 1.0);
+
+    // perspective transformed position
+    gl_Position = MVP * vec4(in_position, 1.0);
+
+    // Matrix for transforming normals
+    mat4 invtransmodel =  transpose(inverse(M));
+
+    // Flip tex coords the right way up
+    frag_tex_coord = in_tex_coord * vec2(1.0f, -1.0f);
+
+    frag_normal = normalize((invtransmodel * vec4(in_normal, 0.0)).xyz);
+
+    frag_color = in_color;
+
+    frag_pos_world = world_pos.xyz; 
+}

@@ -1,0 +1,5 @@
+[[pass]]
+name = "background"
+pixel_shader = "pixels.ps"
+vertex_shader = "vertices.vs"
+geometry = "fs_quad"

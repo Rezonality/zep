@@ -1,0 +1,42 @@
+dist: trusty
+
+matrix:
+  include:
+  - os: linux
+    language: cpp
+    compiler: gcc
+    env: COMPILER="g++-5"
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-5
+        - build-essential
+        - cmake
+        - libboost-all-dev
+  - os: linux
+    language: cpp
+    compiler: clang
+    env: COMPILER="clang++-3.7"
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        - llvm-toolchain-precise-3.7
+        packages:
+        - clang-3.7
+        - build-essential
+        - cmake
+        - libboost-all-dev
+  - os: osx
+    language: cpp
+    compiler: clang
+
+script:
+- mkdir build
+- cd build
+- git clone https://github.com/toml-lang/toml.git
+- cmake -DCMAKE_CXX_COMPILER=$COMPILER ..
+- make
+- ctest --output-on-failure

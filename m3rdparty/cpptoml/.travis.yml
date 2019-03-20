@@ -1,0 +1,43 @@
+language: cpp
+
+sudo: false
+
+compiler:
+  - clang
+  - gcc
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+      - llvm-toolchain-precise-3.6
+      # I want to use this eventually, but right now it will prevent us
+      # from installing g++-4.8 properly
+      #- debian-sid
+    packages:
+      - g++-4.8
+      #- libc++1
+      #- libc++-dev
+      #- libc++abi1
+      #- libc++abi-dev
+      - llvm-3.6-dev
+      - clang-3.6
+
+install:
+  - mkdir -p $HOME/lib
+  - export LD_LIBRARY_PATH=$HOME/lib:$LD_LIBRARY_PATH
+  - mkdir -p $HOME/bin
+  - export PATH=$HOME/bin:$PATH
+  - mkdir -p $HOME/include
+  - export CPLUS_INCLUDE_PATH=$HOME/include:$CPLUS_INCLUDE_PATH
+  - wget --no-check-certificate http://www.cmake.org/files/v3.2/cmake-3.2.2-Linux-x86_64.sh
+  - sh cmake-3.2.2-Linux-x86_64.sh --prefix=$HOME --exclude-subdir
+    # use g++-4.8 if g++ is our compiler
+  - if [ "`echo $CXX`" == "g++" ]; then export CXX=g++-4.8; fi
+  # install libc++ if tests are run with clang++
+  - if [ "`echo $CXX`" == "clang++" ]; then export CXX=clang++-3.6 && travis/install_libcxx.sh; fi
+
+script:
+  - mkdir build
+  - cd build
+  - cmake .. -DCMAKE_BUILD_TYPE=Debug && make

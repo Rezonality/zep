@@ -1,0 +1,61 @@
+# Build worker image (VM template)
+image: Visual Studio 2017
+
+# scripts that are called at very beginning, before repo cloning
+init:
+  - date /T & time /T
+  - git config --global core.autocrlf input
+  - cmake --version
+
+branches:
+  only:
+  - master
+
+clone_depth: 5
+
+version: '{build}'
+
+platform:
+  - x64
+
+configuration:
+  - Release
+  #- Debug
+
+environment:
+  MSBUILD_FLAGS: /verbosity:minimal /maxcpucount
+  matrix:
+    - generator: "Visual Studio 15 2017 Win64"
+
+matrix:
+  fast_finish: true
+
+install:
+  - git submodule update --init --recursive
+  
+build_script:
+  # generate build script
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - dir
+  # create folder for an out-of-source-tree build: "c:\projects\build"
+  - cd.. 
+  - mkdir build
+  - cd build
+  - >
+    cmake %APPVEYOR_BUILD_FOLDER%
+    -G "%generator%" 
+    -DCMAKE_INSTALL_PREFIX=./mgfx
+  # build
+  - cmake --build . --target ALL_BUILD --config %configuration% -- /nologo /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  # install
+  # - cmake --build . --target INSTALL --config %configuration% -- /nologo
+  # package (with cpack)
+  #- cmake --build ./build --target PACKAGE --config %configuration% -- /nologo
+
+after_build:
+  # set compiler var
+  - if "%generator%"=="Visual Studio 14" (set COMPILER="VC14")
+  # switch to project build folder and zip "tutorials" folder
+  - cd C:\projects\build
+  - 7z a -tzip -mx9 "mgfx-%APPVEYOR_BUILD_VERSION%-%COMPILER%.zip" Release
+  - appveyor PushArtifact "mgfx-%APPVEYOR_BUILD_VERSION%-%COMPILER%.zip"
