@@ -14,6 +14,7 @@
 #include <imgui_impl_vulkan.h>
 
 #include "SDL_syswm.h"
+#include "SDL_vulkan.h"
 
 #include "device_vulkan.h"
 
@@ -137,31 +138,68 @@ std::map<std::string, std::string> FileNameToVkShaderType = {
     { "cs", "cs_5_0" }
 };
 
-void DeviceVulkan::CreateInstance()
+const char* DeviceVulkan::GetName()
+{
+    return "Vulkan";
+}
+
+bool DeviceVulkan::CreateInstance()
 {
     if (enableValidationLayers && !checkValidationLayerSupport())
     {
         throw std::runtime_error("validation layers requested, but not available!");
     }
+
     VkApplicationInfo appInfo = {};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "Hello Triangle";
+    appInfo.pApplicationName = "Jorvik";
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "No Engine";
+    appInfo.pEngineName = "Jorvik";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion = VK_API_VERSION_1_0;
 
-    SDL_Vulkan_GetInstanceExtensions(demo->sdl_window, &(demo->enabled_extension_count), demo->extension_names);
+    uint32_t extensionCount = 0;
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+    std::vector<VkExtensionProperties> vulkanExtensions(extensionCount);
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, vulkanExtensions.data());
 
-    if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
+    LOG(INFO) << "Vulkan Extensions:";
+    for (const auto& extension : vulkanExtensions)
     {
-        throw std::runtime_error("failed to create instance!");
+        LOG(INFO) << extension.extensionName;
     }
-}
 
-const char* DeviceVulkan::GetName()
-{
-    return "Vulkan";
+    extensionCount = 0;
+    SDL_Vulkan_GetInstanceExtensions(m_pWindow, &extensionCount, nullptr);
+    std::vector<const char*> sdlExtensions(extensionCount);
+    SDL_Vulkan_GetInstanceExtensions(m_pWindow, &extensionCount, sdlExtensions.data());
+
+    LOG(INFO) << "SDL Extensions Required:";
+    for (const auto& extension : sdlExtensions)
+    {
+        LOG(INFO) << extension;
+    }
+
+
+    std::vector<const char*> layerNames{};
+    // uncomment below if you want to use validation layers
+    layerNames.push_back("VK_LAYER_LUNARG_standard_validation");
+
+    VkInstanceCreateInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    info.pApplicationInfo = &appInfo;
+    info.enabledLayerCount = (uint32_t)layerNames.size();
+    info.ppEnabledLayerNames = layerNames.data();
+    info.enabledExtensionCount = (uint32_t)sdlExtensions.size();
+    info.ppEnabledExtensionNames = sdlExtensions.data();
+
+    VkResult res;
+    res = vkCreateInstance(&info, nullptr, &instance);
+    if (res != VK_SUCCESS)
+    {
+        return false;
+    }
+    return true;
 }
 
 bool DeviceVulkan::Init(const char* pszWindowName)
@@ -173,11 +211,11 @@ bool DeviceVulkan::Init(const char* pszWindowName)
     // Setup window
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
-    pWindow = SDL_CreateWindow(pszWindowName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, g_DisplayWidth, g_DisplayHeight, SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
+    m_pWindow = SDL_CreateWindow(pszWindowName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, g_DisplayWidth, g_DisplayHeight, SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
 
     SDL_SysWMinfo wmInfo;
     SDL_VERSION(&wmInfo.version);
-    SDL_GetWindowWMInfo(pWindow, &wmInfo);
+    SDL_GetWindowWMInfo(m_pWindow, &wmInfo);
 
     g_hWnd = wmInfo.info.win.window;
 
@@ -227,6 +265,10 @@ void DeviceVulkan::Destroy()
     */
 
     //ImGui_ImplVulkan_Shutdown();
+    if (instance != nullptr)
+    {
+        vkDestroyInstance(instance, nullptr);
+    }
 
     if (pWindow != nullptr)
     {

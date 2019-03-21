@@ -49,7 +49,7 @@ public:
     ~DeviceVulkan();
 
     // Vulkan methods
-    virtual void CreateInstance();
+    virtual bool CreateInstance();
 
     virtual bool Init(const char* pszWindowName) override;
     virtual void Destroy() override;
@@ -80,13 +80,14 @@ private:
     void Clear();
 
 private:
- 
-    VkInstance instance;
-    VkDebugUtilsMessengerEXT debugMessenger;
-    VkSurfaceKHR surface;
+
+    SDL_Window* m_pWindow = nullptr;
+    VkInstance instance = nullptr;
+    VkDebugUtilsMessengerEXT debugMessenger = nullptr;
+    VkSurfaceKHR surface = nullptr;
 
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkDevice device;
+    VkDevice device = nullptr;
 
     VkQueue graphicsQueue;
     VkQueue presentQueue;

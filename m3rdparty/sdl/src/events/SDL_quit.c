@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -55,7 +55,7 @@ SDL_QuitInit_Internal(void)
     struct sigaction action;
     sigaction(SIGINT, NULL, &action);
 #ifdef HAVE_SA_SIGACTION
-    if ( action.sa_handler == SIG_DFL && action.sa_sigaction == (void*)SIG_DFL ) {
+    if ( action.sa_handler == SIG_DFL && (void (*)(int))action.sa_sigaction == SIG_DFL ) {
 #else
     if ( action.sa_handler == SIG_DFL ) {
 #endif
@@ -65,7 +65,7 @@ SDL_QuitInit_Internal(void)
     sigaction(SIGTERM, NULL, &action);
 
 #ifdef HAVE_SA_SIGACTION
-    if ( action.sa_handler == SIG_DFL && action.sa_sigaction == (void*)SIG_DFL ) {
+    if ( action.sa_handler == SIG_DFL && (void (*)(int))action.sa_sigaction == SIG_DFL ) {
 #else
     if ( action.sa_handler == SIG_DFL ) {
 #endif
@@ -91,9 +91,7 @@ SDL_QuitInit_Internal(void)
 int
 SDL_QuitInit(void)
 {
-    const char *hint = SDL_GetHint(SDL_HINT_NO_SIGNAL_HANDLERS);
-    disable_signals = hint && (SDL_atoi(hint) == 1);
-    if (!disable_signals) {
+    if (!SDL_GetHintBoolean(SDL_HINT_NO_SIGNAL_HANDLERS, SDL_FALSE)) {
         return SDL_QuitInit_Internal();
     }
     return 0;

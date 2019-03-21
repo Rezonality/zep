@@ -243,14 +243,14 @@ IF (TARGET_PC)
 	# For midi
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__WINDOWS_MM__=1")
     LIST(APPEND PLATFORM_LINKLIBS 
-        SDL2
-        SDL2main
+        sdl2d
+        sdl2maind
         )
 ENDIF()
 IF (TARGET_MAC)
     LIST(APPEND PLATFORM_LINKLIBS 
-        sdl2-2.0
-        sdl2main
+        SDL2-2.0
+        SDL2main
         )
 ENDIF()
 IF (TARGET_LINUX)

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -304,20 +304,11 @@ WIN_InitMouse(_THIS)
     mouse->GetGlobalMouseState = WIN_GetGlobalMouseState;
 
     SDL_SetDefaultCursor(WIN_CreateDefaultCursor());
-
-    SDL_SetDoubleClickTime(GetDoubleClickTime());
 }
 
 void
 WIN_QuitMouse(_THIS)
 {
-    SDL_Mouse *mouse = SDL_GetMouse();
-    if ( mouse->def_cursor ) {
-        SDL_free(mouse->def_cursor);
-        mouse->def_cursor = NULL;
-        mouse->cur_cursor = NULL;
-    }
-
     if (rawInputEnableCount) {  /* force RAWINPUT off here. */
         rawInputEnableCount = 1;
         ToggleRawInput(SDL_FALSE);

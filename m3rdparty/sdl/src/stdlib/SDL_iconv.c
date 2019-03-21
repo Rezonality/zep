@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -30,13 +30,15 @@
 #include "SDL_stdinc.h"
 #include "SDL_endian.h"
 
-#ifdef HAVE_ICONV
+#if defined(HAVE_ICONV) && defined(HAVE_ICONV_H)
+#include <iconv.h>
 
 /* Depending on which standard the iconv() was implemented with,
    iconv() may or may not use const char ** for the inbuf param.
    If we get this wrong, it's just a warning, so no big deal.
 */
 #if defined(_XGP6) || defined(__APPLE__) || \
+    defined(__EMSCRIPTEN__) || \
     (defined(__GLIBC__) && ((__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2)) || \
     (defined(_NEWLIB_VERSION)))
 #define ICONV_INBUF_NONCONST
@@ -87,13 +89,13 @@ SDL_iconv(SDL_iconv_t cd,
 #else
 
 /* Lots of useful information on Unicode at:
-	http://www.cl.cam.ac.uk/~mgk25/unicode.html
+    http://www.cl.cam.ac.uk/~mgk25/unicode.html
 */
 
-#define UNICODE_BOM	0xFEFF
+#define UNICODE_BOM    0xFEFF
 
-#define UNKNOWN_ASCII	'?'
-#define UNKNOWN_UNICODE	0xFFFD
+#define UNKNOWN_ASCII    '?'
+#define UNKNOWN_UNICODE    0xFFFD
 
 enum
 {
@@ -113,13 +115,13 @@ enum
     ENCODING_UCS4LE,
 };
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-#define ENCODING_UTF16NATIVE	ENCODING_UTF16BE
-#define ENCODING_UTF32NATIVE	ENCODING_UTF32BE
+#define ENCODING_UTF16NATIVE    ENCODING_UTF16BE
+#define ENCODING_UTF32NATIVE    ENCODING_UTF32BE
 #define ENCODING_UCS2NATIVE     ENCODING_UCS2BE
 #define ENCODING_UCS4NATIVE     ENCODING_UCS4BE
 #else
-#define ENCODING_UTF16NATIVE	ENCODING_UTF16LE
-#define ENCODING_UTF32NATIVE	ENCODING_UTF32LE
+#define ENCODING_UTF16NATIVE    ENCODING_UTF16LE
+#define ENCODING_UTF32NATIVE    ENCODING_UTF32LE
 #define ENCODING_UCS2NATIVE     ENCODING_UCS2LE
 #define ENCODING_UCS4NATIVE     ENCODING_UCS4LE
 #endif
@@ -796,6 +798,7 @@ SDL_iconv(SDL_iconv_t cd,
             if (ch > 0x10FFFF) {
                 ch = UNKNOWN_UNICODE;
             }
+            /* fallthrough */
         case ENCODING_UCS4BE:
             if (ch > 0x7FFFFFFF) {
                 ch = UNKNOWN_UNICODE;
@@ -817,6 +820,7 @@ SDL_iconv(SDL_iconv_t cd,
             if (ch > 0x10FFFF) {
                 ch = UNKNOWN_UNICODE;
             }
+            /* fallthrough */
         case ENCODING_UCS4LE:
             if (ch > 0x7FFFFFFF) {
                 ch = UNKNOWN_UNICODE;

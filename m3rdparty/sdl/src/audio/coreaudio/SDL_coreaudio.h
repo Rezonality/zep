@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -20,8 +20,8 @@
 */
 #include "../../SDL_internal.h"
 
-#ifndef _SDL_coreaudio_h
-#define _SDL_coreaudio_h
+#ifndef SDL_coreaudio_h_
+#define SDL_coreaudio_h_
 
 #include "../SDL_sysaudio.h"
 
@@ -33,9 +33,11 @@
 #include <CoreAudio/CoreAudio.h>
 #include <CoreServices/CoreServices.h>
 #else
-#include <AudioToolbox/AudioToolbox.h>
+#import <AVFoundation/AVFoundation.h>
+#import <UIKit/UIApplication.h>
 #endif
 
+#include <AudioToolbox/AudioToolbox.h>
 #include <AudioUnit/AudioUnit.h>
 
 /* Hidden "this" pointer for the audio functions */
@@ -43,15 +45,22 @@
 
 struct SDL_PrivateAudioData
 {
-    AudioUnit audioUnit;
-    int audioUnitOpened;
+    AudioQueueRef audioQueue;
+    int numAudioBuffers;
+    AudioQueueBufferRef *audioBuffer;
     void *buffer;
-    UInt32 bufferOffset;
     UInt32 bufferSize;
+    AudioStreamBasicDescription strdesc;
+    SDL_bool refill;
+    SDL_AudioStream *capturestream;
 #if MACOSX_COREAUDIO
     AudioDeviceID deviceID;
+#else
+    SDL_bool interrupted;
+    CFTypeRef interruption_listener;
 #endif
 };
 
-#endif /* _SDL_coreaudio_h */
+#endif /* SDL_coreaudio_h_ */
+
 /* vi: set ts=4 sw=4 expandtab: */

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -36,6 +36,9 @@
 @interface SDLApplication : NSApplication
 
 - (void)terminate:(id)sender;
+- (void)sendEvent:(NSEvent *)theEvent;
+
++ (void)registerUserDefaults;
 
 @end
 
@@ -45,6 +48,59 @@
 - (void)terminate:(id)sender
 {
     SDL_SendQuit();
+}
+
+static SDL_bool s_bShouldHandleEventsInSDLApplication = SDL_FALSE;
+
+static void Cocoa_DispatchEvent(NSEvent *theEvent)
+{
+    SDL_VideoDevice *_this = SDL_GetVideoDevice();
+
+    switch ([theEvent type]) {
+        case NSEventTypeLeftMouseDown:
+        case NSEventTypeOtherMouseDown:
+        case NSEventTypeRightMouseDown:
+        case NSEventTypeLeftMouseUp:
+        case NSEventTypeOtherMouseUp:
+        case NSEventTypeRightMouseUp:
+        case NSEventTypeLeftMouseDragged:
+        case NSEventTypeRightMouseDragged:
+        case NSEventTypeOtherMouseDragged: /* usually middle mouse dragged */
+        case NSEventTypeMouseMoved:
+        case NSEventTypeScrollWheel:
+            Cocoa_HandleMouseEvent(_this, theEvent);
+            break;
+        case NSEventTypeKeyDown:
+        case NSEventTypeKeyUp:
+        case NSEventTypeFlagsChanged:
+            Cocoa_HandleKeyEvent(_this, theEvent);
+            break;
+        default:
+            break;
+    }
+}
+
+// Dispatch events here so that we can handle events caught by
+// nextEventMatchingMask in SDL, as well as events caught by other
+// processes (such as CEF) that are passed down to NSApp.
+- (void)sendEvent:(NSEvent *)theEvent
+{
+    if (s_bShouldHandleEventsInSDLApplication) {
+        Cocoa_DispatchEvent(theEvent);
+    }
+
+    [super sendEvent:theEvent];
+}
+
++ (void)registerUserDefaults
+{
+    NSDictionary *appDefaults = [[NSDictionary alloc] initWithObjectsAndKeys:
+                                 [NSNumber numberWithBool:NO], @"AppleMomentumScrollSupported",
+                                 [NSNumber numberWithBool:NO], @"ApplePressAndHoldEnabled",
+                                 [NSNumber numberWithBool:YES], @"ApplePersistenceIgnoreState",
+                                 nil];
+    [[NSUserDefaults standardUserDefaults] registerDefaults:appDefaults];
+    [appDefaults release];
 }
 
 @end // SDLApplication
@@ -95,7 +151,7 @@
     [super dealloc];
 }
 
-- (void)windowWillClose:(NSNotification *)notification
+- (void)windowWillClose:(NSNotification *)notification;
 {
     NSWindow *win = (NSWindow*)[notification object];
 
@@ -114,28 +170,23 @@
      */
     for (NSWindow *window in [NSApp orderedWindows]) {
         if (window != win && [window canBecomeKeyWindow]) {
-            if ([window respondsToSelector:@selector(isOnActiveSpace)]) {
-                if (![window isOnActiveSpace]) {
-                    continue;
-                }
+            if (![window isOnActiveSpace]) {
+                continue;
             }
             [window makeKeyAndOrderFront:self];
             return;
         }
     }
 
-    /* If a window wasn't found above, iterate through all visible windows
-     * (including the 'About' window, if it's shown) and make the first one key.
-     * Note that +[NSWindow windowNumbersWithOptions:] was added in 10.6.
+    /* If a window wasn't found above, iterate through all visible windows in
+     * the active Space in z-order (including the 'About' window, if it's shown)
+     * and make the first one key.
      */
-    if ([NSWindow respondsToSelector:@selector(windowNumbersWithOptions:)]) {
-        /* Get all visible windows in the active Space, in z-order. */
-        for (NSNumber *num in [NSWindow windowNumbersWithOptions:0]) {
-            NSWindow *window = [NSApp windowWithWindowNumber:[num integerValue]];
-            if (window && window != win && [window canBecomeKeyWindow]) {
-                [window makeKeyAndOrderFront:self];
-                return;
-            }
+    for (NSNumber *num in [NSWindow windowNumbersWithOptions:0]) {
+        NSWindow *window = [NSApp windowWithWindowNumber:[num integerValue]];
+        if (window && window != win && [window canBecomeKeyWindow]) {
+            [window makeKeyAndOrderFront:self];
+            return;
         }
     }
 }
@@ -177,6 +228,22 @@
 - (BOOL)application:(NSApplication *)theApplication openFile:(NSString *)filename
 {
     return (BOOL)SDL_SendDropFile(NULL, [filename UTF8String]) && SDL_SendDropComplete(NULL);
+}
+
+- (void)applicationDidFinishLaunching:(NSNotification *)notification
+{
+    /* The menu bar of SDL apps which don't have the typical .app bundle
+     * structure fails to work the first time a window is created (until it's
+     * de-focused and re-focused), if this call is in Cocoa_RegisterApp instead
+     * of here. https://bugzilla.libsdl.org/show_bug.cgi?id=3051
+     */
+    if (!SDL_GetHintBoolean(SDL_HINT_MAC_BACKGROUND_APP, SDL_FALSE)) {
+        [NSApp activateIgnoringOtherApps:YES];
+    }
+
+    /* If we call this before NSApp activation, macOS might print a complaint
+     * about ApplePersistenceIgnoreState. */
+    [SDLApplication registerUserDefaults];
 }
 @end
 
@@ -251,7 +318,7 @@ CreateApplicationMenus(void)
     [appleMenu addItemWithTitle:title action:@selector(hide:) keyEquivalent:@"h"];
 
     menuItem = (NSMenuItem *)[appleMenu addItemWithTitle:@"Hide Others" action:@selector(hideOtherApplications:) keyEquivalent:@"h"];
-    [menuItem setKeyEquivalentModifierMask:(NSAlternateKeyMask|NSCommandKeyMask)];
+    [menuItem setKeyEquivalentModifierMask:(NSEventModifierFlagOption|NSEventModifierFlagCommand)];
 
     [appleMenu addItemWithTitle:@"Show All" action:@selector(unhideAllApplications:) keyEquivalent:@""];
 
@@ -291,13 +358,13 @@ CreateApplicationMenus(void)
 
 
     /* Add the fullscreen view toggle menu option, if supported */
-    if ([NSApp respondsToSelector:@selector(setPresentationOptions:)]) {
+    if (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_6) {
         /* Create the view menu */
         viewMenu = [[NSMenu alloc] initWithTitle:@"View"];
 
         /* Add menu items */
         menuItem = [viewMenu addItemWithTitle:@"Toggle Full Screen" action:@selector(toggleFullScreen:) keyEquivalent:@"f"];
-        [menuItem setKeyEquivalentModifierMask:NSControlKeyMask | NSCommandKeyMask];
+        [menuItem setKeyEquivalentModifierMask:NSEventModifierFlagControl | NSEventModifierFlagCommand];
 
         /* Put menu into the menubar */
         menuItem = [[NSMenuItem alloc] initWithTitle:@"View" action:nil keyEquivalent:@""];
@@ -319,32 +386,22 @@ Cocoa_RegisterApp(void)
         [SDLApplication sharedApplication];
         SDL_assert(NSApp != nil);
 
-        const char *hint = SDL_GetHint(SDL_HINT_MAC_BACKGROUND_APP);
-        if (!hint || *hint == '0') {
-#if MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_6
-			if ([NSApp respondsToSelector:@selector(setActivationPolicy:)]) {
-#endif
-				[NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-#if MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_6
-			} else {
-				ProcessSerialNumber psn = {0, kCurrentProcess};
-				TransformProcessType(&psn, kProcessTransformToForegroundApplication);
-			}
-#endif
-            [NSApp activateIgnoringOtherApps:YES];
-		}
-		
+        s_bShouldHandleEventsInSDLApplication = SDL_TRUE;
+
+        if (!SDL_GetHintBoolean(SDL_HINT_MAC_BACKGROUND_APP, SDL_FALSE)) {
+            [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+        }
+
         if ([NSApp mainMenu] == nil) {
             CreateApplicationMenus();
         }
         [NSApp finishLaunching];
-        NSDictionary *appDefaults = [[NSDictionary alloc] initWithObjectsAndKeys:
-            [NSNumber numberWithBool:NO], @"AppleMomentumScrollSupported",
-            [NSNumber numberWithBool:NO], @"ApplePressAndHoldEnabled",
-            [NSNumber numberWithBool:YES], @"ApplePersistenceIgnoreState",
-            nil];
-        [[NSUserDefaults standardUserDefaults] registerDefaults:appDefaults];
-        [appDefaults release];
+        if ([NSApp delegate]) {
+            /* The SDL app delegate calls this in didFinishLaunching if it's
+             * attached to the NSApp, otherwise we need to call it manually.
+             */
+            [SDLApplication registerUserDefaults];
+        }
     }
     if (NSApp && !appDelegate) {
         appDelegate = [[SDLAppDelegate alloc] init];
@@ -364,6 +421,7 @@ void
 Cocoa_PumpEvents(_THIS)
 { @autoreleasepool
 {
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1070
     /* Update activity every 30 seconds to prevent screensaver */
     SDL_VideoData *data = (SDL_VideoData *)_this->driverdata;
     if (_this->suspend_screensaver && !data->screensaver_use_iopm) {
@@ -374,36 +432,19 @@ Cocoa_PumpEvents(_THIS)
             data->screensaver_activity = now;
         }
     }
+#endif
 
     for ( ; ; ) {
-        NSEvent *event = [NSApp nextEventMatchingMask:NSAnyEventMask untilDate:[NSDate distantPast] inMode:NSDefaultRunLoopMode dequeue:YES ];
+        NSEvent *event = [NSApp nextEventMatchingMask:NSEventMaskAny untilDate:[NSDate distantPast] inMode:NSDefaultRunLoopMode dequeue:YES ];
         if ( event == nil ) {
             break;
         }
 
-        switch ([event type]) {
-        case NSLeftMouseDown:
-        case NSOtherMouseDown:
-        case NSRightMouseDown:
-        case NSLeftMouseUp:
-        case NSOtherMouseUp:
-        case NSRightMouseUp:
-        case NSLeftMouseDragged:
-        case NSRightMouseDragged:
-        case NSOtherMouseDragged: /* usually middle mouse dragged */
-        case NSMouseMoved:
-        case NSScrollWheel:
-            Cocoa_HandleMouseEvent(_this, event);
-            break;
-        case NSKeyDown:
-        case NSKeyUp:
-        case NSFlagsChanged:
-            Cocoa_HandleKeyEvent(_this, event);
-            break;
-        default:
-            break;
+        if (!s_bShouldHandleEventsInSDLApplication) {
+            Cocoa_DispatchEvent(event);
         }
-        /* Pass through to NSApp to make sure everything stays in sync */
+
+        // Pass events down to SDLApplication to be handled in sendEvent:
         [NSApp sendEvent:event];
     }
 }}

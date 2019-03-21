@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -118,12 +118,6 @@ calc_swizzle32(const SDL_PixelFormat * srcfmt, const SDL_PixelFormat * dstfmt)
         16, 8, 0, 24,
         0, NULL
     };
-    if (!srcfmt) {
-        srcfmt = &default_pixel_format;
-    }
-    if (!dstfmt) {
-        dstfmt = &default_pixel_format;
-    }
     const vector unsigned char plus = VECUINT8_LITERAL(0x00, 0x00, 0x00, 0x00,
                                                        0x04, 0x04, 0x04, 0x04,
                                                        0x08, 0x08, 0x08, 0x08,
@@ -131,11 +125,20 @@ calc_swizzle32(const SDL_PixelFormat * srcfmt, const SDL_PixelFormat * dstfmt)
                                                        0x0C);
     vector unsigned char vswiz;
     vector unsigned int srcvec;
+    Uint32 rmask, gmask, bmask, amask;
+
+    if (!srcfmt) {
+        srcfmt = &default_pixel_format;
+    }
+    if (!dstfmt) {
+        dstfmt = &default_pixel_format;
+    }
+
 #define RESHIFT(X) (3 - ((X) >> 3))
-    Uint32 rmask = RESHIFT(srcfmt->Rshift) << (dstfmt->Rshift);
-    Uint32 gmask = RESHIFT(srcfmt->Gshift) << (dstfmt->Gshift);
-    Uint32 bmask = RESHIFT(srcfmt->Bshift) << (dstfmt->Bshift);
-    Uint32 amask;
+    rmask = RESHIFT(srcfmt->Rshift) << (dstfmt->Rshift);
+    gmask = RESHIFT(srcfmt->Gshift) << (dstfmt->Gshift);
+    bmask = RESHIFT(srcfmt->Bshift) << (dstfmt->Bshift);
+
     /* Use zero for alpha if either surface doesn't have alpha */
     if (dstfmt->Amask) {
         amask =
@@ -147,6 +150,7 @@ calc_swizzle32(const SDL_PixelFormat * srcfmt, const SDL_PixelFormat * dstfmt)
                           0xFFFFFFFF);
     }
 #undef RESHIFT
+
     ((unsigned int *) (char *) &srcvec)[0] = (rmask | gmask | bmask | amask);
     vswiz = vec_add(plus, (vector unsigned char) vec_splat(srcvec, 0));
     return (vswiz);
@@ -1109,6 +1113,7 @@ Blit_RGB101010_index8(SDL_BlitInfo * info)
                                 (((*src)&0x0000F800)>>6)| \
                                 (((*src)&0x000000F8)>>3)); \
 }
+#ifndef USE_DUFFS_LOOP
 #define RGB888_RGB555_TWO(dst, src) { \
     *(Uint32 *)(dst) = (((((src[HI])&0x00F80000)>>9)| \
                          (((src[HI])&0x0000F800)>>6)| \
@@ -1117,6 +1122,7 @@ Blit_RGB101010_index8(SDL_BlitInfo * info)
                          (((src[LO])&0x0000F800)>>6)| \
                          (((src[LO])&0x000000F8)>>3); \
 }
+#endif
 static void
 Blit_RGB888_RGB555(SDL_BlitInfo * info)
 {
@@ -1233,6 +1239,7 @@ Blit_RGB888_RGB555(SDL_BlitInfo * info)
                                 (((*src)&0x0000FC00)>>5)| \
                                 (((*src)&0x000000F8)>>3)); \
 }
+#ifndef USE_DUFFS_LOOP
 #define RGB888_RGB565_TWO(dst, src) { \
     *(Uint32 *)(dst) = (((((src[HI])&0x00F80000)>>8)| \
                          (((src[HI])&0x0000FC00)>>5)| \
@@ -1241,6 +1248,7 @@ Blit_RGB888_RGB555(SDL_BlitInfo * info)
                          (((src[LO])&0x0000FC00)>>5)| \
                          (((src[LO])&0x000000F8)>>3); \
 }
+#endif
 static void
 Blit_RGB888_RGB565(SDL_BlitInfo * info)
 {
@@ -2325,6 +2333,31 @@ BlitNtoNKey(SDL_BlitInfo * info)
     /* Set up some basic variables */
     ckey &= rgbmask;
 
+    /* Fastpath: same source/destination format, no Amask, bpp 32, loop is vectorized. ~10x faster */
+    if (srcfmt->format == dstfmt->format &&
+        (srcfmt->format == SDL_PIXELFORMAT_RGB888 || srcfmt->format == SDL_PIXELFORMAT_BGR888)) {
+        Uint32 *src32 = (Uint32*)src;
+        Uint32 *dst32 = (Uint32*)dst;
+        srcskip /= sizeof(Uint32);
+        dstskip /= sizeof(Uint32);
+        while (height--) {
+            /* *INDENT-OFF* */
+            DUFFS_LOOP(
+            {
+                if (*src32 != ckey) {
+                    *dst32 = *src32;
+                }
+                ++src32;
+                ++dst32;
+            },
+            width);
+            /* *INDENT-ON* */
+            src32 += srcskip;
+            dst32 += dstskip;
+        }
+        return;
+    }
+
     while (height--) {
         /* *INDENT-OFF* */
         DUFFS_LOOP(
@@ -2371,6 +2404,34 @@ BlitNtoNKeyCopyAlpha(SDL_BlitInfo * info)
     srcbpp = srcfmt->BytesPerPixel;
     dstbpp = dstfmt->BytesPerPixel;
     ckey &= rgbmask;
+
+    /* Fastpath: same source/destination format, with Amask, bpp 32, loop is vectorized. ~10x faster */
+    if (srcfmt->format == dstfmt->format &&
+        (srcfmt->format == SDL_PIXELFORMAT_ARGB8888 ||
+         srcfmt->format == SDL_PIXELFORMAT_ABGR8888 ||
+         srcfmt->format == SDL_PIXELFORMAT_BGRA8888 ||
+         srcfmt->format == SDL_PIXELFORMAT_RGBA8888)) {
+        Uint32 *src32 = (Uint32*)src;
+        Uint32 *dst32 = (Uint32*)dst;
+        srcskip /= sizeof(Uint32);
+        dstskip /= sizeof(Uint32);
+        while (height--) {
+            /* *INDENT-OFF* */
+            DUFFS_LOOP(
+            {
+                if ((*src32 & rgbmask) != ckey) {
+                    *dst32 = *src32;
+                }
+                ++src32;
+                ++dst32;
+            },
+            width);
+            /* *INDENT-ON* */
+            src32 += srcskip;
+            dst32 += dstskip;
+        }
+        return;
+    }
 
     while (height--) {
         /* *INDENT-OFF* */
@@ -2455,6 +2516,9 @@ BlitNto2101010(SDL_BlitInfo * info)
 }
 
 /* Normal N to N optimized blitters */
+#define NO_ALPHA   1
+#define SET_ALPHA  2
+#define COPY_ALPHA 4
 struct blit_table
 {
     Uint32 srcR, srcG, srcB;
@@ -2462,8 +2526,7 @@ struct blit_table
     Uint32 dstR, dstG, dstB;
     Uint32 blit_features;
     SDL_BlitFunc blitfunc;
-    enum
-    { NO_ALPHA = 1, SET_ALPHA = 2, COPY_ALPHA = 4 } alpha;
+    Uint32 alpha;  /* bitwise NO_ALPHA, SET_ALPHA, COPY_ALPHA */
 };
 static const struct blit_table normal_blit_1[] = {
     /* Default for 8-bit RGB source, never optimized */

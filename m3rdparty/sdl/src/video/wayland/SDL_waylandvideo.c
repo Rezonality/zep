@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -34,12 +34,19 @@
 #include "SDL_waylandopengles.h"
 #include "SDL_waylandmouse.h"
 #include "SDL_waylandtouch.h"
+#include "SDL_waylandclipboard.h"
+#include "SDL_waylandvulkan.h"
 
+#include <sys/types.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <xkbcommon/xkbcommon.h>
 
 #include "SDL_waylanddyn.h"
 #include <wayland-util.h>
+
+#include "xdg-shell-client-protocol.h"
+#include "xdg-shell-unstable-v6-client-protocol.h"
 
 #define WAYLANDVID_DRIVER_NAME "wayland"
 
@@ -54,6 +61,62 @@ Wayland_SetDisplayMode(_THIS, SDL_VideoDisplay *display, SDL_DisplayMode *mode);
 
 static void
 Wayland_VideoQuit(_THIS);
+
+/* Find out what class name we should use
+ * Based on src/video/x11/SDL_x11video.c */
+static char *
+get_classname()
+{
+/* !!! FIXME: this is probably wrong, albeit harmless in many common cases. From protocol spec:
+    "The surface class identifies the general class of applications
+    to which the surface belongs. A common convention is to use the
+    file name (or the full path if it is a non-standard location) of
+    the application's .desktop file as the class." */
+
+    char *spot;
+#if defined(__LINUX__) || defined(__FREEBSD__)
+    char procfile[1024];
+    char linkfile[1024];
+    int linksize;
+#endif
+
+    /* First allow environment variable override */
+    spot = SDL_getenv("SDL_VIDEO_WAYLAND_WMCLASS");
+    if (spot) {
+        return SDL_strdup(spot);
+    } else {
+        /* Fallback to the "old" envvar */
+        spot = SDL_getenv("SDL_VIDEO_X11_WMCLASS");
+        if (spot) {
+            return SDL_strdup(spot);
+        }
+    }
+
+    /* Next look at the application's executable name */
+#if defined(__LINUX__) || defined(__FREEBSD__)
+#if defined(__LINUX__)
+    SDL_snprintf(procfile, SDL_arraysize(procfile), "/proc/%d/exe", getpid());
+#elif defined(__FREEBSD__)
+    SDL_snprintf(procfile, SDL_arraysize(procfile), "/proc/%d/file",
+                 getpid());
+#else
+#error Where can we find the executable name?
+#endif
+    linksize = readlink(procfile, linkfile, sizeof(linkfile) - 1);
+    if (linksize > 0) {
+        linkfile[linksize] = '\0';
+        spot = SDL_strrchr(linkfile, '/');
+        if (spot) {
+            return SDL_strdup(spot + 1);
+        } else {
+            return SDL_strdup(linkfile);
+        }
+    }
+#endif /* __LINUX__ || __FREEBSD__ */
+
+    /* Finally use the default we've used forever */
+    return SDL_strdup("SDL_App");
+}
 
 /* Wayland driver bootstrap functions */
 static int
@@ -114,12 +177,26 @@ Wayland_CreateDevice(int devindex)
     device->GL_GetProcAddress = Wayland_GLES_GetProcAddress;
     device->GL_DeleteContext = Wayland_GLES_DeleteContext;
 
-    device->CreateWindow = Wayland_CreateWindow;
+    device->CreateSDLWindow = Wayland_CreateWindow;
     device->ShowWindow = Wayland_ShowWindow;
     device->SetWindowFullscreen = Wayland_SetWindowFullscreen;
+    device->MaximizeWindow = Wayland_MaximizeWindow;
+    device->RestoreWindow = Wayland_RestoreWindow;
     device->SetWindowSize = Wayland_SetWindowSize;
+    device->SetWindowTitle = Wayland_SetWindowTitle;
     device->DestroyWindow = Wayland_DestroyWindow;
     device->SetWindowHitTest = Wayland_SetWindowHitTest;
+
+    device->SetClipboardText = Wayland_SetClipboardText;
+    device->GetClipboardText = Wayland_GetClipboardText;
+    device->HasClipboardText = Wayland_HasClipboardText;
+
+#if SDL_VIDEO_VULKAN
+    device->Vulkan_LoadLibrary = Wayland_Vulkan_LoadLibrary;
+    device->Vulkan_UnloadLibrary = Wayland_Vulkan_UnloadLibrary;
+    device->Vulkan_GetInstanceExtensions = Wayland_Vulkan_GetInstanceExtensions;
+    device->Vulkan_CreateSurface = Wayland_Vulkan_CreateSurface;
+#endif
 
     device->free = Wayland_DeleteDevice;
 
@@ -145,7 +222,7 @@ display_handle_geometry(void *data,
 {
     SDL_VideoDisplay *display = data;
 
-    display->name = strdup(model);
+    display->name = SDL_strdup(model);
     display->driverdata = output;
 }
 
@@ -161,9 +238,11 @@ display_handle_mode(void *data,
     SDL_DisplayMode mode;
 
     SDL_zero(mode);
+    mode.format = SDL_PIXELFORMAT_RGB888;
     mode.w = width;
     mode.h = height;
     mode.refresh_rate = refresh / 1000; // mHz to Hz
+    mode.driverdata = display->driverdata;
     SDL_AddDisplayMode(display, &mode);
 
     if (flags & WL_OUTPUT_MODE_CURRENT) {
@@ -211,6 +290,7 @@ Wayland_add_display(SDL_VideoData *d, uint32_t id)
     output = wl_registry_bind(d->registry, id, &wl_output_interface, 2);
     if (!output) {
         SDL_SetError("Failed to retrieve output.");
+        SDL_free(display);
         return;
     }
 
@@ -236,6 +316,29 @@ static const struct qt_windowmanager_listener windowmanager_listener = {
 };
 #endif /* SDL_VIDEO_DRIVER_WAYLAND_QT_TOUCH */
 
+
+static void
+handle_ping_zxdg_shell(void *data, struct zxdg_shell_v6 *zxdg, uint32_t serial)
+{
+    zxdg_shell_v6_pong(zxdg, serial);
+}
+
+static const struct zxdg_shell_v6_listener shell_listener_zxdg = {
+    handle_ping_zxdg_shell
+};
+
+
+static void
+handle_ping_xdg_wm_base(void *data, struct xdg_wm_base *xdg, uint32_t serial)
+{
+    xdg_wm_base_pong(xdg, serial);
+}
+
+static const struct xdg_wm_base_listener shell_listener_xdg = {
+    handle_ping_xdg_wm_base
+};
+
+
 static void
 display_handle_global(void *data, struct wl_registry *registry, uint32_t id,
                       const char *interface, uint32_t version)
@@ -248,11 +351,23 @@ display_handle_global(void *data, struct wl_registry *registry, uint32_t id,
         Wayland_add_display(d, id);
     } else if (strcmp(interface, "wl_seat") == 0) {
         Wayland_display_add_input(d, id);
+    } else if (strcmp(interface, "xdg_wm_base") == 0) {
+        d->shell.xdg = wl_registry_bind(d->registry, id, &xdg_wm_base_interface, 1);
+        xdg_wm_base_add_listener(d->shell.xdg, &shell_listener_xdg, NULL);
+    } else if (strcmp(interface, "zxdg_shell_v6") == 0) {
+        d->shell.zxdg = wl_registry_bind(d->registry, id, &zxdg_shell_v6_interface, 1);
+        zxdg_shell_v6_add_listener(d->shell.zxdg, &shell_listener_zxdg, NULL);
     } else if (strcmp(interface, "wl_shell") == 0) {
-        d->shell = wl_registry_bind(d->registry, id, &wl_shell_interface, 1);
+        d->shell.wl = wl_registry_bind(d->registry, id, &wl_shell_interface, 1);
     } else if (strcmp(interface, "wl_shm") == 0) {
         d->shm = wl_registry_bind(registry, id, &wl_shm_interface, 1);
         d->cursor_theme = WAYLAND_wl_cursor_theme_load(NULL, 32, d->shm);
+    } else if (strcmp(interface, "zwp_relative_pointer_manager_v1") == 0) {
+        Wayland_display_add_relative_pointer_manager(d, id);
+    } else if (strcmp(interface, "zwp_pointer_constraints_v1") == 0) {
+        Wayland_display_add_pointer_constraints(d, id);
+    } else if (strcmp(interface, "wl_data_device_manager") == 0) {
+        d->data_device_manager = wl_registry_bind(d->registry, id, &wl_data_device_manager_interface, 3);
 
 #ifdef SDL_VIDEO_DRIVER_WAYLAND_QT_TOUCH
     } else if (strcmp(interface, "qt_touch_extension") == 0) {
@@ -269,7 +384,8 @@ display_handle_global(void *data, struct wl_registry *registry, uint32_t id,
 }
 
 static const struct wl_registry_listener registry_listener = {
-    display_handle_global
+    display_handle_global,
+    NULL, /* global_remove */
 };
 
 int
@@ -281,6 +397,11 @@ Wayland_VideoInit(_THIS)
     memset(data, 0, sizeof *data);
 
     _this->driverdata = data;
+
+    data->xkb_context = WAYLAND_xkb_context_new(0);
+    if (!data->xkb_context) {
+        return SDL_SetError("Failed to create XKB context");
+    }
 
     data->display = WAYLAND_wl_display_connect(NULL);
     if (data->display == NULL) {
@@ -300,12 +421,10 @@ Wayland_VideoInit(_THIS)
     // Second roundtrip to receive all output events.
     WAYLAND_wl_display_roundtrip(data->display);
 
-    data->xkb_context = WAYLAND_xkb_context_new(0);
-    if (!data->xkb_context) {
-        return SDL_SetError("Failed to create XKB context");
-    }
-
     Wayland_InitMouse();
+
+    /* Get the surface class name, usually the name of the application */
+    data->classname = get_classname();
 
     WAYLAND_wl_display_flush(data->display);
 
@@ -329,7 +448,7 @@ void
 Wayland_VideoQuit(_THIS)
 {
     SDL_VideoData *data = _this->driverdata;
-    int i;
+    int i, j;
 
     Wayland_FiniMouse ();
 
@@ -337,9 +456,16 @@ Wayland_VideoQuit(_THIS)
         SDL_VideoDisplay *display = &_this->displays[i];
         wl_output_destroy(display->driverdata);
         display->driverdata = NULL;
+
+        for (j = display->num_display_modes; j--;) {
+            display->display_modes[j].driverdata = NULL;
+        }
+        display->desktop_mode.driverdata = NULL;
     }
 
     Wayland_display_destroy_input(data);
+    Wayland_display_destroy_pointer_constraints(data);
+    Wayland_display_destroy_relative_pointer_manager(data);
 
     if (data->xkb_context) {
         WAYLAND_xkb_context_unref(data->xkb_context);
@@ -361,8 +487,14 @@ Wayland_VideoQuit(_THIS)
     if (data->cursor_theme)
         WAYLAND_wl_cursor_theme_destroy(data->cursor_theme);
 
-    if (data->shell)
-        wl_shell_destroy(data->shell);
+    if (data->shell.wl)
+        wl_shell_destroy(data->shell.wl);
+
+    if (data->shell.xdg)
+        xdg_wm_base_destroy(data->shell.xdg);
+
+    if (data->shell.zxdg)
+        zxdg_shell_v6_destroy(data->shell.zxdg);
 
     if (data->compositor)
         wl_compositor_destroy(data->compositor);
@@ -375,7 +507,8 @@ Wayland_VideoQuit(_THIS)
         WAYLAND_wl_display_disconnect(data->display);
     }
 
-    free(data);
+    SDL_free(data->classname);
+    SDL_free(data);
     _this->driverdata = NULL;
 }
 

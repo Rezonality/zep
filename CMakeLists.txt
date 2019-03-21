@@ -69,7 +69,6 @@ INCLUDE(utils/list.cmake)
 SET(BUILD_IMGUI TRUE)
 #INCLUDE(m3rdparty/zep/src/list.cmake)
 
-MESSAGE(INFO ${M3RDPARTY_INCLUDE})
 INCLUDE_DIRECTORIES(
     m3rdparty
     utils
@@ -110,6 +109,7 @@ SET (TEST_SOURCES
     ${TEST_SOURCES}
 )
 ADD_EXECUTABLE (unittests ${TEST_SOURCES} )
+ADD_DEPENDENCIES(unittests sdl2)
 
 TARGET_LINK_LIBRARIES (unittests utils ${PLATFORM_LINKLIBS} ${CMAKE_THREAD_LIBS_INIT})
 add_test(unittests unittests)

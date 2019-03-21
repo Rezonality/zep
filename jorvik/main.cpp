@@ -139,8 +139,8 @@ int main(int argc, char** argv)
     jorvik_init_settings();
 
     // Create device
-    jorvik.spDevice = std::make_unique<DeviceDX12>();
-    //jorvik.spDevice = std::make_unique<DeviceVulkan>();
+    //jorvik.spDevice = std::make_unique<DeviceDX12>();
+    jorvik.spDevice = std::make_unique<DeviceVulkan>();
     if (!jorvik.spDevice->Init("Jorvik"))
     {
         UIManager::Instance().AddMessage(MessageType::Error | MessageType::System,

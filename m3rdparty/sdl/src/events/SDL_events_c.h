@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2016 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -18,12 +18,19 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
+
+#ifndef SDL_events_c_h_
+#define SDL_events_c_h_
+
 #include "../SDL_internal.h"
 
 /* Useful functions and variables from SDL_events.c */
 #include "SDL_events.h"
 #include "SDL_thread.h"
+#include "../video/SDL_sysvideo.h"
+
 #include "SDL_clipboardevents_c.h"
+#include "SDL_displayevents_c.h"
 #include "SDL_dropevents_c.h"
 #include "SDL_gesture_c.h"
 #include "SDL_keyboard_c.h"
@@ -46,8 +53,6 @@ extern void SDL_QuitQuit(void);
 
 extern void SDL_SendPendingQuit(void);
 
-/* The event filter function */
-extern SDL_EventFilter SDL_EventOK;
-extern void *SDL_EventOKParam;
+#endif /* SDL_events_c_h_ */
 
 /* vi: set ts=4 sw=4 expandtab: */
