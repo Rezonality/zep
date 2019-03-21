@@ -46,6 +46,18 @@ const char* DeviceVulkan::GetName()
     return "Vulkan";
 }
 
+static void check_vk_result(VkResult err)
+{
+    if (err == 0)
+        return;
+    LOG(ERROR) << "VkResult :" << err;
+    if (err < 0)
+    {
+        assert(!"hello");
+        return;
+    }
+}
+
 bool DeviceVulkan::Init(const char* pszWindowName)
 {
     TIME_SCOPE(device_dx12_init);
@@ -67,17 +79,54 @@ bool DeviceVulkan::Init(const char* pszWindowName)
 
     ImGui::CreateContext(0);
 
-    /*
-    ImGui_ImplVulkan_Init(m_deviceResources.GetD3DDevice(),
-        m_deviceResources->GetBackBufferCount(),
-        m_deviceResources->GetBackBufferFormat(),
-        m_deviceResources->GetFontHeapCPUView(),
-        m_deviceResources->GetFontHeapGPUView());
 
-    ImGui_ImplSDL2_Init(pWindow);
-    */
+    // Setup Platform/Renderer bindings
+    ImGui_ImplSDL2_InitForVulkan(pWindow);
+    ImGui_ImplVulkan_InitInfo init_info = {};
+    init_info.Instance = m_deviceResources.instance;
+    init_info.PhysicalDevice = m_deviceResources.physicalDevice;
+    init_info.Device = m_deviceResources.device;
+    init_info.QueueFamily = m_deviceResources.queueFamilyIndices.graphicsFamily.value();
+    init_info.Queue = m_deviceResources.graphicsQueue;
+    init_info.PipelineCache = nullptr;//m_deviceResources.pipelineLayoutg_PipelineCache;
+    init_info.DescriptorPool = m_deviceResources.descriptorPool;
+    init_info.Allocator = nullptr;
+    init_info.CheckVkResultFn = check_vk_result;
+    ImGui_ImplVulkan_Init(&init_info, m_deviceResources.renderPass);
 
     ImGui::StyleColorsDark();
+
+    // Upload Fonts
+    {
+        // Use any command queue
+        /*
+        VkCommandPool command_pool = wd->Frames[wd->FrameIndex].CommandPool;
+        VkCommandBuffer command_buffer = wd->Frames[wd->FrameIndex].CommandBuffer;
+
+        auto err = vkResetCommandPool(m_deviceResources.device, command_pool, 0);
+        check_vk_result(err);
+        VkCommandBufferBeginInfo begin_info = {};
+        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        err = vkBeginCommandBuffer(command_buffer, &begin_info);
+        check_vk_result(err);
+
+        ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
+
+        VkSubmitInfo end_info = {};
+        end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        end_info.commandBufferCount = 1;
+        end_info.pCommandBuffers = &command_buffer;
+        err = vkEndCommandBuffer(command_buffer);
+        check_vk_result(err);
+        err = vkQueueSubmit(m_deviceResources.graphicsQueue, 1, &end_info, VK_NULL_HANDLE);
+        check_vk_result(err);
+
+        err = vkDeviceWaitIdle(m_deviceResources.device);
+        check_vk_result(err);
+        ImGui_ImplVulkan_InvalidateFontUploadObjects();
+        */
+    }
 
     Initialized = true;
 

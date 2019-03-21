@@ -50,6 +50,7 @@ public:
     void CreateCommandPool();
     void CreateGraphicsPipeline();
     void CreateCommandBuffers();
+    void CreateDescriptorPool();
 
     void Prepare();
     void Present();
@@ -93,10 +94,14 @@ public:
     VkCommandPool commandPool = nullptr;
     std::vector<VkCommandBuffer> commandBuffers;
 
+    VkDescriptorPool descriptorPool = nullptr;
+
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
     size_t currentFrame = 0;
+
+    QueueFamilyIndices queueFamilyIndices;
 
     bool framebufferResized = false;
 };

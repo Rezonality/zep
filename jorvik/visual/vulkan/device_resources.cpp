@@ -91,6 +91,8 @@ void VkDeviceResources::Init(SDL_Window* pWindow)
     CreateCommandPool();
     //CreateCommandBuffers();
     CreateSyncObjects();
+
+    CreateDescriptorPool();
 }
 
 void VkDeviceResources::Wait()
@@ -268,6 +270,32 @@ void VkDeviceResources::PickPhysicalDevice()
     }
 }
 
+void VkDeviceResources::CreateDescriptorPool()
+{
+    VkDescriptorPoolSize pool_sizes[] =
+    {
+        { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+        { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+    };
+    uint32_t poolSize = (sizeof(pool_sizes) / sizeof(VkDescriptorPoolSize));
+    VkDescriptorPoolCreateInfo pool_info = {};
+    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    pool_info.poolSizeCount = (uint32_t)poolSize;
+    pool_info.maxSets = 1000 * poolSize;
+    pool_info.pPoolSizes = pool_sizes;
+    auto err = vkCreateDescriptorPool(device, &pool_info, nullptr, &descriptorPool);
+}
+
 void VkDeviceResources::CreateLogicalDevice()
 {
     QueueFamilyIndices indices = FindQueueFamilies(physicalDevice);
@@ -316,6 +344,8 @@ void VkDeviceResources::CreateLogicalDevice()
 
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
+
+    queueFamilyIndices = indices;
 }
 
 void VkDeviceResources::CreateSwapChain()

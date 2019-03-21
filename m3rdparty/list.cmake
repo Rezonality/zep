@@ -113,6 +113,8 @@ IF (PROJECT_DEVICE_DX12)
     LIST(APPEND M3RDPARTY_SOURCE
         ${JORVIK_ROOT}/m3rdparty/imgui/examples/imgui_impl_dx12.cpp
         ${JORVIK_ROOT}/m3rdparty/imgui/examples/imgui_impl_dx12.h
+        ${JORVIK_ROOT}/m3rdparty/imgui/examples/imgui_impl_vulkan.cpp
+        ${JORVIK_ROOT}/m3rdparty/imgui/examples/imgui_impl_vulkan.h
         ${JORVIK_ROOT}/m3rdparty/imgui/examples/imgui_impl_sdl.cpp
         ${JORVIK_ROOT}/m3rdparty/imgui/examples/imgui_impl_sdl.h
         ${DX12_MINIENGINE_SOURCES}
