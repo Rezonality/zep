@@ -77,7 +77,6 @@ private:
     void Clear();
 
 private:
-    SDL_Window* m_pWindow = nullptr;
     VkDeviceResources m_deviceResources;
 
 };

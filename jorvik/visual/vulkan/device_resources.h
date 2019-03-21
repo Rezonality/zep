@@ -51,6 +51,11 @@ public:
     void CreateGraphicsPipeline();
     void CreateCommandBuffers();
 
+    void Prepare();
+    void Present();
+    
+    uint32_t imageIndex;
+
     VkShaderModule CreateShaderModule(const std::string& code);
     VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);

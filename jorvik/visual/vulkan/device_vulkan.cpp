@@ -55,15 +55,15 @@ bool DeviceVulkan::Init(const char* pszWindowName)
     // Setup window
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
-    m_pWindow = SDL_CreateWindow(pszWindowName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, g_DisplayWidth, g_DisplayHeight, SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
+    pWindow = SDL_CreateWindow(pszWindowName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, g_DisplayWidth, g_DisplayHeight, SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
 
     SDL_SysWMinfo wmInfo;
     SDL_VERSION(&wmInfo.version);
-    SDL_GetWindowWMInfo(m_pWindow, &wmInfo);
+    SDL_GetWindowWMInfo(pWindow, &wmInfo);
 
     g_hWnd = wmInfo.info.win.window;
 
-    m_deviceResources.Init(m_pWindow);
+    m_deviceResources.Init(pWindow);
 
     ImGui::CreateContext(0);
 
@@ -393,7 +393,7 @@ void DeviceVulkan::ProcessEvent(SDL_Event& event)
 
 bool DeviceVulkan::RenderFrame(float frameDelta, std::function<void()> fnRenderObjects)
 {
-    //m_deviceResources->Prepare();
+    m_deviceResources.Prepare();
 
     Clear();
 
@@ -403,11 +403,11 @@ bool DeviceVulkan::RenderFrame(float frameDelta, std::function<void()> fnRenderO
     // Do the GUI rendering
     {
         BeginGUI();
-        editor_draw_ui(frameDelta);
+        //editor_draw_ui(frameDelta);
         EndGUI();
     }
 
-    //m_deviceResources->Present();
+    m_deviceResources.Present();
     return true;
 }
 
