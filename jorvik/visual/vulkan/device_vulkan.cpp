@@ -34,173 +34,6 @@ uint32_t g_DisplayHeight = 768;
 namespace Mgfx
 {
 
-const std::vector<const char*> validationLayers = {
-    "VK_LAYER_LUNARG_standard_validation"
-};
-
-const std::vector<const char*> deviceExtensions = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME
-};
-
-#ifdef NDEBUG
-const bool enableValidationLayers = false;
-#else
-const bool enableValidationLayers = true;
-#endif
-
-VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
-{
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-    if (func != nullptr)
-    {
-        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-    }
-    else
-    {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-}
-
-void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
-{
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-    if (func != nullptr)
-    {
-        func(instance, debugMessenger, pAllocator);
-    }
-}
-
-struct QueueFamilyIndices
-{
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-
-    bool isComplete()
-    {
-        return graphicsFamily.has_value() && presentFamily.has_value();
-    }
-};
-
-/*std::vector<const char*> getRequiredExtensions() {
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions;
-        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-        std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
-        if (enableValidationLayers) {
-            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        }
-
-        return extensions;
-    }
-
-    */
-bool checkValidationLayerSupport()
-{
-    uint32_t layerCount;
-    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-    std::vector<VkLayerProperties> availableLayers(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-
-    for (const char* layerName : validationLayers)
-    {
-        bool layerFound = false;
-
-        for (const auto& layerProperties : availableLayers)
-        {
-            if (strcmp(layerName, layerProperties.layerName) == 0)
-            {
-                layerFound = true;
-                break;
-            }
-        }
-
-        if (!layerFound)
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-void setupDebugMessenger()
-{
-    if (!enableValidationLayers)
-        return;
-
-    VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    createInfo.pfnUserCallback = debugCallback;
-
-    if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to set up debug messenger!");
-    }
-}
-
-std::vector<const char*> getRequiredExtensions()
-{
-    uint32_t glfwExtensionCount = 0;
-    const char** glfwExtensions;
-    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
-    if (enableValidationLayers)
-    {
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    }
-
-    return extensions;
-}
-
-bool checkValidationLayerSupport()
-{
-    uint32_t layerCount;
-    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-    std::vector<VkLayerProperties> availableLayers(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-
-    for (const char* layerName : validationLayers)
-    {
-        bool layerFound = false;
-
-        for (const auto& layerProperties : availableLayers)
-        {
-            if (strcmp(layerName, layerProperties.layerName) == 0)
-            {
-                layerFound = true;
-                break;
-            }
-        }
-
-        if (!layerFound)
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
-{
-    std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-
-    return VK_FALSE;
-}
-struct SwapChainSupportDetails
-{
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
-};
 std::map<std::string, std::string> FileNameToVkShaderType = {
     { "ps", "ps_5_0" },
     { "vs", "vs_5_0" },
@@ -213,74 +46,6 @@ const char* DeviceVulkan::GetName()
     return "Vulkan";
 }
 
-bool DeviceVulkan::CreateInstance()
-{
-    if (enableValidationLayers && !checkValidationLayerSupport())
-    {
-        throw std::runtime_error("validation layers requested, but not available!");
-    }
-
-    VkApplicationInfo appInfo = {};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "Jorvik";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "Jorvik";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
-
-    uint32_t extensionCount = 0;
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-    std::vector<VkExtensionProperties> vulkanExtensions(extensionCount);
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, vulkanExtensions.data());
-
-    LOG(INFO) << "Vulkan Extensions:";
-    for (const auto& extension : vulkanExtensions)
-    {
-        LOG(INFO) << extension.extensionName << " : " << extension.specVersion;
-    }
-
-    extensionCount = 0;
-    SDL_Vulkan_GetInstanceExtensions(m_pWindow, &extensionCount, nullptr);
-    std::vector<const char*> sdlExtensions(extensionCount);
-    SDL_Vulkan_GetInstanceExtensions(m_pWindow, &extensionCount, sdlExtensions.data());
-
-    LOG(INFO) << "SDL Extensions Required:";
-    for (const auto& extension : sdlExtensions)
-    {
-        LOG(INFO) << extension;
-    }
-
-    uint32_t layerCount;
-    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-    std::vector<VkLayerProperties> availableLayers(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-    LOG(INFO) << "Layers:";
-    for (const auto& layer : availableLayers)
-    {
-        LOG(INFO) << layer.layerName << " : " << layer.description;
-    }
-
-    std::vector<const char*> layerNames{};
-    // uncomment below if you want to use validation layers
-    layerNames.push_back("VK_LAYER_LUNARG_standard_validation");
-
-    VkInstanceCreateInfo info{};
-    info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    info.pApplicationInfo = &appInfo;
-    info.enabledLayerCount = (uint32_t)layerNames.size();
-    info.ppEnabledLayerNames = layerNames.data();
-    info.enabledExtensionCount = (uint32_t)sdlExtensions.size();
-    info.ppEnabledExtensionNames = sdlExtensions.data();
-
-    VkResult res;
-    res = vkCreateInstance(&info, nullptr, &instance);
-    if (res != VK_SUCCESS)
-    {
-        return false;
-    }
-    return true;
-}
-
 bool DeviceVulkan::Init(const char* pszWindowName)
 {
     TIME_SCOPE(device_dx12_init);
@@ -290,7 +55,7 @@ bool DeviceVulkan::Init(const char* pszWindowName)
     // Setup window
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
-    m_pWindow = SDL_CreateWindow(pszWindowName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, g_DisplayWidth, g_DisplayHeight, SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
+    m_pWindow = SDL_CreateWindow(pszWindowName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, g_DisplayWidth, g_DisplayHeight, SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
 
     SDL_SysWMinfo wmInfo;
     SDL_VERSION(&wmInfo.version);
@@ -298,28 +63,21 @@ bool DeviceVulkan::Init(const char* pszWindowName)
 
     g_hWnd = wmInfo.info.win.window;
 
-    CreateInstance();
-    /*
-    m_deviceResources = std::make_unique<Vulkan::DeviceResources>(DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_D32_FLOAT, 2, D3D_FEATURE_LEVEL_11_0, 0);// DX::DeviceResources::c_AllowTearing);
-    m_deviceResources->RegisterDeviceNotify(this);
-    m_deviceResources->SetWindow(g_hWnd, g_DisplayWidth, g_DisplayHeight);
-    m_deviceResources->CreateDeviceResources();
-    m_deviceResources->CreateWindowSizeDependentResources();
-    */
+    m_deviceResources.Init(m_pWindow);
 
     ImGui::CreateContext(0);
-    /*
 
-    ImGui_ImplVulkan_Init(m_deviceResources->GetD3DDevice(),
+    /*
+    ImGui_ImplVulkan_Init(m_deviceResources.GetD3DDevice(),
         m_deviceResources->GetBackBufferCount(),
         m_deviceResources->GetBackBufferFormat(),
         m_deviceResources->GetFontHeapCPUView(),
         m_deviceResources->GetFontHeapGPUView());
 
     ImGui_ImplSDL2_Init(pWindow);
+    */
 
     ImGui::StyleColorsDark();
-    */
 
     Initialized = true;
 
@@ -337,17 +95,8 @@ DeviceVulkan::~DeviceVulkan()
 
 void DeviceVulkan::Destroy()
 {
-    /*if (m_deviceResources)
-    {
-        m_deviceResources->WaitForGpu();
-    }
-    */
-
-    //ImGui_ImplVulkan_Shutdown();
-    if (instance != nullptr)
-    {
-        vkDestroyInstance(instance, nullptr);
-    }
+    m_deviceResources.Wait();
+    m_deviceResources.Cleanup();
 
     if (pWindow != nullptr)
     {
@@ -619,8 +368,7 @@ void DeviceVulkan::EndGUI()
 void DeviceVulkan::Resize(int width, int height)
 {
     // ImGui_ImplVulkan_InvalidateDeviceObjects();
-    //if (!m_deviceResources->WindowSizeChanged(width, height))
-    //    return;
+    m_deviceResources.framebufferResized = true;
 
     //ImGui_ImplVulkan_CreateDeviceObjects();
 }

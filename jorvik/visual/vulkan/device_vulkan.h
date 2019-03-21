@@ -5,7 +5,7 @@
 #include "utils/logger.h"
 #include "compile.h"
 #include "visual/IDevice.h"
-#include "vulkan/vulkan.h"
+#include "device_resources.h"
 
 struct SDL_Window;
 union SDL_Event;
@@ -48,9 +48,6 @@ public:
     DeviceVulkan();
     ~DeviceVulkan();
 
-    // Vulkan methods
-    virtual bool CreateInstance();
-
     virtual bool Init(const char* pszWindowName) override;
     virtual void Destroy() override;
     virtual bool RenderFrame(float frameDelta, std::function<void()> fnRenderObjects) override;
@@ -80,36 +77,9 @@ private:
     void Clear();
 
 private:
-
     SDL_Window* m_pWindow = nullptr;
-    VkInstance instance = nullptr;
-    VkDebugUtilsMessengerEXT debugMessenger = nullptr;
-    VkSurfaceKHR surface = nullptr;
+    VkDeviceResources m_deviceResources;
 
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkDevice device = nullptr;
-
-    VkQueue graphicsQueue;
-    VkQueue presentQueue;
-
-    VkSwapchainKHR swapChain;
-    std::vector<VkImage> swapChainImages;
-    VkFormat swapChainImageFormat;
-    VkExtent2D swapChainExtent;
-    std::vector<VkImageView> swapChainImageViews;
-    std::vector<VkFramebuffer> swapChainFramebuffers;
-
-    VkRenderPass renderPass;
-    VkPipelineLayout pipelineLayout;
-    VkPipeline graphicsPipeline;
-
-    VkCommandPool commandPool;
-    std::vector<VkCommandBuffer> commandBuffers;
-
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
-    std::vector<VkFence> inFlightFences;
-    size_t currentFrame = 0;
 };
 
 } // namespace Mgfx
