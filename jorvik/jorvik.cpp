@@ -47,8 +47,9 @@ static void read_settings()
     SDL_DisplayMode mode;
     SDL_GetCurrentDisplayMode(0, &mode);
 
-    jorvik.startHeight = uint32_t(mode.h * .666);
-    jorvik.startWidth = uint32_t(jorvik.startHeight * 1.3333);
+    float ratio = mode.w / (float)mode.h;
+    jorvik.startWidth = uint32_t(mode.w * .6666);
+    jorvik.startHeight = uint32_t(jorvik.startWidth / ratio);
 }
 
 static void get_roaming_path()
