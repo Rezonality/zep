@@ -27,7 +27,7 @@
 
 #undef ERROR
 
-#if TARGET_PC
+#ifdef WIN32
 HWND g_hWnd;
 #endif
 uint32_t g_DisplayWidth = 1024;

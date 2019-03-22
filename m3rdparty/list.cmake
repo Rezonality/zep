@@ -170,6 +170,10 @@ IF (TARGET_PC)
 LIST(APPEND PLATFORM_LINKLIBS 
     d3d12
     dxgi
+    opengl32.lib
+    winmm.lib   # SDL - sound, etc.
+    version.lib # SDL - windows keyboard
+    imm32.lib   # SDL - windows keyboard
     )
 ENDIF()
 

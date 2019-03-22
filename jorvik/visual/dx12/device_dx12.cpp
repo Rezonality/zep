@@ -18,7 +18,7 @@
 #include "device_dx12.h"
 #include "constants.h"
 
-#include "editor.h"
+#include "jorvik/editor.h"
 #include "jorvik.h"
 #include "meta_tags.h"
 

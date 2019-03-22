@@ -142,9 +142,9 @@ int main(int argc, char** argv)
     jorvik_init_settings();
 
     // Create device
-#ifdef TARGET_PC
-    //jorvik.spDevice = std::make_unique<DeviceDX12>();
-    jorvik.spDevice = std::make_unique<DeviceVulkan>();
+#ifdef WIN32
+    jorvik.spDevice = std::make_unique<DeviceDX12>();
+    //jorvik.spDevice = std::make_unique<DeviceVulkan>();
 #else
     jorvik.spDevice = std::make_unique<DeviceVulkan>();
 #endif
