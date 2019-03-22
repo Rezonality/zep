@@ -621,7 +621,7 @@ void DeviceDX12::Wait()
     m_deviceResources->WaitForGpu();
 
 }
-void DeviceDX12::DrawFSQuad(std::shared_ptr<CompileResult>& state)
+void DeviceDX12::DrawFSQuad(std::shared_ptr<CompileResult> state)
 {
     // Use the null vertex buffer trick with a big triangle for now.
     auto pipeline = std::static_pointer_cast<CompiledPassRenderStateAssetDX12>(state);

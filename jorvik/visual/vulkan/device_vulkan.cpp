@@ -10,8 +10,8 @@
 #include <optional>
 
 #include <imgui/imgui.h>
-#include <imgui_impl_sdl.h>
-#include <imgui_impl_vulkan.h>
+#include <imgui/examples/imgui_impl_sdl.h>
+#include <imgui/examples/imgui_impl_vulkan.h>
 
 #include "SDL_syswm.h"
 #include "SDL_vulkan.h"
@@ -27,7 +27,9 @@
 
 #undef ERROR
 
+#if TARGET_PC
 HWND g_hWnd;
+#endif
 uint32_t g_DisplayWidth = 1024;
 uint32_t g_DisplayHeight = 768;
 
@@ -73,12 +75,14 @@ bool DeviceVulkan::Init(const char* pszWindowName)
     SDL_VERSION(&wmInfo.version);
     SDL_GetWindowWMInfo(pWindow, &wmInfo);
 
+#if TARGET_PC
+    // TODO: What's this for on non windows?
     g_hWnd = wmInfo.info.win.window;
+#endif
 
     m_deviceResources.Init(pWindow);
 
     ImGui::CreateContext(0);
-
 
     // Setup Platform/Renderer bindings
     ImGui_ImplSDL2_InitForVulkan(pWindow);
@@ -503,7 +507,7 @@ void DeviceVulkan::Wait()
 {
     //m_deviceResources->WaitForGpu();
 }
-void DeviceVulkan::DrawFSQuad(std::shared_ptr<CompileResult>& state)
+void DeviceVulkan::DrawFSQuad(std::shared_ptr<CompileResult> state)
 {
     // Use the null vertex buffer trick with a big triangle for now.
     //

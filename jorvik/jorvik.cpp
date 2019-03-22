@@ -3,8 +3,10 @@
 #include "utils/animation/timer.h"
 #include "utils/ui/ui_manager.h"
 #include "utils/ui/dpi.h"
+#include "utils/logger.h"
 
 #include "m3rdparty/cpptoml/include/cpptoml.h"
+#include "SDL.h"
 
 #include "editor.h"
 #include "jorvik.h"
@@ -15,7 +17,11 @@
 #include "visual/render_node.h"
 #include "visual/shader_file_asset.h"
 #include "visual/pass_renderstate.h"
+
+#if (TARGET_PC)
 #include "visual/dx12/device_dx12.h"
+#endif
+#include "visual/vulkan/device_vulkan.h"
 
 namespace Mgfx
 {

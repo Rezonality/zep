@@ -4,7 +4,10 @@
 #include "utils/math/mathutils.h" // For IMGui overrides
 #include "utils/logger.h"
 
+#if TARGET_PC
 #include "visual/dx12/device_dx12.h"
+#endif
+#include "visual/vulkan/device_vulkan.h"
 #include "visual/scene.h"
 
 #include "compile.h"

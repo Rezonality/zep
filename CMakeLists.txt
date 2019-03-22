@@ -77,6 +77,7 @@ SET(BUILD_IMGUI TRUE)
 
 INCLUDE_DIRECTORIES(
     m3rdparty
+    m3rdparty/zep/src
     utils
     ${COMMON_INCLUDE}
     ${M3RDPARTY_INCLUDE}

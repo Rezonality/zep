@@ -31,8 +31,19 @@ file(GLOB GLM_SOURCE
 # File watcher
 SET (FILEWATCHER_SOURCE
     m3rdparty/filewatcher/FileWatcher.cpp
-    m3rdparty/filewatcher/FileWatcherWin32.cpp
     m3rdparty/filewatcher/FileWatcher.h)
+
+IF (TARGET_PC)
+SET (FILEWATCHER_SOURCE
+    ${FILEWATCHER_SOURCE}
+    m3rdparty/filewatcher/FileWatcherWin32.cpp
+    )
+ELSEIF(TARGET_LINUX)
+SET (FILEWATCHER_SOURCE
+    ${FILEWATCHER_SOURCE}
+    m3rdparty/filewatcher/FileWatcherLinux.cpp
+    )
+ENDIF()
 
 # MPC Parser
 SET (MPC_SOURCE
@@ -113,10 +124,6 @@ IF (PROJECT_DEVICE_DX12)
     LIST(APPEND M3RDPARTY_SOURCE
         ${JORVIK_ROOT}/m3rdparty/imgui/examples/imgui_impl_dx12.cpp
         ${JORVIK_ROOT}/m3rdparty/imgui/examples/imgui_impl_dx12.h
-        ${JORVIK_ROOT}/m3rdparty/imgui/examples/imgui_impl_vulkan.cpp
-        ${JORVIK_ROOT}/m3rdparty/imgui/examples/imgui_impl_vulkan.h
-        ${JORVIK_ROOT}/m3rdparty/imgui/examples/imgui_impl_sdl.cpp
-        ${JORVIK_ROOT}/m3rdparty/imgui/examples/imgui_impl_sdl.h
         ${DX12_MINIENGINE_SOURCES}
         ${DX12_COMPUTE_SHADERS} 
         ${DX12_PIXEL_SHADERS}
@@ -126,6 +133,13 @@ IF (PROJECT_DEVICE_DX12)
         m3rdparty/imgui/examples)
 
 ENDIF() 
+
+LIST(APPEND M3RDPARTY_SOURCE
+        ${JORVIK_ROOT}/m3rdparty/imgui/examples/imgui_impl_vulkan.cpp
+        ${JORVIK_ROOT}/m3rdparty/imgui/examples/imgui_impl_vulkan.h
+        ${JORVIK_ROOT}/m3rdparty/imgui/examples/imgui_impl_sdl.cpp
+        ${JORVIK_ROOT}/m3rdparty/imgui/examples/imgui_impl_sdl.h
+        )
 
 FIND_PACKAGE(Vulkan REQUIRED)
 
@@ -264,6 +278,8 @@ IF (TARGET_LINUX)
     LIST(APPEND PLATFORM_LINKLIBS 
         SDL2-2.0
         SDL2main
+        pthread
+        stdc++fs
         )
 ENDIF()
 SOURCE_GROUP ("m3rdparty\\googletest" REGULAR_EXPRESSION "(googlete)+.*") 

@@ -13,7 +13,7 @@
 
 #include <imgui/imgui.h>
 #include <tclap/CmdLine.h>
-#include "sdl.h"
+#include "SDL.h"
 
 #include "jorvik.h"
 #include "editor.h"
@@ -142,8 +142,13 @@ int main(int argc, char** argv)
     jorvik_init_settings();
 
     // Create device
-    jorvik.spDevice = std::make_unique<DeviceDX12>();
-    //jorvik.spDevice = std::make_unique<DeviceVulkan>();
+#ifdef TARGET_PC
+    //jorvik.spDevice = std::make_unique<DeviceDX12>();
+    jorvik.spDevice = std::make_unique<DeviceVulkan>();
+#else
+    jorvik.spDevice = std::make_unique<DeviceVulkan>();
+#endif
+
     if (!jorvik.spDevice->Init("Jorvik"))
     {
         UIManager::Instance().AddMessage(MessageType::Error | MessageType::System,

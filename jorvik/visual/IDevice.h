@@ -26,7 +26,7 @@ struct IDevice
     virtual void Wait() = 0;
 
     // Temporary quad interface before I add more complex geometry methods and VS/Geometry matching code
-    virtual void DrawFSQuad(std::shared_ptr<CompileResult>& state) = 0;
+    virtual void DrawFSQuad(std::shared_ptr<CompileResult> state) = 0;
 
     // Helpers
     virtual const char* GetName() = 0;

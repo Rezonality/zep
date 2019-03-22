@@ -62,7 +62,7 @@ public:
     virtual std::future<std::shared_ptr<CompileResult>> CompileShader(const fs::path& path, const std::string& strText) override;
     virtual std::future<std::shared_ptr<CompileResult>> CompilePass(PassState* pPassRenderState) override;
 
-    virtual void DrawFSQuad(std::shared_ptr<CompileResult>& state) override;
+    virtual void DrawFSQuad(std::shared_ptr<CompileResult> state) override;
 
     // Inherited via IDeviceNotify
     //virtual void OnDeviceLost() override;

@@ -45,21 +45,21 @@ std::string string_replace(std::string subject, const std::string& search, const
 void string_replace_in_place(std::string& subject, const std::string& search, const std::string& replace);
 
 // trim from beginning of string (left)
-inline std::string& string_left_trim(std::string& s, const char* t = " \t\n\r\f\v")
+inline std::string string_left_trim(std::string s, const char* t = " \t\n\r\f\v")
 {
     s.erase(0, s.find_first_not_of(t));
     return s;
 }
 
 // trim from end of string (right)
-inline std::string& string_right_trim(std::string& s, const char* t = " \t\n\r\f\v")
+inline std::string string_right_trim(std::string s, const char* t = " \t\n\r\f\v")
 {
     s.erase(s.find_last_not_of(t) + 1);
     return s;
 }
 
 // trim from both ends of string (left & right)
-inline std::string& string_trim(std::string& s, const char* t = " \t\n\r\f\v")
+inline std::string string_trim(std::string s, const char* t = " \t\n\r\f\v")
 {
     return string_left_trim(string_right_trim(s, t), t);
 }

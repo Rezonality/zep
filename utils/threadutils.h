@@ -13,7 +13,7 @@ bool is_future_ready(std::future<R> const& f)
 }
 
 template <typename T>
-std::future<T> make_ready_future(T& val)
+std::future<T> make_ready_future(T val)
 {
     std::promise<T> promise;
     promise.set_value(val);
