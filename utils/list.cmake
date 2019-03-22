@@ -9,6 +9,8 @@ LIST(APPEND COMMON_SOURCES
 
 utils/ui/ui_manager.cpp
 utils/ui/ui_manager.h
+utils/ui/dpi.cpp
+utils/ui/dpi.h
 
 utils/file/runtree.cpp
 utils/file/runtree.h

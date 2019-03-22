@@ -2,6 +2,7 @@
 #include "utils/file/runtree.h"
 #include "utils/animation/timer.h"
 #include "utils/string/stringutils.h"
+#include "utils/ui/dpi.h"
 
 #include "m3rdparty/threadpool/threadpool.h"
 #include <glm/glm/gtc/matrix_transform.hpp>
@@ -34,9 +35,6 @@
 #undef ERROR
 
 extern HWND g_hWnd;
-extern uint32_t g_DisplayWidth;
-extern uint32_t g_DisplayHeight;
-
 using namespace Microsoft::WRL;
 using namespace DirectX;
 
@@ -83,7 +81,7 @@ bool DeviceDX12::Init(const char* pszWindowName)
     // Setup window
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
-    pWindow = SDL_CreateWindow(pszWindowName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, g_DisplayWidth, g_DisplayHeight, SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
+    pWindow = SDL_CreateWindow(pszWindowName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, jorvik.startWidth, jorvik.startHeight, SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE);
 
     SDL_SysWMinfo wmInfo;
     SDL_VERSION(&wmInfo.version);
@@ -91,13 +89,20 @@ bool DeviceDX12::Init(const char* pszWindowName)
 
     g_hWnd = wmInfo.info.win.window;
 
+    int width, height;
+    SDL_GetWindowSize(pWindow, &width, &height);
+    LOG(INFO) << "Window: " << width << ", " << height;
+
     m_deviceResources = std::make_unique<DX::DeviceResources>(DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_D32_FLOAT, 2, D3D_FEATURE_LEVEL_11_0, 0);// DX::DeviceResources::c_AllowTearing);
     m_deviceResources->RegisterDeviceNotify(this);
-    m_deviceResources->SetWindow(g_hWnd, g_DisplayWidth, g_DisplayHeight);
+    m_deviceResources->SetWindow(g_hWnd, width, height);
     m_deviceResources->CreateDeviceResources();
     m_deviceResources->CreateWindowSizeDependentResources();
 
     ImGui::CreateContext(0);
+
+    ImGui::GetStyle().ScaleAllSizes(dpi.scaleFactor);
+    ImGui::GetIO().FontGlobalScale = 1.0;
 
     ImGui_ImplDX12_Init(m_deviceResources->GetD3DDevice(),
         m_deviceResources->GetBackBufferCount(),

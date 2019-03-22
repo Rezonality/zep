@@ -2,6 +2,7 @@
 #include "utils/file/runtree.h"
 #include "utils/animation/timer.h"
 #include "utils/ui/ui_manager.h"
+#include "utils/ui/dpi.h"
 
 #include "m3rdparty/cpptoml/include/cpptoml.h"
 
@@ -42,6 +43,8 @@ static void read_settings()
         LOG(DEBUG) << "Failed to read settings: " << ex.what();
     }
     jorvik.spOpus = Opus::MakeDefaultOpus();
+    jorvik.startHeight = uint32_t(768 * dpi.scaleFactor);
+    jorvik.startWidth = uint32_t(1024 * dpi.scaleFactor);
 }
 
 static void get_roaming_path()

@@ -31,6 +31,9 @@ struct Jorvik
     std::shared_ptr<Opus> spOpus;
     std::vector<fnMessage> listeners;
     
+    uint32_t startWidth;
+    uint32_t startHeight;
+
     float time;
 };
 extern Jorvik jorvik;

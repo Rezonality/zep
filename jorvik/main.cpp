@@ -9,6 +9,7 @@
 #include "utils/file/runtree.h"
 #include "utils/animation/timer.h"
 #include "utils/logger.h"
+#include "utils/ui/dpi.h"
 
 #include <imgui/imgui.h>
 #include <tclap/CmdLine.h>
@@ -111,11 +112,13 @@ void setup_imgui()
     config.OversampleH = 3;
     config.OversampleV = 1;
     config.DstFont = ImGui::GetFont();
-    io.Fonts->AddFontFromFileTTF(runtree_find_asset("fonts/ProggyClean.ttf").string().c_str(), 13, &config, ranges);
+    io.Fonts->AddFontFromFileTTF(runtree_find_asset("fonts/ProggyClean.ttf").string().c_str(), 13 * dpi.scaleFactor, &config, ranges);
 }
 
 int main(int argc, char** argv)
 {
+    check_dpi();
+
     set_debug_crt();
 
     // Parse the command line
@@ -139,8 +142,8 @@ int main(int argc, char** argv)
     jorvik_init_settings();
 
     // Create device
-    //jorvik.spDevice = std::make_unique<DeviceDX12>();
-    jorvik.spDevice = std::make_unique<DeviceVulkan>();
+    jorvik.spDevice = std::make_unique<DeviceDX12>();
+    //jorvik.spDevice = std::make_unique<DeviceVulkan>();
     if (!jorvik.spDevice->Init("Jorvik"))
     {
         UIManager::Instance().AddMessage(MessageType::Error | MessageType::System,
