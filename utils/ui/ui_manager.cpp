@@ -5,7 +5,7 @@
 
 #include "ui_manager.h"
 
-#include "sdl.h"
+#include "SDL.h"
 
 using namespace Mgfx;
 

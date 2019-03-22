@@ -139,8 +139,8 @@ SET (IMGUI_INCLUDE
     m3rdparty/imgui/imgui_orient.h)
 
 SET (RTMIDI_SOURCE
-	m3rdparty/rtmidi/rtmidi.cpp
-	m3rdparty/rtmidi/rtmidi.h)
+	m3rdparty/rtmidi/RtMidi.cpp
+	m3rdparty/rtmidi/RtMidi.h)
 
 LIST(APPEND M3RDPARTY_SOURCE 
     ${GAPBUFFER_SOURCE}
@@ -152,9 +152,14 @@ LIST(APPEND M3RDPARTY_SOURCE
     ${GLM_SOURCE} ${GLM_INCLUDE}
 	${RTMIDI_SOURCE})
 
+IF (TARGET_PC)
 LIST(APPEND PLATFORM_LINKLIBS 
     d3d12
     dxgi
+    )
+ENDIF()
+
+LIST(APPEND PLATFORM_LINKLIBS 
     ${Vulkan_LIBRARIES}
     )
 

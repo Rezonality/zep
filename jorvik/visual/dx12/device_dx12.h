@@ -1,5 +1,6 @@
 #pragma once
 
+#if TARGET_PC
 #include "d3d12.h"
 #include <dxgi1_4.h>
 
@@ -106,3 +107,5 @@ private:
 };
 
 } // namespace Mgfx
+
+#endif

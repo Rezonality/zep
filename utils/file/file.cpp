@@ -9,6 +9,7 @@
 
 #include <queue>
 #include <set>
+#include <cassert>
 #include "utils/logger.h"
 #include "utils/string/stringutils.h"
 
@@ -260,6 +261,7 @@ fs::path file_documents_path()
 #else
 fs::path file_documents_path()
 {
+    // TODO Fix file stuff on linux
     assert(!"Fixme");
     return fs::path();
 }

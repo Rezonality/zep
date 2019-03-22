@@ -6,7 +6,7 @@ namespace Mgfx
 
 void scheduler_start(scheduler& sched, float seconds, std::function<void()> fnCallback)
 {
-    timer_start(sched.timer);
+    timer_start(sched.cb_timer);
     sched.state = SchedulerState::Started;
     sched.timeout = seconds;
     sched.callback = fnCallback;
@@ -23,7 +23,7 @@ void scheduler_update(scheduler& sched)
     {
         return;
     }
-    if (timer_get_elapsed_seconds(sched.timer) >= sched.timeout)
+    if (timer_get_elapsed_seconds(sched.cb_timer) >= sched.timeout)
     {
         sched.callback();
         sched.state = SchedulerState::Triggered;

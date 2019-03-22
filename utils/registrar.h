@@ -3,33 +3,35 @@
 #include <unordered_map>
 #include <typeinfo>
 #include <typeindex>
+#include <memory>
 
 namespace Mgfx
 {
+
+    /*
 template<class T>
 class Registrar
 {
 public:
     using Collection = std::unordered_map<std::type_index, std::shared_ptr<T>>;
 
-    template <class T>
     T* Get()
     {
-        return dynamic_cast<T*>(items[typeid(T)].get());
+        return dynamic_cast<P*>(items[typeid(T)].get());
     };
 
-    template <typename T, typename... Args>
+    template <typename P, typename... Args>
     void Register(Args&&... args)
     {
-        items[typeid(T)] = std::make_shared<T>(std::forward<Args>(args)...);
+        items[typeid(P)] = std::make_shared<T>(std::forward<Args>(args)...);
     }
 
-    template <typename T>
-    void each(std::function<void(T* pSystem)> f)
+    template <typename P>
+    void each(std::function<void(P* pSystem)> f)
     {
         for (auto& sys : items)
         {
-            T* pSys = dynamic_cast<T*>(sys.second.get());
+            T* pSys = dynamic_cast<P*>(sys.second.get());
             if (pSys)
             {
                 f(pSys);
@@ -45,5 +47,6 @@ public:
 private:
     Collection items;
 };
+*/
 
 } // Mgfx

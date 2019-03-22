@@ -16,7 +16,7 @@ enum class SchedulerState
 struct scheduler
 {
     std::function<void()> callback;
-    timer timer;
+    timer cb_timer;
     float timeout = 1.0f;
     SchedulerState state = SchedulerState::Off;
 };

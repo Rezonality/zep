@@ -5,7 +5,7 @@
 #include "file/file.h"
 #include "config_app.h"
 
-#include "sdl.h"
+#include "SDL.h"
 namespace Mgfx
 {
 std::string g_AppFriendlyName = APPLICATION_NAME;
@@ -31,7 +31,7 @@ void runtree_destroy()
     runtreePath.clear();
 }
 
-fs::path runtree_find_asset_internal(fs::path& searchPath)
+fs::path runtree_find_asset_internal(const fs::path& searchPath)
 {
     fs::path found(runtreePath / searchPath);
     if (fs::exists(found))
@@ -46,7 +46,7 @@ fs::path runtree_find_asset_internal(fs::path& searchPath)
 
 fs::path runtree_find_asset(const fs::path& p)
 {
-    return runtree_find_asset_internal(fs::path(p));
+    return runtree_find_asset_internal(p);
 }
 
 std::string runtree_load_asset(const fs::path& p)

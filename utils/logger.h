@@ -66,7 +66,7 @@ public:
 #ifdef WIN32
             OutputDebugStringA(out.str().c_str());
 #else
-            cout << out.str();
+            std::cout << out.str();
 #endif
         }
         opened = false;

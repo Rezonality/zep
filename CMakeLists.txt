@@ -7,10 +7,22 @@ PROJECT (Jorvik)
 
 MESSAGE(STATUS " CMakeLists: Jorvik")
 
+# Set all compiler flags 
+INCLUDE(cmake/all.cmake)
+
+# Functions for file copying
+INCLUDE(m3rdparty/cmake/copy_files.cmake)
+
 # Options
 option (PROJECT_UNITTESTS "Build Unit Tests" ON)
 option (PROJECT_JORVIK "Build Jorvik" ON)
-option (PROJECT_DEVICE_DX12 "Support DX12" ON)
+
+IF (TARGET_PC)
+    option (PROJECT_DEVICE_DX12 "Support DX12" ON)
+ELSE()
+    option (PROJECT_DEVICE_DX12 "Support DX12" OFF)
+ENDIF()
+
 option (PROJECT_DEVICE_VULKAN "Support Vulkan" ON)
 
 # Docs not added for functions yet, but you can generate them
@@ -50,12 +62,6 @@ SET(PLATFORM_LINKLIBS "")
 SET(PLATFORM_LINKLIBS_DEBUG "")
 SET(PLATFORM_LINKLIBS_RELEASE "")
 
-# Set all compiler flags 
-INCLUDE(cmake/all.cmake)
-
-# Functions for file copying
-INCLUDE(m3rdparty/cmake/copy_files.cmake)
-
 set (JORVIK_ROOT ${CMAKE_CURRENT_LIST_DIR})
 
 # config_app.h checks
@@ -78,6 +84,7 @@ INCLUDE_DIRECTORIES(
     .
     ) 
 
+MESSAGE(STATUS ${M3RDPARTY_INCLUDE})
 # Create the library - No depenencies on anything else in this file
 ADD_LIBRARY(utils 
 	${COMMON_SOURCES}
