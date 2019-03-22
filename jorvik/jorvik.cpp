@@ -43,8 +43,12 @@ static void read_settings()
         LOG(DEBUG) << "Failed to read settings: " << ex.what();
     }
     jorvik.spOpus = Opus::MakeDefaultOpus();
-    jorvik.startHeight = uint32_t(768 * dpi.scaleFactor);
-    jorvik.startWidth = uint32_t(1024 * dpi.scaleFactor);
+
+    SDL_DisplayMode mode;
+    SDL_GetCurrentDisplayMode(0, &mode);
+
+    jorvik.startHeight = uint32_t(mode.h * .666);
+    jorvik.startWidth = uint32_t(jorvik.startHeight * 1.3333);
 }
 
 static void get_roaming_path()

@@ -277,7 +277,14 @@ void editor_show_zep()
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));
 
     ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(1024, 768), ImGuiCond_FirstUseEver);
+
+    uint32_t flags = ImGuiCond_FirstUseEver;
+    if (jorvik.forceReset)
+    {
+        flags = 0;
+    }
+
+    ImGui::SetNextWindowSize(ImVec2(jorvik.startWidth * .5f, jorvik.startHeight * .85f), flags);
 
     if (!ImGui::Begin("Zep", &editor.show_zep, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar))
     {
