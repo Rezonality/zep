@@ -89,7 +89,7 @@ void VkDeviceResources::Init(SDL_Window* pWindow)
     //CreateGraphicsPipeline();
     CreateFramebuffers();
     CreateCommandPool();
-    //CreateCommandBuffers();
+    CreateCommandBuffers();
     CreateSyncObjects();
 
     CreateDescriptorPool();
@@ -648,6 +648,7 @@ void VkDeviceResources::CreateCommandBuffers()
         throw std::runtime_error("failed to allocate command buffers!");
     }
 
+    /*
     for (size_t i = 0; i < commandBuffers.size(); i++)
     {
         VkCommandBufferBeginInfo beginInfo = {};
@@ -683,6 +684,7 @@ void VkDeviceResources::CreateCommandBuffers()
             throw std::runtime_error("failed to record command buffer!");
         }
     }
+    */
 }
 
 void VkDeviceResources::CreateSyncObjects()
@@ -709,6 +711,8 @@ void VkDeviceResources::CreateSyncObjects()
 
 void VkDeviceResources::Prepare()
 {
+    // Wait for the current frame fence
+    // This is so that the CPU doesn't get ahead of the GPU; up to the depth of the number of frames
     vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     VkResult result = vkAcquireNextImageKHR(device, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
@@ -754,15 +758,12 @@ void VkDeviceResources::Prepare()
 
 void VkDeviceResources::Present()
 {
-    /*
     VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
-    */
-
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-    presentInfo.waitSemaphoreCount = 0;// 1;
-    presentInfo.pWaitSemaphores = nullptr;// signalSemaphores;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
 
     VkSwapchainKHR swapChains[] = {swapChain};
     presentInfo.swapchainCount = 1;

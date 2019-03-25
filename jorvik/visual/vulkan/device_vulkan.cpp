@@ -18,7 +18,7 @@
 
 #include "device_vulkan.h"
 
-#include "editor.h"
+#include "jorvik/editor.h"
 #include "jorvik.h"
 #include "meta_tags.h"
 
@@ -86,6 +86,7 @@ bool DeviceVulkan::Init(const char* pszWindowName)
 
     // Setup Platform/Renderer bindings
     ImGui_ImplSDL2_InitForVulkan(pWindow);
+
     ImGui_ImplVulkan_InitInfo init_info = {};
     init_info.Instance = m_deviceResources.instance;
     init_info.PhysicalDevice = m_deviceResources.physicalDevice;
@@ -99,38 +100,6 @@ bool DeviceVulkan::Init(const char* pszWindowName)
     ImGui_ImplVulkan_Init(&init_info, m_deviceResources.renderPass);
 
     ImGui::StyleColorsDark();
-
-    // Upload Fonts
-    {
-        // Use any command queue
-        /*
-        VkCommandPool command_pool = wd->Frames[wd->FrameIndex].CommandPool;
-        VkCommandBuffer command_buffer = wd->Frames[wd->FrameIndex].CommandBuffer;
-
-        auto err = vkResetCommandPool(m_deviceResources.device, command_pool, 0);
-        check_vk_result(err);
-        VkCommandBufferBeginInfo begin_info = {};
-        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        err = vkBeginCommandBuffer(command_buffer, &begin_info);
-        check_vk_result(err);
-
-        ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
-
-        VkSubmitInfo end_info = {};
-        end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        end_info.commandBufferCount = 1;
-        end_info.pCommandBuffers = &command_buffer;
-        err = vkEndCommandBuffer(command_buffer);
-        check_vk_result(err);
-        err = vkQueueSubmit(m_deviceResources.graphicsQueue, 1, &end_info, VK_NULL_HANDLE);
-        check_vk_result(err);
-
-        err = vkDeviceWaitIdle(m_deviceResources.device);
-        check_vk_result(err);
-        ImGui_ImplVulkan_InvalidateFontUploadObjects();
-        */
-    }
 
     Initialized = true;
 
@@ -404,26 +373,82 @@ std::future<std::shared_ptr<CompileResult>> DeviceVulkan::CompilePass(PassState*
 void DeviceVulkan::BeginGUI()
 {
     // Prepare the device for doing 2D Rendering using ImGUI
-    //ImGui_ImplVulkan_NewFrame();
-    //ImGui_ImplSDL2_NewFrame(pWindow);
-    //ImGui::NewFrame();
+    ImGui_ImplVulkan_NewFrame();
+    
+    // Upload Fonts
+    if (!ImGui::GetIO().Fonts->IsBuilt())
+    {
+        // Use any command queue
+        // TODO: Vulkan Noob. Not associated with a backbuffer, so does command buffer matter, since I'm resetting the pool?
+        VkCommandPool command_pool = m_deviceResources.commandPool;
+        VkCommandBuffer command_buffer = m_deviceResources.commandBuffers[0];
+
+        auto err = vkResetCommandPool(m_deviceResources.device, command_pool, 0);
+        check_vk_result(err);
+
+        VkCommandBufferBeginInfo begin_info = {};
+        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        err = vkBeginCommandBuffer(command_buffer, &begin_info);
+        check_vk_result(err);
+
+        ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
+
+        VkSubmitInfo end_info = {};
+        end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        end_info.commandBufferCount = 1;
+        end_info.pCommandBuffers = &command_buffer;
+        err = vkEndCommandBuffer(command_buffer);
+        check_vk_result(err);
+
+        err = vkQueueSubmit(m_deviceResources.graphicsQueue, 1, &end_info, VK_NULL_HANDLE);
+        check_vk_result(err);
+
+        err = vkDeviceWaitIdle(m_deviceResources.device);
+        check_vk_result(err);
+        ImGui_ImplVulkan_InvalidateFontUploadObjects();
+    }
+
+    ImGui_ImplSDL2_NewFrame(pWindow);
+    ImGui::NewFrame();
+
+
 }
 
 void DeviceVulkan::EndGUI()
 {
-    //ImGui::Render();
+    ImGui::Render();
+
+    /*
+    VkRenderPassBeginInfo renderPassInfo = {};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = m_deviceResources.renderPass;
+    renderPassInfo.framebuffer = m_deviceResources.swapChainFramebuffers[m_deviceResources.currentFrame];
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent = m_deviceResources.swapChainExtent;
+
+    vkCmdBeginRenderPass(buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_deviceResources.graphicsPipeline);
+    */
 
     //m_deviceResources->GetCommandList()->SetDescriptorHeaps(1, m_deviceResources->GetFontHeap());
-    //ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_deviceResources->GetCommandList());
+    auto buffer = m_deviceResources.commandBuffers[m_deviceResources.currentFrame];
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffer);
+    
+    //vkCmdEndRenderPass(commandBuffers[i]);
+
 }
 
 // Update the swap chain for a new client rectangle size (window sized)
 void DeviceVulkan::Resize(int width, int height)
 {
-    // ImGui_ImplVulkan_InvalidateDeviceObjects();
+    ImGui_ImplVulkan_InvalidateDeviceObjects();
     m_deviceResources.framebufferResized = true;
 
-    //ImGui_ImplVulkan_CreateDeviceObjects();
+    ImGui_ImplVulkan_CreateDeviceObjects();
+    
+
 }
 
 // Handle any interesting SDL events
@@ -456,7 +481,7 @@ bool DeviceVulkan::RenderFrame(float frameDelta, std::function<void()> fnRenderO
     // Do the GUI rendering
     {
         BeginGUI();
-        //editor_draw_ui(frameDelta);
+        editor_draw_ui(frameDelta);
         EndGUI();
     }
 
