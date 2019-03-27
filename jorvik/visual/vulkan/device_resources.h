@@ -26,6 +26,18 @@ struct SwapChainSupportDetails
     std::vector<VkPresentModeKHR> presentModes;
 };
 
+struct FrameData
+{
+    VkImage swapChainImage;
+    VkImageView swapChainImageView;
+    VkFramebuffer swapChainFramebuffer;
+    VkCommandPool commandPool;
+    std::vector<VkCommandBuffer> commandBuffers;
+    VkSemaphore imageAvailableSemaphore;
+    VkSemaphore renderFinishedSemaphore;
+    VkFence inFlightFence;
+};
+
 class VkDeviceResources
 {
 public:
@@ -49,13 +61,15 @@ public:
     void CreateSyncObjects();
     void CreateCommandPool();
     void CreateGraphicsPipeline();
-    void CreateCommandBuffers();
     void CreateDescriptorPool();
 
     void Prepare();
     void Present();
-    
-    uint32_t imageIndex;
+   
+    FrameData& GetCurrentFrame()
+    {
+        return perFrame[currentFrame];
+    }
 
     VkShaderModule CreateShaderModule(const std::string& code);
     VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -80,26 +94,18 @@ public:
     VkQueue graphicsQueue = nullptr;
     VkQueue presentQueue = nullptr;
 
+    std::vector<FrameData> perFrame;
+    uint32_t currentFrame = 0;
+    uint32_t lastFrame = 0;
+
     VkSwapchainKHR swapChain = nullptr;
-    std::vector<VkImage> swapChainImages;
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
-    std::vector<VkImageView> swapChainImageViews;
-    std::vector<VkFramebuffer> swapChainFramebuffers;
 
     VkRenderPass renderPass = nullptr;
     VkPipelineLayout pipelineLayout = nullptr;
     VkPipeline graphicsPipeline = nullptr;
-
-    VkCommandPool commandPool = nullptr;
-    std::vector<VkCommandBuffer> commandBuffers;
-
     VkDescriptorPool descriptorPool = nullptr;
-
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
-    std::vector<VkFence> inFlightFences;
-    size_t currentFrame = 0;
 
     QueueFamilyIndices queueFamilyIndices;
 

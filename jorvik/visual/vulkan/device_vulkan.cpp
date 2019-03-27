@@ -380,7 +380,8 @@ void DeviceVulkan::BeginGUI()
     {
         // Use any command queue
         // TODO: Vulkan Noob. Not associated with a backbuffer, so does command buffer matter, since I'm resetting the pool?
-        VkCommandPool commandPool = m_deviceResources.commandPool;
+        VkCommandPool commandPool = m_deviceResources.GetCurrentFrame().commandPool;
+
         VkCommandBufferAllocateInfo allocInfo = {};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.commandPool = commandPool;
@@ -438,7 +439,7 @@ void DeviceVulkan::EndGUI()
     */
 
     //m_deviceResources->GetCommandList()->SetDescriptorHeaps(1, m_deviceResources->GetFontHeap());
-    auto buffer = m_deviceResources.commandBuffers[0];// m_deviceResources.currentFrame];
+    auto buffer = m_deviceResources.GetCurrentFrame().commandBuffers[0];
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffer);
     
     //vkCmdEndRenderPass(commandBuffers[i]);
@@ -478,7 +479,8 @@ bool DeviceVulkan::RenderFrame(float frameDelta, std::function<void()> fnRenderO
 {
     m_deviceResources.Prepare();
 
-    Clear();
+    //commandList->ClearRenderTargetView(rtvDescriptor, Colors::CornflowerBlue, 0, nullptr);
+    //commandList->ClearDepthStencilView(dsvDescriptor, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
     // Callback to render stuff
     fnRenderObjects();
@@ -492,28 +494,6 @@ bool DeviceVulkan::RenderFrame(float frameDelta, std::function<void()> fnRenderO
 
     m_deviceResources.Present();
     return true;
-}
-
-// Helper method to clear the back buffers.
-void DeviceVulkan::Clear()
-{
-    /*
-    auto commandList = m_deviceResources->GetCommandList();
-
-    // Clear the views.
-    auto rtvDescriptor = m_deviceResources->GetRenderTargetView();
-    auto dsvDescriptor = m_deviceResources->GetDepthStencilView();
-
-    commandList->OMSetRenderTargets(1, &rtvDescriptor, FALSE, &dsvDescriptor);
-    commandList->ClearRenderTargetView(rtvDescriptor, Colors::CornflowerBlue, 0, nullptr);
-    commandList->ClearDepthStencilView(dsvDescriptor, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-
-    // Set the viewport and scissor rect.
-    auto viewport = m_deviceResources->GetScreenViewport();
-    auto scissorRect = m_deviceResources->GetScissorRect();
-    commandList->RSSetViewports(1, &viewport);
-    commandList->RSSetScissorRects(1, &scissorRect);
-    */
 }
 
 glm::uvec2 DeviceVulkan::GetWindowSize()

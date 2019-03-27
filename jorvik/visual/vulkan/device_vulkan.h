@@ -74,9 +74,6 @@ public:
     }*/
 
 private:
-    void Clear();
-
-private:
     VkDeviceResources m_deviceResources;
 
 };
