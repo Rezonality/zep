@@ -89,7 +89,6 @@ void VkDeviceResources::Init(SDL_Window* pWindow)
     //CreateGraphicsPipeline();
     CreateFramebuffers();
     CreateCommandPool();
-    CreateCommandBuffers();
     CreateSyncObjects();
 
     CreateDescriptorPool();
@@ -174,7 +173,6 @@ void VkDeviceResources::RecreateSwapChain()
     CreateRenderPass();
     //CreateGraphicsPipeline();
     CreateFramebuffers();
-    CreateCommandBuffers();
 }
 
 void VkDeviceResources::CreateInstance()
@@ -633,20 +631,11 @@ void VkDeviceResources::CreateCommandPool()
     }
 }
 
+/*
 void VkDeviceResources::CreateCommandBuffers()
 {
     commandBuffers.resize(swapChainFramebuffers.size());
 
-    VkCommandBufferAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = commandPool;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
-
-    if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to allocate command buffers!");
-    }
 
     /*
     for (size_t i = 0; i < commandBuffers.size(); i++)
@@ -684,8 +673,8 @@ void VkDeviceResources::CreateCommandBuffers()
             throw std::runtime_error("failed to record command buffer!");
         }
     }
-    */
 }
+*/
 
 void VkDeviceResources::CreateSyncObjects()
 {
@@ -727,7 +716,28 @@ void VkDeviceResources::Prepare()
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
-    /*
+    // ? Need this flag
+    vkResetCommandPool(device, commandPool, VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
+
+    commandBuffers.resize(1);
+    VkCommandBufferAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = commandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = 1;
+
+    if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to allocate command buffers!");
+    }
+        
+    VkCommandBufferBeginInfo begin_info = {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    auto err = vkBeginCommandBuffer(commandBuffers[0], &begin_info);
+}
+
+void VkDeviceResources::Present()
+{
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -740,28 +750,18 @@ void VkDeviceResources::Prepare()
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
 
-    vkResetFences(device, 1, &inFlightFences[currentFrame]);
-
     VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
-    */
-}
-/*
 
-
+    vkResetFences(device, 1, &inFlightFences[currentFrame]);
     if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to submit draw command buffer!");
     }
-    }*/
 
-void VkDeviceResources::Present()
-{
-    VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
 

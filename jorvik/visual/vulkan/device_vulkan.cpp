@@ -380,25 +380,32 @@ void DeviceVulkan::BeginGUI()
     {
         // Use any command queue
         // TODO: Vulkan Noob. Not associated with a backbuffer, so does command buffer matter, since I'm resetting the pool?
-        VkCommandPool command_pool = m_deviceResources.commandPool;
-        VkCommandBuffer command_buffer = m_deviceResources.commandBuffers[0];
+        VkCommandPool commandPool = m_deviceResources.commandPool;
+        VkCommandBufferAllocateInfo allocInfo = {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.commandPool = commandPool;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandBufferCount = 1;
 
-        auto err = vkResetCommandPool(m_deviceResources.device, command_pool, 0);
-        check_vk_result(err);
+        VkCommandBuffer commandBuffer = nullptr;
+        if (vkAllocateCommandBuffers(m_deviceResources.device, &allocInfo, &commandBuffer) != VK_SUCCESS)
+        {
+            return;
+        }
 
         VkCommandBufferBeginInfo begin_info = {};
         begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        err = vkBeginCommandBuffer(command_buffer, &begin_info);
+        auto err = vkBeginCommandBuffer(commandBuffer, &begin_info);
         check_vk_result(err);
 
-        ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
+        ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
 
         VkSubmitInfo end_info = {};
         end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         end_info.commandBufferCount = 1;
-        end_info.pCommandBuffers = &command_buffer;
-        err = vkEndCommandBuffer(command_buffer);
+        end_info.pCommandBuffers = &commandBuffer;
+        err = vkEndCommandBuffer(commandBuffer);
         check_vk_result(err);
 
         err = vkQueueSubmit(m_deviceResources.graphicsQueue, 1, &end_info, VK_NULL_HANDLE);
@@ -411,8 +418,6 @@ void DeviceVulkan::BeginGUI()
 
     ImGui_ImplSDL2_NewFrame(pWindow);
     ImGui::NewFrame();
-
-
 }
 
 void DeviceVulkan::EndGUI()
@@ -433,7 +438,7 @@ void DeviceVulkan::EndGUI()
     */
 
     //m_deviceResources->GetCommandList()->SetDescriptorHeaps(1, m_deviceResources->GetFontHeap());
-    auto buffer = m_deviceResources.commandBuffers[m_deviceResources.currentFrame];
+    auto buffer = m_deviceResources.commandBuffers[0];// m_deviceResources.currentFrame];
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffer);
     
     //vkCmdEndRenderPass(commandBuffers[i]);
