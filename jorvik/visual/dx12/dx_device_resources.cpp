@@ -1,12 +1,12 @@
 ﻿//
-// DeviceResources.cpp - A wrapper for the Direct3D 12 device and swapchain
+// DxDeviceResources.cpp - A wrapper for the Direct3D 12 device and swapchain
 //
 // From MS, in their DX SDK.
 
-#include "device_resources.h"
+#include "dx_device_resources.h"
 
 using namespace DirectX;
-using namespace DX;
+using namespace Mgfx;
 
 using Microsoft::WRL::ComPtr;
 
@@ -24,29 +24,33 @@ namespace
     }
 };
 
-// Constructor for DeviceResources.
-DeviceResources::DeviceResources(
+namespace Mgfx
+{
+
+// Constructor for DxDeviceResources.
+DxDeviceResources::DxDeviceResources(
+    Mgfx::IDeviceNotify* pNotify,
     DXGI_FORMAT backBufferFormat,
     DXGI_FORMAT depthBufferFormat,
     UINT backBufferCount,
     D3D_FEATURE_LEVEL minFeatureLevel,
     unsigned int flags) noexcept(false) :
-        m_backBufferIndex(0),
-        m_fenceValues{},
-        m_rtvDescriptorSize(0),
-        m_screenViewport{},
-        m_scissorRect{},
-        m_backBufferFormat(backBufferFormat),
-        m_depthBufferFormat(depthBufferFormat),
-        m_backBufferCount(backBufferCount),
-        m_d3dMinFeatureLevel(minFeatureLevel),
-        m_window(nullptr),
-        m_d3dFeatureLevel(D3D_FEATURE_LEVEL_11_0),
-        m_dxgiFactoryFlags(0),
-        m_outputSize{0, 0, 1, 1},
-        m_colorSpace(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709),
-        m_options(flags),
-        m_deviceNotify(nullptr)
+    m_backBufferIndex(0),
+    m_fenceValues{},
+    m_rtvDescriptorSize(0),
+    m_screenViewport{},
+    m_scissorRect{},
+    m_backBufferFormat(backBufferFormat),
+    m_depthBufferFormat(depthBufferFormat),
+    m_backBufferCount(backBufferCount),
+    m_d3dMinFeatureLevel(minFeatureLevel),
+    m_window(nullptr),
+    m_d3dFeatureLevel(D3D_FEATURE_LEVEL_11_0),
+    m_dxgiFactoryFlags(0),
+    m_outputSize{0, 0, 1, 1},
+    m_colorSpace(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709),
+    m_options(flags),
+    m_pDeviceNotify(pNotify)
 {
     if (backBufferCount > MAX_BACK_BUFFER_COUNT)
     {
@@ -59,15 +63,15 @@ DeviceResources::DeviceResources(
     }
 }
 
-// Destructor for DeviceResources.
-DeviceResources::~DeviceResources()
+// Destructor for DxDeviceResources.
+DxDeviceResources::~DxDeviceResources()
 {
     // Ensure that the GPU is no longer referencing resources that are about to be destroyed.
     WaitForGpu();
 }
 
 // Configures the Direct3D device, and stores handles to it and the device context.
-void DeviceResources::CreateDeviceResources() 
+void DxDeviceResources::CreateDeviceResources()
 {
 #if defined(_DEBUG)
     // Enable the debug layer (requires the Graphics Tools "optional feature").
@@ -127,7 +131,7 @@ void DeviceResources::CreateDeviceResources()
         adapter.Get(),
         m_d3dMinFeatureLevel,
         IID_PPV_ARGS(m_d3dDevice.ReleaseAndGetAddressOf())
-        ));
+    ));
 
     m_d3dDevice->SetName(L"DeviceResources");
 
@@ -245,7 +249,7 @@ void DeviceResources::CreateDeviceResources()
 }
 
 // These resources need to be recreated every time the window size is changed.
-void DeviceResources::CreateWindowSizeDependentResources() 
+void DxDeviceResources::CreateWindowSizeDependentResources()
 {
     if (!m_window)
     {
@@ -277,7 +281,7 @@ void DeviceResources::CreateWindowSizeDependentResources()
             backBufferHeight,
             backBufferFormat,
             (m_options & c_AllowTearing) ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0
-            );
+        );
 
         if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
         {
@@ -326,7 +330,7 @@ void DeviceResources::CreateWindowSizeDependentResources()
             &fsSwapChainDesc,
             nullptr,
             swapChain.GetAddressOf()
-            ));
+        ));
 
         ThrowIfFailed(swapChain.As(&m_swapChain));
 
@@ -370,7 +374,7 @@ void DeviceResources::CreateWindowSizeDependentResources()
             backBufferHeight,
             1, // This depth stencil view has only one texture.
             1  // Use a single mipmap level.
-            );
+        );
         depthStencilDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
         D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
@@ -385,7 +389,7 @@ void DeviceResources::CreateWindowSizeDependentResources()
             D3D12_RESOURCE_STATE_DEPTH_WRITE,
             &depthOptimizedClearValue,
             IID_PPV_ARGS(m_depthStencil.ReleaseAndGetAddressOf())
-            ));
+        ));
 
         m_depthStencil->SetName(L"Depth stencil");
 
@@ -409,7 +413,7 @@ void DeviceResources::CreateWindowSizeDependentResources()
 }
 
 // This method is called when the Win32 window is created (or re-created).
-void DeviceResources::SetWindow(HWND window, int width, int height)
+void DxDeviceResources::SetWindow(HWND window, int width, int height)
 {
     m_window = window;
 
@@ -419,8 +423,10 @@ void DeviceResources::SetWindow(HWND window, int width, int height)
 }
 
 // This method is called when the Win32 window changes size.
-bool DeviceResources::WindowSizeChanged(int width, int height)
+bool DxDeviceResources::WindowSizeChanged(int width, int height)
 {
+    m_pDeviceNotify->OnBeginResize();
+
     RECT newRc;
     newRc.left = newRc.top = 0;
     newRc.right = width;
@@ -438,15 +444,18 @@ bool DeviceResources::WindowSizeChanged(int width, int height)
 
     m_outputSize = newRc;
     CreateWindowSizeDependentResources();
+
+    m_pDeviceNotify->OnEndResize();
+
     return true;
 }
 
 // Recreate all device resources and set them back to the current state.
-void DeviceResources::HandleDeviceLost()
+void DxDeviceResources::HandleDeviceLost()
 {
-    if (m_deviceNotify)
+    if (m_pDeviceNotify)
     {
-        m_deviceNotify->OnDeviceLost();
+        m_pDeviceNotify->OnDeviceLost();
     }
 
     for (UINT n = 0; n < m_backBufferCount; n++)
@@ -479,14 +488,14 @@ void DeviceResources::HandleDeviceLost()
     CreateDeviceResources();
     CreateWindowSizeDependentResources();
 
-    if (m_deviceNotify)
+    if (m_pDeviceNotify)
     {
-        m_deviceNotify->OnDeviceRestored();
+        m_pDeviceNotify->OnDeviceRestored();
     }
 }
 
 // Prepare the command list and render target for rendering.
-void DeviceResources::Prepare(D3D12_RESOURCE_STATES beforeState)
+void DxDeviceResources::Prepare(D3D12_RESOURCE_STATES beforeState)
 {
     // Reset command list and allocator.
     ThrowIfFailed(m_commandAllocators[m_backBufferIndex]->Reset());
@@ -501,7 +510,7 @@ void DeviceResources::Prepare(D3D12_RESOURCE_STATES beforeState)
 }
 
 // Present the contents of the swap chain to the screen.
-void DeviceResources::Present(D3D12_RESOURCE_STATES beforeState)
+void DxDeviceResources::Present(D3D12_RESOURCE_STATES beforeState)
 {
     if (beforeState != D3D12_RESOURCE_STATE_PRESENT)
     {
@@ -532,11 +541,11 @@ void DeviceResources::Present(D3D12_RESOURCE_STATES beforeState)
     // If the device was reset we must completely reinitialize the renderer.
     if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
     {
-//#ifdef _DEBUG
+        //#ifdef _DEBUG
         char buff[64] = {};
         sprintf_s(buff, "Device Lost on Present: Reason code 0x%08X\n", (hr == DXGI_ERROR_DEVICE_REMOVED) ? m_d3dDevice->GetDeviceRemovedReason() : hr);
         OutputDebugStringA(buff);
-//#endif
+        //#endif
         HandleDeviceLost();
     }
     else
@@ -554,7 +563,7 @@ void DeviceResources::Present(D3D12_RESOURCE_STATES beforeState)
 }
 
 // Wait for pending GPU work to complete.
-void DeviceResources::WaitForGpu() noexcept
+void DxDeviceResources::WaitForGpu() noexcept
 {
     if (m_commandQueue && m_fence && m_fenceEvent.IsValid())
     {
@@ -575,7 +584,7 @@ void DeviceResources::WaitForGpu() noexcept
 }
 
 // Prepare to render the next frame.
-void DeviceResources::MoveToNextFrame()
+void DxDeviceResources::MoveToNextFrame()
 {
     // Schedule a Signal command in the queue.
     const UINT64 currentFenceValue = m_fenceValues[m_backBufferIndex];
@@ -597,7 +606,7 @@ void DeviceResources::MoveToNextFrame()
 
 // This method acquires the first available hardware adapter that supports Direct3D 12.
 // If no such adapter can be found, try WARP. Otherwise throw an exception.
-void DeviceResources::GetAdapter(IDXGIAdapter1** ppAdapter)
+void DxDeviceResources::GetAdapter(IDXGIAdapter1 * *ppAdapter)
 {
     *ppAdapter = nullptr;
 
@@ -627,22 +636,22 @@ void DeviceResources::GetAdapter(IDXGIAdapter1** ppAdapter)
             // Check to see if the adapter supports Direct3D 12, but don't create the actual device yet.
             if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), m_d3dMinFeatureLevel, _uuidof(ID3D12Device), nullptr)))
             {
-            #ifdef _DEBUG
+#ifdef _DEBUG
                 wchar_t buff[256] = {};
                 swprintf_s(buff, L"Direct3D Adapter (%u): VID:%04X, PID:%04X - %ls\n", adapterIndex, desc.VendorId, desc.DeviceId, desc.Description);
                 OutputDebugStringW(buff);
-            #endif
+#endif
                 break;
             }
         }
     }
     else
 #endif
-    for (UINT adapterIndex = 0;
-        DXGI_ERROR_NOT_FOUND != m_dxgiFactory->EnumAdapters1(
-            adapterIndex,
-            adapter.ReleaseAndGetAddressOf());
-        ++adapterIndex)
+        for (UINT adapterIndex = 0;
+            DXGI_ERROR_NOT_FOUND != m_dxgiFactory->EnumAdapters1(
+                adapterIndex,
+                adapter.ReleaseAndGetAddressOf());
+            ++adapterIndex)
     {
         DXGI_ADAPTER_DESC1 desc;
         ThrowIfFailed(adapter->GetDesc1(&desc));
@@ -656,11 +665,11 @@ void DeviceResources::GetAdapter(IDXGIAdapter1** ppAdapter)
         // Check to see if the adapter supports Direct3D 12, but don't create the actual device yet.
         if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), m_d3dMinFeatureLevel, _uuidof(ID3D12Device), nullptr)))
         {
-        #ifdef _DEBUG
+#ifdef _DEBUG
             wchar_t buff[256] = {};
             swprintf_s(buff, L"Direct3D Adapter (%u): VID:%04X, PID:%04X - %ls\n", adapterIndex, desc.VendorId, desc.DeviceId, desc.Description);
             OutputDebugStringW(buff);
-        #endif
+#endif
             break;
         }
     }
@@ -687,7 +696,7 @@ void DeviceResources::GetAdapter(IDXGIAdapter1** ppAdapter)
 }
 
 // Sets the color space for the swap chain in order to handle HDR output.
-void DeviceResources::UpdateColorSpace()
+void DxDeviceResources::UpdateColorSpace()
 {
     DXGI_COLOR_SPACE_TYPE colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 
@@ -743,3 +752,5 @@ void DeviceResources::UpdateColorSpace()
         ThrowIfFailed(m_swapChain->SetColorSpace1(colorSpace));
     }
 }
+
+} // Mgfx

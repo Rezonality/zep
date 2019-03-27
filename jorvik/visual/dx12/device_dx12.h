@@ -19,7 +19,7 @@
 #include <wrl.h>
 #include <d3dcompiler.h>
 
-#include "device_resources.h"
+#include "dx_device_resources.h"
 #include "root_signature.h"
 
 #include "utils/logger.h"
@@ -66,7 +66,7 @@ struct DeviceMaterial
     D3D12_CPU_DESCRIPTOR_HANDLE SRVs[6];
 };
 
-class DeviceDX12 : public IDevice, public DX::IDeviceNotify
+class DeviceDX12 : public IDevice
 {
 public:
     DeviceDX12();
@@ -91,8 +91,12 @@ public:
     // Inherited via IDeviceNotify
     virtual void OnDeviceLost() override;
     virtual void OnDeviceRestored() override;
+    virtual void OnInvalidateDeviceObjects() override;
+    virtual void OnCreateDeviceObjects() override;
+    virtual void OnBeginResize() override;
+    virtual void OnEndResize() override;
 
-    DX::DeviceResources& GetDeviceResources() const
+    DxDeviceResources& GetDeviceResources() const
     {
         return *m_deviceResources;
     }
@@ -103,7 +107,7 @@ private:
     void Reflect(std::shared_ptr<CompiledShaderAssetDX12> spResult, ID3D10Blob* pBlob);
 
 private:
-    std::unique_ptr<DX::DeviceResources> m_deviceResources;
+    std::unique_ptr<DxDeviceResources> m_deviceResources;
 };
 
 } // namespace Mgfx

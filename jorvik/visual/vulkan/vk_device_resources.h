@@ -2,6 +2,7 @@
 #include "vulkan/vulkan.h"
 #include <optional>
 #include <vector>
+#include "visual/IDevice.h"
 
 struct SDL_Window;
 
@@ -41,7 +42,7 @@ struct FrameData
 class VkDeviceResources
 {
 public:
-    VkDeviceResources();
+    VkDeviceResources(IDeviceNotify* pNotify);
     ~VkDeviceResources();
 
     void Init(SDL_Window* pWindow);
@@ -110,6 +111,7 @@ public:
     QueueFamilyIndices queueFamilyIndices;
 
     bool framebufferResized = false;
+    Mgfx::IDeviceNotify* m_pDeviceNotify;
 };
 
 } // Mgfx

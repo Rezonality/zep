@@ -14,7 +14,7 @@
 
 #include "SDL.h"
 #include "SDL_vulkan.h"
-#include "device_resources.h"
+#include "vk_device_resources.h"
 
 namespace Mgfx
 {
@@ -67,7 +67,8 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
     }
 }
 
-VkDeviceResources::VkDeviceResources()
+VkDeviceResources::VkDeviceResources(Mgfx::IDeviceNotify* pNotify)
+    : m_pDeviceNotify(pNotify)
 {
 }
 
@@ -90,8 +91,9 @@ void VkDeviceResources::Init(SDL_Window* pWindow)
     CreateFramebuffers();
     CreateCommandPool();
     CreateSyncObjects();
-
     CreateDescriptorPool();
+
+    m_pDeviceNotify->OnCreateDeviceObjects();
 }
 
 void VkDeviceResources::Wait()
@@ -131,6 +133,8 @@ void VkDeviceResources::CleanupSwapChain()
 
 void VkDeviceResources::Cleanup()
 {
+    m_pDeviceNotify->OnInvalidateDeviceObjects();
+
     CleanupSwapChain();
 
     for (auto& frame : perFrame)
@@ -140,6 +144,8 @@ void VkDeviceResources::Cleanup()
         vkDestroyFence(device, frame.inFlightFence, nullptr);
         vkDestroyCommandPool(device, frame.commandPool, nullptr);
     }
+
+    vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 
     vkDestroyDevice(device, nullptr);
 
@@ -156,6 +162,8 @@ void VkDeviceResources::RecreateSwapChain()
 {
     LOG(DEBUG) << "Vulkan: RecreateSwapChain";
 
+    m_pDeviceNotify->OnBeginResize();
+
     int width = 0, height = 0;
     SDL_GetWindowSize(m_pWindow, &width, &height);
     vkDeviceWaitIdle(device);
@@ -164,9 +172,11 @@ void VkDeviceResources::RecreateSwapChain()
 
     CreateSwapChain();
     CreateImageViews();
-    CreateRenderPass();
-    //CreateGraphicsPipeline();
+    CreateRenderPass();      // Note: surface format could have changed
+    //CreateGraphicsPipeline();k
     CreateFramebuffers();
+    
+    m_pDeviceNotify->OnEndResize();
 }
 
 void VkDeviceResources::CreateInstance()
@@ -729,7 +739,8 @@ void VkDeviceResources::Prepare()
         throw std::runtime_error("failed to allocate command buffers!");
     }
 
-    std::vector<float> clear_color = {0.45f, 0.55f, 0.60f, 1.00f};
+    // Temp: cornflower blue
+    std::vector<float> clear_color = {100.0f / 255.0f, 149.0f / 255.0f, 237.0f / 255.0f, 1.00f};
     VkClearValue clear;
     memcpy(&clear.color.float32[0], &clear_color[0], sizeof(float) * 4);
     

@@ -5,7 +5,7 @@
 #include "utils/logger.h"
 #include "compile.h"
 #include "visual/IDevice.h"
-#include "device_resources.h"
+#include "vk_device_resources.h"
 
 struct SDL_Window;
 union SDL_Event;
@@ -65,16 +65,19 @@ public:
     virtual void DrawFSQuad(std::shared_ptr<CompileResult> state) override;
 
     // Inherited via IDeviceNotify
-    //virtual void OnDeviceLost() override;
-    //virtual void OnDeviceRestored() override;
-
-    /*DX::DeviceResources& GetDeviceResources() const
-    {
-        return *m_deviceResources;
-    }*/
+    virtual void OnDeviceLost() override;
+    virtual void OnDeviceRestored() override;
+    virtual void OnInvalidateDeviceObjects() override;
+    virtual void OnCreateDeviceObjects() override;
+    virtual void OnBeginResize() override;
+    virtual void OnEndResize() override;
 
 private:
-    VkDeviceResources m_deviceResources;
+    virtual void CheckFontUploaded();
+
+private:
+    std::unique_ptr<VkDeviceResources> m_pDeviceResources;
+    bool fontDirty = false;
 
 };
 

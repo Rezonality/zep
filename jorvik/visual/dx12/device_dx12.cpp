@@ -93,16 +93,10 @@ bool DeviceDX12::Init(const char* pszWindowName)
     SDL_GetWindowSize(pWindow, &width, &height);
     LOG(INFO) << "Window: " << width << ", " << height;
 
-    m_deviceResources = std::make_unique<DX::DeviceResources>(DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_D32_FLOAT, 2, D3D_FEATURE_LEVEL_11_0, 0);// DX::DeviceResources::c_AllowTearing);
-    m_deviceResources->RegisterDeviceNotify(this);
+    m_deviceResources = std::make_unique<DxDeviceResources>(this, DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_D32_FLOAT, 2, D3D_FEATURE_LEVEL_11_0, 0);// DX::DxDeviceResources::c_AllowTearing);
     m_deviceResources->SetWindow(g_hWnd, width, height);
     m_deviceResources->CreateDeviceResources();
     m_deviceResources->CreateWindowSizeDependentResources();
-
-    ImGui::CreateContext(0);
-
-    ImGui::GetStyle().ScaleAllSizes(dpi.scaleFactor);
-    ImGui::GetIO().FontGlobalScale = 1.0;
 
     ImGui_ImplDX12_Init(m_deviceResources->GetD3DDevice(),
         m_deviceResources->GetBackBufferCount(),
@@ -111,8 +105,6 @@ bool DeviceDX12::Init(const char* pszWindowName)
         m_deviceResources->GetFontHeapGPUView());
 
     ImGui_ImplSDL2_Init(pWindow);
-
-    ImGui::StyleColorsDark();
 
     Initialized = true;
 
@@ -536,11 +528,8 @@ void DeviceDX12::EndGUI()
 // Update the swap chain for a new client rectangle size (window sized)
 void DeviceDX12::Resize(int width, int height)
 {
-    ImGui_ImplDX12_InvalidateDeviceObjects();
     if (!m_deviceResources->WindowSizeChanged(width, height))
         return;
-
-    ImGui_ImplDX12_CreateDeviceObjects();
 }
 
 // Handle any interesting SDL events
@@ -613,6 +602,24 @@ void DeviceDX12::OnDeviceLost()
 }
 
 void DeviceDX12::OnDeviceRestored()
+{
+}
+
+void DeviceDX12::OnInvalidateDeviceObjects()
+{
+    ImGui_ImplDX12_InvalidateDeviceObjects();
+}
+
+void DeviceDX12::OnCreateDeviceObjects()
+{
+    ImGui_ImplDX12_CreateDeviceObjects();
+}
+
+void DeviceDX12::OnBeginResize()
+{
+}
+
+void DeviceDX12::OnEndResize()
 {
 }
 

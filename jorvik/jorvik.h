@@ -27,6 +27,7 @@ struct Jorvik
 
     fs::path roamingPath;
     bool forceReset = false;
+    bool vulkan = false;
 
     std::shared_ptr<Opus> spOpus;
     std::vector<fnMessage> listeners;

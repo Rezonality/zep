@@ -2,6 +2,7 @@
 #include "utils/animation/timer.h"
 #include "utils/file/runtree.h"
 #include "utils/string/stringutils.h"
+#include "utils/ui/dpi.h"
 
 #include "m3rdparty/threadpool/threadpool.h"
 #include <glm/glm/gtc/matrix_transform.hpp>
@@ -30,8 +31,6 @@
 #ifdef WIN32
 HWND g_hWnd;
 #endif
-uint32_t g_DisplayWidth = 1024;
-uint32_t g_DisplayHeight = 768;
 
 namespace Mgfx
 {
@@ -60,16 +59,30 @@ static void check_vk_result(VkResult err)
     }
 }
 
+DeviceVulkan::DeviceVulkan()
+{
+}
+
+DeviceVulkan::~DeviceVulkan()
+{
+    Destroy();
+}
+
 bool DeviceVulkan::Init(const char* pszWindowName)
 {
     TIME_SCOPE(device_dx12_init);
 
     Initialized = false;
 
+    m_pDeviceResources = std::make_unique<VkDeviceResources>(this);
+
     // Setup window
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
-    pWindow = SDL_CreateWindow(pszWindowName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, g_DisplayWidth, g_DisplayHeight, SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
+    pWindow = SDL_CreateWindow(pszWindowName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, jorvik.startWidth, jorvik.startHeight, SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
+
+    // Setup Platform/Renderer bindings
+    ImGui_ImplSDL2_InitForVulkan(pWindow);
 
     SDL_SysWMinfo wmInfo;
     SDL_VERSION(&wmInfo.version);
@@ -80,53 +93,23 @@ bool DeviceVulkan::Init(const char* pszWindowName)
     g_hWnd = wmInfo.info.win.window;
 #endif
 
-    m_deviceResources.Init(pWindow);
-
-    ImGui::CreateContext(0);
-
-    // Setup Platform/Renderer bindings
-    ImGui_ImplSDL2_InitForVulkan(pWindow);
-
-    ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = m_deviceResources.instance;
-    init_info.PhysicalDevice = m_deviceResources.physicalDevice;
-    init_info.Device = m_deviceResources.device;
-    init_info.QueueFamily = m_deviceResources.queueFamilyIndices.graphicsFamily.value();
-    init_info.Queue = m_deviceResources.graphicsQueue;
-    init_info.PipelineCache = nullptr;//m_deviceResources.pipelineLayoutg_PipelineCache;
-    init_info.DescriptorPool = m_deviceResources.descriptorPool;
-    init_info.Allocator = nullptr;
-    init_info.CheckVkResultFn = check_vk_result;
-    ImGui_ImplVulkan_Init(&init_info, m_deviceResources.renderPass);
-
-    ImGui::StyleColorsDark();
+    m_pDeviceResources->Init(pWindow);
 
     Initialized = true;
 
     return true;
 }
 
-DeviceVulkan::DeviceVulkan()
-{
-}
-
-DeviceVulkan::~DeviceVulkan()
-{
-    Destroy();
-}
-
 void DeviceVulkan::Destroy()
 {
-    m_deviceResources.Wait();
-    m_deviceResources.Cleanup();
+    m_pDeviceResources->Wait();
+    m_pDeviceResources->Cleanup();
 
     if (pWindow != nullptr)
     {
         SDL_DestroyWindow(pWindow);
         pWindow = nullptr;
     }
-
-    //m_deviceResources.reset();
 }
 
 // If not found in the meta tags, then assign based on file and just use '5'
@@ -374,49 +357,6 @@ void DeviceVulkan::BeginGUI()
 {
     // Prepare the device for doing 2D Rendering using ImGUI
     ImGui_ImplVulkan_NewFrame();
-    
-    // Upload Fonts
-    if (!ImGui::GetIO().Fonts->IsBuilt())
-    {
-        // Use any command queue
-        // TODO: Vulkan Noob. Not associated with a backbuffer, so does command buffer matter, since I'm resetting the pool?
-        VkCommandPool commandPool = m_deviceResources.GetCurrentFrame().commandPool;
-
-        VkCommandBufferAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = commandPool;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = 1;
-
-        VkCommandBuffer commandBuffer = nullptr;
-        if (vkAllocateCommandBuffers(m_deviceResources.device, &allocInfo, &commandBuffer) != VK_SUCCESS)
-        {
-            return;
-        }
-
-        VkCommandBufferBeginInfo begin_info = {};
-        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        auto err = vkBeginCommandBuffer(commandBuffer, &begin_info);
-        check_vk_result(err);
-
-        ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
-
-        VkSubmitInfo end_info = {};
-        end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        end_info.commandBufferCount = 1;
-        end_info.pCommandBuffers = &commandBuffer;
-        err = vkEndCommandBuffer(commandBuffer);
-        check_vk_result(err);
-
-        err = vkQueueSubmit(m_deviceResources.graphicsQueue, 1, &end_info, VK_NULL_HANDLE);
-        check_vk_result(err);
-
-        err = vkDeviceWaitIdle(m_deviceResources.device);
-        check_vk_result(err);
-        ImGui_ImplVulkan_InvalidateFontUploadObjects();
-    }
-
     ImGui_ImplSDL2_NewFrame(pWindow);
     ImGui::NewFrame();
 }
@@ -428,18 +368,18 @@ void DeviceVulkan::EndGUI()
     /*
     VkRenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = m_deviceResources.renderPass;
-    renderPassInfo.framebuffer = m_deviceResources.swapChainFramebuffers[m_deviceResources.currentFrame];
+    renderPassInfo.renderPass = m_pDeviceResources->renderPass;
+    renderPassInfo.framebuffer = m_pDeviceResources->swapChainFramebuffers[m_pDeviceResources->currentFrame];
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = m_deviceResources.swapChainExtent;
+    renderPassInfo.renderArea.extent = m_pDeviceResources->swapChainExtent;
 
     vkCmdBeginRenderPass(buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_deviceResources.graphicsPipeline);
+    vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pDeviceResources->graphicsPipeline);
     */
 
     //m_deviceResources->GetCommandList()->SetDescriptorHeaps(1, m_deviceResources->GetFontHeap());
-    auto buffer = m_deviceResources.GetCurrentFrame().commandBuffers[0];
+    auto buffer = m_pDeviceResources->GetCurrentFrame().commandBuffers[0];
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffer);
     
     //vkCmdEndRenderPass(commandBuffers[i]);
@@ -449,19 +389,14 @@ void DeviceVulkan::EndGUI()
 // Update the swap chain for a new client rectangle size (window sized)
 void DeviceVulkan::Resize(int width, int height)
 {
-    ImGui_ImplVulkan_InvalidateDeviceObjects();
-    m_deviceResources.framebufferResized = true;
-
-    ImGui_ImplVulkan_CreateDeviceObjects();
-    
-
+    m_pDeviceResources->framebufferResized = true;
 }
 
 // Handle any interesting SDL events
 void DeviceVulkan::ProcessEvent(SDL_Event& event)
 {
     // Just->pass->the event onto ImGUI, in case it needs mouse events, etc.
-    //ImGui_ImplSDL2_ProcessEvent(&event);
+    ImGui_ImplSDL2_ProcessEvent(&event);
     if (event.type == SDL_WINDOWEVENT)
     {
         // NOTE: There is a known bug with SDL where it doesn't update the window until the size operation completes
@@ -477,10 +412,9 @@ void DeviceVulkan::ProcessEvent(SDL_Event& event)
 
 bool DeviceVulkan::RenderFrame(float frameDelta, std::function<void()> fnRenderObjects)
 {
-    m_deviceResources.Prepare();
+    m_pDeviceResources->Prepare();
 
-    //commandList->ClearRenderTargetView(rtvDescriptor, Colors::CornflowerBlue, 0, nullptr);
-    //commandList->ClearDepthStencilView(dsvDescriptor, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+    CheckFontUploaded();
 
     // Callback to render stuff
     fnRenderObjects();
@@ -492,7 +426,7 @@ bool DeviceVulkan::RenderFrame(float frameDelta, std::function<void()> fnRenderO
         EndGUI();
     }
 
-    m_deviceResources.Present();
+    m_pDeviceResources->Present();
     return true;
 }
 
@@ -542,6 +476,102 @@ void DeviceVulkan::DrawFSQuad(std::shared_ptr<CompileResult> state)
     }
     commandList->DrawInstanced(3, 1, 0, 0);
     */
+}
+
+void DeviceVulkan::OnDeviceLost()
+{
+}
+
+void DeviceVulkan::OnDeviceRestored()
+{
+}
+
+void DeviceVulkan::OnInvalidateDeviceObjects()
+{
+    // Ensure nothing we are removing is in the pipe
+    m_pDeviceResources->Wait();
+
+    // Get rid of ImGui stuff
+    ImGui_ImplVulkan_InvalidateDeviceObjects();
+
+    // Need to upload the texture again and update its entry in the descriptor table
+    fontDirty = true;
+}
+
+void DeviceVulkan::OnCreateDeviceObjects()
+{
+    ImGui_ImplVulkan_InitInfo init_info = {};
+    init_info.Instance = m_pDeviceResources->instance;
+    init_info.PhysicalDevice = m_pDeviceResources->physicalDevice;
+    init_info.Device = m_pDeviceResources->device;
+    init_info.QueueFamily = m_pDeviceResources->queueFamilyIndices.graphicsFamily.value();
+    init_info.Queue = m_pDeviceResources->graphicsQueue;
+    init_info.PipelineCache = nullptr;//m_pDeviceResources->pipelineLayoutg_PipelineCache;
+    init_info.DescriptorPool = m_pDeviceResources->descriptorPool;
+    init_info.Allocator = nullptr;
+    init_info.CheckVkResultFn = check_vk_result;
+
+    // Call init, not restore, because we need to rebind the vulkan state to imgui
+    ImGui_ImplVulkan_Init(&init_info, m_pDeviceResources->renderPass);
+}
+
+void DeviceVulkan::CheckFontUploaded()
+{
+    // Upload Fonts
+    if (!ImGui::GetIO().Fonts->IsBuilt() || fontDirty)
+    {
+        fontDirty = false;
+
+        // Use any command queue
+        // TODO: Vulkan Noob. Not associated with a backbuffer, so does command buffer matter, since I'm resetting the pool?
+        VkCommandPool commandPool = m_pDeviceResources->GetCurrentFrame().commandPool;
+
+        VkCommandBufferAllocateInfo allocInfo = {};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.commandPool = commandPool;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandBufferCount = 1;
+
+        VkCommandBuffer commandBuffer = nullptr;
+        if (vkAllocateCommandBuffers(m_pDeviceResources->device, &allocInfo, &commandBuffer) != VK_SUCCESS)
+        {
+            return;
+        }
+
+        VkCommandBufferBeginInfo begin_info = {};
+        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        auto err = vkBeginCommandBuffer(commandBuffer, &begin_info);
+        check_vk_result(err);
+
+        ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+
+        VkSubmitInfo end_info = {};
+        end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        end_info.commandBufferCount = 1;
+        end_info.pCommandBuffers = &commandBuffer;
+        err = vkEndCommandBuffer(commandBuffer);
+        check_vk_result(err);
+
+        err = vkQueueSubmit(m_pDeviceResources->graphicsQueue, 1, &end_info, VK_NULL_HANDLE);
+        check_vk_result(err);
+
+        err = vkDeviceWaitIdle(m_pDeviceResources->device);
+        check_vk_result(err);
+        ImGui_ImplVulkan_InvalidateFontUploadObjects();
+    }
+}
+
+void DeviceVulkan::OnBeginResize()
+{
+    // Because passstate depends on the swap chain format, and that can change
+    // (aparently?!), we tear down and restore our state here
+    OnInvalidateDeviceObjects();
+}
+
+void DeviceVulkan::OnEndResize()
+{
+    OnCreateDeviceObjects();
 }
 
 } // namespace Mgfx

@@ -13,7 +13,18 @@ namespace Mgfx
 struct PassState;
 class CompileResult;
 
-struct IDevice
+// Provides an interface for an application that owns DxDeviceResources to be notified of the device being lost or created.
+struct IDeviceNotify
+{
+    virtual void OnDeviceLost() = 0;
+    virtual void OnDeviceRestored() = 0;
+    virtual void OnInvalidateDeviceObjects() = 0;
+    virtual void OnCreateDeviceObjects() = 0;
+    virtual void OnBeginResize() = 0;
+    virtual void OnEndResize() = 0;
+};
+
+struct IDevice : public IDeviceNotify
 {
     // Device methods, typically called in this order
     virtual bool Init(const char* pszWindowName) = 0;

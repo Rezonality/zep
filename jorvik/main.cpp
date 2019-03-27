@@ -40,7 +40,7 @@ bool ReadCommandLine(int argc, char** argv, int& exitCode)
     try
     {
         TCLAP::CmdLine cmd(APPLICATION_NAME, ' ', APPLICATION_VERSION);
-        TCLAP::SwitchArg gl("", "gl", "Enable OpenGL", cmd, false);
+        TCLAP::SwitchArg vulkan("", "vulkan", "Enable Vulkan", cmd, false);
         TCLAP::SwitchArg d3d("", "d3d", "Enable DX12", cmd, false);
         TCLAP::SwitchArg console("c", "console", "Enable Console", cmd, false);
         TCLAP::SwitchArg reset("", "reset", "Reset configuration", cmd, false);
@@ -53,6 +53,7 @@ bool ReadCommandLine(int argc, char** argv, int& exitCode)
             cmd.parse(argc, argv);
 
             jorvik.forceReset = reset.getValue();
+            jorvik.vulkan = vulkan.getValue();
 
 #ifdef WIN32
             // Show the console if the user supplied args
@@ -143,13 +144,25 @@ int main(int argc, char** argv)
 
     // Create device
 #ifdef WIN32
-    //jorvik.spDevice = std::make_unique<DeviceDX12>();
-    jorvik.spDevice = std::make_unique<DeviceVulkan>();
+    if (jorvik.vulkan)
+    {
+        jorvik.spDevice = std::make_unique<DeviceVulkan>();
+    }
+    else
+    {
+        jorvik.spDevice = std::make_unique<DeviceDX12>();
+    }
 #else
     jorvik.spDevice = std::make_unique<DeviceVulkan>();
 #endif
 
-    if (!jorvik.spDevice->Init("Jorvik"))
+    ImGui::CreateContext(0);
+    ImGui::GetStyle().ScaleAllSizes(dpi.scaleFactor);
+
+    std::ostringstream str;
+    str << "Jorvik: " << jorvik.spDevice->GetName();
+
+    if (!jorvik.spDevice->Init(str.str().c_str()))
     {
         UIManager::Instance().AddMessage(MessageType::Error | MessageType::System,
             std::string("Couldn't create device: ") + std::string(jorvik.spDevice->GetName()));
