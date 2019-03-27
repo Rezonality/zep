@@ -365,25 +365,8 @@ void DeviceVulkan::EndGUI()
 {
     ImGui::Render();
 
-    /*
-    VkRenderPassBeginInfo renderPassInfo = {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = m_pDeviceResources->renderPass;
-    renderPassInfo.framebuffer = m_pDeviceResources->swapChainFramebuffers[m_pDeviceResources->currentFrame];
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = m_pDeviceResources->swapChainExtent;
-
-    vkCmdBeginRenderPass(buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pDeviceResources->graphicsPipeline);
-    */
-
-    //m_deviceResources->GetCommandList()->SetDescriptorHeaps(1, m_deviceResources->GetFontHeap());
     auto buffer = m_pDeviceResources->GetCurrentFrame().commandBuffers[0];
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffer);
-    
-    //vkCmdEndRenderPass(commandBuffers[i]);
-
 }
 
 // Update the swap chain for a new client rectangle size (window sized)
@@ -437,20 +420,11 @@ glm::uvec2 DeviceVulkan::GetWindowSize()
     return glm::uvec2(w, h);
 }
 
-/*
-void DeviceVulkan::OnDeviceLost()
-{
-}
-
-void DeviceVulkan::OnDeviceRestored()
-{
-}
-*/
-
 void DeviceVulkan::Wait()
 {
-    //m_deviceResources->WaitForGpu();
+    m_pDeviceResources->Wait();
 }
+
 void DeviceVulkan::DrawFSQuad(std::shared_ptr<CompileResult> state)
 {
     // Use the null vertex buffer trick with a big triangle for now.

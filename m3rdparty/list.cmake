@@ -1,6 +1,6 @@
 option (PROJECT_M3RDPARTY_ZIP "Compile Zip decompression" OFF)
 option (PROJECT_CPP_FILESYSTEM "Use CPP 14 Filesystem - experimental" ON)
-option (PROJECT_SHADERTOOLS "Build SpirV, glslang" OFF)
+option (PROJECT_SHADERTOOLS "Build SpirV, glslang" ON)
 
 # Zip
 if (PROJECT_M3RDPARTY_ZIP)
