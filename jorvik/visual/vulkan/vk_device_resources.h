@@ -1,8 +1,8 @@
 #pragma once
-#include "vulkan/vulkan.hpp"
+#include "visual/IDevice.h"
+#include "vookoo/include/vku/vku.hpp"
 #include <optional>
 #include <vector>
-#include "visual/IDevice.h"
 
 struct SDL_Window;
 
@@ -53,8 +53,7 @@ public:
     void CreateInstance();
     void SetupDebugMessenger();
     void CreateSurface();
-    void PickPhysicalDevice();
-    void CreateLogicalDevice();
+    void CreateDevice();
     void CreateSwapChain();
     void CreateImageViews();
     void CreateRenderPass();
@@ -66,33 +65,43 @@ public:
 
     void Prepare();
     void Present();
-   
+
     FrameData& GetCurrentFrame()
     {
         return perFrame[currentFrame];
+    }
+
+    /// Get the queue used to submit graphics jobs
+    const vk::Queue graphicsQueue() const
+    {
+        return device->getQueue(graphicsQueueFamilyIndex, 0);
+    }
+
+    /// Get the queue used to submit compute jobs
+    const vk::Queue computeQueue() const
+    {
+        return device->getQueue(computeQueueFamilyIndex, 0);
     }
 
     VkShaderModule CreateShaderModule(const std::string& code);
     VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
     VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-    SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
-    bool isDeviceSuitable(VkPhysicalDevice device);
-    bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
-    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
-    std::vector<const char*> GetRequiredExtensions();
-    bool CheckValidationLayerSupport();
+    SwapChainSupportDetails QuerySwapChainSupport();
+    bool isDeviceSuitable();
+    bool CheckDeviceExtensionSupport();
+    QueueFamilyIndices FindQueueFamilies();
 
     SDL_Window* m_pWindow;
 
-    VkInstance instance = nullptr;
+    vk::UniqueInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger = nullptr;
     VkSurfaceKHR surface = nullptr;
 
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkDevice device = nullptr;
+    vk::UniqueDevice device;
+    vk::PhysicalDevice physicalDevice;
+    vk::PhysicalDeviceMemoryProperties memprops;
 
-    VkQueue graphicsQueue = nullptr;
     VkQueue presentQueue = nullptr;
 
     std::vector<FrameData> perFrame;
@@ -108,11 +117,11 @@ public:
     VkPipeline graphicsPipeline = nullptr;
     VkDescriptorPool descriptorPool = nullptr;
 
-    QueueFamilyIndices queueFamilyIndices;
+    uint32_t graphicsQueueFamilyIndex;
+    uint32_t computeQueueFamilyIndex;
 
     bool framebufferResized = false;
     Mgfx::IDeviceNotify* m_pDeviceNotify;
 };
 
-} // Mgfx
-
+} // namespace Mgfx

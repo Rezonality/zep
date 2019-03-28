@@ -17,11 +17,7 @@
 #include "visual/render_node.h"
 #include "visual/shader_file_asset.h"
 #include "visual/pass_renderstate.h"
-
-#if (TARGET_PC)
-#include "visual/dx12/device_dx12.h"
-#endif
-#include "visual/vulkan/device_vulkan.h"
+#include "visual/IDevice.h"
 
 namespace Mgfx
 {

@@ -475,11 +475,11 @@ void DeviceVulkan::OnInvalidateDeviceObjects()
 void DeviceVulkan::OnCreateDeviceObjects()
 {
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = m_pDeviceResources->instance;
+    init_info.Instance = m_pDeviceResources->instance.get();
     init_info.PhysicalDevice = m_pDeviceResources->physicalDevice;
-    init_info.Device = m_pDeviceResources->device;
-    init_info.QueueFamily = m_pDeviceResources->queueFamilyIndices.graphicsFamily.value();
-    init_info.Queue = m_pDeviceResources->graphicsQueue;
+    init_info.Device = m_pDeviceResources->device.get();
+    init_info.QueueFamily = -1;
+    init_info.Queue = m_pDeviceResources->graphicsQueue();
     init_info.PipelineCache = nullptr;//m_pDeviceResources->pipelineLayoutg_PipelineCache;
     init_info.DescriptorPool = m_pDeviceResources->descriptorPool;
     init_info.Allocator = nullptr;
@@ -507,7 +507,7 @@ void DeviceVulkan::CheckFontUploaded()
         allocInfo.commandBufferCount = 1;
 
         VkCommandBuffer commandBuffer = nullptr;
-        if (vkAllocateCommandBuffers(m_pDeviceResources->device, &allocInfo, &commandBuffer) != VK_SUCCESS)
+        if (vkAllocateCommandBuffers(m_pDeviceResources->device.get(), &allocInfo, &commandBuffer) != VK_SUCCESS)
         {
             return;
         }
@@ -527,10 +527,10 @@ void DeviceVulkan::CheckFontUploaded()
         err = vkEndCommandBuffer(commandBuffer);
         check_vk_result(err);
 
-        err = vkQueueSubmit(m_pDeviceResources->graphicsQueue, 1, &end_info, VK_NULL_HANDLE);
+        err = vkQueueSubmit(m_pDeviceResources->graphicsQueue(), 1, &end_info, VK_NULL_HANDLE);
         check_vk_result(err);
 
-        err = vkDeviceWaitIdle(m_pDeviceResources->device);
+        err = vkDeviceWaitIdle(m_pDeviceResources->device.get());
         check_vk_result(err);
         ImGui_ImplVulkan_InvalidateFontUploadObjects();
     }
