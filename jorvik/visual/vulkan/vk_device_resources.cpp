@@ -1,13 +1,9 @@
-#include "vulkan/vulkan.h"
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
-#include <iostream>
-#include <optional>
 #include <set>
 #include <stdexcept>
-#include <vector>
 
 #include "utils/file/file.h"
 #include "utils/logger.h"

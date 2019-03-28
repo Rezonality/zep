@@ -148,7 +148,7 @@ HRESULT Includer(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParent
         return E_FAIL;
     }
 
-    auto pMem = mynew uint8_t[inc.size()];
+    auto pMem = new uint8_t[inc.size()];
     memcpy(pMem, inc.c_str(), inc.size());
     *ppData = pMem;
     *pBytes = UINT(inc.size());
