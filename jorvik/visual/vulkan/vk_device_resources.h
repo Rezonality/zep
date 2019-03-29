@@ -2,8 +2,10 @@
 
 #include "visual/IDevice.h"
 #include "vookoo/include/vku/vku.hpp"
+
 #include <optional>
 #include <vector>
+
 #include "vk_debug_callback.h"
 
 struct SDL_Window;
@@ -13,23 +15,6 @@ namespace Mgfx
 
 class VkWindow;
 class VkDebugCallback;
-struct QueueFamilyIndices
-{
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-
-    bool isComplete()
-    {
-        return graphicsFamily.has_value() && presentFamily.has_value();
-    }
-};
-
-struct SwapChainSupportDetails
-{
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
-};
 
 struct FrameData
 {
@@ -48,10 +33,11 @@ public:
 
     void Init(SDL_Window* pWindow);
     void Wait();
-    void Cleanup();
-    bool CreateInstance();
+    void Destroy();
+    bool Create();
+    
     bool CreateSwapChain();
-
+    void DestroySwapChain();
     void RecreateSwapChain();
 
     bool Prepare();
@@ -59,7 +45,7 @@ public:
 
     FrameData& GetCurrentFrame()
     {
-        return perFrame[currentFrame];
+        return perFrame[m_currentFrame];
     }
 
     /// Get the queue used to submit graphics jobs
@@ -94,12 +80,9 @@ public:
     VkDebugCallback debugCallback;
 
     std::unique_ptr<VkWindow> m_spWindow;
-
-    VkShaderModule CreateShaderModule(const std::string& code);
-
     std::vector<FrameData> perFrame;
 
-    uint32_t currentFrame = 0;
+    uint32_t m_currentFrame = 0;
     uint32_t lastFrame = 0;
 
     //VkRenderPass renderPass = nullptr;

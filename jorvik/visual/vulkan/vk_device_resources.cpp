@@ -10,6 +10,7 @@
 
 #include "SDL.h"
 #include "SDL_vulkan.h"
+
 #include "vk_device_resources.h"
 #include "vk_window.h"
 
@@ -28,7 +29,8 @@ VkDeviceResources::~VkDeviceResources()
 void VkDeviceResources::Init(SDL_Window* pWindow)
 {
     m_pWindow = pWindow;
-    CreateInstance();
+
+    Create();
     CreateSwapChain();
 
     m_pDeviceNotify->OnCreateDeviceObjects();
@@ -39,12 +41,12 @@ void VkDeviceResources::Wait()
     device->waitIdle();
 }
 
-void VkDeviceResources::Cleanup()
+void VkDeviceResources::Destroy()
 {
     m_pDeviceNotify->OnInvalidateDeviceObjects();
 
-    m_spWindow.reset();
-    perFrame.clear();
+    DestroySwapChain();
+
     descriptorPool.reset();
     device.reset();
 
@@ -55,26 +57,27 @@ void VkDeviceResources::Cleanup()
     instance.reset();
 }
 
+void VkDeviceResources::DestroySwapChain()
+{
+    device->waitIdle();
+    m_spWindow.reset();
+    perFrame.clear();
+}
+
 void VkDeviceResources::RecreateSwapChain()
 {
     LOG(DEBUG) << "Vulkan: RecreateSwapChain";
 
     m_pDeviceNotify->OnBeginResize();
 
-    int width = 0, height = 0;
-    SDL_GetWindowSize(m_pWindow, &width, &height);
-    device->waitIdle();
-
-    m_spWindow.reset();
-    perFrame.clear();
-
+    DestroySwapChain();
     CreateSwapChain();
-    //CreateGraphicsPipeline();k
+    //CreateGraphicsPipeline();
 
     m_pDeviceNotify->OnEndResize();
 }
 
-bool VkDeviceResources::CreateInstance()
+bool VkDeviceResources::Create()
 {
     // Get SDL required extensions
     uint32_t extensionCount = 0;
@@ -194,13 +197,14 @@ bool VkDeviceResources::CreateSwapChain()
 
 bool VkDeviceResources::Prepare()
 {
+    lastFrame = m_currentFrame;
+
     // Wait for the current frame fence
     // This is so that the CPU doesn't get ahead of the GPU; up to the depth of the number of frames
-    device->waitForFences(perFrame[currentFrame].inFlightFence.get(), VK_TRUE, std::numeric_limits<uint64_t>::max());
+    device->waitForFences(perFrame[lastFrame].inFlightFence.get(), VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     // Need the last frame to submit from the previous semaphore
-    lastFrame = currentFrame;
-    VkResult result = vkAcquireNextImageKHR(device.get(), m_spWindow->Swapchain(), std::numeric_limits<uint64_t>::max(), *perFrame[currentFrame].imageAvailableSemaphore, VK_NULL_HANDLE, &currentFrame);
+    VkResult result = vkAcquireNextImageKHR(device.get(), m_spWindow->Swapchain(), std::numeric_limits<uint64_t>::max(), *perFrame[lastFrame].imageAvailableSemaphore, VK_NULL_HANDLE, &m_currentFrame);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR)
     {
@@ -212,11 +216,13 @@ bool VkDeviceResources::Prepare()
         return false;
     }
 
-    // ? Need this flag
-    device->resetCommandPool(*perFrame[currentFrame].commandPool, vk::CommandPoolResetFlagBits::eReleaseResources);
+    auto& frame = perFrame[m_currentFrame];
 
-    perFrame[currentFrame].commandBuffers.resize(1);
-    perFrame[currentFrame].commandBuffers = device->allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(*perFrame[currentFrame].commandPool, vk::CommandBufferLevel::ePrimary, 1));
+    // ? Need this flag
+    device->resetCommandPool(*frame.commandPool, vk::CommandPoolResetFlagBits::eReleaseResources);
+
+    frame.commandBuffers.resize(1);
+    frame.commandBuffers = device->allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(*frame.commandPool, vk::CommandBufferLevel::ePrimary, 1));
 
     vk::ClearValue clearValues[2];
     clearValues[0].color = vk::ClearColorValue(std::array<float, 4>({ 100.0f / 255.0f, 149.0f / 255.0f, 237.0f / 255.0f, 1.0f }));
@@ -224,56 +230,42 @@ bool VkDeviceResources::Prepare()
 
     vk::RenderPassBeginInfo beginInfo(
         m_spWindow->RenderPass(),
-        m_spWindow->Framebuffers()[currentFrame].get(),
+        m_spWindow->Framebuffers()[m_currentFrame].get(),
         vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(m_spWindow->Width(), m_spWindow->Height())),
         2,
         clearValues);
 
-    perFrame[currentFrame].commandBuffers[0]->begin(vk::CommandBufferBeginInfo());
-    perFrame[currentFrame].commandBuffers[0]->beginRenderPass(beginInfo, vk::SubpassContents::eInline);
+    frame.commandBuffers[0]->begin(vk::CommandBufferBeginInfo());
+    frame.commandBuffers[0]->beginRenderPass(beginInfo, vk::SubpassContents::eInline);
 
     return true;
 }
 
 bool VkDeviceResources::Present()
 {
-    perFrame[currentFrame].commandBuffers[0]->endRenderPass();
-    perFrame[currentFrame].commandBuffers[0]->end();
+    auto& frame = perFrame[m_currentFrame];
 
-    device->resetFences(perFrame[currentFrame].inFlightFence.get());
+    frame.commandBuffers[0]->endRenderPass();
+    frame.commandBuffers[0]->end();
+
+    device->resetFences(perFrame[m_currentFrame].inFlightFence.get());
 
     vk::PipelineStageFlags waitDestinationStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
-    vk::SubmitInfo submit(1, &*perFrame[lastFrame].imageAvailableSemaphore, &waitDestinationStageMask, 1, &*perFrame[currentFrame].commandBuffers[0], 1, &*perFrame[currentFrame].renderFinishedSemaphore);
-    graphicsQueue().submit(1, &submit, *perFrame[currentFrame].inFlightFence);
+    vk::SubmitInfo submit(1, &*perFrame[lastFrame].imageAvailableSemaphore, &waitDestinationStageMask, 1, &*frame.commandBuffers[0], 1, &*frame.renderFinishedSemaphore);
+    graphicsQueue().submit(1, &submit, *frame.inFlightFence);
 
     try
     {
-        vk::PresentInfoKHR presentInfo(1, &*perFrame[currentFrame].renderFinishedSemaphore, 1, &m_spWindow->Swapchain(), &currentFrame);
+        vk::PresentInfoKHR presentInfo(1, &*frame.renderFinishedSemaphore, 1, &m_spWindow->Swapchain(), &m_currentFrame);
         graphicsQueue().presentKHR(presentInfo);
     }
-    catch(std::exception&)
+    catch (std::exception&)
     {
         framebufferResized = false;
         RecreateSwapChain();
         return false;
     }
     return true;
-}
-
-VkShaderModule VkDeviceResources::CreateShaderModule(const std::string& code)
-{
-    VkShaderModuleCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = code.size();
-    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.c_str());
-
-    VkShaderModule shaderModule;
-    if (vkCreateShaderModule(device.get(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create shader module!");
-    }
-
-    return shaderModule;
 }
 
 } // namespace Mgfx

@@ -11,6 +11,7 @@
 #include <optional>
 
 #include <imgui/imgui.h>
+
 #include <imgui/examples/imgui_impl_sdl.h>
 #include <imgui/examples/imgui_impl_vulkan.h>
 
@@ -20,8 +21,8 @@
 #include "device_vulkan.h"
 #include "vk_window.h"
 
-#include "jorvik/editor.h"
 #include "jorvik.h"
+#include "jorvik/editor.h"
 #include "meta_tags.h"
 
 #include "visual/scene.h"
@@ -36,7 +37,8 @@ HWND g_hWnd;
 namespace Mgfx
 {
 
-std::map<std::string, std::string> FileNameToVkShaderType = {
+std::map<std::string, std::string> FileNameToVkShaderType = 
+{
     { "ps", "ps_5_0" },
     { "vs", "vs_5_0" },
     { "gs", "gs_5_0" },
@@ -104,7 +106,7 @@ bool DeviceVulkan::Init(const char* pszWindowName)
 void DeviceVulkan::Destroy()
 {
     m_pDeviceResources->Wait();
-    m_pDeviceResources->Cleanup();
+    m_pDeviceResources->Destroy();
 
     if (pWindow != nullptr)
     {
@@ -481,58 +483,29 @@ void DeviceVulkan::OnCreateDeviceObjects()
     init_info.Device = m_pDeviceResources->device.get();
     init_info.QueueFamily = -1;
     init_info.Queue = m_pDeviceResources->graphicsQueue();
-    init_info.PipelineCache = nullptr;//m_pDeviceResources->pipelineLayoutg_PipelineCache;
+    init_info.PipelineCache = nullptr; //m_pDeviceResources->pipelineLayoutg_PipelineCache;
     init_info.DescriptorPool = m_pDeviceResources->descriptorPool.get();
     init_info.Allocator = nullptr;
     init_info.CheckVkResultFn = check_vk_result;
 
     // Call init, not restore, because we need to rebind the vulkan state to imgui
     ImGui_ImplVulkan_Init(&init_info, m_pDeviceResources->GetWindow()->RenderPass());
+    
 }
 
 void DeviceVulkan::CheckFontUploaded()
 {
     // Upload Fonts
+    // The device client may update the texture fonts and cause us to need a rebuild!
     if (!ImGui::GetIO().Fonts->IsBuilt() || fontDirty)
     {
         fontDirty = false;
 
-        // Use any command queue
-        // TODO: Vulkan Noob. Not associated with a backbuffer, so does command buffer matter, since I'm resetting the pool?
-        VkCommandPool commandPool = *m_pDeviceResources->GetCurrentFrame().commandPool;
-
-        VkCommandBufferAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = commandPool;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = 1;
-
-        VkCommandBuffer commandBuffer = nullptr;
-        if (vkAllocateCommandBuffers(m_pDeviceResources->device.get(), &allocInfo, &commandBuffer) != VK_SUCCESS)
+        vku::executeImmediately(m_pDeviceResources->device.get(), m_pDeviceResources->perFrame[0].commandPool.get(), m_pDeviceResources->graphicsQueue(), [&](vk::CommandBuffer cb)
         {
-            return;
-        }
+            ImGui_ImplVulkan_CreateFontsTexture(cb);
+        });
 
-        VkCommandBufferBeginInfo begin_info = {};
-        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        auto err = vkBeginCommandBuffer(commandBuffer, &begin_info);
-        check_vk_result(err);
-
-        ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
-
-        VkSubmitInfo end_info = {};
-        end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        end_info.commandBufferCount = 1;
-        end_info.pCommandBuffers = &commandBuffer;
-        err = vkEndCommandBuffer(commandBuffer);
-        check_vk_result(err);
-
-        err = vkQueueSubmit(m_pDeviceResources->graphicsQueue(), 1, &end_info, VK_NULL_HANDLE);
-        check_vk_result(err);
-
-        err = vkDeviceWaitIdle(m_pDeviceResources->device.get());
-        check_vk_result(err);
         ImGui_ImplVulkan_InvalidateFontUploadObjects();
     }
 }
