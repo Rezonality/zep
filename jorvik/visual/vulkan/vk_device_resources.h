@@ -1,7 +1,5 @@
 #pragma once
 
-//#define VULKAN_HPP_NO_EXCEPTIONS 1
-
 #include "visual/IDevice.h"
 #include "vookoo/include/vku/vku.hpp"
 #include <optional>
@@ -13,6 +11,7 @@ struct SDL_Window;
 namespace Mgfx
 {
 
+class VkWindow;
 class VkDebugCallback;
 struct QueueFamilyIndices
 {
@@ -34,14 +33,11 @@ struct SwapChainSupportDetails
 
 struct FrameData
 {
-    VkImage swapChainImage;
-    VkImageView swapChainImageView;
-    VkFramebuffer swapChainFramebuffer;
-    VkCommandPool commandPool;
-    std::vector<VkCommandBuffer> commandBuffers;
-    VkSemaphore imageAvailableSemaphore;
-    VkSemaphore renderFinishedSemaphore;
-    VkFence inFlightFence;
+    vk::UniqueCommandPool commandPool;
+    std::vector<vk::UniqueCommandBuffer> commandBuffers;
+    vk::UniqueSemaphore imageAvailableSemaphore;
+    vk::UniqueSemaphore renderFinishedSemaphore;
+    vk::UniqueFence inFlightFence;
 };
 
 class VkDeviceResources
@@ -54,21 +50,12 @@ public:
     void Wait();
     void Cleanup();
     bool CreateInstance();
-    bool CreateDevice();
+    bool CreateSwapChain();
 
-    void CleanupSwapChain();
     void RecreateSwapChain();
-    void CreateSwapChain();
-    void CreateImageViews();
-    void CreateRenderPass();
-    void CreateFramebuffers();
-    void CreateSyncObjects();
-    void CreateCommandPool();
-    void CreateGraphicsPipeline();
-    void CreateDescriptorPool();
 
-    void Prepare();
-    void Present();
+    bool Prepare();
+    bool Present();
 
     FrameData& GetCurrentFrame()
     {
@@ -87,6 +74,11 @@ public:
         return device->getQueue(computeQueueFamilyIndex, 0);
     }
 
+    const VkWindow* GetWindow() const
+    {
+        return m_spWindow.get();
+    }
+
     SDL_Window* m_pWindow;
 
     vk::UniqueInstance instance;
@@ -101,23 +93,16 @@ public:
 
     VkDebugCallback debugCallback;
 
+    std::unique_ptr<VkWindow> m_spWindow;
+
     VkShaderModule CreateShaderModule(const std::string& code);
-    VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-    VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
-    VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-    SwapChainSupportDetails QuerySwapChainSupport();
-    QueueFamilyIndices FindQueueFamilies();
 
     std::vector<FrameData> perFrame;
 
     uint32_t currentFrame = 0;
     uint32_t lastFrame = 0;
 
-    VkSwapchainKHR swapChain = nullptr;
-    VkFormat swapChainImageFormat;
-    VkExtent2D swapChainExtent;
-
-    VkRenderPass renderPass = nullptr;
+    //VkRenderPass renderPass = nullptr;
     VkPipelineLayout pipelineLayout = nullptr;
     VkPipeline graphicsPipeline = nullptr;
 

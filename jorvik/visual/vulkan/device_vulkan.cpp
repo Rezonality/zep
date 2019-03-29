@@ -18,6 +18,7 @@
 #include "SDL_vulkan.h"
 
 #include "device_vulkan.h"
+#include "vk_window.h"
 
 #include "jorvik/editor.h"
 #include "jorvik.h"
@@ -365,7 +366,7 @@ void DeviceVulkan::EndGUI()
 {
     ImGui::Render();
 
-    auto buffer = m_pDeviceResources->GetCurrentFrame().commandBuffers[0];
+    auto buffer = *m_pDeviceResources->GetCurrentFrame().commandBuffers[0];
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffer);
 }
 
@@ -486,7 +487,7 @@ void DeviceVulkan::OnCreateDeviceObjects()
     init_info.CheckVkResultFn = check_vk_result;
 
     // Call init, not restore, because we need to rebind the vulkan state to imgui
-    ImGui_ImplVulkan_Init(&init_info, m_pDeviceResources->renderPass);
+    ImGui_ImplVulkan_Init(&init_info, m_pDeviceResources->GetWindow()->RenderPass());
 }
 
 void DeviceVulkan::CheckFontUploaded()
@@ -498,7 +499,7 @@ void DeviceVulkan::CheckFontUploaded()
 
         // Use any command queue
         // TODO: Vulkan Noob. Not associated with a backbuffer, so does command buffer matter, since I'm resetting the pool?
-        VkCommandPool commandPool = m_pDeviceResources->GetCurrentFrame().commandPool;
+        VkCommandPool commandPool = *m_pDeviceResources->GetCurrentFrame().commandPool;
 
         VkCommandBufferAllocateInfo allocInfo = {};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;

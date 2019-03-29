@@ -13,7 +13,7 @@ union SDL_Event;
 namespace Mgfx
 {
 
-class Window;
+class VkWindow;
 class CompileResult;
 
 struct ICompile;

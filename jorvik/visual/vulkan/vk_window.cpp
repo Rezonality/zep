@@ -5,7 +5,7 @@
 namespace Mgfx
 {
 
-Window::Window(const vk::Instance& instance, const vk::Device& device, const vk::PhysicalDevice& physicalDevice, uint32_t graphicsQueueFamilyIndex, vk::SurfaceKHR surface)
+VkWindow::VkWindow(const vk::Instance& instance, const vk::Device& device, const vk::PhysicalDevice& physicalDevice, uint32_t graphicsQueueFamilyIndex, vk::SurfaceKHR surface)
 {
     surface_ = surface;
     instance_ = instance;
@@ -142,14 +142,10 @@ Window::Window(const vk::Instance& instance, const vk::Device& device, const vk:
         framebuffers_.push_back(device.createFramebufferUnique(fbci));
     }
 
-    vk::SemaphoreCreateInfo sci;
-    imageAcquireSemaphore_ = device.createSemaphoreUnique(sci);
-    commandCompleteSemaphore_ = device.createSemaphoreUnique(sci);
-
     ok_ = true;
 }
 
-void Window::DumpCaps(std::ostream& os, vk::PhysicalDevice pd) const
+void VkWindow::DumpCaps(std::ostream& os, vk::PhysicalDevice pd) const
 {
     os << "Surface formats\n";
     auto fmts = pd.getSurfaceFormatsKHR(surface_);
@@ -169,104 +165,88 @@ void Window::DumpCaps(std::ostream& os, vk::PhysicalDevice pd) const
 }
 
 /// Return the queue family index used to present the surface to the display.
-uint32_t Window::PresentQueueFamily() const
+uint32_t VkWindow::PresentQueueFamily() const
 {
     return presentQueueFamily_;
 }
 
 /// Get the queue used to submit graphics jobs
-const vk::Queue Window::PresentQueue() const
+const vk::Queue VkWindow::PresentQueue() const
 {
     return device_.getQueue(presentQueueFamily_, 0);
 }
 
-bool Window::Ok() const
+bool VkWindow::Ok() const
 {
     return ok_;
 }
 
 /// Return the renderpass used by this window.
-vk::RenderPass Window::RenderPass() const
+vk::RenderPass VkWindow::RenderPass() const
 {
     return *renderPass_;
 }
 
 /// Return the frame buffers used by this window
-const std::vector<vk::UniqueFramebuffer>& Window::Framebuffers() const
+const std::vector<vk::UniqueFramebuffer>& VkWindow::Framebuffers() const
 {
     return framebuffers_;
 }
 
 /// Destroy resources when shutting down.
-Window::~Window()
+VkWindow::~VkWindow()
 {
     for (auto& iv : imageViews_)
     {
         device_.destroyImageView(iv);
     }
-    for (auto& f : commandBufferFences_)
-    {
-        device_.destroyFence(f);
-    }
     swapchain_ = vk::UniqueSwapchainKHR{};
 }
 
 /// Return the width of the display.
-uint32_t Window::Width() const
+uint32_t VkWindow::Width() const
 {
     return width_;
 }
 
 /// Return the height of the display.
-uint32_t Window::Height() const
+uint32_t VkWindow::Height() const
 {
     return height_;
 }
 
 /// Return the format of the back buffer.
-vk::Format Window::SwapchainImageFormat() const
+vk::Format VkWindow::SwapchainImageFormat() const
 {
     return swapchainImageFormat_;
 }
 
 /// Return the colour space of the back buffer (Usually sRGB)
-vk::ColorSpaceKHR Window::SwapchainColorSpace() const
+vk::ColorSpaceKHR VkWindow::SwapchainColorSpace() const
 {
     return swapchainColorSpace_;
 }
 
 /// Return the swapchain object
-const vk::SwapchainKHR Window::Swapchain() const
+const vk::SwapchainKHR VkWindow::Swapchain() const
 {
     return *swapchain_;
 }
 
 /// Return the views of the swap chain images
-const std::vector<vk::ImageView>& Window::ImageViews() const
+const std::vector<vk::ImageView>& VkWindow::ImageViews() const
 {
     return imageViews_;
 }
 
 /// Return the swap chain images
-const std::vector<vk::Image>& Window::Images() const
+const std::vector<vk::Image>& VkWindow::Images() const
 {
     return images_;
 }
 
-/// Return the semaphore signalled when an image is acquired.
-vk::Semaphore Window::ImageAcquireSemaphore() const
-{
-    return *imageAcquireSemaphore_;
-}
-
-/// Return the semaphore signalled when the command buffers are finished.
-vk::Semaphore Window::CommandCompleteSemaphore() const
-{
-    return *commandCompleteSemaphore_;
-}
-
 /// Return the number of swap chain images.
-int Window::NumImageIndices() const
+int VkWindow::NumImageIndices() const
 {
     return (int)images_.size();
 }

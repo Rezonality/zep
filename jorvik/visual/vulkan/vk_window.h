@@ -6,13 +6,13 @@
 namespace Mgfx
 {
 
-class Window
+class VkWindow
 {
 public:
-    Window(const vk::Instance& instance, const vk::Device& device, const vk::PhysicalDevice& physicalDevice, uint32_t graphicsQueueFamilyIndex, vk::SurfaceKHR surface);
-    ~Window();
+    VkWindow(const vk::Instance& instance, const vk::Device& device, const vk::PhysicalDevice& physicalDevice, uint32_t graphicsQueueFamilyIndex, vk::SurfaceKHR surface);
+    ~VkWindow();
 
-    Window& operator=(Window&& rhs) = default;
+    VkWindow& operator=(VkWindow&& rhs) = default;
 
     void DumpCaps(std::ostream& os, vk::PhysicalDevice pd) const;
 
@@ -29,9 +29,6 @@ public:
     const vk::SwapchainKHR Swapchain() const;
     const std::vector<vk::ImageView>& ImageViews() const;
     const std::vector<vk::Image>& Images() const;
-
-    vk::Semaphore ImageAcquireSemaphore() const;
-    vk::Semaphore CommandCompleteSemaphore() const;
     int NumImageIndices() const;
 
 private:
@@ -39,12 +36,9 @@ private:
     vk::SurfaceKHR surface_;
     vk::UniqueSwapchainKHR swapchain_;
     vk::UniqueRenderPass renderPass_;
-    vk::UniqueSemaphore imageAcquireSemaphore_;
-    vk::UniqueSemaphore commandCompleteSemaphore_;
 
     std::vector<vk::ImageView> imageViews_;
     std::vector<vk::Image> images_;
-    std::vector<vk::Fence> commandBufferFences_;
     std::vector<vk::UniqueFramebuffer> framebuffers_;
     vku::DepthStencilImage depthStencilImage_;
 
