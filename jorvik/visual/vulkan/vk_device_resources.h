@@ -83,7 +83,7 @@ public:
     std::vector<FrameData> perFrame;
 
     uint32_t m_currentFrame = 0;
-    uint32_t lastFrame = 0;
+    uint32_t m_lastFrame = 0;
 
     //VkRenderPass renderPass = nullptr;
     VkPipelineLayout pipelineLayout = nullptr;

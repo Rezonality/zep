@@ -197,14 +197,14 @@ bool VkDeviceResources::CreateSwapChain()
 
 bool VkDeviceResources::Prepare()
 {
-    lastFrame = m_currentFrame;
+    m_lastFrame = m_currentFrame;
 
     // Wait for the current frame fence
     // This is so that the CPU doesn't get ahead of the GPU; up to the depth of the number of frames
-    device->waitForFences(perFrame[lastFrame].inFlightFence.get(), VK_TRUE, std::numeric_limits<uint64_t>::max());
+    device->waitForFences(perFrame[m_lastFrame].inFlightFence.get(), VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     // Need the last frame to submit from the previous semaphore
-    VkResult result = vkAcquireNextImageKHR(device.get(), m_spWindow->Swapchain(), std::numeric_limits<uint64_t>::max(), *perFrame[lastFrame].imageAvailableSemaphore, VK_NULL_HANDLE, &m_currentFrame);
+    VkResult result = vkAcquireNextImageKHR(device.get(), m_spWindow->Swapchain(), std::numeric_limits<uint64_t>::max(), *perFrame[m_lastFrame].imageAvailableSemaphore, VK_NULL_HANDLE, &m_currentFrame);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR)
     {
@@ -221,8 +221,10 @@ bool VkDeviceResources::Prepare()
     // ? Need this flag
     device->resetCommandPool(*frame.commandPool, vk::CommandPoolResetFlagBits::eReleaseResources);
 
-    frame.commandBuffers.resize(1);
-    frame.commandBuffers = device->allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(*frame.commandPool, vk::CommandBufferLevel::ePrimary, 1));
+    if (frame.commandBuffers.empty())
+    {
+        frame.commandBuffers = device->allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(*frame.commandPool, vk::CommandBufferLevel::ePrimary, 1));
+    }
 
     vk::ClearValue clearValues[2];
     clearValues[0].color = vk::ClearColorValue(std::array<float, 4>({ 100.0f / 255.0f, 149.0f / 255.0f, 237.0f / 255.0f, 1.0f }));
@@ -251,7 +253,7 @@ bool VkDeviceResources::Present()
     device->resetFences(perFrame[m_currentFrame].inFlightFence.get());
 
     vk::PipelineStageFlags waitDestinationStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
-    vk::SubmitInfo submit(1, &*perFrame[lastFrame].imageAvailableSemaphore, &waitDestinationStageMask, 1, &*frame.commandBuffers[0], 1, &*frame.renderFinishedSemaphore);
+    vk::SubmitInfo submit(1, &*perFrame[m_lastFrame].imageAvailableSemaphore, &waitDestinationStageMask, 1, &*frame.commandBuffers[0], 1, &*frame.renderFinishedSemaphore);
     graphicsQueue().submit(1, &submit, *frame.inFlightFence);
 
     try
