@@ -481,7 +481,7 @@ void DeviceVulkan::OnCreateDeviceObjects()
     init_info.QueueFamily = -1;
     init_info.Queue = m_pDeviceResources->graphicsQueue();
     init_info.PipelineCache = nullptr;//m_pDeviceResources->pipelineLayoutg_PipelineCache;
-    init_info.DescriptorPool = m_pDeviceResources->descriptorPool;
+    init_info.DescriptorPool = m_pDeviceResources->descriptorPool.get();
     init_info.Allocator = nullptr;
     init_info.CheckVkResultFn = check_vk_result;
 

@@ -1,14 +1,19 @@
 #pragma once
+
+//#define VULKAN_HPP_NO_EXCEPTIONS 1
+
 #include "visual/IDevice.h"
 #include "vookoo/include/vku/vku.hpp"
 #include <optional>
 #include <vector>
+#include "vk_debug_callback.h"
 
 struct SDL_Window;
 
 namespace Mgfx
 {
 
+class VkDebugCallback;
 struct QueueFamilyIndices
 {
     std::optional<uint32_t> graphicsFamily;
@@ -48,12 +53,11 @@ public:
     void Init(SDL_Window* pWindow);
     void Wait();
     void Cleanup();
+    bool CreateInstance();
+    bool CreateDevice();
+
     void CleanupSwapChain();
     void RecreateSwapChain();
-    void CreateInstance();
-    void SetupDebugMessenger();
-    void CreateSurface();
-    void CreateDevice();
     void CreateSwapChain();
     void CreateImageViews();
     void CreateRenderPass();
@@ -83,28 +87,29 @@ public:
         return device->getQueue(computeQueueFamilyIndex, 0);
     }
 
+    SDL_Window* m_pWindow;
+
+    vk::UniqueInstance instance;
+    vk::SurfaceKHR surface;
+    vk::UniqueDevice device;
+    vk::PhysicalDevice physicalDevice;
+    vk::PhysicalDeviceMemoryProperties memprops;
+    vk::UniqueDescriptorPool descriptorPool;
+    
+    uint32_t graphicsQueueFamilyIndex;
+    uint32_t computeQueueFamilyIndex;
+
+    VkDebugCallback debugCallback;
+
     VkShaderModule CreateShaderModule(const std::string& code);
     VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
     VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
     SwapChainSupportDetails QuerySwapChainSupport();
-    bool isDeviceSuitable();
-    bool CheckDeviceExtensionSupport();
     QueueFamilyIndices FindQueueFamilies();
 
-    SDL_Window* m_pWindow;
-
-    vk::UniqueInstance instance;
-    VkDebugUtilsMessengerEXT debugMessenger = nullptr;
-    VkSurfaceKHR surface = nullptr;
-
-    vk::UniqueDevice device;
-    vk::PhysicalDevice physicalDevice;
-    vk::PhysicalDeviceMemoryProperties memprops;
-
-    VkQueue presentQueue = nullptr;
-
     std::vector<FrameData> perFrame;
+
     uint32_t currentFrame = 0;
     uint32_t lastFrame = 0;
 
@@ -115,10 +120,6 @@ public:
     VkRenderPass renderPass = nullptr;
     VkPipelineLayout pipelineLayout = nullptr;
     VkPipeline graphicsPipeline = nullptr;
-    VkDescriptorPool descriptorPool = nullptr;
-
-    uint32_t graphicsQueueFamilyIndex;
-    uint32_t computeQueueFamilyIndex;
 
     bool framebufferResized = false;
     Mgfx::IDeviceNotify* m_pDeviceNotify;

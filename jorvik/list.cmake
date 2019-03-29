@@ -55,6 +55,10 @@ jorvik/visual/vulkan/device_vulkan.cpp
 jorvik/visual/vulkan/device_vulkan.h
 jorvik/visual/vulkan/vk_device_resources.cpp
 jorvik/visual/vulkan/vk_device_resources.h
+jorvik/visual/vulkan/vk_debug_callback.cpp
+jorvik/visual/vulkan/vk_debug_callback.h
+jorvik/visual/vulkan/vk_window.cpp
+jorvik/visual/vulkan/vk_window.h
 )
 ENDIF()
 

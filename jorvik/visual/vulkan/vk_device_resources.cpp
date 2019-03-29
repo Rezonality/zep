@@ -15,48 +15,6 @@
 namespace Mgfx
 {
 
-const int WIDTH = 800;
-const int HEIGHT = 600;
-
-const int MAX_FRAMES_IN_FLIGHT = 2;
-
-static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
-{
-    LOG(DEBUG) << "Vulcan Validation Layer: " << pCallbackData->pMessage;
-
-    return VK_FALSE;
-}
-
-const std::vector<const char*> validationLayers = {
-    "VK_LAYER_LUNARG_standard_validation"
-};
-
-const std::vector<const char*> deviceExtensions = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME
-};
-
-VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
-{
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-    if (func != nullptr)
-    {
-        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-    }
-    else
-    {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-}
-
-void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
-{
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-    if (func != nullptr)
-    {
-        func(instance, debugMessenger, pAllocator);
-    }
-}
-
 VkDeviceResources::VkDeviceResources(Mgfx::IDeviceNotify* pNotify)
     : m_pDeviceNotify(pNotify)
 {
@@ -70,9 +28,8 @@ void VkDeviceResources::Init(SDL_Window* pWindow)
 {
     m_pWindow = pWindow;
     CreateInstance();
-    SetupDebugMessenger();
-    CreateSurface();
     CreateDevice();
+
     CreateSwapChain();
     CreateImageViews();
     CreateRenderPass();
@@ -134,13 +91,13 @@ void VkDeviceResources::Cleanup()
         vkDestroyCommandPool(device.get(), frame.commandPool, nullptr);
     }
 
-    vkDestroyDescriptorPool(device.get(), descriptorPool, nullptr);
-
+    descriptorPool.reset();
     device.reset();
 
-    DestroyDebugUtilsMessengerEXT(instance.get(), debugMessenger, nullptr);
-
     vkDestroySurfaceKHR(instance.get(), surface, nullptr);
+
+    debugCallback.reset();
+
     instance.reset();
 }
 
@@ -165,13 +122,15 @@ void VkDeviceResources::RecreateSwapChain()
     m_pDeviceNotify->OnEndResize();
 }
 
-void VkDeviceResources::CreateInstance()
+bool VkDeviceResources::CreateInstance()
 {
+    // Get SDL required extensions
     uint32_t extensionCount = 0;
     SDL_Vulkan_GetInstanceExtensions(m_pWindow, &extensionCount, nullptr);
     std::vector<const char*> sdlExtensions(extensionCount);
     SDL_Vulkan_GetInstanceExtensions(m_pWindow, &extensionCount, sdlExtensions.data());
 
+    // Make the vulkan instance
     vku::InstanceMaker im;
     im.defaultLayers();
     for (auto sdlExt : sdlExtensions)
@@ -182,97 +141,38 @@ void VkDeviceResources::CreateInstance()
 
     instance = im.createUnique();
 
-    /*
-    LOG(DEBUG) << "Vulkan: CreateInstance";
-    if (enableValidationLayers && !CheckValidationLayerSupport())
+    // Add debug callbacks
+    debugCallback = VkDebugCallback(*instance);
+
+    // Create the surface
+    VkSurfaceKHR surf;
+    if (!SDL_Vulkan_CreateSurface(m_pWindow, instance.get(), &surf))
     {
-        throw std::runtime_error("validation layers requested, but not available!");
+        return false;
     }
 
-    VkApplicationInfo appInfo = {};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "Hello Triangle";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "No Engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
-
-    VkInstanceCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    createInfo.pApplicationInfo = &appInfo;
-
-    auto extensions = GetRequiredExtensions();
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-    createInfo.ppEnabledExtensionNames = extensions.data();
-
-    if (enableValidationLayers)
-    {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
-    }
-    else
-    {
-        createInfo.enabledLayerCount = 0;
-    }
-
-    if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create instance!");
-    }
-    */
-}
-
-void VkDeviceResources::SetupDebugMessenger()
-{
-    //if (!enableValidationLayers)
-    //   return;
-
-    VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    createInfo.pfnUserCallback = debugCallback;
-
-    if (CreateDebugUtilsMessengerEXT(instance.get(), &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to set up debug messenger!");
-    }
-}
-
-void VkDeviceResources::CreateSurface()
-{
-    if (!SDL_Vulkan_CreateSurface(m_pWindow, instance.get(), &surface))
-    {
-        throw std::runtime_error("failed to create window surface!");
-    }
+    surface = surf;
+    return true;
 }
 
 void VkDeviceResources::CreateDescriptorPool()
 {
-    VkDescriptorPoolSize pool_sizes[] = {
-        { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-        { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-    };
-    uint32_t poolSize = (sizeof(pool_sizes) / sizeof(VkDescriptorPoolSize));
-    VkDescriptorPoolCreateInfo pool_info = {};
-    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    pool_info.poolSizeCount = (uint32_t)poolSize;
-    pool_info.maxSets = 1000 * poolSize;
-    pool_info.pPoolSizes = pool_sizes;
-    auto err = vkCreateDescriptorPool(device.get(), &pool_info, nullptr, &descriptorPool);
+    std::vector<vk::DescriptorPoolSize> poolSizes;
+    poolSizes.emplace_back(vk::DescriptorType::eUniformBuffer, 128);
+    poolSizes.emplace_back(vk::DescriptorType::eCombinedImageSampler, 128);
+    poolSizes.emplace_back(vk::DescriptorType::eStorageBuffer, 128);
+
+    // Create an arbitrary number of descriptors in a pool.
+    // Allow the descriptors to be freed, possibly not optimal behaviour.
+    vk::DescriptorPoolCreateInfo descriptorPoolInfo{};
+    descriptorPoolInfo.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
+    descriptorPoolInfo.maxSets = 256;
+    descriptorPoolInfo.poolSizeCount = (uint32_t)poolSizes.size();
+    descriptorPoolInfo.pPoolSizes = poolSizes.data();
+    descriptorPool = device->createDescriptorPoolUnique(descriptorPoolInfo);
 }
 
-void VkDeviceResources::CreateDevice()
+bool VkDeviceResources::CreateDevice()
 {
     auto pds = instance->enumeratePhysicalDevices();
     physicalDevice = pds[0];
@@ -306,7 +206,7 @@ void VkDeviceResources::CreateDevice()
     if (graphicsQueueFamilyIndex == badQueue || computeQueueFamilyIndex == badQueue)
     {
         LOG(ERROR) << "Missing a queue";
-        return;
+        return false;
     }
 
     memprops = physicalDevice.getMemoryProperties();
@@ -322,6 +222,8 @@ void VkDeviceResources::CreateDevice()
         dm.queue(computeQueueFamilyIndex);
     }
     device = dm.createUnique(physicalDevice);
+
+    return true;
 }
 
 void VkDeviceResources::CreateSwapChain()
@@ -886,40 +788,6 @@ SwapChainSupportDetails VkDeviceResources::QuerySwapChainSupport()
     }
 
     return details;
-}
-
-bool VkDeviceResources::isDeviceSuitable()
-{
-    QueueFamilyIndices indices = FindQueueFamilies();
-
-    bool extensionsSupported = CheckDeviceExtensionSupport();
-
-    bool swapChainAdequate = false;
-    if (extensionsSupported)
-    {
-        SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport();
-        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-    }
-
-    return indices.isComplete() && extensionsSupported && swapChainAdequate;
-}
-
-bool VkDeviceResources::CheckDeviceExtensionSupport()
-{
-    uint32_t extensionCount;
-    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
-
-    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
-
-    std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
-
-    for (const auto& extension : availableExtensions)
-    {
-        requiredExtensions.erase(extension.extensionName);
-    }
-
-    return requiredExtensions.empty();
 }
 
 QueueFamilyIndices VkDeviceResources::FindQueueFamilies()
