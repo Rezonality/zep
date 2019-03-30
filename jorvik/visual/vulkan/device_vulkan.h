@@ -25,7 +25,8 @@ public:
         LOG(DEBUG) << "Destroyed a ShaderAssetVulkan";
     }
     //std::vector<D3D12_INPUT_ELEMENT_DESC> inputLayoutDesc;
-    //Microsoft::WRL::ComPtr<ID3D10Blob> pShader;
+    std::vector<unsigned int> spvShader;
+    vk::UniqueShaderModule shaderModule;
     std::vector<std::string> semantics;
     std::shared_ptr<ConstantsVulkan> spConstants;
 };

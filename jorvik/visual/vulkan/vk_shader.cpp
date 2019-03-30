@@ -1,12 +1,120 @@
 #include "utils/logger.h"
+#include "utils/string/stringutils.h"
 #include "vk_device_resources.h"
 
 #include "glslang/SPIRV/GlslangToSpv.h"
 #include "glslang/StandAlone/DirStackFileIncluder.h"
 
+#include "device_vulkan.h"
+
 namespace Mgfx
 {
 
+std::map<std::string, EShLanguage> FileNameToLang = 
+{
+    { "ps", EShLangFragment },
+    { "vs", EShLangVertex },
+    { "gs", EShLangGeometry },
+    { "cs", EShLangCompute }
+};
+
+// If not found in the meta tags, then assign based on file and just use '5'
+EShLanguage GetShaderType(std::shared_ptr<CompiledShaderAssetVulkan>& spResult, const fs::path& path)
+{
+    std::string shaderType = spResult->spTags->shader_type.value;
+    std::string search = shaderType.empty() ? path.stem().string() : shaderType;
+    for (auto& current : FileNameToLang)
+    {
+        if (search == current.first)
+        {
+            return current.second;
+        }
+    }
+    return EShLangFragment;
+}
+
+// If not found in the meta tags, then hope for 'main'
+std::string GetEntryPoint(std::shared_ptr<CompiledShaderAssetVulkan>& spResult)
+{
+    std::string entryPoint = spResult->spTags->entry_point.value;
+    if (entryPoint.empty())
+    {
+        return "main";
+    }
+    return entryPoint;
+}
+
+// We need to filter:
+// ERROR : (<linenum>,<column>-?<column>): message
+// This can probably done efficiently with regex, but I'm no expert on regex,
+// and it's easy to miss thing. So here we just do simple string searches
+// It works, and makes up an error when it doesn't, so I can fix it!
+void ParseErrors(std::shared_ptr<CompiledShaderAssetVulkan>& spResult, const std::string& output)
+{
+    LOG(DEBUG) << output;
+
+    // Just in case we get more than one line
+    std::vector<std::string> errors;
+    string_split(output, "\n", errors);
+    for (auto error : errors)
+    {
+        auto pMsg = std::make_shared<CompileMessage>();
+        pMsg->filePath = spResult->path.string();
+
+        try
+        {
+            auto messageBreakPos = error.find_first_of(':');
+            if (messageBreakPos != std::string::npos)
+            {
+                auto type = string_trim(error.substr(0, messageBreakPos));
+                auto message = string_trim(error.substr(messageBreakPos + 1, error.size() - messageBreakPos + 1));
+
+                pMsg->text = message;
+                pMsg->msgType = (type == "ERROR" ? CompileMessageType::Error : CompileMessageType::Warning);
+
+                /*
+                pMsg->text = string_trim(error.substr(lastBracket + 2, error.size() - lastBracket + 2));
+                std::string numbers = string_trim(error.substr(bracketPos, lastBracket - bracketPos), "( )");
+                auto numVec = string_split(numbers, ",");
+                if (!numVec.empty())
+                {
+                    pMsg->line = std::max(0, std::stoi(numVec[0]) - 1);
+                }
+                if (numVec.size() > 1)
+                {
+                    auto columnVec = string_split(numVec[1], "-");
+                    if (!columnVec.empty())
+                    {
+                        pMsg->range.first = std::max(0, std::stoi(columnVec[0]) - 1);
+                        if (columnVec.size() > 1)
+                        {
+                            pMsg->range.second = std::stoi(columnVec[1]);
+                        }
+                        else
+                        {
+                            pMsg->range.second = pMsg->range.first + 1;
+                        }
+                    }
+                }
+                */
+            }
+            else
+            {
+                pMsg->text = error;
+                pMsg->line = 0;
+                pMsg->range = std::make_pair(0, 0);
+                pMsg->msgType = CompileMessageType::Error;
+            }
+        }
+        catch (...)
+        {
+            pMsg->text = "Failed to parse compiler error:\n" + error;
+            pMsg->line = 0;
+            pMsg->msgType = CompileMessageType::Error;
+        }
+        spResult->messages.push_back(pMsg);
+    }
+}
 EShLanguage translateShaderStage(vk::ShaderStageFlagBits stage)
 {
     switch (stage)
@@ -125,15 +233,19 @@ void init(TBuiltInResource& resource)
     resource.limits.generalConstantMatrixVectorIndexing = 1;
 }
 
-bool GLSLtoSPV(const vk::ShaderStageFlagBits shaderType, const fs::path& shaderPath, std::string const& shaderText, std::vector<unsigned int>& spvShader, std::string& result)
+std::shared_ptr<CompiledShaderAssetVulkan> Compile(const vk::ShaderStageFlagBits shaderType, const fs::path& shaderPath, const std::string& shaderText)
 {
-    EShLanguage stage = translateShaderStage(shaderType);
+    auto spResult = std::make_shared<CompiledShaderAssetVulkan>();
+    spResult->path = shaderPath;
+    spResult->spTags = parse_meta_tags(shaderText);
+    spResult->state = CompileState::Valid;
+
+    EShLanguage stage = GetShaderType(spResult, shaderPath);
 
     TBuiltInResource resource;
     init(resource);
 
-    EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules);
-    const int defaultVersion = 100;
+    EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules | EShMsgReadHlsl);
 
     DirStackFileIncluder Includer;
     if (shaderPath.has_parent_path())
@@ -145,9 +257,9 @@ bool GLSLtoSPV(const vk::ShaderStageFlagBits shaderType, const fs::path& shaderP
     glslang::TShader shader(stage);
 
     //Set up Vulkan/SpirV Environment
-	int clientInputSemanticsVersion = 100;                                               // maps to, say, #define VULKAN 100
-	glslang::EShTargetClientVersion VulkanClientVersion = glslang::EShTargetVulkan_1_0;  // would map to, say, Vulkan 1.0
-	glslang::EShTargetLanguageVersion TargetVersion = glslang::EShTargetSpv_1_0;         // maps to, say, SPIR-V 1.0
+    int clientInputSemanticsVersion = 310; // maps to, say, #define VULKAN 100
+    glslang::EShTargetClientVersion VulkanClientVersion = glslang::EShTargetVulkan_1_0; // would map to, say, Vulkan 1.0
+    glslang::EShTargetLanguageVersion TargetVersion = glslang::EShTargetSpv_1_0; // maps to, say, SPIR-V 1.0
 
     shader.setEnvInput(glslang::EShSourceHlsl, stage, glslang::EShClientVulkan, clientInputSemanticsVersion);
     shader.setEnvClient(glslang::EShClientVulkan, VulkanClientVersion);
@@ -156,47 +268,54 @@ bool GLSLtoSPV(const vk::ShaderStageFlagBits shaderType, const fs::path& shaderP
     const char* pInput = shaderText.c_str();
     shader.setStrings(&pInput, 1);
 
-    if (!shader.preprocess(&resource, defaultVersion, ENoProfile, false, false, messages, &preprocessed, Includer))
+    std::vector<std::string> errors;
+    if (!shader.preprocess(&resource, clientInputSemanticsVersion, ENoProfile, false, false, messages, &preprocessed, Includer))
     {
-        LOG(INFO) << "PreProcess fail: " << shaderPath;
-        //result << shaderPath << " : 
-        LOG(INFO) << shader.getInfoLog();
+        LOG(INFO) << "\n" << shader.getInfoLog();
         LOG(INFO) << shader.getInfoDebugLog();
-        return false;
+
+        errors.push_back(shader.getInfoLog());
+        spResult->state = CompileState::Invalid;
     }
-
-    const char* pProcessed = preprocessed.c_str();
-    shader.setStrings(&pProcessed, 1);
-
-    if (!shader.parse(&resource, 100, false, messages))
+    else
     {
-        LOG(DEBUG) << shader.getInfoLog();
-        LOG(DEBUG) << shader.getInfoDebugLog();
-        return false;
+        const char* pProcessed = preprocessed.c_str();
+        shader.setStrings(&pProcessed, 1);
+
+        if (!shader.parse(&resource, clientInputSemanticsVersion, false, messages))
+        {
+            LOG(DEBUG) << "\n" << shader.getInfoLog();
+            LOG(DEBUG) << shader.getInfoDebugLog();
+
+            errors.push_back(shader.getInfoLog());
+        }
+        else
+        {
+            glslang::TProgram program;
+            program.addShader(&shader);
+
+            if (!program.link(messages))
+            {
+                LOG(INFO) << "\n" << shader.getInfoLog();
+                LOG(INFO) << shader.getInfoDebugLog();
+
+                errors.push_back(shader.getInfoLog());
+            }
+            glslang::GlslangToSpv(*program.getIntermediate(stage), spResult->spvShader);
+        }
     }
 
-    glslang::TProgram program;
-    program.addShader(&shader);
-
-    if (!program.link(messages))
+    for (auto& err : errors)
     {
-        LOG(INFO) << shader.getInfoLog();
-        LOG(INFO) << shader.getInfoDebugLog();
-        return false;
+        ParseErrors(spResult, err);
     }
 
-    glslang::GlslangToSpv(*program.getIntermediate(stage), spvShader);
-    return true;
+    return spResult;
 }
 
-vk::UniqueShaderModule createShaderModule(vk::UniqueDevice& device, vk::ShaderStageFlagBits shaderStage, const fs::path& shaderPath, std::string const& shaderText, std::string& result)
+std::shared_ptr<CompiledShaderAssetVulkan> GLSLangCompile(vk::UniqueDevice& device, vk::ShaderStageFlagBits shaderStage, const fs::path& shaderPath, std::string const& shaderText)
 {
-    std::vector<unsigned int> shaderSPV;
-    bool ok = GLSLtoSPV(shaderStage, shaderPath, shaderText, shaderSPV, result);
-    if (!ok)
-        return vk::UniqueShaderModule();
-
-    return device->createShaderModuleUnique(vk::ShaderModuleCreateInfo(vk::ShaderModuleCreateFlags(), shaderSPV.size() * sizeof(unsigned int), shaderSPV.data()));
+    return Compile(shaderStage, shaderPath, shaderText);
 }
 
 } // namespace Mgfx

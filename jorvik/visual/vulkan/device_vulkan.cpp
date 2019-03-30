@@ -40,14 +40,6 @@ HWND g_hWnd;
 namespace Mgfx
 {
 
-std::map<std::string, std::string> FileNameToVkShaderType = 
-{
-    { "ps", "ps_5_0" },
-    { "vs", "vs_5_0" },
-    { "gs", "gs_5_0" },
-    { "cs", "cs_5_0" }
-};
-
 const char* DeviceVulkan::GetName()
 {
     return "Vulkan";
@@ -118,103 +110,6 @@ void DeviceVulkan::Destroy()
     }
 }
 
-// If not found in the meta tags, then assign based on file and just use '5'
-std::string GetShaderType(std::shared_ptr<CompiledShaderAssetVulkan>& spResult, const fs::path& path)
-{
-    std::string shaderType = spResult->spTags->shader_type.value;
-    if (shaderType.empty())
-    {
-        for (auto& search : FileNameToVkShaderType)
-        {
-            if (path.stem().string() == search.first)
-            {
-                shaderType = search.second;
-            }
-        }
-    }
-    return shaderType;
-}
-
-// If not found in the meta tags, then hope for 'main'
-std::string GetEntryPoint(std::shared_ptr<CompiledShaderAssetVulkan>& spResult)
-{
-    std::string entryPoint = spResult->spTags->entry_point.value;
-    if (entryPoint.empty())
-    {
-        return "main";
-    }
-    return entryPoint;
-}
-
-// We need to filter:
-// <filepath>(<linenum>,<column>-?<column>): message
-// This can probably done efficiently with regex, but I'm no expert on regex,
-// and it's easy to miss thing. So here we just do simple string searches
-// It works, and makes up an error when it doesn't, so I can fix it!
-void ParseErrors(std::shared_ptr<CompiledShaderAssetVulkan>& spResult, const std::string& output)
-{
-    LOG(DEBUG) << output;
-
-    // Try to parse the DX error string into file, line, column and message
-    // Exception should catch silly mistakes.
-    std::vector<std::string> errors;
-    string_split(output, "\n", errors);
-    for (auto error : errors)
-    {
-        auto pMsg = std::make_shared<CompileMessage>();
-        pMsg->filePath = spResult->path.string();
-
-        try
-        {
-            auto bracketPos = error.find_first_of('(');
-            if (bracketPos != std::string::npos)
-            {
-                auto lastBracket = error.find("):", bracketPos);
-                if (lastBracket)
-                {
-                    pMsg->filePath = string_trim(error.substr(0, bracketPos));
-                    pMsg->text = string_trim(error.substr(lastBracket + 2, error.size() - lastBracket + 2));
-                    std::string numbers = string_trim(error.substr(bracketPos, lastBracket - bracketPos), "( )");
-                    auto numVec = string_split(numbers, ",");
-                    if (!numVec.empty())
-                    {
-                        pMsg->line = std::max(0, std::stoi(numVec[0]) - 1);
-                    }
-                    if (numVec.size() > 1)
-                    {
-                        auto columnVec = string_split(numVec[1], "-");
-                        if (!columnVec.empty())
-                        {
-                            pMsg->range.first = std::max(0, std::stoi(columnVec[0]) - 1);
-                            if (columnVec.size() > 1)
-                            {
-                                pMsg->range.second = std::stoi(columnVec[1]);
-                            }
-                            else
-                            {
-                                pMsg->range.second = pMsg->range.first + 1;
-                            }
-                        }
-                    }
-                }
-            }
-            else
-            {
-                pMsg->text = error;
-                pMsg->line = 0;
-                pMsg->range = std::make_pair(0, 0);
-                pMsg->msgType = CompileMessageType::Error;
-            }
-        }
-        catch (...)
-        {
-            pMsg->text = "Failed to parse compiler error:\n" + error;
-            pMsg->line = 0;
-            pMsg->msgType = CompileMessageType::Error;
-        }
-        spResult->messages.push_back(pMsg);
-    }
-}
 
 std::future<std::shared_ptr<CompileResult>> DeviceVulkan::CompileShader(const fs::path& inPath, const std::string& inText)
 {
@@ -231,44 +126,9 @@ std::future<std::shared_ptr<CompileResult>> DeviceVulkan::CompileShader(const fs
 
     // Run the compiler on the threadpool
     return jorvik.spThreadPool->enqueue([this, path, strText]() {
-        LOG(DEBUG) << "DX Compile thread";
-        auto spResult = std::make_shared<CompiledShaderAssetVulkan>();
-        spResult->path = path;
-        spResult->spTags = parse_meta_tags(strText);
-
-        std::string strResult;
-        auto shaderModule = createShaderModule(m_pDeviceResources->device, vk::ShaderStageFlagBits::eFragment, path, strText, strResult);
-        //spResult->pShader = nullptr;
-
-        /*
-#if defined(_DEBUG)
-        // Enable better shader debugging with the graphics debugging tools.
-        UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#else
-        UINT compileFlags = 0;
-#endif
-
-        auto currentRootPath = path.parent_path();
-        auto fileStem = path.stem();
-        auto shaderType = GetShaderType(spResult, path);
-        auto entryPoint = GetEntryPoint(spResult);
-
-        ID3D10Blob* pErrors;
-        auto hr = D3DCompile(strText.c_str(), strText.size(), path.string().c_str(), NULL, NULL, entryPoint.c_str(), shaderType.c_str(), 0, 0, &spResult->pShader, &pErrors);
-        if (FAILED(hr))
-        {
-            std::string output = std::string((const char*)pErrors->GetBufferPointer());
-            LOG(DEBUG) << "Errors: " << output;
-            ParseErrors(spResult, output);
-            spResult->state = CompileState::Invalid;
-        }
-        else
-        {
-            Reflect(spResult, spResult->pShader.Get());
-            spResult->state = CompileState::Valid;
-        }
-        */
-
+        LOG(DEBUG) << "Vulkan compile thread";
+        
+        auto spResult = GLSLangCompile(m_pDeviceResources->device, vk::ShaderStageFlagBits::eFragment, path, strText);
         return std::dynamic_pointer_cast<CompileResult>(spResult);
     });
 }
