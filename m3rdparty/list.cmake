@@ -244,14 +244,20 @@ ENDIF()
 IF (PROJECT_SHADERTOOLS)
     include (ExternalProject)
     ExternalProject_Add(
-        glslang
+        glslang-lib
         PREFIX "m3rdparty"
-        CMAKE_ARGS -DENABLE_AMD_EXTENSIONS=ON -DENABLE_GLSLANG_BINARIES=ON -DENABLE_NV_EXTENSIONS=ON -DENABLE_HLSL=ON
+        CMAKE_ARGS -DENABLE_AMD_EXTENSIONS=ON -ENABLE_GLSLANG_BINARIES=OFF -DENABLE_NV_EXTENSIONS=ON -DENABLE_HLSL=ON
         SOURCE_DIR "${M3RDPARTY_DIR}/glslang"
+        BINARY_DIR  "${CMAKE_BINARY_DIR}/glslang-build"
         TEST_COMMAND ""
         INSTALL_COMMAND "" 
         INSTALL_DIR ""
         )
+    LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/glslang-build/glslang)
+    LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/glslang-build/SPIRV)
+    LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/glslang-build/hlsl)
+    LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/glslang-build/glslang/OSDependent/Windows)
+    LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/glslang-build/OGLCompilersDLL)
 
     ExternalProject_Add(
         spirv-cross
@@ -264,12 +270,22 @@ IF (PROJECT_SHADERTOOLS)
         )
 ENDIF()
 
+set(GLSLANG_LIBS 
+     glslang$<$<CONFIG:Debug>:d> 
+     SPIRV$<$<CONFIG:Debug>:d> 
+     SPVRemapper$<$<CONFIG:Debug>:d> 
+     OGLCompiler$<$<CONFIG:Debug>:d> 
+     HLSL$<$<CONFIG:Debug>:d> 
+     OSDependent$<$<CONFIG:Debug>:d> 
+) 
+
 IF (TARGET_PC)
 	# For midi
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__WINDOWS_MM__=1")
     LIST(APPEND PLATFORM_LINKLIBS 
         SDL2
         SDL2main
+        ${GLSLANG_LIBS}
         )
 ENDIF()
 IF (TARGET_MAC)

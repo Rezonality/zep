@@ -20,6 +20,7 @@
 
 #include "device_vulkan.h"
 #include "vk_window.h"
+#include "vk_shader.h"
 
 #include "jorvik.h"
 #include "jorvik/editor.h"
@@ -225,6 +226,8 @@ std::future<std::shared_ptr<CompileResult>> DeviceVulkan::CompileShader(const fs
         auto spResult = std::make_shared<CompiledShaderAssetVulkan>();
         spResult->path = path;
         spResult->spTags = parse_meta_tags(strText);
+
+        auto shaderModule = createShaderModule(m_pDeviceResources->device, vk::ShaderStageFlagBits::eFragment, strText);
         //spResult->pShader = nullptr;
 
         /*
