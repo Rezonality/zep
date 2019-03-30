@@ -2,6 +2,7 @@
 #include "vk_device_resources.h"
 
 #include "glslang/SPIRV/GlslangToSpv.h"
+#include "glslang/StandAlone/DirStackFileIncluder.h"
 
 namespace Mgfx
 {
@@ -124,41 +125,62 @@ void init(TBuiltInResource& resource)
     resource.limits.generalConstantMatrixVectorIndexing = 1;
 }
 
-bool GLSLtoSPV(const vk::ShaderStageFlagBits shaderType, std::string const& glslShader, std::vector<unsigned int>& spvShader)
+bool GLSLtoSPV(const vk::ShaderStageFlagBits shaderType, const fs::path& shaderPath, std::string const& shaderText, std::vector<unsigned int>& spvShader)
 {
     EShLanguage stage = translateShaderStage(shaderType);
-
-    const char* shaderStrings[1];
-    shaderStrings[0] = glslShader.data();
-
-    glslang::TShader shader(stage);
-    shader.setStrings(shaderStrings, 1);
 
     TBuiltInResource resource;
     init(resource);
 
-    // Enable SPIR-V and Vulkan rules when parsing GLSL
     EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules);
+    const int defaultVersion = 100;
+
+    DirStackFileIncluder Includer;
+    if (shaderPath.has_parent_path())
+    {
+        Includer.pushExternalLocalDirectory(shaderPath.parent_path().string());
+    }
+
+    std::string preprocessed;
+    glslang::TShader shader(stage);
+
+    //Set up Vulkan/SpirV Environment
+	int clientInputSemanticsVersion = 100;                                               // maps to, say, #define VULKAN 100
+	glslang::EShTargetClientVersion VulkanClientVersion = glslang::EShTargetVulkan_1_0;  // would map to, say, Vulkan 1.0
+	glslang::EShTargetLanguageVersion TargetVersion = glslang::EShTargetSpv_1_0;         // maps to, say, SPIR-V 1.0
+
+    shader.setEnvInput(glslang::EShSourceHlsl, stage, glslang::EShClientVulkan, clientInputSemanticsVersion);
+    shader.setEnvClient(glslang::EShClientVulkan, VulkanClientVersion);
+    shader.setEnvTarget(glslang::EShTargetSpv, TargetVersion);
+
+    const char* pInput = shaderText.c_str();
+    shader.setStrings(&pInput, 1);
+
+    if (!shader.preprocess(&resource, defaultVersion, ENoProfile, false, false, messages, &preprocessed, Includer))
+    {
+        LOG(INFO) << "PreProcess fail: " << shaderPath;
+        LOG(INFO) << shader.getInfoLog();
+        LOG(INFO) << shader.getInfoDebugLog();
+        return false;
+    }
+
+    const char* pProcessed = preprocessed.c_str();
+    shader.setStrings(&pProcessed, 1);
 
     if (!shader.parse(&resource, 100, false, messages))
     {
-        puts(shader.getInfoLog());
-        puts(shader.getInfoDebugLog());
-        return false; // something didn't work
+        LOG(DEBUG) << shader.getInfoLog();
+        LOG(DEBUG) << shader.getInfoDebugLog();
+        return false;
     }
 
     glslang::TProgram program;
     program.addShader(&shader);
 
-    //
-    // Program-level processing...
-    //
-
     if (!program.link(messages))
     {
-        puts(shader.getInfoLog());
-        puts(shader.getInfoDebugLog());
-        fflush(stdout);
+        LOG(INFO) << shader.getInfoLog();
+        LOG(INFO) << shader.getInfoDebugLog();
         return false;
     }
 
@@ -166,11 +188,12 @@ bool GLSLtoSPV(const vk::ShaderStageFlagBits shaderType, std::string const& glsl
     return true;
 }
 
-vk::UniqueShaderModule createShaderModule(vk::UniqueDevice& device, vk::ShaderStageFlagBits shaderStage, std::string const& shaderText)
+vk::UniqueShaderModule createShaderModule(vk::UniqueDevice& device, vk::ShaderStageFlagBits shaderStage, const fs::path& shaderPath, std::string const& shaderText)
 {
     std::vector<unsigned int> shaderSPV;
-    bool ok = GLSLtoSPV(shaderStage, shaderText, shaderSPV);
-    assert(ok);
+    bool ok = GLSLtoSPV(shaderStage, shaderPath, shaderText, shaderSPV);
+    if (!ok)
+        return vk::UniqueShaderModule();
 
     return device->createShaderModuleUnique(vk::ShaderModuleCreateInfo(vk::ShaderModuleCreateFlags(), shaderSPV.size() * sizeof(unsigned int), shaderSPV.data()));
 }

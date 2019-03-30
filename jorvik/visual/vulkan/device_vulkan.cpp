@@ -29,6 +29,8 @@
 #include "visual/scene.h"
 #include "visual/shader_file_asset.h"
 
+#include "glslang/glslang/Public/ShaderLang.h"
+
 #undef ERROR
 
 #ifdef WIN32
@@ -220,6 +222,13 @@ std::future<std::shared_ptr<CompileResult>> DeviceVulkan::CompileShader(const fs
     fs::path path = inPath;
     std::string strText = inText;
 
+    static bool glslangInitialized = false;
+    if (!glslangInitialized)
+    {
+        glslang::InitializeProcess();
+        glslangInitialized = true;
+    }
+
     // Run the compiler on the threadpool
     return jorvik.spThreadPool->enqueue([this, path, strText]() {
         LOG(DEBUG) << "DX Compile thread";
@@ -227,7 +236,7 @@ std::future<std::shared_ptr<CompileResult>> DeviceVulkan::CompileShader(const fs
         spResult->path = path;
         spResult->spTags = parse_meta_tags(strText);
 
-        auto shaderModule = createShaderModule(m_pDeviceResources->device, vk::ShaderStageFlagBits::eFragment, strText);
+        auto shaderModule = createShaderModule(m_pDeviceResources->device, vk::ShaderStageFlagBits::eFragment, path, strText);
         //spResult->pShader = nullptr;
 
         /*
