@@ -159,7 +159,7 @@ bool GLSLtoSPV(const vk::ShaderStageFlagBits shaderType, const fs::path& shaderP
     if (!shader.preprocess(&resource, defaultVersion, ENoProfile, false, false, messages, &preprocessed, Includer))
     {
         LOG(INFO) << "PreProcess fail: " << shaderPath;
-        result << shaderPath << " : 
+        //result << shaderPath << " : 
         LOG(INFO) << shader.getInfoLog();
         LOG(INFO) << shader.getInfoDebugLog();
         return false;
