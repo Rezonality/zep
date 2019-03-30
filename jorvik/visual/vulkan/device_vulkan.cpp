@@ -236,7 +236,8 @@ std::future<std::shared_ptr<CompileResult>> DeviceVulkan::CompileShader(const fs
         spResult->path = path;
         spResult->spTags = parse_meta_tags(strText);
 
-        auto shaderModule = createShaderModule(m_pDeviceResources->device, vk::ShaderStageFlagBits::eFragment, path, strText);
+        std::string strResult;
+        auto shaderModule = createShaderModule(m_pDeviceResources->device, vk::ShaderStageFlagBits::eFragment, path, strText, strResult);
         //spResult->pShader = nullptr;
 
         /*

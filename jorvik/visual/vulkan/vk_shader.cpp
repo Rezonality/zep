@@ -125,7 +125,7 @@ void init(TBuiltInResource& resource)
     resource.limits.generalConstantMatrixVectorIndexing = 1;
 }
 
-bool GLSLtoSPV(const vk::ShaderStageFlagBits shaderType, const fs::path& shaderPath, std::string const& shaderText, std::vector<unsigned int>& spvShader)
+bool GLSLtoSPV(const vk::ShaderStageFlagBits shaderType, const fs::path& shaderPath, std::string const& shaderText, std::vector<unsigned int>& spvShader, std::string& result)
 {
     EShLanguage stage = translateShaderStage(shaderType);
 
@@ -159,6 +159,7 @@ bool GLSLtoSPV(const vk::ShaderStageFlagBits shaderType, const fs::path& shaderP
     if (!shader.preprocess(&resource, defaultVersion, ENoProfile, false, false, messages, &preprocessed, Includer))
     {
         LOG(INFO) << "PreProcess fail: " << shaderPath;
+        result << shaderPath << " : 
         LOG(INFO) << shader.getInfoLog();
         LOG(INFO) << shader.getInfoDebugLog();
         return false;
@@ -188,10 +189,10 @@ bool GLSLtoSPV(const vk::ShaderStageFlagBits shaderType, const fs::path& shaderP
     return true;
 }
 
-vk::UniqueShaderModule createShaderModule(vk::UniqueDevice& device, vk::ShaderStageFlagBits shaderStage, const fs::path& shaderPath, std::string const& shaderText)
+vk::UniqueShaderModule createShaderModule(vk::UniqueDevice& device, vk::ShaderStageFlagBits shaderStage, const fs::path& shaderPath, std::string const& shaderText, std::string& result)
 {
     std::vector<unsigned int> shaderSPV;
-    bool ok = GLSLtoSPV(shaderStage, shaderPath, shaderText, shaderSPV);
+    bool ok = GLSLtoSPV(shaderStage, shaderPath, shaderText, shaderSPV, result);
     if (!ok)
         return vk::UniqueShaderModule();
 
