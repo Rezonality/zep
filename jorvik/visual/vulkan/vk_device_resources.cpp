@@ -41,29 +41,6 @@ void VkDeviceResources::Wait()
     device->waitIdle();
 }
 
-void VkDeviceResources::Destroy()
-{
-    m_pDeviceNotify->OnInvalidateDeviceObjects();
-
-    DestroySwapChain();
-
-    descriptorPool.reset();
-    device.reset();
-
-    vkDestroySurfaceKHR(instance.get(), surface, nullptr);
-
-    debugCallback.reset();
-
-    instance.reset();
-}
-
-void VkDeviceResources::DestroySwapChain()
-{
-    device->waitIdle();
-    m_spWindow.reset();
-    perFrame.clear();
-}
-
 void VkDeviceResources::RecreateSwapChain()
 {
     LOG(DEBUG) << "Vulkan: RecreateSwapChain";
@@ -174,6 +151,22 @@ bool VkDeviceResources::Create()
     return true;
 }
 
+void VkDeviceResources::Destroy()
+{
+    m_pDeviceNotify->OnInvalidateDeviceObjects();
+
+    DestroySwapChain();
+
+    descriptorPool.reset();
+    device.reset();
+
+    vkDestroySurfaceKHR(instance.get(), surface, nullptr);
+
+    debugCallback.reset();
+
+    instance.reset();
+}
+
 bool VkDeviceResources::CreateSwapChain()
 {
     m_spWindow = std::make_unique<VkWindow>(instance.get(), device.get(), physicalDevice, graphicsQueueFamilyIndex, surface);
@@ -195,6 +188,13 @@ bool VkDeviceResources::CreateSwapChain()
     return true;
 }
 
+void VkDeviceResources::DestroySwapChain()
+{
+    device->waitIdle();
+    m_spWindow.reset();
+    perFrame.clear();
+}
+
 bool VkDeviceResources::Prepare()
 {
     m_lastFrame = m_currentFrame;
@@ -204,14 +204,13 @@ bool VkDeviceResources::Prepare()
     device->waitForFences(perFrame[m_lastFrame].inFlightFence.get(), VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     // Need the last frame to submit from the previous semaphore
-    VkResult result = vkAcquireNextImageKHR(device.get(), m_spWindow->Swapchain(), std::numeric_limits<uint64_t>::max(), *perFrame[m_lastFrame].imageAvailableSemaphore, VK_NULL_HANDLE, &m_currentFrame);
-
-    if (result == VK_ERROR_OUT_OF_DATE_KHR)
+    vk::Result resultValue = device->acquireNextImageKHR(m_spWindow->Swapchain(), std::numeric_limits<uint64_t>::max(), *perFrame[m_lastFrame].imageAvailableSemaphore, vk::Fence(), &m_currentFrame);
+    if (resultValue == vk::Result::eErrorOutOfDateKHR)
     {
         RecreateSwapChain();
         return false;
     }
-    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+    else if (resultValue != vk::Result::eSuccess && resultValue != vk::Result::eSuboptimalKHR)
     {
         return false;
     }
@@ -252,8 +251,9 @@ bool VkDeviceResources::Present()
 
     device->resetFences(perFrame[m_currentFrame].inFlightFence.get());
 
+    // TODO: Figure out the semaphore dependencies here; and what each submitted command buffer should have in it.
     vk::PipelineStageFlags waitDestinationStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
-    vk::SubmitInfo submit(1, &*perFrame[m_lastFrame].imageAvailableSemaphore, &waitDestinationStageMask, 1, &*frame.commandBuffers[0], 1, &*frame.renderFinishedSemaphore);
+    vk::SubmitInfo submit(1, &perFrame[m_lastFrame].imageAvailableSemaphore.get(), &waitDestinationStageMask, 1, &frame.commandBuffers[0].get(), 1, &frame.renderFinishedSemaphore.get());
     graphicsQueue().submit(1, &submit, *frame.inFlightFence);
 
     try
