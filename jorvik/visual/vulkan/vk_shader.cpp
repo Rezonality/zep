@@ -79,11 +79,11 @@ void ParseErrors(std::shared_ptr<CompiledShaderAssetVulkan>& spResult, const std
             }
             if (std::regex_search(error, match, numberRegex) && match.size() > 1)
             {
-                pMsg->line = std::stoi(match[1].str());
+                pMsg->line = std::stoi(match[1].str()) - 1;
             }
             if (std::regex_search(error, match, columnRegex) && match.size() > 1)
             {
-                pMsg->range.first = std::stoi(match[1].str());
+                pMsg->range.first = std::stoi(match[1].str()) - 1;
                 pMsg->range.second = pMsg->range.first + 1;
             }
             if (std::regex_search(error, match, message) && match.size() > 1)
