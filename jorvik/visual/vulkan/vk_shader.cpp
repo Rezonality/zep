@@ -7,11 +7,11 @@
 
 #include "device_vulkan.h"
 
+#include <regex>
 namespace Mgfx
 {
 
-std::map<std::string, EShLanguage> FileNameToLang = 
-{
+std::map<std::string, EShLanguage> FileNameToLang = {
     { "ps", EShLangFragment },
     { "vs", EShLangVertex },
     { "gs", EShLangGeometry },
@@ -44,8 +44,8 @@ std::string GetEntryPoint(std::shared_ptr<CompiledShaderAssetVulkan>& spResult)
     return entryPoint;
 }
 
-// We need to filter:
-// ERROR : (<linenum>,<column>-?<column>): message
+// Vulkan errors are not very consistent!
+// EX1, HLSL "(9): error at column 2, HLSL parsing failed."
 // This can probably done efficiently with regex, but I'm no expert on regex,
 // and it's easy to miss thing. So here we just do simple string searches
 // It works, and makes up an error when it doesn't, so I can fix it!
@@ -63,47 +63,36 @@ void ParseErrors(std::shared_ptr<CompiledShaderAssetVulkan>& spResult, const std
 
         try
         {
-            auto messageBreakPos = error.find_first_of(':');
-            if (messageBreakPos != std::string::npos)
+            std::regex errorRegex(".*(error)", std::regex::icase);
+            std::regex warningRegex(".*(warning)", std::regex::icase);
+            std::regex numberRegex(".*\\(([0-9]+)\\)", std::regex::icase);
+            std::regex columnRegex(".*column ([0-9]+)", std::regex::icase);
+            std::regex message(R"((\([0-9]+\):)*\s*(warning|error)*\s*(at column [0-9]*,)\s*)", std::regex::icase);
+            std::smatch match;
+            if (std::regex_search(error, match, errorRegex) && match.size() > 1)
             {
-                auto type = string_trim(error.substr(0, messageBreakPos));
-                auto message = string_trim(error.substr(messageBreakPos + 1, error.size() - messageBreakPos + 1));
-
-                pMsg->text = message;
-                pMsg->msgType = (type == "ERROR" ? CompileMessageType::Error : CompileMessageType::Warning);
-
-                /*
-                pMsg->text = string_trim(error.substr(lastBracket + 2, error.size() - lastBracket + 2));
-                std::string numbers = string_trim(error.substr(bracketPos, lastBracket - bracketPos), "( )");
-                auto numVec = string_split(numbers, ",");
-                if (!numVec.empty())
-                {
-                    pMsg->line = std::max(0, std::stoi(numVec[0]) - 1);
-                }
-                if (numVec.size() > 1)
-                {
-                    auto columnVec = string_split(numVec[1], "-");
-                    if (!columnVec.empty())
-                    {
-                        pMsg->range.first = std::max(0, std::stoi(columnVec[0]) - 1);
-                        if (columnVec.size() > 1)
-                        {
-                            pMsg->range.second = std::stoi(columnVec[1]);
-                        }
-                        else
-                        {
-                            pMsg->range.second = pMsg->range.first + 1;
-                        }
-                    }
-                }
-                */
+                pMsg->msgType = CompileMessageType::Error;
+            }
+            if (std::regex_search(error, match, warningRegex) && match.size() > 1)
+            {
+                pMsg->msgType = CompileMessageType::Warning;
+            }
+            if (std::regex_search(error, match, numberRegex) && match.size() > 1)
+            {
+                pMsg->line = std::stoi(match[1].str());
+            }
+            if (std::regex_search(error, match, columnRegex) && match.size() > 1)
+            {
+                pMsg->range.first = std::stoi(match[1].str());
+                pMsg->range.second = pMsg->range.first + 1;
+            }
+            if (std::regex_search(error, match, message) && match.size() > 1)
+            {
+                pMsg->text = match.suffix().str();
             }
             else
             {
                 pMsg->text = error;
-                pMsg->line = 0;
-                pMsg->range = std::make_pair(0, 0);
-                pMsg->msgType = CompileMessageType::Error;
             }
         }
         catch (...)
@@ -245,6 +234,7 @@ std::shared_ptr<CompiledShaderAssetVulkan> Compile(const vk::ShaderStageFlagBits
     TBuiltInResource resource;
     init(resource);
 
+    // Allow reading of HLSL always?
     EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules | EShMsgReadHlsl);
 
     DirStackFileIncluder Includer;
@@ -271,7 +261,8 @@ std::shared_ptr<CompiledShaderAssetVulkan> Compile(const vk::ShaderStageFlagBits
     std::vector<std::string> errors;
     if (!shader.preprocess(&resource, clientInputSemanticsVersion, ENoProfile, false, false, messages, &preprocessed, Includer))
     {
-        LOG(INFO) << "\n" << shader.getInfoLog();
+        LOG(INFO) << "\n"
+                  << shader.getInfoLog();
         LOG(INFO) << shader.getInfoDebugLog();
 
         errors.push_back(shader.getInfoLog());
@@ -284,7 +275,8 @@ std::shared_ptr<CompiledShaderAssetVulkan> Compile(const vk::ShaderStageFlagBits
 
         if (!shader.parse(&resource, clientInputSemanticsVersion, false, messages))
         {
-            LOG(DEBUG) << "\n" << shader.getInfoLog();
+            LOG(DEBUG) << "\n"
+                       << shader.getInfoLog();
             LOG(DEBUG) << shader.getInfoDebugLog();
 
             errors.push_back(shader.getInfoLog());
@@ -296,7 +288,8 @@ std::shared_ptr<CompiledShaderAssetVulkan> Compile(const vk::ShaderStageFlagBits
 
             if (!program.link(messages))
             {
-                LOG(INFO) << "\n" << shader.getInfoLog();
+                LOG(INFO) << "\n"
+                          << shader.getInfoLog();
                 LOG(INFO) << shader.getInfoDebugLog();
 
                 errors.push_back(shader.getInfoLog());
