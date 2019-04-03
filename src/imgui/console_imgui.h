@@ -29,7 +29,7 @@ struct ZepConsole : Zep::IZepComponent
     }
 
     ZepConsole(Zep::ZepPath& p)
-        : zepEditor(nullptr, p)
+        : zepEditor(p, nullptr)
     {
         zepEditor.RegisterCallback(this);
         auto pBuffer = zepEditor.GetEmptyBuffer("Log");
