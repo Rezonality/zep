@@ -302,6 +302,10 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         }
         else
         {
+            if (startOffset == 0)
+            {
+                return;
+            }
             endOffset = startOffset;
             startOffset = buffer.LocationFromOffsetByChars(startOffset, -1);
         }

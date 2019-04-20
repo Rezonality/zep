@@ -865,6 +865,10 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         // Insert-mode context.command
         if (context.mode == EditorMode::Insert)
         {
+            if (loc == 0)
+            {
+                return true;
+            }
             // In insert mode, we are 'on' the character after the one we want to delete
             context.beginRange = context.buffer.LocationFromOffsetByChars(loc, -1);
             context.endRange = context.buffer.LocationFromOffsetByChars(loc, 0);
