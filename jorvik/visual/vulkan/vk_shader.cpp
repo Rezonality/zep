@@ -46,10 +46,9 @@ std::string GetEntryPoint(std::shared_ptr<CompiledShaderAssetVulkan>& spResult)
 
 // Vulkan errors are not very consistent!
 // EX1, HLSL "(9): error at column 2, HLSL parsing failed."
-// This can probably done efficiently with regex, but I'm no expert on regex,
-// and it's easy to miss thing. So here we just do simple string searches
-// It works, and makes up an error when it doesn't, so I can fix it!
-void ParseErrors(std::shared_ptr<CompiledShaderAssetVulkan>& spResult, const std::string& output)
+// Here I use several regex to pull out the bits I need.
+// But sometimes Vulkan isn't really pointing at the right column; and the text output varies depending on the error.
+void ParseErrors(const std::string& text, std::shared_ptr<CompiledShaderAssetVulkan>& spResult, const std::string& output)
 {
     LOG(DEBUG) << output;
 
@@ -81,10 +80,16 @@ void ParseErrors(std::shared_ptr<CompiledShaderAssetVulkan>& spResult, const std
             {
                 pMsg->line = std::stoi(match[1].str()) - 1;
             }
+			else
+			{
+				// Ignore no line
+				continue;
+			}
             if (std::regex_search(error, match, columnRegex) && match.size() > 1)
             {
-                pMsg->range.first = std::stoi(match[1].str()) - 1;
-                pMsg->range.second = pMsg->range.first + 1;
+                auto column = std::stoi(match[1].str()) - 1;
+                pMsg->range.first = column;
+                pMsg->range.second = column + 1;
             }
             if (std::regex_search(error, match, message) && match.size() > 1)
             {
@@ -104,6 +109,7 @@ void ParseErrors(std::shared_ptr<CompiledShaderAssetVulkan>& spResult, const std
         spResult->messages.push_back(pMsg);
     }
 }
+
 EShLanguage translateShaderStage(vk::ShaderStageFlagBits stage)
 {
     switch (stage)
@@ -300,7 +306,7 @@ std::shared_ptr<CompiledShaderAssetVulkan> Compile(const vk::ShaderStageFlagBits
 
     for (auto& err : errors)
     {
-        ParseErrors(spResult, err);
+        ParseErrors(preprocessed, spResult, err);
     }
 
     return spResult;

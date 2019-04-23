@@ -1,21 +1,20 @@
 //#include "file/runtree.h"
 
 #include "utils.h"
-#include "utils/math/mathutils.h" // For IMGui overrides
 #include "utils/logger.h"
+#include "utils/math/mathutils.h" // For IMGui overrides
 
 #include "SDL.h"
 #include "visual/IDevice.h"
 #include "visual/scene.h"
 
 #include "compile.h"
+#include "config_app.h"
 #include "editor.h"
 #include "jorvik.h"
 #include "opus.h"
-#include "config_app.h"
 
 #include <imgui/imgui.h>
-
 
 using namespace Zep;
 
@@ -30,7 +29,7 @@ GEditor editor;
 
 void editor_init()
 {
-    // Initialize the editor and watch for changes 
+    // Initialize the editor and watch for changes
     editor.spZep = std::make_shared<ZepWrapper>(JORVIK_ROOT, [](std::shared_ptr<ZepMessage> spMessage) -> void {
         if (spMessage->messageId == Zep::Msg::Buffer)
         {
@@ -57,7 +56,6 @@ void editor_init()
                     // Note, scheduler called on main thread always during the tick.
                     // TODO: Cleaner way to share coroutines
                     scheduler_start(*spPending, 1.0f, [path]() {
-
                         auto itrFound = PendingTextProcessing.find(path);
                         if (itrFound == PendingTextProcessing.end())
                         {
@@ -100,8 +98,7 @@ void editor_update_assets()
     {
         return;
     }
-    jorvik.spOpus->ForEachFileAsset([](OpusAsset * pAsset)
-    {
+    jorvik.spOpus->ForEachFileAsset([](OpusAsset* pAsset) {
         auto pBuffer = editor.spZep->GetEditor().GetFileBuffer(ZepPath(pAsset->GetSourcePath().string()), 0, true);
 
         bool found = false;
@@ -205,6 +202,10 @@ void editor_process_compile_result(ICompile* pObject)
 
     for (auto& msg : pResult->messages)
     {
+		// Ignore generic errors for the whole file, during marker highlighting
+		if (msg->line == -1)
+			continue;
+
         auto spMarker = std::make_shared<RangeMarker>();
         spMarker->description = msg->text;
         spMarker->name = msg->text;
@@ -222,15 +223,25 @@ void editor_process_compile_result(ICompile* pObject)
 
         long start, end;
         pBuffer->GetLineOffsets(spMarker->bufferLine >= 0 ? spMarker->bufferLine : 0, start, end);
-        spMarker->range = BufferRange{start, start};
+        spMarker->range = BufferRange{ start, start };
         if (msg->range.first != -1)
         {
-            spMarker->range.first += msg->range.first;
-            if (msg->range.second != -1)
-                spMarker->range.second += msg->range.second;
+            auto startLoc = spMarker->range.first + msg->range.first;
+            if (pBuffer->GetText().size() > startLoc && pBuffer->GetText()[startLoc] != '\n')
+            {
+                spMarker->range.first += msg->range.first;
+                if (msg->range.second != -1)
+                    spMarker->range.second += msg->range.second;
+            }
+            else
+            {
+				// If we are pointed at the end of a line for an error, ignore it and just highlight the line
+                spMarker->range.second = end - 1;
+            }
         }
         else
         {
+			// No given colum range, so we are just covering the line
             spMarker->range.second = end - 1;
         }
         pBuffer->AddRangeMarker(spMarker);
@@ -389,7 +400,6 @@ void editor_draw_ui(TimeDelta dt)
 
     if (!editor.show_editor)
         return;
-
 };
 
 } // namespace Mgfx
