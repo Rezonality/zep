@@ -1,5 +1,2 @@
-#cmakedefine APPLICATION_NAME "${APPLICATION_NAME}"
-#cmakedefine APPLICATION_VERSION "${APPLICATION_VERSION}"
-#cmakedefine JORVIK_ROOT "${JORVIK_ROOT}"
-
+#cmakedefine ZEP_ROOT "${ZEP_ROOT}"
 

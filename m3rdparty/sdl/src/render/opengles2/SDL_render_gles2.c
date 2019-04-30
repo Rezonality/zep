@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -22,7 +22,6 @@
 
 #if SDL_VIDEO_RENDER_OGL_ES2 && !SDL_RENDER_DISABLED
 
-#include "SDL_assert.h"
 #include "SDL_hints.h"
 #include "SDL_opengles2.h"
 #include "../SDL_sysrender.h"
@@ -167,8 +166,7 @@ typedef enum
     GLES2_IMAGESOURCE_TEXTURE_BGR,
     GLES2_IMAGESOURCE_TEXTURE_YUV,
     GLES2_IMAGESOURCE_TEXTURE_NV12,
-    GLES2_IMAGESOURCE_TEXTURE_NV21,
-    GLES2_IMAGESOURCE_TEXTURE_EXTERNAL_OES
+    GLES2_IMAGESOURCE_TEXTURE_NV21
 } GLES2_ImageSource;
 
 typedef struct GLES2_DriverContext
@@ -260,8 +258,10 @@ GL_CheckAllErrors (const char *prefix, SDL_Renderer *renderer, const char *file,
 
 #if 0
 #define GL_CheckError(prefix, renderer)
+#elif defined(_MSC_VER) || defined(__WATCOMC__)
+#define GL_CheckError(prefix, renderer) GL_CheckAllErrors(prefix, renderer, __FILE__, __LINE__, __FUNCTION__)
 #else
-#define GL_CheckError(prefix, renderer) GL_CheckAllErrors(prefix, renderer, SDL_FILE, SDL_LINE, SDL_FUNCTION)
+#define GL_CheckError(prefix, renderer) GL_CheckAllErrors(prefix, renderer, __FILE__, __LINE__, __PRETTY_FUNCTION__)
 #endif
 
 
@@ -553,6 +553,18 @@ static void GLES2_UnlockTexture(SDL_Renderer *renderer, SDL_Texture *texture);
 static int GLES2_SetRenderTarget(SDL_Renderer * renderer, SDL_Texture * texture);
 static void GLES2_DestroyTexture(SDL_Renderer *renderer, SDL_Texture *texture);
 
+static GLenum
+GetScaleQuality(void)
+{
+    const char *hint = SDL_GetHint(SDL_HINT_RENDER_SCALE_QUALITY);
+
+    if (!hint || *hint == '0' || SDL_strcasecmp(hint, "nearest") == 0) {
+        return GL_NEAREST;
+    } else {
+        return GL_LINEAR;
+    }
+}
+
 static int
 GLES2_CreateTexture(SDL_Renderer *renderer, SDL_Texture *texture)
 {
@@ -581,19 +593,8 @@ GLES2_CreateTexture(SDL_Renderer *renderer, SDL_Texture *texture)
         format = GL_LUMINANCE;
         type = GL_UNSIGNED_BYTE;
         break;
-#ifdef GL_TEXTURE_EXTERNAL_OES
-    case SDL_PIXELFORMAT_EXTERNAL_OES:
-        format = GL_NONE;
-        type = GL_NONE;
-        break;
-#endif
     default:
         return SDL_SetError("Texture format not supported");
-    }
-
-    if (texture->format == SDL_PIXELFORMAT_EXTERNAL_OES &&
-        texture->access != SDL_TEXTUREACCESS_STATIC) {
-        return SDL_SetError("Unsupported texture access for SDL_PIXELFORMAT_EXTERNAL_OES");
     }
 
     /* Allocate a texture struct */
@@ -602,18 +603,14 @@ GLES2_CreateTexture(SDL_Renderer *renderer, SDL_Texture *texture)
         return SDL_OutOfMemory();
     }
     data->texture = 0;
-#ifdef GL_TEXTURE_EXTERNAL_OES
-    data->texture_type = (texture->format == SDL_PIXELFORMAT_EXTERNAL_OES) ? GL_TEXTURE_EXTERNAL_OES : GL_TEXTURE_2D;
-#else
     data->texture_type = GL_TEXTURE_2D;
-#endif
     data->pixel_format = format;
     data->pixel_type = type;
     data->yuv = ((texture->format == SDL_PIXELFORMAT_IYUV) || (texture->format == SDL_PIXELFORMAT_YV12));
     data->nv12 = ((texture->format == SDL_PIXELFORMAT_NV12) || (texture->format == SDL_PIXELFORMAT_NV21));
     data->texture_u = 0;
     data->texture_v = 0;
-    scaleMode = (texture->scaleMode == SDL_ScaleModeNearest) ? GL_NEAREST : GL_LINEAR;
+    scaleMode = GetScaleQuality();
 
     /* Allocate a blob for image renderdata */
     if (texture->access == SDL_TEXTUREACCESS_STREAMING) {
@@ -695,11 +692,9 @@ GLES2_CreateTexture(SDL_Renderer *renderer, SDL_Texture *texture)
     renderdata->glTexParameteri(data->texture_type, GL_TEXTURE_MAG_FILTER, scaleMode);
     renderdata->glTexParameteri(data->texture_type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     renderdata->glTexParameteri(data->texture_type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    if (texture->format != SDL_PIXELFORMAT_EXTERNAL_OES) {
-        renderdata->glTexImage2D(data->texture_type, 0, format, texture->w, texture->h, 0, format, type, NULL);
-        if (GL_CheckError("glTexImage2D()", renderer) < 0) {
-            return -1;
-        }
+    renderdata->glTexImage2D(data->texture_type, 0, format, texture->w, texture->h, 0, format, type, NULL);
+    if (GL_CheckError("glTexImage2D()", renderer) < 0) {
+        return -1;
     }
 
     if (texture->access == SDL_TEXTUREACCESS_TARGET) {
@@ -718,10 +713,6 @@ GLES2_TexSubImage2D(GLES2_DriverContext *data, GLenum target, GLint xoffset, GLi
     Uint8 *src;
     int src_pitch;
     int y;
-
-    if ((width == 0) || (height == 0) || (bpp == 0)) {
-        return 0;  /* nothing to do */
-    }
 
     /* Reformat the texture data into a tightly packed array */
     src_pitch = width * bpp;
@@ -959,7 +950,7 @@ static void GLES2_EvictShader(SDL_Renderer *renderer, GLES2_ShaderCacheEntry *en
 static GLES2_ProgramCacheEntry *GLES2_CacheProgram(SDL_Renderer *renderer,
                                                    GLES2_ShaderCacheEntry *vertex,
                                                    GLES2_ShaderCacheEntry *fragment);
-static int GLES2_SelectProgram(SDL_Renderer *renderer, GLES2_ImageSource source, int w, int h);
+static int GLES2_SelectProgram(SDL_Renderer *renderer, GLES2_ImageSource source);
 
 static GLES2_ProgramCacheEntry *
 GLES2_CacheProgram(SDL_Renderer *renderer, GLES2_ShaderCacheEntry *vertex,
@@ -1198,7 +1189,7 @@ GLES2_EvictShader(SDL_Renderer *renderer, GLES2_ShaderCacheEntry *entry)
 }
 
 static int
-GLES2_SelectProgram(SDL_Renderer *renderer, GLES2_ImageSource source, int w, int h)
+GLES2_SelectProgram(SDL_Renderer *renderer, GLES2_ImageSource source)
 {
     GLES2_DriverContext *data = (GLES2_DriverContext *)renderer->driverdata;
     GLES2_ShaderCacheEntry *vertex = NULL;
@@ -1225,55 +1216,13 @@ GLES2_SelectProgram(SDL_Renderer *renderer, GLES2_ImageSource source, int w, int
         ftype = GLES2_SHADER_FRAGMENT_TEXTURE_BGR_SRC;
         break;
     case GLES2_IMAGESOURCE_TEXTURE_YUV:
-        switch (SDL_GetYUVConversionModeForResolution(w, h)) {
-        case SDL_YUV_CONVERSION_JPEG:
-            ftype = GLES2_SHADER_FRAGMENT_TEXTURE_YUV_JPEG_SRC;
-            break;
-        case SDL_YUV_CONVERSION_BT601:
-            ftype = GLES2_SHADER_FRAGMENT_TEXTURE_YUV_BT601_SRC;
-            break;
-        case SDL_YUV_CONVERSION_BT709:
-            ftype = GLES2_SHADER_FRAGMENT_TEXTURE_YUV_BT709_SRC;
-            break;
-        default:
-            SDL_SetError("Unsupported YUV conversion mode: %d\n", SDL_GetYUVConversionModeForResolution(w, h));
-            goto fault;
-        }
+        ftype = GLES2_SHADER_FRAGMENT_TEXTURE_YUV_SRC;
         break;
     case GLES2_IMAGESOURCE_TEXTURE_NV12:
-        switch (SDL_GetYUVConversionModeForResolution(w, h)) {
-        case SDL_YUV_CONVERSION_JPEG:
-            ftype = GLES2_SHADER_FRAGMENT_TEXTURE_NV12_JPEG_SRC;
-            break;
-        case SDL_YUV_CONVERSION_BT601:
-            ftype = GLES2_SHADER_FRAGMENT_TEXTURE_NV12_BT601_SRC;
-            break;
-        case SDL_YUV_CONVERSION_BT709:
-            ftype = GLES2_SHADER_FRAGMENT_TEXTURE_NV12_BT709_SRC;
-            break;
-        default:
-            SDL_SetError("Unsupported YUV conversion mode: %d\n", SDL_GetYUVConversionModeForResolution(w, h));
-            goto fault;
-        }
+        ftype = GLES2_SHADER_FRAGMENT_TEXTURE_NV12_SRC;
         break;
     case GLES2_IMAGESOURCE_TEXTURE_NV21:
-        switch (SDL_GetYUVConversionModeForResolution(w, h)) {
-        case SDL_YUV_CONVERSION_JPEG:
-            ftype = GLES2_SHADER_FRAGMENT_TEXTURE_NV21_JPEG_SRC;
-            break;
-        case SDL_YUV_CONVERSION_BT601:
-            ftype = GLES2_SHADER_FRAGMENT_TEXTURE_NV21_BT601_SRC;
-            break;
-        case SDL_YUV_CONVERSION_BT709:
-            ftype = GLES2_SHADER_FRAGMENT_TEXTURE_NV21_BT709_SRC;
-            break;
-        default:
-            SDL_SetError("Unsupported YUV conversion mode: %d\n", SDL_GetYUVConversionModeForResolution(w, h));
-            goto fault;
-        }
-        break;
-    case GLES2_IMAGESOURCE_TEXTURE_EXTERNAL_OES:
-        ftype = GLES2_SHADER_FRAGMENT_TEXTURE_EXTERNAL_OES_SRC;
+        ftype = GLES2_SHADER_FRAGMENT_TEXTURE_NV21_SRC;
         break;
     default:
         goto fault;
@@ -1496,7 +1445,7 @@ GLES2_SetDrawingState(SDL_Renderer * renderer)
     GLES2_SetTexCoords(data, SDL_FALSE);
 
     /* Activate an appropriate shader and set the projection matrix */
-    if (GLES2_SelectProgram(renderer, GLES2_IMAGESOURCE_SOLID, 0, 0) < 0) {
+    if (GLES2_SelectProgram(renderer, GLES2_IMAGESOURCE_SOLID) < 0) {
         return -1;
     }
 
@@ -1534,7 +1483,7 @@ GLES2_UpdateVertexBuffer(SDL_Renderer *renderer, GLES2_Attribute attr,
     GLES2_DriverContext *data = (GLES2_DriverContext *)renderer->driverdata;
 
 #if !SDL_GLES2_USE_VBOS
-    data->glVertexAttribPointer(attr, 2, GL_FLOAT, GL_FALSE, 0, vertexData);
+    data->glVertexAttribPointer(attr, attr == GLES2_ATTRIBUTE_ANGLE ? 1 : 2, GL_FLOAT, GL_FALSE, 0, vertexData);
 #else
     if (!data->vertex_buffers[attr]) {
         data->glGenBuffers(1, &data->vertex_buffers[attr]);
@@ -1549,7 +1498,7 @@ GLES2_UpdateVertexBuffer(SDL_Renderer *renderer, GLES2_Attribute attr,
         data->glBufferSubData(GL_ARRAY_BUFFER, 0, dataSizeInBytes, vertexData);
     }
 
-    data->glVertexAttribPointer(attr, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    data->glVertexAttribPointer(attr, attr == GLES2_ATTRIBUTE_ANGLE ? 1 : 2, GL_FLOAT, GL_FALSE, 0, 0);
 #endif
 
     return 0;
@@ -1723,9 +1672,6 @@ GLES2_SetupCopy(SDL_Renderer *renderer, SDL_Texture *texture)
             case SDL_PIXELFORMAT_NV21:
                 sourceType = GLES2_IMAGESOURCE_TEXTURE_NV21;
                 break;
-            case SDL_PIXELFORMAT_EXTERNAL_OES:
-                sourceType = GLES2_IMAGESOURCE_TEXTURE_EXTERNAL_OES;
-                break;
             default:
                 return SDL_SetError("Unsupported texture format");
             }
@@ -1756,15 +1702,12 @@ GLES2_SetupCopy(SDL_Renderer *renderer, SDL_Texture *texture)
             case SDL_PIXELFORMAT_NV21:
                 sourceType = GLES2_IMAGESOURCE_TEXTURE_NV21;
                 break;
-            case SDL_PIXELFORMAT_EXTERNAL_OES:
-                sourceType = GLES2_IMAGESOURCE_TEXTURE_EXTERNAL_OES;
-                break;
             default:
                 return SDL_SetError("Unsupported texture format");
         }
     }
 
-    if (GLES2_SelectProgram(renderer, sourceType, texture->w, texture->h) < 0) {
+    if (GLES2_SelectProgram(renderer, sourceType) < 0) {
         return -1;
     }
 
@@ -1865,9 +1808,8 @@ GLES2_RenderCopyEx(SDL_Renderer *renderer, SDL_Texture *texture, const SDL_Rect 
     GLfloat vertices[8];
     GLfloat texCoords[8];
     GLfloat translate[8];
-    GLfloat fAngle[8];
+    GLfloat fAngle[4];
     GLfloat tmp;
-    float radian_angle;
 
     GLES2_ActivateRenderer(renderer);
 
@@ -1877,11 +1819,7 @@ GLES2_RenderCopyEx(SDL_Renderer *renderer, SDL_Texture *texture, const SDL_Rect 
 
     data->glEnableVertexAttribArray(GLES2_ATTRIBUTE_CENTER);
     data->glEnableVertexAttribArray(GLES2_ATTRIBUTE_ANGLE);
-
-    radian_angle = (float)(M_PI * (360.0 - angle) / 180.0);
-    fAngle[0] = fAngle[2] = fAngle[4] = fAngle[6] = (GLfloat)SDL_sin(radian_angle);
-    /* render expects cos value - 1 (see GLES2_VertexSrc_Default_) */
-    fAngle[1] = fAngle[3] = fAngle[5] = fAngle[7] = (GLfloat)SDL_cos(radian_angle) - 1.0f;
+    fAngle[0] = fAngle[1] = fAngle[2] = fAngle[3] = (GLfloat)(360.0f - angle);
     /* Calculate the center of rotation */
     translate[0] = translate[2] = translate[4] = translate[6] = (center->x + dstrect->x);
     translate[1] = translate[3] = translate[5] = translate[7] = (center->y + dstrect->y);
@@ -1910,7 +1848,7 @@ GLES2_RenderCopyEx(SDL_Renderer *renderer, SDL_Texture *texture, const SDL_Rect 
     data->glVertexAttribPointer(GLES2_ATTRIBUTE_CENTER, 2, GL_FLOAT, GL_FALSE, 0, translate);
     data->glVertexAttribPointer(GLES2_ATTRIBUTE_POSITION, 2, GL_FLOAT, GL_FALSE, 0, vertices);*/
 
-    GLES2_UpdateVertexBuffer(renderer, GLES2_ATTRIBUTE_ANGLE, fAngle, 8 * sizeof(GLfloat));
+    GLES2_UpdateVertexBuffer(renderer, GLES2_ATTRIBUTE_ANGLE, fAngle, 4 * sizeof(GLfloat));
     GLES2_UpdateVertexBuffer(renderer, GLES2_ATTRIBUTE_CENTER, translate, 8 * sizeof(GLfloat));
     GLES2_UpdateVertexBuffer(renderer, GLES2_ATTRIBUTE_POSITION, vertices, 8 * sizeof(GLfloat));
 
@@ -1937,7 +1875,6 @@ GLES2_RenderReadPixels(SDL_Renderer * renderer, const SDL_Rect * rect,
 {
     GLES2_DriverContext *data = (GLES2_DriverContext *)renderer->driverdata;
     Uint32 temp_format = renderer->target ? renderer->target->format : SDL_PIXELFORMAT_ABGR8888;
-    size_t buflen;
     void *temp_pixels;
     int temp_pitch;
     Uint8 *src, *dst, *tmp;
@@ -1947,12 +1884,7 @@ GLES2_RenderReadPixels(SDL_Renderer * renderer, const SDL_Rect * rect,
     GLES2_ActivateRenderer(renderer);
 
     temp_pitch = rect->w * SDL_BYTESPERPIXEL(temp_format);
-    buflen = (size_t) (rect->h * temp_pitch);
-    if (buflen == 0) {
-        return 0;  /* nothing to do. */
-    }
-
-    temp_pixels = SDL_malloc(buflen);
+    temp_pixels = SDL_malloc(rect->h * temp_pitch);
     if (!temp_pixels) {
         return SDL_OutOfMemory();
     }
@@ -2237,9 +2169,6 @@ GLES2_CreateRenderer(SDL_Window *window, Uint32 flags)
     renderer->info.texture_formats[renderer->info.num_texture_formats++] = SDL_PIXELFORMAT_IYUV;
     renderer->info.texture_formats[renderer->info.num_texture_formats++] = SDL_PIXELFORMAT_NV12;
     renderer->info.texture_formats[renderer->info.num_texture_formats++] = SDL_PIXELFORMAT_NV21;
-#ifdef GL_TEXTURE_EXTERNAL_OES
-    renderer->info.texture_formats[renderer->info.num_texture_formats++] = SDL_PIXELFORMAT_EXTERNAL_OES;
-#endif
 
     GLES2_ResetState(renderer);
 

@@ -331,7 +331,7 @@ class ThreadWithParamSupport : public ThreadWithParamBase {
     // TODO(yukawa): Consider to use _beginthreadex instead.
     HANDLE thread_handle = ::CreateThread(
         NULL,    // Default security.
-        0,       // Default stack size.
+        0,       // Default stack fixed_size.
         &ThreadWithParamSupport::ThreadMain,
         param,   // Parameter to ThreadMainStatic
         0x0,     // Default creation flags.
@@ -501,7 +501,7 @@ class ThreadLocalRegistryImpl {
     DWORD watcher_thread_id;
     HANDLE watcher_thread = ::CreateThread(
         NULL,   // Default security.
-        0,      // Default stack size
+        0,      // Default stack fixed_size
         &ThreadLocalRegistryImpl::WatcherThreadFunc,
         reinterpret_cast<LPVOID>(new ThreadIdAndHandle(thread_id, thread)),
         CREATE_SUSPENDED,
@@ -1088,7 +1088,7 @@ std::string ReadEntireFile(FILE* file) {
   fseek(file, 0, SEEK_SET);
 
   // Keeps reading the file until we cannot read further or the
-  // pre-determined file size is reached.
+  // pre-determined file fixed_size is reached.
   do {
     bytes_last_read = fread(buffer+bytes_read, 1, file_size-bytes_read, file);
     bytes_read += bytes_last_read;

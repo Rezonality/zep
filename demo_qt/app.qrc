@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/Icons">
+        <file alias="AppIcon32">res/AppIcon32.png</file>
+        <file alias="AppIcon128">res/AppIcon128.png</file>
+        <file alias="GraphBackground">res/white-sand.png</file>
+        <file alias="GraphBackground2">res/textured-paper.png</file>
+        <file alias="AppIcon.ico">res/AppIcon.ico</file>
+        <file alias="Screwdriver">res/screwdriver.ico</file>
+    </qresource>
+</RCC>

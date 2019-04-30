@@ -20,7 +20,7 @@ platform:
 
 configuration:
   - Release
-  #- Debug
+  - Debug
 
 environment:
   MSBUILD_FLAGS: /verbosity:minimal /maxcpucount
@@ -44,18 +44,20 @@ build_script:
   - >
     cmake %APPVEYOR_BUILD_FOLDER%
     -G "%generator%" 
-    -DCMAKE_INSTALL_PREFIX=./mgfx
-  # build
+    -DCMAKE_INSTALL_PREFIX=./zep
   - cmake --build . --target ALL_BUILD --config %configuration% -- /nologo /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-  # install
-  # - cmake --build . --target INSTALL --config %configuration% -- /nologo
-  # package (with cpack)
-  #- cmake --build ./build --target PACKAGE --config %configuration% -- /nologo
+
+test_script:
+    - ps: |
+        cd $env:CONFIGURATION
+        .\unittests.exe --gtest_output=xml:unit_tests_report.xml
+        $wc = New-Object 'System.Net.WebClient'
+        $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path unit_tests_report.xml))
 
 after_build:
   # set compiler var
   - if "%generator%"=="Visual Studio 14" (set COMPILER="VC14")
   # switch to project build folder and zip "tutorials" folder
   - cd C:\projects\build
-  - 7z a -tzip -mx9 "mgfx-%APPVEYOR_BUILD_VERSION%-%COMPILER%.zip" Release
-  - appveyor PushArtifact "mgfx-%APPVEYOR_BUILD_VERSION%-%COMPILER%.zip"
+  - 7z a -tzip -mx9 "zep-%configuration%-%APPVEYOR_BUILD_VERSION%-%COMPILER%.zip" %configuration%
+  - appveyor PushArtifact "zep-%configuration%-%APPVEYOR_BUILD_VERSION%-%COMPILER%.zip"

@@ -86,7 +86,7 @@ void PrintBytesInObjectToImpl(const unsigned char* obj_bytes, size_t count,
 
   const size_t kThreshold = 132;
   const size_t kChunkSize = 64;
-  // If the object size is bigger than kThreshold, we'll have to omit
+  // If the object fixed_size is bigger than kThreshold, we'll have to omit
   // some details by printing only the first and the last kChunkSize
   // bytes.
   // TODO(wan): let the user control the threshold using a flag.

@@ -1683,7 +1683,7 @@ AssertionResult HRESULTFailureHelper(const char* expr,
                                           hr,  // the error
                                           0,  // no line width restrictions
                                           error_text,  // output buffer
-                                          kBufSize,  // buf size
+                                          kBufSize,  // buf fixed_size
                                           NULL);  // no arguments for inserts
   // Trims tailing white space (FormatMessage leaves a trailing CR-LF)
   for (; message_length && IsSpace(error_text[message_length - 1]);

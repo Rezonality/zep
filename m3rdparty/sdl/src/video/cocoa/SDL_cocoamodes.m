@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -100,14 +100,46 @@ CG_SetError(const char *prefix, CGDisplayErr result)
 }
 
 static SDL_bool
-GetDisplayMode(_THIS, CGDisplayModeRef vidmode, CVDisplayLinkRef link, SDL_DisplayMode *mode)
+GetDisplayMode(_THIS, CGDisplayModeRef vidmode, CFArrayRef modelist, CVDisplayLinkRef link, SDL_DisplayMode *mode)
 {
     SDL_DisplayModeData *data;
-    int width = 0;
-    int height = 0;
+    int width = (int) CGDisplayModeGetWidth(vidmode);
+    int height = (int) CGDisplayModeGetHeight(vidmode);
     int bpp = 0;
     int refreshRate = 0;
     CFStringRef fmt;
+
+    /* Ignore this mode if it's low-dpi (@1x) and we have a high-dpi mode in the
+     * list with the same size in points.
+     */
+#ifdef MAC_OS_X_VERSION_10_8
+    if (modelist != NULL && floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_7) {
+        int pixelW = (int) CGDisplayModeGetPixelWidth(vidmode);
+        int pixelH = (int) CGDisplayModeGetPixelHeight(vidmode);
+
+        if (width == pixelW && height == pixelH) {
+            CFIndex modescount = CFArrayGetCount(modelist);
+
+            for (int i = 0; i < modescount; i++) {
+                CGDisplayModeRef othermode = (CGDisplayModeRef) CFArrayGetValueAtIndex(modelist, i);
+
+                if (CFEqual(vidmode, othermode)) {
+                    continue;
+                }
+
+                int otherW = (int) CGDisplayModeGetWidth(othermode);
+                int otherH = (int) CGDisplayModeGetHeight(othermode);
+
+                int otherpixelW = (int) CGDisplayModeGetPixelWidth(othermode);
+                int otherpixelH = (int) CGDisplayModeGetPixelHeight(othermode);
+
+                if (width == otherW && height == otherH && (otherpixelW != otherW || otherpixelH != otherH)) {
+                    return SDL_FALSE;
+                }
+            }
+        }
+    }
+#endif
 
     data = (SDL_DisplayModeData *) SDL_malloc(sizeof(*data));
     if (!data) {
@@ -116,8 +148,6 @@ GetDisplayMode(_THIS, CGDisplayModeRef vidmode, CVDisplayLinkRef link, SDL_Displ
     data->moderef = vidmode;
 
     fmt = CGDisplayModeCopyPixelEncoding(vidmode);
-    width = (int) CGDisplayModeGetWidth(vidmode);
-    height = (int) CGDisplayModeGetHeight(vidmode);
     refreshRate = (int) (CGDisplayModeGetRefreshRate(vidmode) + 0.5);
 
     if (CFStringCompare(fmt, CFSTR(IO32BitDirectPixels),
@@ -243,7 +273,7 @@ Cocoa_InitModes(_THIS)
             SDL_zero(display);
             /* this returns a stddup'ed string */
             display.name = (char *)Cocoa_GetDisplayName(displays[i]);
-            if (!GetDisplayMode(_this, moderef, link, &mode)) {
+            if (!GetDisplayMode(_this, moderef, NULL, link, &mode)) {
                 CVDisplayLinkRelease(link);
                 CGDisplayModeRelease(moderef);
                 SDL_free(display.name);
@@ -340,53 +370,52 @@ void
 Cocoa_GetDisplayModes(_THIS, SDL_VideoDisplay * display)
 {
     SDL_DisplayData *data = (SDL_DisplayData *) display->driverdata;
-    CVDisplayLinkRef link = NULL;
-    CGDisplayModeRef desktopmoderef;
-    SDL_DisplayMode desktopmode;
+    CFDictionaryRef dict = NULL;
     CFArrayRef modes;
 
-    CVDisplayLinkCreateWithCGDisplay(data->display, &link);
-
-    desktopmoderef = CGDisplayCopyDisplayMode(data->display);
-
-    /* CopyAllDisplayModes won't always contain the desktop display mode (if
-     * NULL is passed in) - for example on a retina 15" MBP, System Preferences
-     * allows choosing 1920x1200 but it's not in the list. AddDisplayMode makes
-     * sure there are no duplicates so it's safe to always add the desktop mode
-     * even in cases where it is in the CopyAllDisplayModes list.
+    /* By default, CGDisplayCopyAllDisplayModes will only get a subset of the
+     * system's available modes. For example on a 15" 2016 MBP, users can
+     * choose 1920x1080@2x in System Preferences but it won't show up here,
+     * unless we specify the option below.
      */
-    if (desktopmoderef && GetDisplayMode(_this, desktopmoderef, link, &desktopmode)) {
-        if (!SDL_AddDisplayMode(display, &desktopmode)) {
-            CGDisplayModeRelease(desktopmoderef);
-            SDL_free(desktopmode.driverdata);
-        }
-    } else {
-        CGDisplayModeRelease(desktopmoderef);
+#ifdef MAC_OS_X_VERSION_10_8
+    if (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_7) {
+        const CFStringRef dictkeys[] = {kCGDisplayShowDuplicateLowResolutionModes};
+        const CFBooleanRef dictvalues[] = {kCFBooleanTrue};
+        dict = CFDictionaryCreate(NULL,
+                                  (const void **)dictkeys,
+                                  (const void **)dictvalues,
+                                  1,
+                                  &kCFCopyStringDictionaryKeyCallBacks,
+                                  &kCFTypeDictionaryValueCallBacks);
+    }
+#endif
+
+    modes = CGDisplayCopyAllDisplayModes(data->display, dict);
+
+    if (dict != NULL) {
+        CFRelease(dict);
     }
 
-    modes = CGDisplayCopyAllDisplayModes(data->display, NULL);
-
     if (modes) {
-        CFIndex i;
+        CVDisplayLinkRef link = NULL;
         const CFIndex count = CFArrayGetCount(modes);
+        CFIndex i;
+
+        CVDisplayLinkCreateWithCGDisplay(data->display, &link);
 
         for (i = 0; i < count; i++) {
             CGDisplayModeRef moderef = (CGDisplayModeRef) CFArrayGetValueAtIndex(modes, i);
             SDL_DisplayMode mode;
-
-            if (GetDisplayMode(_this, moderef, link, &mode)) {
-                if (SDL_AddDisplayMode(display, &mode)) {
-                    CGDisplayModeRetain(moderef);
-                } else {
-                    SDL_free(mode.driverdata);
-                }
+            if (GetDisplayMode(_this, moderef, modes, link, &mode)) {
+                CGDisplayModeRetain(moderef);
+                SDL_AddDisplayMode(display, &mode);
             }
         }
 
+        CVDisplayLinkRelease(link);
         CFRelease(modes);
     }
-
-    CVDisplayLinkRelease(link);
 }
 
 int

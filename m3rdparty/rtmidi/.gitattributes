@@ -1,4 +1,0 @@
-# make sure that .gitignore, .travis.yml,... are not part of a
-# source-package generated via 'git archive'
-.git*      	export-ignore
-/.*		export-ignore

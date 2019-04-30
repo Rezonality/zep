@@ -4,10 +4,9 @@
 
 MESSAGE(STATUS "G++.cmake")
 
-#set(CMAKE_CXX_FLAGS "-std=c++14 -Wall -Wextra -Weffc++ -Werror -pedantic -pipe")
-set(CMAKE_CXX_FLAGS "-std=c++11" )
-set(CMAKE_CXX_FLAGS_DEBUG "-D_DEBUG -ggdb -O0")
-set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3")
+set(CMAKE_CXX_FLAGS "" )
+set(CMAKE_CXX_FLAGS_DEBUG "-D_DEBUG -ggdb -O0 -std=c++17")
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -std=c++17")
 
 if("${CMAKE_GENERATOR}" STREQUAL "Ninja")
   # Ninja redirects build output and prints it only on error
@@ -15,9 +14,11 @@ if("${CMAKE_GENERATOR}" STREQUAL "Ninja")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color")
 endif()
 
-#
-# Test coverage related stuff
-#
+IF (Qt5_POSITION_INDEPENDENT_CODE)
+    SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
+ENDIF()  
+
+# test coverage related stuff
 if(PROJECT_COVERAGE)
   message(STATUS "Unittests coverage build")
 

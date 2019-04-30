@@ -1,4 +1,3 @@
-mkdir build
-cd build
-cmake -G "Unix Makefiles" ../
-cd ../
+#!/bin/bash
+
+source config_all.sh

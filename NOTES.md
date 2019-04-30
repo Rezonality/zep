@@ -1,23 +1,9 @@
-# Ideas
+ Assumptions in the code / Design decisions:
 
-- Fade out editor window when idle
-- Show commented drum beats/etc. highlighted as time passes  "0xx00xx"
-- Switch in new state at beginning of a bar, phrase, etc.
-- User can immediately compile, auto compile, at next phrase
-- Show extra data as added comments
-
-# Release Checks
-
-- [] Notepad mode by default
-- [] Package and reload a standard setup
-- [] Low and Hi Res displays
-- [] Notepad mode abilities: split, close, etc.  User test.
-- [] Initial window sizes/shapes
-
-# Vulkan
-Wait inFlightFence
-Reset inFlightFence
-AcquireNextImageKHR:  wait imageAvailableSemaphore  SO: Waiting for the flip to finish with the semaphore, signalling 
-VcSubmitQueue: wait imageAvailableSemaphore, signal renderFinished, signal inFlightFence SO: waiting for the image availability, submitting and signalling that the render is complete
-VkQueuePresent: wait for renderFinished before flipping
-
+ - All ASCII for now, no real UTF8
+ - The cursor is only ever on a valid buffer location.  This can be the hidden CR of the line,
+   or the 0 at the end.
+ - Even if the loaded buffer doesn't 0 terminate, it is terminated and then removed at save time if necessary.
+ - Internally every thing is a '\n'; '\r\n' is converted and converted back if necessary.  Mixed files aren't supported, you'll just get a '\n' file
+ - The window converts the entire buffer to a list of visible character lines.  This is used to handle wrapping, and let the user jump around in a wrapped buffer file.
+ - Cursor is on the virtual line in the wrapped buffer, and can be off screen; but ScrollTo will find it

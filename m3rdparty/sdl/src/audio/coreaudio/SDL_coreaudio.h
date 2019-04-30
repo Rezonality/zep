@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2018 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2017 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -45,14 +45,16 @@
 
 struct SDL_PrivateAudioData
 {
+    SDL_Thread *thread;
     AudioQueueRef audioQueue;
-    int numAudioBuffers;
     AudioQueueBufferRef *audioBuffer;
     void *buffer;
+    UInt32 bufferOffset;
     UInt32 bufferSize;
     AudioStreamBasicDescription strdesc;
-    SDL_bool refill;
-    SDL_AudioStream *capturestream;
+    SDL_sem *ready_semaphore;
+    char *thread_error;
+    SDL_atomic_t shutdown;
 #if MACOSX_COREAUDIO
     AudioDeviceID deviceID;
 #else

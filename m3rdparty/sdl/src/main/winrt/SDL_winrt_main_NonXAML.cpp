@@ -50,5 +50,10 @@
 
 int CALLBACK WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
-    return SDL_WinRTRunApp(SDL_main, NULL);
+    if (FAILED(Windows::Foundation::Initialize(RO_INIT_MULTITHREADED))) {
+        return 1;
+    }
+
+    SDL_WinRTRunApp(SDL_main, NULL);
+    return 0;
 }
