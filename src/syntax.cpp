@@ -1,15 +1,14 @@
 #include "syntax.h"
 #include "editor.h"
+#include "mcommon/string/stringutils.h"
 #include "syntax_rainbow_brackets.h"
 #include "theme.h"
-#include "mcommon/string/stringutils.h"
 
 #include <string>
 #include <vector>
 
 namespace Zep
 {
-
 
 ZepSyntax::ZepSyntax(
     ZepBuffer& buffer,
@@ -25,7 +24,6 @@ ZepSyntax::ZepSyntax(
 {
     m_syntax.resize(m_buffer.GetText().size());
     m_adornments.push_back(std::make_shared<ZepSyntaxAdorn_RainbowBrackets>(*this, m_buffer));
-    QueueUpdateSyntax(0, BufferLocation(m_buffer.GetText().size()));
 }
 
 ZepSyntax::~ZepSyntax()
@@ -105,7 +103,7 @@ void ZepSyntax::QueueUpdateSyntax(BufferLocation startLocation, BufferLocation e
     // Have the thread update the syntax in the new region
     // If the pool has no threads, this will end up serial
     m_syntaxResult = GetEditor().GetThreadPool().enqueue([=]() {
-            UpdateSyntax();
+        UpdateSyntax();
     });
 }
 
@@ -136,6 +134,11 @@ void ZepSyntax::Notify(std::shared_ptr<ZepMessage> spMsg)
             QueueUpdateSyntax(spBufferMsg->startLocation, spBufferMsg->endLocation);
         }
         else if (spBufferMsg->type == BufferMessageType::TextChanged)
+        {
+            Interrupt();
+            QueueUpdateSyntax(spBufferMsg->startLocation, spBufferMsg->endLocation);
+        }
+        else if (spBufferMsg->type == BufferMessageType::Initialized)
         {
             Interrupt();
             QueueUpdateSyntax(spBufferMsg->startLocation, spBufferMsg->endLocation);
@@ -272,7 +275,7 @@ void ZepSyntax::UpdateSyntax()
                 }
             }
         }
-        
+
         itrCurrent = itrLast;
     }
 
