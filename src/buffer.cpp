@@ -625,7 +625,7 @@ void ZepBuffer::Load(const ZepPath& path)
 
 bool ZepBuffer::Save(int64_t& size)
 {
-    if (TestFlags(FileFlags::NotModifiable))
+    if (TestFlags(FileFlags::Locked))
     {
         return false;
     }

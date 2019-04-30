@@ -146,7 +146,7 @@ void ZepEditor::SaveBuffer(ZepBuffer& buffer)
     {
         strText << "Failed to save, Read Only: " << buffer.GetDisplayName();
     }
-    else if (buffer.TestFlags(FileFlags::NotModifiable))
+    else if (buffer.TestFlags(FileFlags::Locked))
     {
         strText << "Failed to save, Locked: " << buffer.GetDisplayName();
     }
@@ -234,35 +234,12 @@ ZepBuffer* ZepEditor::GetFileBuffer(const ZepPath& filePath, uint32_t fileFlags,
         return nullptr;
     }
 
+    // Create buffer, try to load even if not present, the buffer represents the save path (it just isn't saved yet)
     auto pBuffer = CreateNewBuffer(path.has_filename() ? path.filename().string() : path.string());
-    if (GetFileSystem().Exists(path))
-    {
-        pBuffer->Load(path);
-        if (GetFileSystem().IsReadOnly(path))
-        {
-            pBuffer->SetFlags(FileFlags::ReadOnly);
-        }
-    }
+    pBuffer->Load(path);
 
     pBuffer->SetFlags(fileFlags, true);
     return pBuffer;
-}
-
-std::vector<ZepWindow*> ZepEditor::GetBufferWindows(const ZepBuffer& buffer) const
-{
-    std::vector<ZepWindow*> windows;
-
-    for (auto& tab : m_tabWindows)
-    {
-        for (auto& win : tab->GetWindows())
-        {
-            if (&win->GetBuffer() == &buffer)
-            {
-                windows.push_back(win);
-            }
-        }
-    }
-    return windows;
 }
 
 ZepTabWindow* ZepEditor::EnsureTab()
@@ -699,7 +676,11 @@ void ZepEditor::UpdateSize()
     m_tabContentRegion->flags = RegionFlags::Expanding;
 
     LayoutRegion(*m_editorRegion);
-    GetActiveTabWindow()->SetDisplayRegion(m_tabContentRegion->rect);
+
+    if (GetActiveTabWindow())
+    {
+        GetActiveTabWindow()->SetDisplayRegion(m_tabContentRegion->rect);
+    }
 }
 
 void ZepEditor::Display()

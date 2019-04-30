@@ -180,6 +180,11 @@ bool ZepFileSystemCPP::Equivalent(const ZepPath& path1, const ZepPath& path2) co
 #else
     try
     {
+        // The below API expects existing files!  Best we can do is direct compare of paths
+        if (!cpp_fs::exists(path1.string()) || !cpp_fs::exists(path2.string()))
+        {
+            return Canonical(path1).string() == Canonical(path2).string();
+        }
         return cpp_fs::equivalent(path1.string(), path2.string());
     }
     catch (cpp_fs::filesystem_error& err)

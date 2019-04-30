@@ -39,6 +39,8 @@
 #include "mode_standard.h"
 #include "window.h"
 #include "mode.h"
+#include "mode_vim.h"
+#include "mode_standard.h"
 #ifdef ZEP_QT
 #include "imgui/display_qt.h"
 #include "imgui/editor_qt.h"
