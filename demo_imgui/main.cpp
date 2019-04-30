@@ -315,6 +315,15 @@ int main(int argc, char** argv)
                 done = true;
             if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
                 done = true;
+
+			// Keep consuming events if they are stacked up
+			// Bug #39.
+			// This stops keyboard events filling up the queue and replaying after you release the key.
+			// It also makes things more snappy
+			if (SDL_PollEvent(nullptr) == 1)
+			{
+				continue;
+			}
         }
         else
         {
