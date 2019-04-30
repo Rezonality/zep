@@ -122,6 +122,8 @@ BufferLocation ZepBuffer::LocationFromOffsetByChars(const BufferLocation& locati
         if (current >= (long)m_gapBuffer.size())
             break;
 
+		current = std::max(0l, current);
+
         if (m_gapBuffer[current] == '\n')
         {
             if ((current + dir) >= (long)m_gapBuffer.size())
