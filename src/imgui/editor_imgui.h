@@ -10,7 +10,7 @@ class ZepTabWindow;
 class ZepEditor_ImGui : public ZepEditor
 {
 public:
-    ZepEditor_ImGui(const ZepPath& rootPath, IZepFileSystem* pFileSystem = nullptr);
+    ZepEditor_ImGui(const ZepPath& rootPath, uint32_t flags = 0, IZepFileSystem* pFileSystem = nullptr);
     void HandleInput();
 
 private:

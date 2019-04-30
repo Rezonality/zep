@@ -12,8 +12,8 @@
 namespace Zep
 {
 
-ZepEditor_ImGui::ZepEditor_ImGui(const ZepPath& root, IZepFileSystem* pFileSystem)
-    : ZepEditor(new ZepDisplay_ImGui(), root, 0, pFileSystem)
+ZepEditor_ImGui::ZepEditor_ImGui(const ZepPath& root, uint32_t flags, IZepFileSystem* pFileSystem)
+    : ZepEditor(new ZepDisplay_ImGui(), root, flags, pFileSystem)
 {
 }
 
