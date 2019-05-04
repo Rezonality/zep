@@ -2,11 +2,11 @@
 
 #include "buffer.h"
 
+#include <atomic>
+#include <future>
+#include <memory>
 #include <set>
 #include <vector>
-#include <future>
-#include <atomic>
-#include <memory>
 
 namespace Zep
 {
@@ -29,6 +29,13 @@ enum
 };
 };
 
+struct SyntaxData
+{
+    ThemeColor foreground = ThemeColor::Normal;
+    ThemeColor background = ThemeColor::Background;
+    bool underline = false;
+};
+
 class ZepSyntaxAdorn;
 class ZepSyntax : public ZepComponent
 {
@@ -39,8 +46,7 @@ public:
         uint32_t flags = 0);
     virtual ~ZepSyntax();
 
-    virtual ThemeColor GetSyntaxAt(long index) const;
-    virtual NVec4f GetSyntaxColorAt(long offset) const;
+    virtual SyntaxData GetSyntaxAt(long index) const;
     virtual void UpdateSyntax();
     virtual void Interrupt();
     virtual void Wait() const;
@@ -49,7 +55,7 @@ public:
     {
         return m_processedChar;
     }
-    virtual const std::vector<ThemeColor>& GetText() const
+    virtual const std::vector<SyntaxData>& GetText() const
     {
         return m_syntax;
     }
@@ -61,10 +67,10 @@ private:
 protected:
     ZepBuffer& m_buffer;
     std::vector<CommentEntry> m_commentEntries;
-    std::vector<ThemeColor> m_syntax; // TODO: Use gap buffer - not sure why this is a vector?
+    std::vector<SyntaxData> m_syntax;
     std::future<void> m_syntaxResult;
-    std::atomic<long> m_processedChar = {0};
-    std::atomic<long> m_targetChar = {0};
+    std::atomic<long> m_processedChar = { 0 };
+    std::atomic<long> m_targetChar = { 0 };
     std::vector<uint32_t> m_multiCommentStarts;
     std::vector<uint32_t> m_multiCommentEnds;
     std::set<std::string> m_keywords;
@@ -84,7 +90,7 @@ public:
     {
     }
 
-    virtual NVec4f GetSyntaxColorAt(long offset, bool& found) const = 0;
+    virtual SyntaxData GetSyntaxAt(long offset, bool& found) const = 0;
 
 protected:
     ZepBuffer& m_buffer;

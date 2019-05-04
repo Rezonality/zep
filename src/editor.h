@@ -261,6 +261,14 @@ public:
     void SetDisplayRegion(const NVec2f& topLeft, const NVec2f& bottomRight);
     void UpdateSize();
 
+    int GetLineSpace() const
+    {
+        return m_lineSpace;
+    }
+
+    // Space between lines in pixels.  Make sure it is DPI aware if you set it!
+    void SetLineSpace(int space);
+
     ZepDisplay& GetDisplay() const
     {
         return *m_pDisplay;
@@ -352,6 +360,7 @@ private:
 
     std::unique_ptr<ThreadPool> m_threadPool;
 
+    int m_lineSpace = 1;
 };
 
 } // namespace Zep

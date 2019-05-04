@@ -31,35 +31,23 @@ ZepSyntax::~ZepSyntax()
     Interrupt();
 }
 
-NVec4f ZepSyntax::GetSyntaxColorAt(long offset) const
+SyntaxData ZepSyntax::GetSyntaxAt(long offset) const
 {
     Wait();
-    if (m_processedChar < offset || ((long)m_syntax.size()) <= offset)
+    if (m_processedChar < offset || (long)m_syntax.size() <= offset)
     {
-        return m_buffer.GetTheme().GetColor(ThemeColor::Normal);
+        return SyntaxData{};
     }
 
     for (auto& adorn : m_adornments)
     {
         bool found = false;
-        auto col = adorn->GetSyntaxColorAt(offset, found);
+        auto data = adorn->GetSyntaxAt(offset, found);
         if (found)
         {
-            return col;
+            return data;
         }
     }
-
-    return m_buffer.GetTheme().GetColor(m_syntax[offset]);
-}
-
-ThemeColor ZepSyntax::GetSyntaxAt(long offset) const
-{
-    Wait();
-    if (m_processedChar < offset || (long)m_syntax.size() <= offset)
-    {
-        return ThemeColor::Normal;
-    }
-
     return m_syntax[offset];
 }
 
@@ -95,7 +83,7 @@ void ZepSyntax::QueueUpdateSyntax(BufferLocation startLocation, BufferLocation e
 
     // Make sure the syntax buffer is big enough - adding normal syntax to the end
     // This may also 'chop'
-    m_syntax.resize(m_buffer.GetText().size(), ThemeColor::Normal);
+    m_syntax.resize(m_buffer.GetText().size(), SyntaxData{});
 
     m_processedChar = std::min(long(m_processedChar), long(m_buffer.GetText().size() - 1));
     m_targetChar = std::min(long(m_targetChar), long(m_buffer.GetText().size() - 1));
@@ -130,7 +118,7 @@ void ZepSyntax::Notify(std::shared_ptr<ZepMessage> spMsg)
         else if (spBufferMsg->type == BufferMessageType::TextAdded)
         {
             Interrupt();
-            m_syntax.insert(m_syntax.begin() + spBufferMsg->startLocation, spBufferMsg->endLocation - spBufferMsg->startLocation, ThemeColor::Normal);
+            m_syntax.insert(m_syntax.begin() + spBufferMsg->startLocation, spBufferMsg->endLocation - spBufferMsg->startLocation, SyntaxData{});
             QueueUpdateSyntax(spBufferMsg->startLocation, spBufferMsg->endLocation);
         }
         else if (spBufferMsg->type == BufferMessageType::TextChanged)
@@ -181,11 +169,11 @@ void ZepSyntax::UpdateSyntax()
 
     // Mark a region of the syntax buffer with the correct marker
     auto mark = [&](GapBuffer<utf8>::const_iterator itrA, GapBuffer<utf8>::const_iterator itrB, ThemeColor type) {
-        std::fill(m_syntax.begin() + (itrA - buffer.begin()), m_syntax.begin() + (itrB - buffer.begin()), type);
+        std::fill(m_syntax.begin() + (itrA - buffer.begin()), m_syntax.begin() + (itrB - buffer.begin()), SyntaxData{type});
     };
 
     auto markSingle = [&](GapBuffer<utf8>::const_iterator itrA, ThemeColor type) {
-        *(m_syntax.begin() + (itrA - buffer.begin())) = type;
+        (m_syntax.begin() + (itrA - buffer.begin()))->foreground = type;
     };
 
     // Update start location

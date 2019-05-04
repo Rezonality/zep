@@ -38,7 +38,27 @@ enum class ThemeColor
     Info,
     WidgetBackground,
     WidgetActive,
-    WidgetInactive
+    WidgetInactive,
+
+    // Last in the list!
+    // A set of pregenerated, easy to differentiate unique colors
+    UniqueColor0,
+    UniqueColor1,
+    UniqueColor2,
+    UniqueColor3,
+    UniqueColor4,
+    UniqueColor5,
+    UniqueColor6,
+    UniqueColor7,
+    UniqueColor8,
+    UniqueColor9,
+    UniqueColor10,
+    UniqueColor11,
+    UniqueColor12,
+    UniqueColor13,
+    UniqueColor14,
+    UniqueColor15,
+    UniqueColorLast,
 };
 
 enum class ThemeType
@@ -55,7 +75,7 @@ public:
 
     virtual NVec4f GetColor(ThemeColor themeColor) const;
     virtual NVec4f GetComplement(const NVec4f& col, const NVec4f& adjust = NVec4f(0.0f)) const;
-    virtual NVec4f GetUniqueColor(uint32_t id) const;
+    virtual ThemeColor GetUniqueColor(uint32_t id) const;
 
     void SetThemeType(ThemeType type);
     ThemeType GetThemeType() const;

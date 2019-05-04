@@ -29,7 +29,7 @@ public:
     {                                                              \
         ZepBuffer *pBuffer = spEditor->GetEmptyBuffer(filename);   \
         pBuffer->SetText(source);                                  \
-        ASSERT_EQ(pBuffer->GetSyntax()->GetSyntaxAt(offset), ThemeColor::color); \
+        ASSERT_EQ(pBuffer->GetSyntax()->GetSyntaxAt(offset).foreground, ThemeColor::color); \
     };
 
 #define CPP_SYNTAX_TEST(name, source, offset, color) SYNTAX_TEST(name, "test.cpp", source, offset, color)

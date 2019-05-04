@@ -19,7 +19,7 @@ struct Region;
 // A collection of spans that show split lines on the display
 struct SpanInfo
 {
-    NVec2i columnOffsets;                 // Begin/end range of the text buffer for this line, as always end is one beyond the end.
+    BufferRange columnOffsets;                 // Begin/end range of the text buffer for this line, as always end is one beyond the end.
     long lastNonCROffset = InvalidOffset; // The last char that is visible on the line (i.e. not CR/LF)
     float spanYPx = 0.0f;                 // Position in the buffer in pixels, if the screen was as big as the buffer.
     long bufferLineNumber = 0;            // Line in the original buffer, not the screen line
@@ -27,21 +27,22 @@ struct SpanInfo
 
     long Length() const
     {
-        return columnOffsets.y - columnOffsets.x;
+        return columnOffsets.second - columnOffsets.first;
     }
+
     bool BufferCursorInside(long offset) const
     {
-        return offset >= columnOffsets.x && offset < columnOffsets.y;
+        return offset >= columnOffsets.first && offset < columnOffsets.second;
     }
 };
 
 inline bool operator < (const SpanInfo& lhs, const SpanInfo& rhs)
 {
-    if (lhs.columnOffsets.x != rhs.columnOffsets.x)
+    if (lhs.columnOffsets.first != rhs.columnOffsets.first)
     {
-        return lhs.columnOffsets.x < rhs.columnOffsets.x;
+        return lhs.columnOffsets.first < rhs.columnOffsets.first;
     }
-    return lhs.columnOffsets.y < rhs.columnOffsets.y;
+    return lhs.columnOffsets.second < rhs.columnOffsets.second;
 }
 
 enum class CursorType
@@ -144,6 +145,8 @@ public:
     bool IsActiveWindow() const;
     NVec4f FilterActiveColor(const NVec4f& col, float atten = 1.0f);
 
+    void UpdateLayout(bool force = false);
+
 private:
     struct WindowPass
     {
@@ -156,7 +159,6 @@ private:
     };
 
 private:
-    void UpdateLayout();
     void UpdateLineSpans();
     void ScrollToCursor();
     void EnsureCursorVisible();

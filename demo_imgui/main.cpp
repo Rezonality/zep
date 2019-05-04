@@ -182,7 +182,7 @@ struct ZepContainer : public IZepComponent
                 auto pSyntax = spTipMsg->pBuffer->GetSyntax();
                 if (pSyntax)
                 {
-                    if (pSyntax->GetSyntaxAt(spTipMsg->location) == ThemeColor::Identifier)
+                    if (pSyntax->GetSyntaxAt(spTipMsg->location).foreground == ThemeColor::Identifier)
                     {
                         auto spMarker = std::make_shared<RangeMarker>();
                         spMarker->description = "This is an identifier";
@@ -191,7 +191,7 @@ struct ZepContainer : public IZepComponent
                         spTipMsg->spMarker = spMarker;
                         spTipMsg->handled = true;
                     }
-                    else if (pSyntax->GetSyntaxAt(spTipMsg->location) == ThemeColor::Keyword)
+                    else if (pSyntax->GetSyntaxAt(spTipMsg->location).foreground == ThemeColor::Keyword)
                     {
                         auto spMarker = std::make_shared<RangeMarker>();
                         spMarker->description = "This is a keyword";

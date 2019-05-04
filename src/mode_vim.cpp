@@ -567,6 +567,16 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
                 GetEditor().GetActiveTabWindow()->CloseActiveWindow();
             }
         }
+        else if (strCommand.find(":ZSetLineSpace") == 0)
+        {
+            int space = 1;
+            auto strTok = string_split(strCommand, " ");
+            if (strTok.size() > 1)
+            {
+                space = std::stoi(strTok[1]);
+            }
+            GetEditor().SetLineSpace(space);
+        }
         else if (strCommand.find(":ZTestMarkers") == 0)
         {
             int markerType = 0;
@@ -592,10 +602,18 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
             spMarker->range = BufferRange{start, end};
             switch (markerType)
             {
+                case 4:
+                    spMarker->highlightColor = ThemeColor::Error;
+                    spMarker->backgroundColor = ThemeColor::Error;
+                    spMarker->textColor = ThemeColor::Text;
+                    spMarker->name = "Filled Marker";
+                    spMarker->description = "This is an example tooltip\nThey can be added to any range of characters";
+                    spMarker->displayType = RangeMarkerDisplayType::Tooltip | RangeMarkerDisplayType::Underline | RangeMarkerDisplayType::Indicator | RangeMarkerDisplayType::Background;
+                    break;
                 case 3:
                     spMarker->highlightColor = ThemeColor::TabActive;
                     spMarker->textColor = ThemeColor::Text;
-                    spMarker->name = "Filled Marker";
+                    spMarker->name = "Underline Marker";
                     spMarker->description = "This is an example tooltip\nThey can be added to any range of characters";
                     spMarker->displayType = RangeMarkerDisplayType::Tooltip | RangeMarkerDisplayType::Underline | RangeMarkerDisplayType::Indicator;
                     break;
@@ -621,7 +639,7 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
             }
             buffer.AddRangeMarker(spMarker);
         }
-        else if (strCommand == ":ZWhiteSpace")
+        else if (strCommand == ":ZShowCR")
         {
             pWindow->ToggleFlag(WindowFlags::ShowCR);
         }

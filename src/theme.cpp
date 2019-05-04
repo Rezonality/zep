@@ -9,7 +9,7 @@ ZepTheme::ZepTheme()
 {
     double golden_ratio_conjugate = 0.618033988749895;
     double h = .4f;
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < (int)ThemeColor::UniqueColorLast; i++)
     {
         h += golden_ratio_conjugate;
         h = std::fmod(h, 1.0);
@@ -113,13 +113,20 @@ void ZepTheme::SetLightTheme()
     m_colors[ThemeColor::WidgetInactive] = m_colors[ThemeColor::TabInactive];
     m_colors[ThemeColor::WidgetBackground] = m_colors[ThemeColor::AirlineBackground] - NVec4f(.1f, .1f, .1f, 0.0f);
 }
-NVec4f ZepTheme::GetUniqueColor(uint32_t index) const
+
+ThemeColor ZepTheme::GetUniqueColor(uint32_t index) const
 {
-    return m_uniqueColors[index % m_uniqueColors.size()];
+    return ThemeColor((uint32_t)ThemeColor::UniqueColor0 + (uint32_t)(index % (uint32_t)ThemeColor::UniqueColorLast));
 }
 
 NVec4f ZepTheme::GetColor(ThemeColor themeColor) const
 {
+    if (themeColor >= ThemeColor::UniqueColor0)
+    {
+        // Return the unique color 
+        return m_uniqueColors[((uint32_t)themeColor - (uint32_t)ThemeColor::UniqueColor0) % (uint32_t)ThemeColor::UniqueColorLast];
+    }
+
     auto itr = m_colors.find(themeColor);
     if (itr == m_colors.end())
     {

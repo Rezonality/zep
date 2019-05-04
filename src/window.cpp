@@ -219,7 +219,7 @@ void ZepWindow::EnsureCursorVisible()
     BufferLocation loc = m_bufferCursor;
     for (auto& line : m_windowLines)
     {
-        if (line->columnOffsets.x <= loc && line->columnOffsets.y > loc)
+        if (line->columnOffsets.first <= loc && line->columnOffsets.second > loc)
         {
             auto cursorLine = line->lineIndex;
             if (cursorLine < m_visibleLineRange.x)
@@ -302,41 +302,41 @@ void ZepWindow::UpdateLineSpans()
         if (m_pBuffer->GetLineCount() <= bufferLine)
             break;
 
-        NVec2i columnOffsets;
-        if (!m_pBuffer->GetLineOffsets(bufferLine, columnOffsets.x, columnOffsets.y))
+        BufferRange columnOffsets;
+        if (!m_pBuffer->GetLineOffsets(bufferLine, columnOffsets.first, columnOffsets.second))
             break;
 
         // Start a new line
         SpanInfo* lineInfo = new SpanInfo();
         lineInfo->bufferLineNumber = bufferLine;
         lineInfo->lineIndex = spanLine;
-        lineInfo->columnOffsets.x = columnOffsets.x;
-        lineInfo->columnOffsets.y = columnOffsets.x;
+        lineInfo->columnOffsets.first = columnOffsets.first;
+        lineInfo->columnOffsets.second = columnOffsets.first;
         lineInfo->spanYPx = bufferPosYPx;
 
         // These offsets are 0 -> n + 1, i.e. the last offset the buffer returns is 1 beyond the current
-        for (auto ch = columnOffsets.x; ch < columnOffsets.y; ch++)
+        for (auto ch = columnOffsets.first; ch < columnOffsets.second; ch++)
         {
             const utf8* pCh = &textBuffer[ch];
             const auto textSize = display.GetCharSize(pCh);
 
             // Wrap if we have displayed at least one char, and we have to
-            if (m_wrap && ch != columnOffsets.x)
+            if (m_wrap && ch != columnOffsets.first)
             {
                 // At least a single char has wrapped; close the old line, start a new one
                 if (((screenPosX + textSize.x) + textSize.x) >= (m_textRegion->rect.bottomRightPx.x))
                 {
                     // Remember the offset beyond the end of the line
-                    lineInfo->columnOffsets.y = ch;
+                    lineInfo->columnOffsets.second = ch;
                     m_windowLines.push_back(lineInfo);
 
                     // Next line
                     lineInfo = new SpanInfo();
                     spanLine++;
-                    bufferPosYPx += GetEditor().GetDisplay().GetFontHeightPixels();
+                    bufferPosYPx += GetEditor().GetDisplay().GetFontHeightPixels() + GetEditor().GetLineSpace();
 
                     // Now jump to the next 'screen line' for the rest of this 'buffer line'
-                    lineInfo->columnOffsets = NVec2i(ch, ch + 1);
+                    lineInfo->columnOffsets = BufferRange(ch, ch + 1);
                     lineInfo->lastNonCROffset = 0;
                     lineInfo->lineIndex = spanLine;
                     lineInfo->bufferLineNumber = bufferLine;
@@ -350,7 +350,7 @@ void ZepWindow::UpdateLineSpans()
             }
 
             lineInfo->spanYPx = bufferPosYPx;
-            lineInfo->columnOffsets.y = ch + 1;
+            lineInfo->columnOffsets.second = ch + 1;
 
             lineInfo->lastNonCROffset = std::max(ch, 0l);
         }
@@ -362,21 +362,21 @@ void ZepWindow::UpdateLineSpans()
         bufferLine++;
         spanLine++;
         screenPosX = m_textRegion->rect.topLeftPx.x;
-        bufferPosYPx += GetEditor().GetDisplay().GetFontHeightPixels();
+        bufferPosYPx += GetEditor().GetDisplay().GetFontHeightPixels() + GetEditor().GetLineSpace();
     }
 
     // Sanity
     if (m_windowLines.empty())
     {
         SpanInfo* lineInfo = new SpanInfo();
-        lineInfo->columnOffsets.x = 0;
-        lineInfo->columnOffsets.y = 0;
+        lineInfo->columnOffsets.first = 0;
+        lineInfo->columnOffsets.second = 0;
         lineInfo->lastNonCROffset = 0;
         lineInfo->bufferLineNumber = 0;
         m_windowLines.push_back(lineInfo);
     }
 
-    m_bufferSizeYPx = m_windowLines[m_windowLines.size() - 1]->spanYPx + GetEditor().GetDisplay().GetFontHeightPixels();
+    m_bufferSizeYPx = m_windowLines[m_windowLines.size() - 1]->spanYPx + GetEditor().GetDisplay().GetFontHeightPixels() + GetEditor().GetLineSpace();
 
     UpdateVisibleLineRange();
     m_layoutDirty = true;
@@ -518,10 +518,10 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, int displayPass)
         // Show any markers in the left indicator region
         for (auto& marker : m_pBuffer->GetRangeMarkers())
         {
+            // >|< Text.  This is the bit between the arrows <-.  A vertical bar in the 'margin'
             if (marker->displayType & RangeMarkerDisplayType::Indicator)
             {
-                auto sel = marker->range;
-                if (lineInfo.columnOffsets.x <= sel.second && lineInfo.columnOffsets.y > sel.first)
+                if (marker->IntersectsRange(lineInfo.columnOffsets))
                 {
                     display.DrawRectFilled(NRectf(NVec2f(m_indicatorRegion->rect.topLeftPx.x, ToWindowY(lineInfo.spanYPx)), NVec2f(m_indicatorRegion->rect.Center().x, ToWindowY(lineInfo.spanYPx) + display.GetFontHeightPixels())), m_pBuffer->GetTheme().GetColor(marker->highlightColor));
                 }
@@ -543,12 +543,12 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, int displayPass)
     auto tipTimeSeconds = timer_get_elapsed_seconds(m_toolTipTimer);
 
     // Walk from the start of the line to the end of the line (in buffer chars)
-    for (auto ch = lineInfo.columnOffsets.x; ch < lineInfo.columnOffsets.y; ch++)
+    for (auto ch = lineInfo.columnOffsets.first; ch < lineInfo.columnOffsets.second; ch++)
     {
         const utf8* pCh = &m_pBuffer->GetText()[ch];
 
         // Visible white space
-        if (pSyntax && pSyntax->GetSyntaxAt(ch) == ThemeColor::Whitespace)
+        if (pSyntax && pSyntax->GetSyntaxAt(ch).foreground == ThemeColor::Whitespace)
         {
             pCh = (const utf8*)whiteSpace.c_str();
         }
@@ -579,8 +579,9 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, int displayPass)
             {
                 if (GetEditor().GetCurrentMode()->GetEditorMode() == EditorMode::Visual)
                 {
+                    // Draw the visual selection marker
                     auto sel = m_pBuffer->GetSelection();
-                    if (ch >= sel.first && ch < sel.second && !hiddenChar)
+                    if (sel.ContainsLocation(ch) && !hiddenChar)
                     {
                         display.DrawRectFilled(NRectf(NVec2f(screenPosX, ToWindowY(lineInfo.spanYPx)), NVec2f(screenPosX + textSize.x, ToWindowY(lineInfo.spanYPx) + textSize.y)), m_pBuffer->GetTheme().GetColor(ThemeColor::VisualSelectBackground));
                     }
@@ -594,19 +595,25 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, int displayPass)
                 m_tipBufferLocation = ch;
             }
 
+            if (pSyntax && pSyntax->GetSyntaxAt(ch).background != ThemeColor::Background)
+            {
+                display.DrawRectFilled(charRect, m_pBuffer->GetTheme().GetColor(pSyntax->GetSyntaxAt(ch).background));
+            }
+
             // Show any markers
             for (auto& marker : m_pBuffer->GetRangeMarkers())
             {
                 auto sel = marker->range;
-                if (ch >= sel.first && ch < sel.second)
+                if (marker->ContainsLocation(ch))
                 {
                     if (marker->displayType & RangeMarkerDisplayType::Underline)
                     {
                         display.DrawRectFilled(NRectf(NVec2f(screenPosX, ToWindowY(lineInfo.spanYPx) + textSize.y - 1), NVec2f(screenPosX + textSize.x, ToWindowY(lineInfo.spanYPx) + textSize.y)), m_pBuffer->GetTheme().GetColor(marker->highlightColor));
                     }
-                    else if (marker->displayType & RangeMarkerDisplayType::Background)
+
+                    if (marker->displayType & RangeMarkerDisplayType::Background)
                     {
-                        display.DrawRectFilled(charRect, m_pBuffer->GetTheme().GetColor(marker->highlightColor));
+                        display.DrawRectFilled(charRect, m_pBuffer->GetTheme().GetColor(marker->backgroundColor));
                     }
 
                     // If this marker has an associated tooltip, pop it up after a time delay
@@ -623,7 +630,7 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, int displayPass)
         }
         else
         {
-            if (pSyntax && pSyntax->GetSyntaxAt(ch) == ThemeColor::Whitespace)
+            if (pSyntax && pSyntax->GetSyntaxAt(ch).foreground == ThemeColor::Whitespace)
             {
                 auto centerChar = NVec2f(screenPosX + textSize.x / 2, ToWindowY(lineInfo.spanYPx) + textSize.y / 2);
                 display.DrawRectFilled(NRectf(centerChar - NVec2f(1.0f, 1.0f), centerChar + NVec2f(1.0f, 1.0f)), m_pBuffer->GetTheme().GetColor(ThemeColor::Whitespace));
@@ -631,14 +638,22 @@ bool ZepWindow::DisplayLine(const SpanInfo& lineInfo, int displayPass)
             else
             {
                 NVec4f col;
-                if (*pCh == '\n' || *pCh == 0)
+                if (hiddenChar)
                 {
                     col = m_pBuffer->GetTheme().GetColor(ThemeColor::HiddenText);
                 }
                 else
                 {
-                    col = pSyntax != nullptr ? pSyntax->GetSyntaxColorAt(ch) : m_pBuffer->GetTheme().GetColor(ThemeColor::Text);
+                    if (pSyntax)
+                    {
+                        col = m_pBuffer->GetTheme().GetColor(pSyntax->GetSyntaxAt(ch).foreground);
+                    }
+                    else
+                    {
+                        col = m_pBuffer->GetTheme().GetColor(ThemeColor::Text);
+                    }
                 }
+
                 display.DrawChars(NVec2f(screenPosX, ToWindowY(lineInfo.spanYPx)), col, pCh, pEnd);
             }
         }
@@ -682,10 +697,10 @@ void ZepWindow::DisplayCursor()
     auto xPos = m_textRegion->rect.topLeftPx.x;
     NVec2f cursorSize;
     bool found = false;
-    for (auto ch = cursorBufferLine.columnOffsets.x; ch < cursorBufferLine.columnOffsets.y; ch++)
+    for (auto ch = cursorBufferLine.columnOffsets.first; ch < cursorBufferLine.columnOffsets.second; ch++)
     {
         cursorSize = display.GetCharSize(&tex[ch]);
-        if ((ch - cursorBufferLine.columnOffsets.x) == cursorCL.x)
+        if ((ch - cursorBufferLine.columnOffsets.first) == cursorCL.x)
         {
             found = true;
             break;
@@ -837,9 +852,9 @@ void ZepWindow::DisplayScrollers()
     GetEditor().GetDisplay().SetClipRect(m_bufferRegion->rect);
 }
 
-void ZepWindow::UpdateLayout()
+void ZepWindow::UpdateLayout(bool force)
 {
-    if (m_layoutDirty)
+    if (m_layoutDirty || force)
     {
         LayoutRegion(*m_bufferRegion);
 
@@ -981,12 +996,12 @@ void ZepWindow::MoveCursorY(int yDistance, LineLocation clampLocation)
         target.x = m_lastCursorColumn;
 
     // Update the master buffer cursor
-    m_bufferCursor = line.columnOffsets.x + target.x;
+    m_bufferCursor = line.columnOffsets.first + target.x;
 
     // Ensure the current x offset didn't walk us off the line
     // We are clamping to visible line here
-    m_bufferCursor = std::max(m_bufferCursor, line.columnOffsets.x);
-    m_bufferCursor = std::min(m_bufferCursor, line.columnOffsets.y - 1);
+    m_bufferCursor = std::max(m_bufferCursor, line.columnOffsets.first);
+    m_bufferCursor = std::min(m_bufferCursor, line.columnOffsets.second - 1);
 
     // We can't call the buffer's LineLocation code, because when moving in span lines,
     // we are technically not moving in buffer lines; we are stepping in wrapped buffer lines.
@@ -995,24 +1010,24 @@ void ZepWindow::MoveCursorY(int yDistance, LineLocation clampLocation)
     // Require (because standard has the cursor _on_ the CR sometimes, but Vim modes do not.
     // Because the LineLastNonCR might find a 'split' line which has a line end in the middle of the line,
     // it has to be more tricky to find the last 'Non CR' character, as here
-    BufferLocation clampOffset = line.columnOffsets.y;
+    BufferLocation clampOffset = line.columnOffsets.second;
     switch (clampLocation)
     {
         case LineLocation::BeyondLineEnd:
-            clampOffset = line.columnOffsets.y;
+            clampOffset = line.columnOffsets.second;
             break;
         case LineLocation::LineLastNonCR:
-            if ((line.columnOffsets.y > 0) && (m_pBuffer->GetText()[line.columnOffsets.y - 1] == '\n' || m_pBuffer->GetText()[line.columnOffsets.y - 1] == 0))
+            if ((line.columnOffsets.second > 0) && (m_pBuffer->GetText()[line.columnOffsets.second - 1] == '\n' || m_pBuffer->GetText()[line.columnOffsets.second - 1] == 0))
             {
-                clampOffset = std::max(line.columnOffsets.x, line.columnOffsets.y - 2);
+                clampOffset = std::max(line.columnOffsets.first, line.columnOffsets.second - 2);
             }
             else
             {
-                clampOffset = std::max(line.columnOffsets.x, line.columnOffsets.y - 1);
+                clampOffset = std::max(line.columnOffsets.first, line.columnOffsets.second - 1);
             }
             break;
         case LineLocation::LineCRBegin:
-            clampOffset = line.columnOffsets.y - 1;
+            clampOffset = line.columnOffsets.second - 1;
             break;
         default:
             assert(!"Not supported Y motion line clamp!");
@@ -1041,10 +1056,10 @@ NVec2i ZepWindow::BufferToDisplay(const BufferLocation& loc)
     // TODO:  A map
     for (auto& line : m_windowLines)
     {
-        if (line->columnOffsets.x <= loc && line->columnOffsets.y > loc)
+        if (line->columnOffsets.first <= loc && line->columnOffsets.second > loc)
         {
             ret.y = line_number;
-            ret.x = loc - line->columnOffsets.x;
+            ret.x = loc - line->columnOffsets.first;
             return ret;
         }
         line_number++;
@@ -1052,7 +1067,7 @@ NVec2i ZepWindow::BufferToDisplay(const BufferLocation& loc)
 
     // Max
     ret.y = int(m_windowLines.size() - 1);
-    ret.x = m_windowLines[m_windowLines.size() - 1]->columnOffsets.y - 1;
+    ret.x = m_windowLines[m_windowLines.size() - 1]->columnOffsets.second - 1;
     return ret;
 }
 

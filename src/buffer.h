@@ -1,11 +1,11 @@
 #pragma once
 
-#include "mcommon/file/path.h"
 #include "editor.h"
+#include "mcommon/file/path.h"
 #include "theme.h"
 
-#include <set>
 #include "gap_buffer.h"
+#include <set>
 
 namespace Zep
 {
@@ -40,7 +40,7 @@ enum : uint32_t
     TerminatedWithZero = (1 << 1),
     ReadOnly = (1 << 2),
     Locked = (1 << 3), // Can this file path ever be written to?
-    Dirty = (1 << 4),  // Has the file been changed?
+    Dirty = (1 << 4), // Has the file been changed?
     NotYetSaved = (1 << 5),
     FirstInit = (1 << 6)
 };
@@ -54,26 +54,47 @@ enum class BufferType
 
 enum class LineLocation
 {
-    None,               // Not any specific location
+    None, // Not any specific location
     LineFirstGraphChar, // First non blank character
-    LineLastGraphChar,  // Last non blank character
-    LineLastNonCR,      // Last character before the carriage return
-    LineBegin,          // Beginning of line
-    BeyondLineEnd,      // The line end of the buffer line (for wrapped lines).
-    LineCRBegin,        // The first carriage return character
+    LineLastGraphChar, // Last non blank character
+    LineLastNonCR, // Last character before the carriage return
+    LineBegin, // Beginning of line
+    BeyondLineEnd, // The line end of the buffer line (for wrapped lines).
+    LineCRBegin, // The first carriage return character
 };
 
 using BufferLocation = long;
-using BufferRange = std::pair<BufferLocation, BufferLocation>;
+struct BufferRange
+{
+    BufferLocation first;
+    BufferLocation second;
+
+    BufferRange(BufferLocation a, BufferLocation b)
+        : first(a)
+        , second(b)
+    {
+    }
+
+    explicit BufferRange()
+        : first(0)
+        , second(0)
+    {
+    }
+
+    bool ContainsLocation(BufferLocation loc) const
+    {
+        return loc >= first && loc < second;
+    }
+};
 
 namespace RangeMarkerDisplayType
 {
 enum
 {
-    Underline = (1 << 0),   // Underline the range
-    Background = (1 << 1),  // Add a background to the range
-    Tooltip = (1 << 2),     // Show a tooltip using the name/description
-    Indicator = (1 << 3),    // Show an indicator on the left side
+    Underline = (1 << 0), // Underline the range
+    Background = (1 << 1), // Add a background to the range
+    Tooltip = (1 << 2), // Show a tooltip using the name/description
+    Indicator = (1 << 3), // Show an indicator on the left side
     All = Underline | Tooltip | Indicator
 };
 };
@@ -82,11 +103,21 @@ struct RangeMarker
 {
     long bufferLine = -1;
     BufferRange range;
-    ThemeColor textColor;
-    ThemeColor highlightColor;
+    ThemeColor textColor = ThemeColor::Text;
+    ThemeColor backgroundColor = ThemeColor::Background;
+    ThemeColor highlightColor = ThemeColor::Background;
     uint32_t displayType = RangeMarkerDisplayType::All;
     std::string name;
     std::string description;
+
+    bool ContainsLocation(long loc) const
+    {
+        return range.ContainsLocation(loc);
+    }
+    bool IntersectsRange(const BufferRange& i) const
+    {
+        return i.first < range.second && i.second > range.first;
+    }
 };
 
 using tRangeMarkers = std::vector<std::shared_ptr<RangeMarker>>;
@@ -108,7 +139,7 @@ public:
     ZepPath GetFilePath() const;
     void SetFilePath(const ZepPath& path);
 
-    BufferLocation Search(const std::string& str, BufferLocation start, SearchDirection dir = SearchDirection::Forward, BufferLocation end = BufferLocation{-1l}) const;
+    BufferLocation Search(const std::string& str, BufferLocation start, SearchDirection dir = SearchDirection::Forward, BufferLocation end = BufferLocation{ -1l }) const;
 
     BufferLocation GetLinePos(BufferLocation bufferLocation, LineLocation lineLocation) const;
     bool GetLineOffsets(const long line, long& charStart, long& charEnd) const;
@@ -218,8 +249,8 @@ private:
     void UpdateForDelete(const BufferLocation& startOffset, const BufferLocation& endOffset);
 
 private:
-    bool m_dirty = false;         // Is the text modified?
-    GapBuffer<utf8> m_gapBuffer;  // Storage for the text - a gap buffer for efficiency
+    bool m_dirty = false; // Is the text modified?
+    GapBuffer<utf8> m_gapBuffer; // Storage for the text - a gap buffer for efficiency
     std::vector<long> m_lineEnds; // End of each line
     uint32_t m_fileFlags = FileFlags::NotYetSaved | FileFlags::FirstInit;
     BufferType m_bufferType = BufferType::Normal;
@@ -230,7 +261,7 @@ private:
 
     BufferRange m_selection;
     tRangeMarkers m_rangeMarkers;
-    BufferLocation m_lastLocation{0};
+    BufferLocation m_lastLocation{ 0 };
 };
 
 // Notification payload

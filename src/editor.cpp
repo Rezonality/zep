@@ -795,4 +795,16 @@ float ZepEditor::GetPixelScale() const
     return m_pixelScale;
 }
 
+void ZepEditor::SetLineSpace(int lineSpace)
+{
+    m_lineSpace = lineSpace;
+    for (auto& pTabWindow : m_tabWindows)
+    {
+        for (auto& pWindow : pTabWindow->GetWindows())
+        {
+            pWindow->UpdateLayout(true);
+        }
+    }
+}
+
 } // namespace Zep
