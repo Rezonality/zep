@@ -134,7 +134,7 @@ void RegisterSyntaxProviders(ZepEditor& editor)
         return std::make_shared<ZepSyntax>(*pBuffer, glsl_keywords, glsl_identifiers);
     }));
 
-    editor.RegisterSyntaxFactory({".hlsl", ".hlsli"}, tSyntaxFactory([](ZepBuffer* pBuffer) {
+    editor.RegisterSyntaxFactory({".hlsl", ".hlsli", ".vs", ".ps"}, tSyntaxFactory([](ZepBuffer* pBuffer) {
         return std::make_shared<ZepSyntax>(*pBuffer, hlsl_keywords, hlsl_identifiers);
     }));
 

@@ -186,7 +186,8 @@ public:
     void LoadConfig(const ZepPath& config_path);
     void Quit();
 
-    void InitWithFileOrDir(const std::string& str);
+    ZepBuffer* InitWithFileOrDir(const std::string& str);
+    ZepBuffer* InitWithText(const std::string& strName, const std::string& strText);
 
     ZepMode* GetCurrentMode() const;
     void BeginSecondaryMode(std::shared_ptr<ZepMode> spSecondaryMode);
@@ -215,6 +216,7 @@ public:
     void SaveBuffer(ZepBuffer& buffer);
     ZepBuffer* GetFileBuffer(const ZepPath& filePath, uint32_t fileFlags = 0, bool create = true);
     ZepBuffer* GetEmptyBuffer(const std::string& name, uint32_t fileFlags = 0);
+    void RemoveBuffer(ZepBuffer* pBuffer);
 
     void SetRegister(const std::string& reg, const Register& val);
     void SetRegister(const char reg, const Register& val);
@@ -295,6 +297,9 @@ public:
 private:
     // Call GetBuffer publicly, to stop creation of duplicate buffers refering to the same file
     ZepBuffer* CreateNewBuffer(const std::string& bufferName);
+
+    // Ensure there is a valid tab window and return it
+    ZepTabWindow* EnsureTab();
 
 private:
     ZepDisplay* m_pDisplay;

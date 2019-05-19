@@ -50,6 +50,9 @@ using namespace Zep;
 
 #include "src/tests/longtext.tt"
 
+namespace
+{
+
 const std::string shader = R"R(
 #version 330 core
 
@@ -73,6 +76,21 @@ void main()
 )R";
 
 std::string startupFile;
+
+float GetDisplayScale()
+{
+    float ddpi = 0.0f;
+    float hdpi = 0.0f;
+    float vdpi = 0.0f;
+    auto res = SDL_GetDisplayDPI(0, &ddpi, &hdpi, &vdpi);
+    if (res == 0 && hdpi != 0)
+    {
+		return hdpi / 96.0f;
+    }
+	return 1.0f;
+}
+
+} // namespace
 
 bool ReadCommandLine(int argc, char** argv, int& exitCode)
 {
@@ -117,36 +135,24 @@ struct ZepContainer : public IZepComponent
         : spEditor(std::make_unique<ZepEditor_ImGui>(ZEP_ROOT))
     {
 
-        // File watcher not used on apple yet ; needs investigating as to why it doesn't compile/run 
+        // File watcher not used on apple yet ; needs investigating as to why it doesn't compile/run
 #ifndef __APPLE__
-        MUtils::Watcher::Instance().AddWatch(ZEP_ROOT, [&](const ZepPath & path)
-        {
+        MUtils::Watcher::Instance().AddWatch(ZEP_ROOT, [&](const ZepPath& path) {
             spEditor->OnFileChanged(path);
-        }, false);
+        },
+                                             false);
 #endif
 
         spEditor->RegisterCallback(this);
-
-        float ddpi = 0.0f;
-        float hdpi = 0.0f;
-        float vdpi = 0.0f;
-        auto res = SDL_GetDisplayDPI(0, &ddpi, &hdpi, &vdpi);
-        if (res == 0 && hdpi != 0)
-        {
-            spEditor->SetPixelScale(hdpi / 96.0f);
-        }
+		spEditor->SetPixelScale(GetDisplayScale());
 
         if (!startupFilePath.empty())
         {
             spEditor->InitWithFileOrDir(startupFilePath);
         }
-
-        // Add a shader, as a default when no file - for the demo
-        if (spEditor->GetBuffers().size() == 0)
+        else
         {
-            ZepBuffer* pBuffer = spEditor->GetEmptyBuffer("shader.vert");
-            pBuffer->SetText(shader.c_str());
-
+            spEditor->InitWithText("Shader.vert", shader);
         }
     }
 
@@ -243,9 +249,15 @@ int main(int argc, char** argv)
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
-    SDL_Window* window = SDL_CreateWindow("Zep", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+
+    float ratio = current.w / (float)current.h;
+    int startWidth = uint32_t(current.w * .6666);
+    int startHeight = uint32_t(startWidth / ratio);
+
+    SDL_Window* window = SDL_CreateWindow("Zep", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, startWidth, startHeight, SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     SDL_GL_SetSwapInterval(0); // Enable vsync
 
@@ -275,32 +287,11 @@ int main(int argc, char** argv)
 
     // Setup style
     ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
 
-    // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-    // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-    // - The fonts will be rasterized at a given fixed_size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-    // - Read 'misc/fonts/README.txt' for more instructions and details.
-    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-    //io.Fonts->AddFontDefault();
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
-    //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-    //IM_ASSERT(font != NULL);
-
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-
-    //io.Fonts->AddFontDefault();
-    /*ImFontConfig cfg;
+    ImFontConfig cfg;
     cfg.OversampleH = 3;
-    cfg.OversampleV= 3;
-    cfg.SizePixels = 16;
-    cfg.PixelSnapH = true;
-    io.Fonts->AddFontFromFileTTF((std::string(SDL_GetBasePath()) + "ProggyClean.ttf").c_str(), 16.0f, &cfg );
-    */
+    cfg.OversampleV = 3;
+    io.Fonts->AddFontFromFileTTF((std::string(SDL_GetBasePath()) + "ProggyClean.ttf").c_str(), 15.0f * GetDisplayScale(), &cfg);
     bool show_demo_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
@@ -324,6 +315,15 @@ int main(int argc, char** argv)
                 done = true;
             if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
                 done = true;
+
+			// Keep consuming events if they are stacked up
+			// Bug #39.
+			// This stops keyboard events filling up the queue and replaying after you release the key.
+			// It also makes things more snappy
+			if (SDL_PollEvent(nullptr) == 1)
+			{
+				continue;
+			}
         }
         else
         {
@@ -418,9 +418,9 @@ int main(int argc, char** argv)
             if (ImGui::BeginMenu("Timings"))
             {
                 for (auto& p : globalProfiler.timerData)
-                { 
+                {
                     std::ostringstream strval;
-                    strval << p.first << " : " << p.second.current / 1000.0 << "ms";// << " Last: " << p.second.current / 1000.0 << "ms";
+                    strval << p.first << " : " << p.second.current / 1000.0 << "ms"; // << " Last: " << p.second.current / 1000.0 << "ms";
                     ImGui::MenuItem(strval.str().c_str());
                 }
                 ImGui::EndMenu();

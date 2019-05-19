@@ -67,6 +67,30 @@ bool ZepFileSystemCPP::IsDirectory(const ZepPath& path) const
 #endif
 }
 
+bool ZepFileSystemCPP::IsReadOnly(const ZepPath& path) const
+{
+#if defined(__APPLE__)
+    struct stat s;
+    auto strPath = path.string();
+    if (stat(strPath.c_str(), &s) == 0)
+    {
+        if (s.st_mode & S_IWRITE)
+        {
+            // Can write, so not read only!
+            return false;
+        }
+    }
+    return true;
+#else
+    auto perms = cpp_fs::status(path.string()).permissions();
+    if ((perms & cpp_fs::perms::owner_write) == cpp_fs::perms::owner_write)
+    {
+        return false;
+    }
+    return true;
+#endif
+}
+
 std::string ZepFileSystemCPP::Read(const ZepPath& fileName)
 {
     std::ifstream in(fileName, std::ios::in | std::ios::binary);
@@ -156,6 +180,11 @@ bool ZepFileSystemCPP::Equivalent(const ZepPath& path1, const ZepPath& path2) co
 #else
     try
     {
+        // The below API expects existing files!  Best we can do is direct compare of paths
+        if (!cpp_fs::exists(path1.string()) || !cpp_fs::exists(path2.string()))
+        {
+            return Canonical(path1).string() == Canonical(path2).string();
+        }
         return cpp_fs::equivalent(path1.string(), path2.string());
     }
     catch (cpp_fs::filesystem_error& err)
