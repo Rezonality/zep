@@ -1,9 +1,10 @@
-#include "mode_search.h"
-#include "tab_window.h"
-#include "window.h"
-#include "mcommon/logger.h"
-#include "mcommon/threadutils.h"
-#include "filesystem.h"
+#include "zep/mode_search.h"
+#include "zep/tab_window.h"
+#include "zep/window.h"
+#include "zep/filesystem.h"
+
+#include "zep/mcommon/logger.h"
+#include "zep/mcommon/threadutils.h"
 
 namespace Zep
 {

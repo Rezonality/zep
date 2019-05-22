@@ -1,11 +1,12 @@
-#include "m3rdparty.h"
 #include "config_app.h"
-#include "src/buffer.h"
-#include "src/display.h"
-#include "src/editor.h"
-#include "src/mode_vim.h"
-#include "src/tab_window.h"
-#include "src/window.h"
+
+#include "zep/buffer.h"
+#include "zep/display.h"
+#include "zep/editor.h"
+#include "zep/mode_vim.h"
+#include "zep/tab_window.h"
+#include "zep/window.h"
+
 #include <gtest/gtest.h>
 
 // TESTS

@@ -1,8 +1,9 @@
-#include "syntax.h"
-#include "editor.h"
-#include "mcommon/string/stringutils.h"
-#include "syntax_rainbow_brackets.h"
-#include "theme.h"
+#include "zep/syntax.h"
+#include "zep/editor.h"
+#include "zep/syntax_rainbow_brackets.h"
+#include "zep/theme.h"
+
+#include "zep/mcommon/string/stringutils.h"
 
 #include <string>
 #include <vector>

@@ -1,9 +1,10 @@
-#include "tab_window.h"
-#include "buffer.h"
-#include "display.h"
-#include "editor.h"
-#include "window.h"
-#include "mcommon/logger.h"
+#include "zep/tab_window.h"
+#include "zep/buffer.h"
+#include "zep/display.h"
+#include "zep/editor.h"
+#include "zep/window.h"
+
+#include "zep/mcommon/logger.h"
 
 // A 'window' is like a Vim Tab
 namespace Zep

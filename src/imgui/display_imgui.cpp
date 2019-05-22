@@ -1,4 +1,4 @@
-#include "display_imgui.h"
+#include "zep/imgui/display_imgui.h"
 
 // This is an ImGui specific renderer for Zep.  Simple interface for drawing chars, rects, lines.
 // Implement a new display for a different rendering type - e.g. terminal or windows Gui.jj

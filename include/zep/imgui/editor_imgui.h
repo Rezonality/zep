@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
-#include "editor.h"
+
+#include "zep/editor.h"
 
 namespace Zep
 {

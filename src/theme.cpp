@@ -1,6 +1,6 @@
-#include "editor.h"
-#include "syntax.h"
-#include "theme.h"
+#include "zep/editor.h"
+#include "zep/syntax.h"
+#include "zep/theme.h"
 
 namespace Zep
 {

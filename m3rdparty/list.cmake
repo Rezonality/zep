@@ -14,23 +14,7 @@ SET (IMGUI_INCLUDE
     m3rdparty/imgui/imgui.h
     m3rdparty/imgui/imgui_dock.h
     m3rdparty/imgui/imgui_orient.h)
-
-LIST(APPEND M3RDPARTY_INCLUDE
-    m3rdparty/imgui
-    m3rdparty/imgui/examples/libs/gl3w
-    )
-
 ENDIF()
-
-LIST(APPEND M3RDPARTY_INCLUDE
-    m3rdparty
-    ${CMAKE_BINARY_DIR}
-    )
-
-LIST(APPEND M3RDPARTY_SOURCE
-    m3rdparty/tfd/tinyfiledialogs.h
-    m3rdparty/tfd/tinyfiledialogs.c
-    )
 
 SET (M3RDPARTY_DIR ${CMAKE_CURRENT_LIST_DIR})
 
@@ -45,12 +29,6 @@ ExternalProject_Add(
   INSTALL_COMMAND "" 
   INSTALL_DIR ""
 )
-
-LIST(APPEND M3RDPARTY_INCLUDE
-    m3rdparty/sdl/include
-    m3rdparty/sdl
-	m3rdparty/tclap/include
-    )
 
 IF (TARGET_PC)
 SET(SDL_LINKLIBS 

@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <thread>
 
-#include <m3rdparty/tclap/include/tclap/CmdLine.h>
+#include "tclap/CmdLine.h"
 
 #include "config_app.h"
 
@@ -28,27 +28,27 @@
 #include IMGUI_IMPL_OPENGL_LOADER_CUSTOM
 #endif
 
-#include "mcommon/animation/timer.h"
+#include "zep/mcommon/animation/timer.h"
 
 #undef max
 
-#include "src/imgui/display_imgui.h"
-#include "src/imgui/editor_imgui.h"
-#include "src/mode_standard.h"
-#include "src/mode_vim.h"
-#include "src/theme.h"
-#include "src/tab_window.h"
-#include "src/window.h"
+#include "zep/imgui/display_imgui.h"
+#include "zep/imgui/editor_imgui.h"
+#include "zep/mode_standard.h"
+#include "zep/mode_vim.h"
+#include "zep/theme.h"
+#include "zep/tab_window.h"
+#include "zep/window.h"
 
-#include "m3rdparty/tfd/tinyfiledialogs.h"
+#include "tfd/tinyfiledialogs.h"
 
 #ifndef __APPLE__
-#include "m3rdparty/FileWatcher/watcher.h"
+#include "FileWatcher/watcher.h"
 #endif
 
 using namespace Zep;
 
-#include "src/tests/longtext.tt"
+//#include "src/tests/longtext.tt"
 
 namespace
 {

@@ -1,8 +1,10 @@
 #pragma once
 #include <string>
-#include "display.h"
-#include "syntax.h"
-#include <imgui.h>
+
+#include "zep/display.h"
+#include "zep/syntax.h"
+
+#include "imgui.h"
 
 namespace Zep
 {

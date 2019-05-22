@@ -3,15 +3,16 @@
 #include <QDesktopWidget>
 #include <string>
 
-#include "editor.h"
-#include "logger.h"
-#include "mode.h"
-#include "mode_standard.h"
-#include "mode_vim.h"
-#include "tab_window.h"
+#include "zep/mcommon/logger.h"
 
-#include "zepdisplay_qt.h"
-#include "zepwidget_qt.h"
+#include "zep/editor.h"
+#include "zep/mode.h"
+#include "zep/mode_standard.h"
+#include "zep/mode_vim.h"
+#include "zep/tab_window.h"
+
+#include "zep/qt/zepdisplay_qt.h"
+#include "zep/qt/zepwidget_qt.h"
 
 namespace Zep
 {

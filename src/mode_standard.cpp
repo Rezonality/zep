@@ -1,7 +1,8 @@
-#include "mode_standard.h"
-#include "commands.h"
-#include "mcommon/string/stringutils.h"
-#include "window.h"
+#include "zep/mode_standard.h"
+#include "zep/commands.h"
+#include "zep/window.h"
+
+#include "zep/mcommon/string/stringutils.h"
 
 // Note:
 // This is a version of the buffer that behaves like notepad.

@@ -1,9 +1,10 @@
-#include "m3rdparty.h"
 #include "config_app.h"
-#include "src/buffer.h"
-#include "src/display.h"
-#include "src/editor.h"
-#include "src/syntax.h"
+
+#include "zep/buffer.h"
+#include "zep/display.h"
+#include "zep/editor.h"
+#include "zep/syntax.h"
+
 #include <gtest/gtest.h>
 
 using namespace Zep;

@@ -1,13 +1,15 @@
-#include "editor_imgui.h"
-#include "display_imgui.h"
-#include "editor.h"
-#include "mode_standard.h"
-#include "mode_vim.h"
-#include "syntax.h"
-#include "tab_window.h"
-#include <imgui.h>
+#include "zep/imgui/editor_imgui.h"
+#include "zep/imgui/display_imgui.h"
+#include "zep/imgui/usb_hid_keys.h"
+
+#include "zep/editor.h"
+#include "zep/mode_standard.h"
+#include "zep/mode_vim.h"
+#include "zep/syntax.h"
+#include "zep/tab_window.h"
+
+#include "imgui.h"
 #include <string>
-#include "usb_hid_keys.h"
 
 namespace Zep
 {

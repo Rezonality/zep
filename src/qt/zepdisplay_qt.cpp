@@ -1,4 +1,5 @@
-#include "zepdisplay_qt.h"
+#include "zep/qt/zepdisplay_qt.h"
+
 #include <qapplication.h>
 #if _WIN32
 #include <windows.h>

@@ -2,17 +2,17 @@
 #include <cmath>
 #include <sstream>
 
-#include "buffer.h"
-#include "display.h"
-#include "mode.h"
-#include "syntax.h"
-#include "tab_window.h"
-#include "theme.h"
-#include "window.h"
-#include "scroller.h"
+#include "zep/buffer.h"
+#include "zep/display.h"
+#include "zep/mode.h"
+#include "zep/syntax.h"
+#include "zep/tab_window.h"
+#include "zep/theme.h"
+#include "zep/window.h"
+#include "zep/scroller.h"
 
-#include "mcommon/logger.h"
-#include "mcommon/string/stringutils.h"
+#include "zep/mcommon/logger.h"
+#include "zep/mcommon/string/stringutils.h"
 
 // A 'window' is like a vim window; i.e. a region inside a tab
 namespace Zep

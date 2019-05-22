@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
-#include "src/gap_buffer.h"
+
+#include "zep/gap_buffer.h"
  
 TEST(GapBuffer, PushPop)
 {

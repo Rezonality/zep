@@ -1,7 +1,7 @@
-#include "display.h"
+#include "zep/display.h"
 
-#include "mcommon/logger.h"
-#include "mcommon/string/stringutils.h"
+#include "zep/mcommon/logger.h"
+#include "zep/mcommon/string/stringutils.h"
 
 // A 'window' is like a vim window; i.e. a region inside a tab
 namespace Zep

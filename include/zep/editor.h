@@ -10,11 +10,11 @@
 #include <vector>
 #include "zep_config.h"
 
-#include "mcommon/math/math.h"
-#include "mcommon/animation/timer.h"
-#include "mcommon/file/archive.h"
-#include "mcommon/threadpool.h"
-#include "mcommon/file/path.h"
+#include "zep/mcommon/math/math.h"
+#include "zep/mcommon/animation/timer.h"
+#include "zep/mcommon/file/archive.h"
+#include "zep/mcommon/threadpool.h"
+#include "zep/mcommon/file/path.h"
 
 #include "splits.h"
 

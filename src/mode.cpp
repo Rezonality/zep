@@ -1,14 +1,15 @@
-#include "mode.h"
-#include "buffer.h"
-#include "commands.h"
-#include "editor.h"
-#include "tab_window.h"
-#include "window.h"
-#include "editor.h"
-#include "filesystem.h"
-#include "mode_search.h"
+#include "zep/mode.h"
+#include "zep/buffer.h"
+#include "zep/commands.h"
+#include "zep/editor.h"
+#include "zep/tab_window.h"
+#include "zep/window.h"
+#include "zep/editor.h"
+#include "zep/filesystem.h"
+#include "zep/mode_search.h"
 
-#include "mcommon/logger.h"
+#include "zep/mcommon/logger.h"
+
 namespace Zep
 {
 

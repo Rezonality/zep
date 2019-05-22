@@ -1,8 +1,8 @@
 #include <chrono> // Timing
 #include <iomanip>
-#include "mcommon/logger.h"
+#include "zep/mcommon/logger.h"
 
-#include "timer.h"
+#include "zep/mcommon/animation/timer.h"
 
 namespace Zep
 {

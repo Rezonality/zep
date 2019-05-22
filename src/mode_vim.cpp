@@ -1,15 +1,16 @@
 #include <cctype>
 #include <sstream>
 
-#include "buffer.h"
-#include "commands.h"
-#include "mode_vim.h"
-#include "mode_search.h"
-#include "tab_window.h"
-#include "mcommon/string/stringutils.h"
-#include "mcommon/animation/timer.h"
-#include "window.h"
-#include "theme.h"
+#include "zep/buffer.h"
+#include "zep/commands.h"
+#include "zep/mode_vim.h"
+#include "zep/mode_search.h"
+#include "zep/tab_window.h"
+#include "zep/window.h"
+#include "zep/theme.h"
+
+#include "zep/mcommon/string/stringutils.h"
+#include "zep/mcommon/animation/timer.h"
 
 // Note:
 // This is a very basic implementation of the common Vim commands that I use: the bare minimum I can live with.

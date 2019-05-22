@@ -1,6 +1,6 @@
-#include "m3rdparty.h"
 #include <gtest/gtest.h>
-#include "src/buffer.h"
+
+#include "zep/buffer.h"
 
 using namespace Zep;
 
