@@ -138,7 +138,10 @@ struct ZepContainer : public IZepComponent
         // File watcher not used on apple yet ; needs investigating as to why it doesn't compile/run
 #ifndef __APPLE__
         MUtils::Watcher::Instance().AddWatch(ZEP_ROOT, [&](const ZepPath& path) {
-            spEditor->OnFileChanged(path);
+            if (spEditor)
+            {
+                spEditor->OnFileChanged(path);
+            }
         },
                                              false);
 #endif

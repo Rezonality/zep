@@ -638,6 +638,7 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
                     spMarker->description = "This is an example error mark";
             }
             buffer.AddRangeMarker(spMarker);
+            SwitchMode(EditorMode::Normal);
         }
         else if (strCommand == ":ZShowCR")
         {
