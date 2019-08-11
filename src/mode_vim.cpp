@@ -44,6 +44,7 @@
 // 'y'
 // 'p'/'P'
 // a-z&a-Z, 0->9, _ " registers
+// r Replace with char
 // '$'
 // 'yy'
 // cc
