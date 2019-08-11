@@ -63,6 +63,9 @@ Using the Qt Renderer:
 A light theme:
 ![Qt](screenshots/sample-light-qt.png)
 
+Embedded in a Live Coding tool:
+![Embedded](screenshots/jorvik.png)
+
 Embedded in a Game Engine:
 ![Embedded](screenshots/embedded.png)
 
