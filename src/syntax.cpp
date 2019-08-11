@@ -3,6 +3,7 @@
 #include "zep/syntax_rainbow_brackets.h"
 #include "zep/theme.h"
 
+#include "zep/mcommon/logger.h"
 #include "zep/mcommon/string/stringutils.h"
 
 #include <string>
@@ -170,7 +171,7 @@ void ZepSyntax::UpdateSyntax()
 
     // Mark a region of the syntax buffer with the correct marker
     auto mark = [&](GapBuffer<utf8>::const_iterator itrA, GapBuffer<utf8>::const_iterator itrB, ThemeColor type) {
-        std::fill(m_syntax.begin() + (itrA - buffer.begin()), m_syntax.begin() + (itrB - buffer.begin()), SyntaxData{type});
+        std::fill(m_syntax.begin() + (itrA - buffer.begin()), m_syntax.begin() + (itrB - buffer.begin()), SyntaxData{ type });
     };
 
     auto markSingle = [&](GapBuffer<utf8>::const_iterator itrA, ThemeColor type) {
@@ -235,20 +236,40 @@ void ZepSyntax::UpdateSyntax()
             mark(itrFirst, itrLast, ThemeColor::Normal);
         }
 
-        std::string stringStr = "\"";
-        auto itrString = buffer.find_first_of(itrFirst, itrLast, stringStr.begin(), stringStr.end());
-        if (itrString != buffer.end())
-        {
-            auto itrStringStart = itrString++;
-            if (itrString < buffer.end())
+        // Find String
+        auto findString = [&](utf8 ch) {
+            auto itrString = itrFirst;
+            if (*itrString == ch)
             {
-                itrLast = buffer.find_first_of(itrString, buffer.end(), stringStr.begin(), stringStr.end());
-                if (itrLast < buffer.end())
+                itrString++;
+
+                while (itrString < buffer.end())
                 {
-                    mark(itrStringStart, ++itrLast, ThemeColor::String);
+                    // handle end of string
+                    if (*itrString == ch)
+                    {
+                        itrString++;
+                        mark(itrFirst, itrString, ThemeColor::String);
+                        itrLast = itrString + 1;
+                        break;
+                    }
+
+                    if (itrString < (buffer.end() - 1))
+                    {
+                        auto itrNext = itrString + 1;
+                        // Ignore quoted
+                        if (*itrString == '\\' && *itrNext == ch)
+                        {
+                            itrString++;
+                        }
+                    }
+
+                    itrString++;
                 }
             }
-        }
+        };
+        findString('\"');
+        findString('\'');
 
         std::string commentStr = "/";
         auto itrComment = buffer.find_first_of(itrFirst, itrLast, commentStr.begin(), commentStr.end());
