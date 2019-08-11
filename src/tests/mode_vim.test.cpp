@@ -255,6 +255,16 @@ COMMAND_TEST(delete_cw_inside_2, "one two three", "llllllllcwabc", "one two abc"
 // cW
 COMMAND_TEST(delete_cW, "one two! three", "llllcWabc", "one abc three");
 
+COMMAND_TEST(replace_char, "one", "lrx", "oxe");
+
+COMMAND_TEST(replace_char_undo, "one", "lrxu", "one");
+
+COMMAND_TEST(replace_range_with_char, "one", "lvlrx", "oxx");
+
+COMMAND_TEST(replace_range_with_char_undo, "one", "lvlrxu", "one");
+
+COMMAND_TEST(replace_with_char_and_count, "one", "l2rx", "oxx");
+
 // paste
 COMMAND_TEST(paste_p_at_end_cr, "(one) two three\r\n", "vllllxlllllllllllljp", " two three\n(one)"); // Will replace \r
 COMMAND_TEST(paste_p_at_end, "(one) two three", "vllllxllllllllllllp", " two three(one)");

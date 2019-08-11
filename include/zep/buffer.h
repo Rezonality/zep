@@ -168,6 +168,7 @@ public:
 
     bool Delete(const BufferLocation& startOffset, const BufferLocation& endOffset);
     bool Insert(const BufferLocation& startOffset, const std::string& str);
+    bool Replace(const BufferLocation& startOffset, const BufferLocation& endOffset, const std::string& str);
 
     long GetLineCount() const
     {

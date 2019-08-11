@@ -67,4 +67,33 @@ void ZepCommand_Insert::Undo()
         m_buffer.Delete(m_startOffset, m_endOffsetInserted);
     }
 }
+
+// Replace
+ZepCommand_ReplaceRange::ZepCommand_ReplaceRange(ZepBuffer& buffer, const BufferLocation& startOffset, const BufferLocation& endOffset, const std::string& strReplace, const BufferLocation& cursor, const BufferLocation& cursorAfter)
+    : ZepCommand(buffer, cursor != -1 ? cursor : endOffset, cursorAfter != -1 ? cursorAfter : startOffset)
+    , m_startOffset(startOffset)
+    , m_endOffset(endOffset)
+    , m_strReplace(strReplace)
+{
+    m_startOffset = buffer.Clamp(m_startOffset);
+}
+
+void ZepCommand_ReplaceRange::Redo()
+{
+    if (m_startOffset != m_endOffset)
+    {
+        m_strDeleted = std::string(m_buffer.GetText().begin() + m_startOffset, m_buffer.GetText().begin() + m_endOffset);
+        m_buffer.Replace(m_startOffset, m_endOffset, m_strReplace);
+    }
+}
+
+void ZepCommand_ReplaceRange::Undo()
+{
+    if (m_startOffset != m_endOffset)
+    {
+        m_buffer.Delete(m_startOffset, m_endOffset);
+        m_buffer.Insert(m_startOffset, m_strDeleted);
+    }
+}
+
 } // namespace Zep

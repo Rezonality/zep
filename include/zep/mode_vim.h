@@ -46,7 +46,8 @@ enum class CommandOperation
     DeleteLines,
     Insert,
     Copy,
-    CopyLines
+    CopyLines,
+    Replace
 };
 
 struct CommandContext

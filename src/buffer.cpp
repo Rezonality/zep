@@ -961,6 +961,31 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
     return true;
 }
 
+bool ZepBuffer::Replace(const BufferLocation& startOffset, const BufferLocation& endOffset, const std::string& str)
+{
+    if (startOffset > (long)m_gapBuffer.size() ||
+        endOffset > (long)m_gapBuffer.size())
+    {
+        return false;
+    }
+
+    // We are about to modify this range
+    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, startOffset, endOffset));
+
+    // Perform a straight replace
+    for (auto loc = startOffset; loc < endOffset; loc++)
+    {
+        // Note we don't support utf8 yet
+        m_gapBuffer[loc] = str[0];
+    }
+
+    // This is the range we added (not valid any more in the buffer)
+    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextChanged, startOffset, endOffset));
+
+    SetFlags(FileFlags::Dirty);
+
+    return true;
+}
 // A fundamental operation - delete a range of characters
 // Need to update:
 // - m_lineEnds

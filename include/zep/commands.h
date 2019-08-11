@@ -69,6 +69,22 @@ public:
     std::string m_deleted;
 };
 
+class ZepCommand_ReplaceRange : public ZepCommand
+{
+public:
+    ZepCommand_ReplaceRange(ZepBuffer& buffer, const BufferLocation& startOffset, const BufferLocation& endOffset, const std::string& ch, const BufferLocation& cursor = BufferLocation{-1}, const BufferLocation& cursorAfter = BufferLocation{-1});
+    virtual ~ZepCommand_ReplaceRange(){};
+
+    virtual void Redo() override;
+    virtual void Undo() override;
+
+    BufferLocation m_startOffset;
+    BufferLocation m_endOffset;
+
+    std::string m_strDeleted;
+    std::string m_strReplace;
+};
+
 class ZepCommand_Insert : public ZepCommand
 {
 public:

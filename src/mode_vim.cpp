@@ -1090,6 +1090,28 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
             }
         }
     }
+    else if (context.command[0] == 'r')
+    {
+        if (context.command.size() == 1)
+        {
+            context.commandResult.flags |= CommandResultFlags::NeedMoreChars;
+        }
+        else
+        {
+            context.op = CommandOperation::Replace;
+            context.tempReg.text = context.command[1];
+            context.pRegister = &context.tempReg;
+            context.commandResult.flags |= CommandResultFlags::HandledCount;
+
+            // Get the range from visual, or use the cursor location
+            if (!GetOperationRange("visual", context.mode, context.beginRange, context.endRange))
+            {
+                context.beginRange = bufferCursor;
+                context.endRange = buffer.LocationFromOffsetByChars(bufferCursor, context.count);
+            }
+            context.commandResult.modeSwitch = EditorMode::Normal;
+        }
+    }
     // Substitute
     else if ((context.command[0] == 's') || (context.command[0] == 'S'))
     {
@@ -1389,6 +1411,18 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         auto cmd = std::make_shared<ZepCommand_Insert>(
             context.buffer,
             context.beginRange,
+            context.pRegister->text,
+            context.bufferCursor,
+            context.cursorAfterOverride);
+        context.commandResult.spCommand = std::static_pointer_cast<ZepCommand>(cmd);
+        return true;
+    }
+    else if (context.op == CommandOperation::Replace && !context.pRegister->text.empty())
+    {
+        auto cmd = std::make_shared<ZepCommand_ReplaceRange>(
+            context.buffer,
+            context.beginRange,
+            context.endRange,
             context.pRegister->text,
             context.bufferCursor,
             context.cursorAfterOverride);
