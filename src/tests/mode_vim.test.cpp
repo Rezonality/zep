@@ -335,6 +335,15 @@ COMMAND_TEST(chage_to, "one two", "ctthey", "heytwo");
 
 COMMAND_TEST(chage_to_digit, "one 1wo", "ct1hey", "hey1wo");
 
+COMMAND_TEST(visual_inner_word, "one-three", "lviwd", "-three");
+COMMAND_TEST(visual_inner_word_undo, "one-three", "lviwdu", "one-three");
+COMMAND_TEST(visual_inner_WORD, "one-three ", "lviWd", " ");
+COMMAND_TEST(visual_inner_WORD_undo, "one-three ", "lviWdu", "one-three ");
+COMMAND_TEST(visual_a_word, "one three", "vawd", "three");
+COMMAND_TEST(visual_a_word_undo, "one three", "vawdu", "one three");
+COMMAND_TEST(visual_a_WORD, "one-three four", "vaWd", "four");
+COMMAND_TEST(visual_a_WORD_undo, "one-three four", "vaWdu", "one-three four");
+
 #define CURSOR_TEST(name, source, command, xcoord, ycoord) \
     TEST_F(VimTest, name)                                  \
     {                                                      \
@@ -411,3 +420,5 @@ CURSOR_TEST(find_a_char_stay_on_line, "one two\nthree", "fefe", 2, 0);
 CURSOR_TEST(find_a_char_repeat, "one one one", "fo;", 8, 0);
 CURSOR_TEST(find_a_char_num, "one2 one2", "2f2", 8, 0);
 CURSOR_TEST(find_a_char_beside, "ooo", "fo;", 2, 0);
+
+
