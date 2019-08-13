@@ -1,0 +1,3 @@
+[submodule "deps/meta-cmake"]
+	path = deps/meta-cmake
+	url = https://github.com/meta-toolkit/meta-cmake.git

@@ -21,6 +21,9 @@ public:
     virtual std::string Read(const ZepPath& filePath) = 0;
     virtual bool Write(const ZepPath& filePath, const void* pData, size_t size) = 0;
 
+    // The rootpath is either the git working directory or the app current working directory
+    virtual ZepPath GetSearchRoot(const ZepPath& start) const = 0;
+
     // The working directory is set at start of day to the app's working parameter directory
     virtual const ZepPath& GetWorkingDirectory() const = 0;
     virtual void SetWorkingDirectory(const ZepPath& path) = 0;
@@ -53,6 +56,7 @@ public:
     virtual void ScanDirectory(const ZepPath& path, std::function<bool(const ZepPath& path, bool& dont_recurse)> fnScan) const override;
     virtual void SetWorkingDirectory(const ZepPath& path) override;
     virtual const ZepPath& GetWorkingDirectory() const override;
+    virtual ZepPath GetSearchRoot(const ZepPath& start) const override;
     virtual bool IsDirectory(const ZepPath& path) const override;
     virtual bool IsReadOnly(const ZepPath& path) const override;
     virtual bool Exists(const ZepPath& path) const override;

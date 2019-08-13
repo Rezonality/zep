@@ -157,23 +157,7 @@ void ZepMode_Search::Begin()
 
     m_pLaunchWindow = GetEditor().GetActiveTabWindow()->GetActiveWindow();
 
-    ZepPath startPath = m_pLaunchWindow->GetBuffer().GetFilePath();
-    ZepPath workingDir = GetEditor().GetFileSystem().GetWorkingDirectory();
-
-    auto found = findStartPath(startPath);
-    if (found.empty())
-    {
-        found = findStartPath(workingDir);
-    }
-
-    if (!found.empty())
-    {
-        startPath = found;
-    }
-    else
-    {
-        startPath = workingDir;
-    }
+    auto startPath = GetEditor().GetFileSystem().GetSearchRoot(m_pLaunchWindow->GetBuffer().GetFilePath());
 
     m_pSearchBuffer = GetEditor().GetEmptyBuffer("Search", FileFlags::Locked | FileFlags::ReadOnly);
     m_pSearchBuffer->SetBufferType(BufferType::Search);

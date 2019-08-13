@@ -14,7 +14,7 @@
 #include "zep/mcommon/string/stringutils.h"
 #include "zep/mcommon/animation/timer.h"
 #include "zep/mcommon/logger.h"
-#include "zep/mcommon/file/archive.h"
+#include "zep/mcommon/file/cpptoml.h"
 #include "zep/mcommon/string/stringutils.h"
 #include "zep/mcommon/string/murmur_hash.h"
 
@@ -113,8 +113,8 @@ void ZepEditor::OnFileChanged(const ZepPath& path)
     {
         if (m_spConfig)
         {
-            LOG(INFO) << "Reloading global vars";
-            archive_reload(*m_spConfig, GetFileSystem().Read(m_spConfig->path));
+            LOG(INFO) << "Reloading config";
+            LoadConfig(path);
             Broadcast(std::make_shared<ZepMessage>(Msg::ConfigChanged));
         }
     }
@@ -128,11 +128,34 @@ void ZepEditor::LoadConfig(const ZepPath& config_path)
     {
         return;
     }
+
+    try
+    {
+        m_spConfig = cpptoml::parse_file(config_path.string());
+        if (m_spConfig == nullptr)
+            return;
+
+        m_showScrollBar = m_spConfig->get_qualified_as<uint32_t>("editor.show_scrollbar").value_or(1);
+    }
+    catch (cpptoml::parse_exception& ex)
+    {
+        std::ostringstream str;
+        str << config_path.filename().string() << " : Failed to parse. " << ex.what();
+        SetCommandText(str.str());
+    }
+    catch (...)
+    {
+        std::ostringstream str;
+        str << config_path.filename().string() << " : Failed to parse. ";
+        SetCommandText(str.str());
+    }
+    /*
     m_spConfig = archive_load(config_path, GetFileSystem().Read(config_path));
     if (m_spConfig)
     {
         archive_bind(*m_spConfig, "editor", "show_scrollbar", m_showScrollBar);
     }
+    */
 }
 
 void ZepEditor::SaveBuffer(ZepBuffer& buffer)

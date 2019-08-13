@@ -12,9 +12,9 @@
 
 #include "zep/mcommon/math/math.h"
 #include "zep/mcommon/animation/timer.h"
-#include "zep/mcommon/file/archive.h"
 #include "zep/mcommon/threadpool.h"
 #include "zep/mcommon/file/path.h"
+#include "zep/mcommon/file/cpptoml.h"
 
 #include "splits.h"
 
@@ -316,7 +316,7 @@ private:
     std::set<IZepComponent*> m_notifyClients;
     mutable tRegisters m_registers;
 
-    std::shared_ptr<Archive> m_spConfig;
+    std::shared_ptr<cpptoml::table> m_spConfig;
     std::shared_ptr<ZepTheme> m_spTheme;
     std::shared_ptr<ZepMode_Vim> m_spVimMode;
     std::shared_ptr<ZepMode_Standard> m_spStandardMode;

@@ -210,6 +210,71 @@ ZepPath ZepFileSystemCPP::Canonical(const ZepPath& path) const
 #endif
 }
 
+ZepPath ZepFileSystemCPP::GetSearchRoot(const ZepPath& start) const
+{
+    auto findStartPath = [&](const ZepPath& startPath)
+    {
+        if (!startPath.empty())
+        {
+            auto testPath = startPath;
+            if (!IsDirectory(testPath))
+            {
+                testPath = testPath.parent_path();
+            }
+
+            while (!testPath.empty() && IsDirectory(testPath))
+            {
+                bool foundDir = false;
+
+                // Look in this dir
+                ScanDirectory(testPath, [&](const ZepPath& p, bool& recurse)
+                    -> bool
+                {
+                    // Not looking at sub folders
+                    recurse = false;
+
+                    // Found the .git repo
+                    if (p.extension() == ".git" && IsDirectory(p))
+                    {
+                        foundDir = true;
+
+                        // Quit search
+                        return false;
+                    }
+                    return true;
+                });
+
+                // If found,  return it as the path we need
+                if (foundDir)
+                {
+                    return testPath;
+                }
+
+                testPath = testPath.parent_path();
+            }
+        }
+        return startPath;
+    };
+
+    ZepPath workingDir = GetWorkingDirectory();
+    auto startPath = findStartPath(start);
+    if (startPath.empty())
+    {
+        startPath = findStartPath(workingDir);
+        if (startPath.empty())
+        {
+            startPath = GetWorkingDirectory();
+        }
+    }
+
+    // Failure case, just use current path
+    if (startPath.empty())
+    {
+        startPath = start;
+    }
+    return startPath;
+}
+
 } // namespace Zep
 
 #endif // CPP_FILESYSTEM

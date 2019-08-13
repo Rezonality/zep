@@ -3,7 +3,6 @@ SET(ZEP_ROOT ${CMAKE_CURRENT_LIST_DIR}/../)
 SET(ZEP_SOURCE
 ${ZEP_ROOT}/src/mcommon/animation/timer.cpp
 ${ZEP_ROOT}/src/mcommon/string/stringutils.cpp
-${ZEP_ROOT}/src/mcommon/file/archive.cpp
 ${ZEP_ROOT}/src/mcommon/file/path.cpp
 ${ZEP_ROOT}/src/filesystem.cpp
 ${ZEP_ROOT}/src/editor.cpp
@@ -45,7 +44,7 @@ ${ZEP_ROOT}/include/zep/display.h
 ${ZEP_ROOT}/include/zep/mcommon/animation/timer.h
 ${ZEP_ROOT}/include/zep/mcommon/string/stringutils.h
 ${ZEP_ROOT}/include/zep/mcommon/threadutils.h
-${ZEP_ROOT}/include/zep/mcommon/file/archive.h
+${ZEP_ROOT}/include/zep/mcommon/file/cpptoml.h
 ${ZEP_ROOT}/include/zep/mcommon/file/path.h
 ${ZEP_ROOT}/include/zep/mcommon/logger.h
 )

@@ -140,7 +140,7 @@ struct ZepContainer : public IZepComponent
         MUtils::Watcher::Instance().AddWatch(ZEP_ROOT, [&](const ZepPath& path) {
             if (spEditor)
             {
-                spEditor->OnFileChanged(path);
+                spEditor->OnFileChanged(ZepPath(ZEP_ROOT) / path);
             }
         },
                                              false);
