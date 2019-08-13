@@ -560,6 +560,15 @@ void ZepBuffer::ProcessInput(const std::string& text)
     m_lineEnds.push_back(long(m_gapBuffer.size()));
 }
 
+bool ZepBuffer::InsideBuffer(BufferLocation loc) const
+{
+    if (loc >= 0 && loc < BufferLocation(m_gapBuffer.size()))
+    {
+        return true;
+    }
+    return false;
+}
+
 BufferLocation ZepBuffer::Clamp(BufferLocation in) const
 {
     in = std::min(in, BufferLocation(m_gapBuffer.size() - 1));

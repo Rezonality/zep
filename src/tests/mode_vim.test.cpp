@@ -257,6 +257,8 @@ COMMAND_TEST(delete_cW, "one two! three", "llllcWabc", "one abc three");
 
 COMMAND_TEST(replace_char, "one", "lrx", "oxe");
 
+COMMAND_TEST(replace_char_digit, "one", "lr2", "o2e");
+
 COMMAND_TEST(replace_char_undo, "one", "lrxu", "one");
 
 COMMAND_TEST(replace_range_with_char, "one", "lvlrx", "oxx");
@@ -264,6 +266,8 @@ COMMAND_TEST(replace_range_with_char, "one", "lvlrx", "oxx");
 COMMAND_TEST(replace_range_with_char_undo, "one", "lvlrxu", "one");
 
 COMMAND_TEST(replace_with_char_and_count, "one", "l2rx", "oxx");
+
+COMMAND_TEST(replace_char_end, "one", "ll3rx", "one"); // Should ignore due to lack of chars in buffer
 
 // paste
 COMMAND_TEST(paste_p_at_end_cr, "(one) two three\r\n", "vllllxlllllllllllljp", " two three\n(one)"); // Will replace \r

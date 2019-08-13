@@ -149,6 +149,7 @@ public:
     BufferLocation Clamp(BufferLocation location) const;
     BufferLocation ClampToVisibleLine(BufferLocation in) const;
     long GetBufferColumn(BufferLocation location) const;
+    bool InsideBuffer(BufferLocation location) const;
     using fnMatch = std::function<bool(const char)>;
 
     void Move(BufferLocation& loc, SearchDirection dir) const;

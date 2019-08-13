@@ -163,9 +163,11 @@ void CommandContext::GetCommandAndCount()
 
     // Special case; 'f3' is a find for the character '3', not a count of 3!
     // But 2f3 is 'find the second 3'....
+    // Same thing for 'r'
+    // I need a key mapper with input patterns to sort this out properly
     if (itr != commandText.end())
     {
-        if (*itr == 'f' || *itr == 'F' || *itr == 'c')
+        if (*itr == 'f' || *itr == 'F' || *itr == 'c' || *itr == 'r')
         {
             while (itr != commandText.end()
                 && std::isgraph(*itr))
@@ -1099,10 +1101,17 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         }
         else
         {
+            context.commandResult.flags |= CommandResultFlags::HandledCount;
+
+            if (!buffer.InsideBuffer(bufferCursor + context.count))
+            {
+                // Outside the valid buffer; an invalid replace with count!
+                return true;
+            }
+
             context.op = CommandOperation::Replace;
             context.tempReg.text = context.command[1];
             context.pRegister = &context.tempReg;
-            context.commandResult.flags |= CommandResultFlags::HandledCount;
 
             // Get the range from visual, or use the cursor location
             if (!GetOperationRange("visual", context.mode, context.beginRange, context.endRange))
