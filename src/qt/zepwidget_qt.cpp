@@ -10,6 +10,7 @@
 #include "zep/mode_standard.h"
 #include "zep/mode_vim.h"
 #include "zep/tab_window.h"
+#include "zep/window.h"
 
 #include "zep/qt/zepdisplay_qt.h"
 #include "zep/qt/zepwidget_qt.h"
@@ -79,7 +80,7 @@ void ZepWidget_Qt::paintEvent(QPaintEvent* pPaint)
 void ZepWidget_Qt::keyPressEvent(QKeyEvent* ev)
 {
     uint32_t mod = 0;
-    auto pMode = m_spEditor->GetCurrentMode();
+    auto pMode = m_spEditor->GetActiveTabWindow()->GetActiveWindow()->GetMode();
 
     if (ev->modifiers() & Qt::ShiftModifier)
     {
@@ -163,7 +164,7 @@ void ZepWidget_Qt::keyPressEvent(QKeyEvent* ev)
             auto ch = i.toLatin1();
             if (ch != 0)
             {
-                m_spEditor->GetCurrentMode()->AddKeyPress(i.toLatin1(), mod);
+                pMode->AddKeyPress(i.toLatin1(), mod);
             }
         }
     }

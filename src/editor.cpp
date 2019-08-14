@@ -477,6 +477,7 @@ ZepMode* ZepEditor::GetSecondaryMode() const
 
 ZepMode* ZepEditor::GetCurrentMode()
 {
+    // The 'Mode' is typically vim or normal and determines how editing is done in a panel
     if (!m_pCurrentMode && !m_mapModes.empty())
     {
         m_pCurrentMode = m_mapModes.begin()->second.get();

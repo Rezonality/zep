@@ -7,6 +7,7 @@
 #include "zep/mode_vim.h"
 #include "zep/syntax.h"
 #include "zep/tab_window.h"
+#include "zep/window.h"
 
 #include "imgui.h"
 #include <string>
@@ -62,69 +63,71 @@ void ZepEditor_ImGui::HandleInput()
         mod |= ModifierKey::Shift;
     }
 
+    auto pWindow = GetActiveTabWindow()->GetActiveWindow();
+
     if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Tab)))
     {
-        GetCurrentMode()->AddKeyPress(ExtKeys::TAB, mod);
+        pWindow->GetMode()->AddKeyPress(ExtKeys::TAB, mod);
         return;
     }
     if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape)))
     {
-        GetCurrentMode()->AddKeyPress(ExtKeys::ESCAPE, mod);
+        pWindow->GetMode()->AddKeyPress(ExtKeys::ESCAPE, mod);
         return;
     }
     else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Enter)))
     {
-        GetCurrentMode()->AddKeyPress(ExtKeys::RETURN, mod);
+        pWindow->GetMode()->AddKeyPress(ExtKeys::RETURN, mod);
         return;
     }
     else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete)))
     {
-        GetCurrentMode()->AddKeyPress(ExtKeys::DEL, mod);
+        pWindow->GetMode()->AddKeyPress(ExtKeys::DEL, mod);
         return;
     }
     else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Home)))
     {
-        GetCurrentMode()->AddKeyPress(ExtKeys::HOME, mod);
+        pWindow->GetMode()->AddKeyPress(ExtKeys::HOME, mod);
         return;
     }
     else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_End)))
     {
-        GetCurrentMode()->AddKeyPress(ExtKeys::END, mod);
+        pWindow->GetMode()->AddKeyPress(ExtKeys::END, mod);
         return;
     }
     else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Backspace)))
     {
-        GetCurrentMode()->AddKeyPress(ExtKeys::BACKSPACE, mod);
+        pWindow->GetMode()->AddKeyPress(ExtKeys::BACKSPACE, mod);
         return;
     }
     else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_RightArrow)))
     {
-        GetCurrentMode()->AddKeyPress(ExtKeys::RIGHT, mod);
+        pWindow->GetMode()->AddKeyPress(ExtKeys::RIGHT, mod);
         return;
     }
     else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_LeftArrow)))
     {
-        GetCurrentMode()->AddKeyPress(ExtKeys::LEFT, mod);
+        pWindow->GetMode()->AddKeyPress(ExtKeys::LEFT, mod);
         return;
     }
     else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_UpArrow)))
     {
-        GetCurrentMode()->AddKeyPress(ExtKeys::UP, mod);
+        pWindow->GetMode()->AddKeyPress(ExtKeys::UP, mod);
         return;
     }
     else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_DownArrow)))
     {
-        GetCurrentMode()->AddKeyPress(ExtKeys::DOWN, mod);
+        pWindow->GetMode()->AddKeyPress(ExtKeys::DOWN, mod);
         return;
     }
     else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_PageDown)))
     {
-        GetCurrentMode()->AddKeyPress(ExtKeys::PAGEDOWN, mod);
+        pWindow->GetMode()->AddKeyPress(ExtKeys::PAGEDOWN, mod);
         return;
     }
     else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_PageUp)))
     {
-        GetCurrentMode()->AddKeyPress(ExtKeys::PAGEUP, mod);
+        pWindow->GetMode()->AddKeyPress(ExtKeys::PAGEUP, mod);
         return;
     }
     else if (io.KeyCtrl)
@@ -149,14 +152,14 @@ void ZepEditor_ImGui::HandleInput()
             {
                 if (ImGui::IsKeyPressed(ch))
                 {
-                    GetCurrentMode()->AddKeyPress((ch - KEY_A) + 'a', mod);
+                    pWindow->GetMode()->AddKeyPress((ch - KEY_A) + 'a', mod);
                     handled = true;
                 }
             }
 
             if (ImGui::IsKeyPressed(KEY_SPACE))
             {
-                GetCurrentMode()->AddKeyPress(' ', mod);
+                pWindow->GetMode()->AddKeyPress(' ', mod);
                 handled = true;
             }
         }
@@ -177,14 +180,14 @@ void ZepEditor_ImGui::HandleInput()
             {
                 if (ImGui::IsKeyPressed(ch))
                 {
-                    GetCurrentMode()->AddKeyPress(ch - 'A' + 'a', mod);
+                    pWindow->GetMode()->AddKeyPress(ch - 'A' + 'a', mod);
                     handled = true;
                 }
             }
 
             if (ImGui::IsKeyPressed(KEY_SPACE))
             {
-                GetCurrentMode()->AddKeyPress(' ', mod);
+                pWindow->GetMode()->AddKeyPress(' ', mod);
                 handled = true;
             }
         }
@@ -200,7 +203,7 @@ void ZepEditor_ImGui::HandleInput()
             if (io.InputQueueCharacters[n] == '\r')
                 continue;
 
-            GetCurrentMode()->AddKeyPress(io.InputQueueCharacters[n], mod);
+            pWindow->GetMode()->AddKeyPress(io.InputQueueCharacters[n], mod);
         }
     }
 }

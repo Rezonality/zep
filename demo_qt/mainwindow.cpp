@@ -10,6 +10,8 @@
 #include "zep/theme.h"
 #include "zep/mode_standard.h"
 #include "zep/mode_vim.h"
+#include "zep/tab_window.h"
+#include "zep/window.h"
 
 #include "zep/qt/zepwidget_qt.h"
 
@@ -75,7 +77,10 @@ MainWindow::MainWindow()
             auto pVim = pMode->addAction("Vim");
             auto pStandard = pMode->addAction("Standard");
 
-            bool enabledVim = strcmp(pWidget->GetEditor().GetCurrentMode()->Name(), Zep::ZepMode_Vim::StaticName()) == 0;
+            auto pCurrentWindow = pWidget->GetEditor().GetActiveTabWindow()->GetActiveWindow();
+            assert(pCurrentWindow);
+
+            bool enabledVim = strcmp(pCurrentWindow->GetMode()->Name(), Zep::ZepMode_Vim::StaticName()) == 0;
             pVim->setCheckable(true);
             pStandard->setCheckable(true);
             pVim->setChecked(enabledVim);

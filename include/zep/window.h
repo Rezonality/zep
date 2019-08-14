@@ -67,7 +67,8 @@ enum
 {
     None = (0),
     ShowWhiteSpace = (1 << 0),
-    ShowCR = (1 << 1)
+    ShowCR = (1 << 1),
+    Modal
 };
 }
 
@@ -116,6 +117,7 @@ public:
     void UpdateScrollers();
 
     ZepTabWindow& GetTabWindow() const;
+    ZepMode* GetMode() const;
 
     void SetDisplayRegion(const NRectf& region);
 

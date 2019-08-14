@@ -174,6 +174,7 @@ void ZepMode_Search::Begin()
 
     m_pSearchWindow = GetEditor().GetActiveTabWindow()->AddWindow(m_pSearchBuffer, nullptr, false);
     m_pSearchWindow->SetCursorType(CursorType::LineMarker);
+    m_pSearchWindow->SetWindowFlags(m_pSearchWindow->GetWindowFlags() & WindowFlags::Modal);
 
     LOG(INFO) << "StartPath: " << startPath.string();
 

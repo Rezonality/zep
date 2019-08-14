@@ -189,16 +189,14 @@ public:
     ZepBuffer* InitWithFileOrDir(const std::string& str);
     ZepBuffer* InitWithText(const std::string& strName, const std::string& strText);
 
-    ZepMode* GetCurrentMode() const;
+    ZepMode* GetCurrentMode();
+    void RegisterMode(std::shared_ptr<ZepMode> spMode);
+    void SetMode(const std::string& mode);
     void BeginSecondaryMode(std::shared_ptr<ZepMode> spSecondaryMode);
     void EndSecondaryMode();
     ZepMode* GetSecondaryMode() const;
 
     void Display();
-
-    void RegisterMode(std::shared_ptr<ZepMode> spMode);
-    void SetMode(const std::string& mode);
-    ZepMode* GetCurrentMode();
 
     void RegisterSyntaxFactory(const std::vector<std::string>& mappings, tSyntaxFactory factory);
     bool Broadcast(std::shared_ptr<ZepMessage> payload);
