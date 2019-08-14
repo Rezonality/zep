@@ -1,10 +1,12 @@
 #include "zep/mode_search.h"
+#include "zep/filesystem.h"
 #include "zep/tab_window.h"
 #include "zep/window.h"
-#include "zep/filesystem.h"
 
 #include "zep/mcommon/logger.h"
 #include "zep/mcommon/threadutils.h"
+
+#include "mcommon/file/fnmatch.h"
 
 namespace Zep
 {
@@ -12,13 +14,6 @@ namespace Zep
 ZepMode_Search::ZepMode_Search(ZepEditor& editor)
     : ZepMode(editor)
 {
-    // Pattern regex
-    auto patterns = std::vector<std::string>({".git", "\\.xcodeproj",
-        "build", "xcuserdata", "\\.obj", "\\.pch", "\\.lib", "\\.ttf", "\\.bmp", "\\.filters", "\\.vcproj", "\\.vcxproj"});
-    for (auto& pattern : patterns)
-    {
-        m_ignorePatterns.push_back(std::regex(pattern, std::regex_constants::optimize));
-    }
 }
 
 ZepMode_Search::~ZepMode_Search()
@@ -106,58 +101,72 @@ void ZepMode_Search::AddKeyPress(uint32_t key, uint32_t modifiers)
     GetEditor().SetCommandText(str.str());
 }
 
+// TODO: Later we will have a project manager for tags, search, etc.
+void ZepMode_Search::GetSearchPaths(const ZepPath& path, std::vector<std::string>& ignore_patterns, std::vector<std::string>& include_patterns) const
+{
+    ZepPath config = path / ".zep" / "project.cfg";
+
+    if (GetEditor().GetFileSystem().Exists(config))
+    {
+        try
+        {
+            auto spConfig = cpptoml::parse_file(config.string());
+            if (spConfig != nullptr)
+            {
+                ignore_patterns = spConfig->get_qualified_array_of<std::string>("search.ignore").value_or(std::vector<std::string>{});
+                include_patterns = spConfig->get_qualified_array_of<std::string>("search.include").value_or(std::vector<std::string>{});
+            }
+        }
+        catch (cpptoml::parse_exception& ex)
+        {
+            std::ostringstream str;
+            str << config.filename().string() << " : Failed to parse. " << ex.what();
+            GetEditor().SetCommandText(str.str());
+        }
+        catch (...)
+        {
+            std::ostringstream str;
+            str << config.filename().string() << " : Failed to parse. ";
+            GetEditor().SetCommandText(str.str());
+        }
+    }
+
+    if (ignore_patterns.empty())
+    {
+        ignore_patterns = {
+            "[Bb]uild/*",
+            "**/[Oo]bj/**",
+            "**/[Bb]in/**",
+            "[Bb]uilt*"
+        };
+    }
+    if (include_patterns.empty())
+    {
+        include_patterns = {
+            "*.cpp",
+            "*.c",
+            "*.hpp",
+            "*.h",
+            "*.lsp",
+            "*.scm",
+            "*.cs",
+            "*.cfg"
+        };
+    }
+}
+
 void ZepMode_Search::Begin()
 {
     m_searchTerm = "";
     GetEditor().SetCommandText(">>> ");
 
-    auto findStartPath = [&](const ZepPath& startPath)
-    {
-        if (!startPath.empty())
-        {
-            auto testPath = startPath;
-            if (!GetEditor().GetFileSystem().IsDirectory(testPath))
-            {
-                testPath = testPath.parent_path();
-            }
-
-            while (!testPath.empty() && GetEditor().GetFileSystem().IsDirectory(testPath))
-            {
-                bool foundDir = false;
-
-                // Look in this dir
-                GetEditor().GetFileSystem().ScanDirectory(testPath, [&](const ZepPath& p, bool& recurse)
-                    -> bool
-                {
-                    // Not looking at sub folders
-                    recurse = false;
-
-                    // Found the .git repo
-                    if (p.extension() == ".git" && GetEditor().GetFileSystem().IsDirectory(p))
-                    {
-                        foundDir = true;
-                    
-                        // Quit search
-                        return false;
-                    }
-                    return true;
-                });
-
-                // If found,  return it as the path we need
-                if (foundDir)
-                {
-                    return testPath;
-                }
-
-                testPath = testPath.parent_path();
-            }
-        }
-        return startPath;
-    };
-
     m_pLaunchWindow = GetEditor().GetActiveTabWindow()->GetActiveWindow();
 
     auto startPath = GetEditor().GetFileSystem().GetSearchRoot(m_pLaunchWindow->GetBuffer().GetFilePath());
+
+    std::vector<std::string> ignorePaths;
+    std::vector<std::string> includePaths;
+    GetSearchPaths(startPath, ignorePaths, includePaths);
 
     m_pSearchBuffer = GetEditor().GetEmptyBuffer("Search", FileFlags::Locked | FileFlags::ReadOnly);
     m_pSearchBuffer->SetBufferType(BufferType::Search);
@@ -169,64 +178,63 @@ void ZepMode_Search::Begin()
     LOG(INFO) << "StartPath: " << startPath.string();
 
     fileSearchActive = true;
-    m_indexResult = GetEditor().GetThreadPool().enqueue([&](const ZepPath& root)
-    {
+    m_indexResult = GetEditor().GetThreadPool().enqueue([&, ignorePaths, includePaths](const ZepPath& root) {
         auto spResult = std::make_shared<FileSearchResult>();
         spResult->root = ZepPath(root.string());
 
         try
         {
             // Index the whole subtree, ignoring any patterns supplied to us
-            GetEditor().GetFileSystem().ScanDirectory(root, [&](const ZepPath& p, bool& recurse)
-                -> bool
-            {
+            GetEditor().GetFileSystem().ScanDirectory(root, [&](const ZepPath& p, bool& recurse) -> bool {
                 recurse = true;
-                auto str = p.string();
-                auto stem = p.stem();
-                auto ext = p.extension();
 
-                if (ext == ".git")
-                {
-                    recurse = false;
-                    return true;
-                }
-
-                // Hack to make debug fast - ignore regex expressions!
-#ifdef _DEBUG
-                if (ext == ".xcodeproj" ||
-                    ext == ".filters" ||
-                    ext == ".vcxproj" ||
-                    ext == ".vcproj" ||
-                    ext == ".pdb" ||
-                    stem == "build" ||
-                    stem == "Debug" ||
-                    stem == "Release")
-                {
-                    recurse = false;
-                    return true;
-                }
-
-#else
-                std::smatch results;
-                for (auto& r : m_ignorePatterns)
-                {
-                    if (std::regex_search(str, results, r))
-                    {
-                        recurse = false;
-                        return true;
-                    }
-                }
-#endif
-
-                // Not adding directories to the search list
-                if (GetEditor().GetFileSystem().IsDirectory(p))
-                {
-                    return true;
-                }
+                auto bDir = GetEditor().GetFileSystem().IsDirectory(p);
 
                 // Add this one to our list
                 auto targetZep = GetEditor().GetFileSystem().Canonical(p);
                 auto rel = path_get_relative(root, targetZep);
+
+                bool matched = true;
+                for (auto& proj : ignorePaths)
+                {
+                    auto res = fnmatch(proj.c_str(), rel.string().c_str(), 0);
+                    if (res == 0)
+                    {
+                        matched = false;
+                        break;
+                    }
+                }
+
+                if (!matched)
+                {
+                    if (bDir)
+                    {
+                        recurse = false;
+                    }
+                    return true;
+                }
+
+                matched = false;
+                for (auto& proj : includePaths)
+                {
+                    auto res = fnmatch(proj.c_str(), rel.string().c_str(), 0);
+                    if (res == 0)
+                    {
+                        matched = true;
+                        break;
+                    }
+                }
+
+                if (!matched)
+                {
+                    return true;
+                }
+
+                // Not adding directories to the search list
+                if (bDir)
+                {
+                    return true;
+                }
 
                 spResult->paths.push_back(rel);
                 spResult->lowerPaths.push_back(string_tolower(rel.string()));
@@ -238,7 +246,8 @@ void ZepMode_Search::Begin()
         {
         }
         return spResult;
-    }, startPath);
+    },
+        startPath);
 }
 
 void ZepMode_Search::Notify(std::shared_ptr<ZepMessage> message)
@@ -276,7 +285,7 @@ void ZepMode_Search::InitSearchTree()
     auto pInitSet = std::make_shared<IndexSet>();
     for (uint32_t i = 0; i < (uint32_t)m_spFilePaths->paths.size(); i++)
     {
-        pInitSet->indices.insert(std::make_pair(0, SearchResult{i, 0}));
+        pInitSet->indices.insert(std::make_pair(0, SearchResult{ i, 0 }));
     }
     m_indexTree.push_back(pInitSet);
 }
@@ -376,15 +385,14 @@ void ZepMode_Search::UpdateTree()
             treeDepth--;
         };
     }
-    else if (m_searchTerm.size() >  treeDepth)
+    else if (m_searchTerm.size() > treeDepth)
     {
         std::shared_ptr<IndexSet> spStartSet;
         spStartSet = m_indexTree[m_indexTree.size() - 1];
         char startChar = m_searchTerm[m_indexTree.size() - 1];
 
         // Search for a match at the next level of the search tree
-        m_searchResult = GetEditor().GetThreadPool().enqueue([&](std::shared_ptr<IndexSet> spStartSet, const char startChar)
-        {
+        m_searchResult = GetEditor().GetThreadPool().enqueue([&](std::shared_ptr<IndexSet> spStartSet, const char startChar) {
             auto spResult = std::make_shared<IndexSet>();
             for (auto& searchPair : spStartSet->indices)
             {
@@ -422,11 +430,12 @@ void ZepMode_Search::UpdateTree()
                         newDist = dist + 1;
                     }
 
-                    spResult->indices.insert(std::make_pair(newDist, SearchResult{index, (uint32_t)pos}));
+                    spResult->indices.insert(std::make_pair(newDist, SearchResult{ index, (uint32_t)pos }));
                 }
             }
             return spResult;
-        }, spStartSet, startChar);
+        },
+            spStartSet, startChar);
 
         treeSearchActive = true;
     }

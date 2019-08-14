@@ -153,6 +153,11 @@ public:
     {
         return m_strPath == rhs.string();
     }
+    
+    bool operator!=(const ZepPath& rhs) const
+    {
+        return m_strPath != rhs.string();
+    }
 
     ZepPath operator/(const ZepPath& rhs) const
     {
@@ -192,7 +197,7 @@ private:
     std::string m_strPath;
 };
 
-ZepPath path_get_relative(const ZepPath& from, ZepPath& to);
+ZepPath path_get_relative(const ZepPath& from, const ZepPath& to);
 
 /*
 inline ZepPath absolute(const ZepPath& input)

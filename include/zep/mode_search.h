@@ -28,6 +28,7 @@ public:
     }
 
 private:
+    void GetSearchPaths(const ZepPath& path, std::vector<std::string>& ignore, std::vector<std::string>& include) const;
     void InitSearchTree();
     void ShowTreeResult();
     void UpdateTree();
@@ -89,8 +90,6 @@ private:
 
     // The winndow we were launched with
     ZepWindow* m_pLaunchWindow = nullptr;
-
-    std::vector<std::regex> m_ignorePatterns;
 };
 
 } // namespace Zep

@@ -116,7 +116,7 @@ public:
     std::string str;       // Generic string for simple messages
     bool handled = false;  // If the message was handled
     NVec2f pos;
-    ZepMouseButton button;
+    ZepMouseButton button = ZepMouseButton::Unknown;
     IZepComponent* pComponent = nullptr;
 };
 
