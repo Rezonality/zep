@@ -59,6 +59,7 @@
 // di[({})]"'
 // c[a]<count>w/e  Change word
 // ci[({})]"'
+// ct[char]/dt[char] Change to and delete to
 // vi[Ww], va[Ww] Visual inner and word selections
 
 namespace Zep
@@ -1090,6 +1091,19 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
             if (GetOperationRange("iW", context.mode, context.beginRange, context.endRange))
             {
                 context.op = CommandOperation::Delete;
+            }
+        }
+        else if (context.command.find("dt") == 0)
+        {
+            if (context.command.length() == 3)
+            {
+                context.beginRange = bufferCursor;
+                context.endRange = buffer.FindOnLineMotion(bufferCursor, (const utf8*)&context.command[2], SearchDirection::Forward);
+                context.op = CommandOperation::Delete;
+            }
+            else
+            {
+                context.commandResult.flags |= CommandResultFlags::NeedMoreChars;
             }
         }
     }
