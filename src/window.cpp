@@ -478,8 +478,6 @@ void ZepWindow::DisplayToolTip(const NVec2f& pos, const RangeMarker& marker) con
 // Additionally (and perhaps that should be a seperate function), this code draws line numbers
 bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
 {
-    // A middle-dot whitespace character
-    static const auto whiteSpace = string_from_wstring(std::wstring(L"\x00b7"));
     static const auto blankSpace = ' ';
 
     auto cursorCL = BufferToDisplay();
@@ -556,12 +554,6 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
     for (auto ch = lineInfo.columnOffsets.first; ch < lineInfo.columnOffsets.second; ch++)
     {
         const utf8* pCh = &m_pBuffer->GetText()[ch];
-
-        // Visible white space
-        if (pSyntax && pSyntax->GetSyntaxAt(ch).foreground == ThemeColor::Whitespace)
-        {
-            pCh = (const utf8*)whiteSpace.c_str();
-        }
 
         // Shown only one char for end of line
         bool hiddenChar = false;
@@ -659,7 +651,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
         }
         else
         {
-            if (pSyntax && pSyntax->GetSyntaxAt(ch).foreground == ThemeColor::Whitespace)
+            if ((m_windowFlags & WindowFlags::ShowWhiteSpace) && pSyntax && pSyntax->GetSyntaxAt(ch).foreground == ThemeColor::Whitespace)
             {
                 auto centerChar = NVec2f(screenPosX + textSize.x / 2, ToWindowY(lineInfo.spanYPx) + textSize.y / 2);
                 display.DrawRectFilled(NRectf(centerChar - NVec2f(1.0f, 1.0f), centerChar + NVec2f(1.0f, 1.0f)), m_pBuffer->GetTheme().GetColor(ThemeColor::Whitespace));
