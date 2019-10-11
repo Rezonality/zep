@@ -11,8 +11,11 @@
 namespace Zep
 {
 
-ZepMode_Search::ZepMode_Search(ZepEditor& editor)
-    : ZepMode(editor)
+ZepMode_Search::ZepMode_Search(ZepEditor& editor, ZepWindow& launchWindow, ZepWindow& window, const ZepPath& path)
+    : ZepMode(editor),
+    m_launchWindow(launchWindow),
+    m_window(window),
+    m_startPath(path)
 {
 }
 
@@ -35,11 +38,14 @@ void ZepMode_Search::AddKeyPress(uint32_t key, uint32_t modifiers)
     (void)modifiers;
     if (key == ExtKeys::ESCAPE)
     {
-        GetEditor().GetActiveTabWindow()->RemoveWindow(m_pSearchWindow);
-        GetEditor().GetActiveTabWindow()->SetActiveWindow(m_pLaunchWindow);
-        GetEditor().RemoveBuffer(m_pSearchBuffer);
-        m_pSearchBuffer = nullptr;
-        GetEditor().EndSecondaryMode();
+        // We choose to rearrange the window and return to the previous order here.
+        // If we just delete the buffer, it would have the same effect, but the editor
+        // does not currently maintain a list of window orderings; so this is a second best for now.
+        // TODO: Add window order tracking along with cursors for CTRL+i/o support
+        auto& buffer = m_window.GetBuffer();
+        GetEditor().GetActiveTabWindow()->RemoveWindow(&m_window);
+        GetEditor().GetActiveTabWindow()->SetActiveWindow(&m_launchWindow);
+        GetEditor().RemoveBuffer(&buffer);
         return;
     }
     else if (key == ExtKeys::RETURN)
@@ -61,11 +67,11 @@ void ZepMode_Search::AddKeyPress(uint32_t key, uint32_t modifiers)
         {
             if (key == 'j')
             {
-                m_pSearchWindow->MoveCursorY(1);
+                m_window.MoveCursorY(1);
             }
             else if (key == 'k')
             {
-                m_pSearchWindow->MoveCursorY(-1);
+                m_window.MoveCursorY(-1);
             }
             else if (key == 'v')
             {
@@ -160,23 +166,11 @@ void ZepMode_Search::Begin()
     m_searchTerm = "";
     GetEditor().SetCommandText(">>> ");
 
-    m_pLaunchWindow = GetEditor().GetActiveTabWindow()->GetActiveWindow();
-
-    auto startPath = GetEditor().GetFileSystem().GetSearchRoot(m_pLaunchWindow->GetBuffer().GetFilePath());
-
     std::vector<std::string> ignorePaths;
     std::vector<std::string> includePaths;
-    GetSearchPaths(startPath, ignorePaths, includePaths);
+    GetSearchPaths(m_startPath, ignorePaths, includePaths);
 
-    m_pSearchBuffer = GetEditor().GetEmptyBuffer("Search", FileFlags::Locked | FileFlags::ReadOnly);
-    m_pSearchBuffer->SetBufferType(BufferType::Search);
-    m_pSearchBuffer->SetText(std::string("Indexing: ") + startPath.string());
-
-    m_pSearchWindow = GetEditor().GetActiveTabWindow()->AddWindow(m_pSearchBuffer, nullptr, false);
-    m_pSearchWindow->SetCursorType(CursorType::LineMarker);
-    m_pSearchWindow->SetWindowFlags(m_pSearchWindow->GetWindowFlags() & WindowFlags::Modal);
-
-    LOG(INFO) << "StartPath: " << startPath.string();
+    m_window.GetBuffer().SetText(std::string("Indexing: ") + m_startPath.string());
 
     fileSearchActive = true;
     m_indexResult = GetEditor().GetThreadPool().enqueue([&, ignorePaths, includePaths](const ZepPath& root) {
@@ -248,7 +242,7 @@ void ZepMode_Search::Begin()
         }
         return spResult;
     },
-        startPath);
+        m_startPath);
 }
 
 void ZepMode_Search::Notify(std::shared_ptr<ZepMessage> message)
@@ -304,8 +298,8 @@ void ZepMode_Search::ShowTreeResult()
         str << m_spFilePaths->paths[index.second.index].string();
         start = false;
     }
-    m_pSearchBuffer->SetText(str.str());
-    m_pSearchWindow->SetBufferCursor(0);
+    m_window.GetBuffer().SetText(str.str());
+    m_window.SetBufferCursor(0);
 }
 
 void ZepMode_Search::OpenSelection(OpenType type)
@@ -313,14 +307,17 @@ void ZepMode_Search::OpenSelection(OpenType type)
     if (m_indexTree.empty())
         return;
 
-    auto cursor = m_pSearchWindow->GetBufferCursor();
-    auto line = m_pSearchBuffer->GetBufferLine(cursor);
+    auto cursor = m_window.GetBufferCursor();
+    auto line = m_window.GetBuffer().GetBufferLine(cursor);
     auto paths = m_indexTree[m_indexTree.size() - 1];
 
-    GetEditor().GetActiveTabWindow()->RemoveWindow(m_pSearchWindow);
-    GetEditor().GetActiveTabWindow()->SetActiveWindow(m_pLaunchWindow);
-    GetEditor().RemoveBuffer(m_pSearchBuffer);
-    m_pSearchBuffer = nullptr;
+    auto& buffer = m_window.GetBuffer();
+
+    // Remove our window so that the inserted buffer is inserted into the previous hierarchy
+    // and not inside our search window ;)
+    // We do not kill the buffer yet.
+    GetEditor().GetActiveTabWindow()->RemoveWindow(&m_window);
+    GetEditor().GetActiveTabWindow()->SetActiveWindow(&m_launchWindow);
 
     BufferLocation count = 0;
     for (auto& index : m_indexTree.back()->indices)
@@ -335,13 +332,13 @@ void ZepMode_Search::OpenSelection(OpenType type)
                 switch (type)
                 {
                 case OpenType::Replace:
-                    m_pLaunchWindow->SetBuffer(pBuffer);
+                    m_launchWindow.SetBuffer(pBuffer);
                     break;
                 case OpenType::VSplit:
-                    GetEditor().GetActiveTabWindow()->AddWindow(pBuffer, m_pLaunchWindow, true);
+                    GetEditor().GetActiveTabWindow()->AddWindow(pBuffer, &m_launchWindow, true);
                     break;
                 case OpenType::HSplit:
-                    GetEditor().GetActiveTabWindow()->AddWindow(pBuffer, m_pLaunchWindow, false);
+                    GetEditor().GetActiveTabWindow()->AddWindow(pBuffer, &m_launchWindow, false);
                     break;
                 case OpenType::Tab:
                     GetEditor().AddTabWindow()->AddWindow(pBuffer, nullptr, false);
@@ -351,7 +348,9 @@ void ZepMode_Search::OpenSelection(OpenType type)
         }
         count++;
     }
-    GetEditor().EndSecondaryMode();
+
+    // Removing the buffer will also kill this mode; this is the last thing we can do here
+    GetEditor().RemoveBuffer(&buffer);
 }
 
 void ZepMode_Search::UpdateTree()

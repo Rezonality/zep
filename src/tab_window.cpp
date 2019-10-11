@@ -3,6 +3,7 @@
 #include "zep/display.h"
 #include "zep/editor.h"
 #include "zep/window.h"
+#include "zep/mode.h"
 
 #include "zep/mcommon/logger.h"
 
@@ -114,10 +115,19 @@ ZepWindow* ZepTabWindow::DoMotion(WindowMotion motion)
         auto itrFound = std::find_if(m_windowRegions.begin(), m_windowRegions.end(), [pBestRegion](auto& val) { return (val.second.get() == pBestRegion); });
         if (itrFound != m_windowRegions.end())
         {
-            m_pActiveWindow = itrFound->first;
+            SetActiveWindow(itrFound->first);
         }
     }
     return m_pActiveWindow;
+}
+
+void ZepTabWindow::SetActiveWindow(ZepWindow* pBuffer)
+{
+    m_pActiveWindow = pBuffer;
+    if (m_pActiveWindow)
+    {
+        m_pActiveWindow->GetBuffer().GetMode()->Begin();
+    }
 }
 
 // Note:
@@ -142,7 +152,7 @@ ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, bool 
     r->ratio = 1.0f;
     r->flags = RegionFlags::Expanding;
 
-    m_pActiveWindow = pWin;
+    SetActiveWindow(pWin);
 
     // No parent, inserting our window on top of whatever is already in the window
     if (pParent == nullptr)
@@ -223,7 +233,7 @@ ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, bool 
         }
     }
 
-    m_pActiveWindow = pWin;
+    SetActiveWindow(pWin);
 
     SetDisplayRegion(m_lastRegionRect, true);
 
@@ -321,7 +331,7 @@ void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
 
     if (m_windows.empty())
     {
-        m_pActiveWindow = nullptr;
+        SetActiveWindow(nullptr);
         m_spRootRegion.reset();
         GetEditor().RemoveTabWindow(this);
     }
@@ -330,7 +340,7 @@ void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
         if (m_pActiveWindow == pWindow)
         {
             // TODO: Active window ordering - remember the last active and switch to it when this one is closed
-            m_pActiveWindow = m_windows[m_windows.size() - 1];
+            SetActiveWindow(m_windows[m_windows.size() - 1]);
         }
         SetDisplayRegion(m_lastRegionRect, true);
         assert(!m_spRootRegion->children.empty());

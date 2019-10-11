@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mode.h"
+#include "zep/commands.h"
 
 class Timer;
 
@@ -68,6 +69,7 @@ struct CommandContext
     std::string command;
 
     const SpanInfo* pLineInfo = nullptr;
+    ReplaceRangeMode replaceRangeMode = ReplaceRangeMode::Fill;
     BufferLocation beginRange{-1};
     BufferLocation endRange{-1};
     ZepBuffer& buffer;

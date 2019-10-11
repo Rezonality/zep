@@ -36,6 +36,7 @@ private:
         int32_t indent;
         BracketType type;
         bool is_open;
+        bool valid = true;
     };
     std::map<BufferLocation, Bracket> m_brackets;
 };

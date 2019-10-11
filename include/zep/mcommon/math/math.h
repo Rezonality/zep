@@ -326,6 +326,13 @@ inline NVec4<float> HSVToRGB(float h, float s, float v)
     return NVec4<float>(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f);
 }
 
+template<class T>
+inline std::ostream& operator<< (std::ostream& str, const NVec4<T>& region)
+{
+    str << "(" << region.x << ", " << region.y << ", " << region.z << ", " << region.w << ")";
+    return str;
+}
+
 using NVec4f = NVec4<float>;
 using NVec4i = NVec4<long>;
 
@@ -365,6 +372,23 @@ struct NRect
     NVec2f TopRight() const
     {
         return NVec2f(bottomRightPx.x, topLeftPx.y);
+    }
+
+    float Left() const
+    {
+        return topLeftPx.x;
+    }
+    float Right() const
+    {
+        return TopRight().x;
+    }
+    float Top() const
+    {
+        return TopRight().y;
+    }
+    float Bottom() const
+    {
+        return bottomRightPx.y;
     }
     float Height() const
     {
@@ -407,6 +431,17 @@ struct NRect
         bottomRightPx.x += x;
         bottomRightPx.y += y;
     }
+    
+    void Move(float x, float y)
+    {
+        auto width = Width();
+        auto height = Height();
+        topLeftPx.x = x;
+        topLeftPx.y = y;
+        bottomRightPx.x = x + width;
+        bottomRightPx.y = y + height;
+    }
+
 
     bool operator==(const NRect<T>& region) const
     {

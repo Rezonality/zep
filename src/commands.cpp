@@ -69,11 +69,12 @@ void ZepCommand_Insert::Undo()
 }
 
 // Replace
-ZepCommand_ReplaceRange::ZepCommand_ReplaceRange(ZepBuffer& buffer, const BufferLocation& startOffset, const BufferLocation& endOffset, const std::string& strReplace, const BufferLocation& cursor, const BufferLocation& cursorAfter)
+ZepCommand_ReplaceRange::ZepCommand_ReplaceRange(ZepBuffer& buffer, ReplaceRangeMode mode, const BufferLocation& startOffset, const BufferLocation& endOffset, const std::string& strReplace, const BufferLocation& cursor, const BufferLocation& cursorAfter)
     : ZepCommand(buffer, cursor != -1 ? cursor : endOffset, cursorAfter != -1 ? cursorAfter : startOffset)
     , m_startOffset(startOffset)
     , m_endOffset(endOffset)
     , m_strReplace(strReplace)
+    , m_mode(mode)
 {
     m_startOffset = buffer.Clamp(m_startOffset);
 }
@@ -83,7 +84,15 @@ void ZepCommand_ReplaceRange::Redo()
     if (m_startOffset != m_endOffset)
     {
         m_strDeleted = std::string(m_buffer.GetText().begin() + m_startOffset, m_buffer.GetText().begin() + m_endOffset);
-        m_buffer.Replace(m_startOffset, m_endOffset, m_strReplace);
+        if (m_mode == ReplaceRangeMode::Fill)
+        {
+            m_buffer.Replace(m_startOffset, m_endOffset, m_strReplace);
+        }
+        else
+        {
+            m_buffer.Delete(m_startOffset, m_endOffset);
+            m_buffer.Insert(m_startOffset, m_strReplace);
+        }
     }
 }
 
@@ -91,8 +100,18 @@ void ZepCommand_ReplaceRange::Undo()
 {
     if (m_startOffset != m_endOffset)
     {
-        m_buffer.Delete(m_startOffset, m_endOffset);
-        m_buffer.Insert(m_startOffset, m_strDeleted);
+        if (m_mode == ReplaceRangeMode::Fill)
+        {
+            m_buffer.Delete(m_startOffset, m_endOffset);
+            m_buffer.Insert(m_startOffset, m_strDeleted);
+        }
+        else
+        {
+            // Delete the previous inserted text
+            m_buffer.Delete(m_startOffset, m_buffer.LocationFromOffsetByChars(m_startOffset, (long)m_strReplace.length()));
+            // Insert the deleted text
+            m_buffer.Insert(m_startOffset, m_strDeleted);
+        }
     }
 }
 

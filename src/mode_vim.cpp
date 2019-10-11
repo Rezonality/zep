@@ -2,7 +2,6 @@
 #include <sstream>
 
 #include "zep/buffer.h"
-#include "zep/commands.h"
 #include "zep/mode_search.h"
 #include "zep/mode_vim.h"
 #include "zep/tab_window.h"
@@ -327,7 +326,7 @@ void ZepMode_Vim::SwitchMode(EditorMode mode)
     if (mode == EditorMode::None)
         return;
 
-    if (mode == EditorMode::Insert && GetCurrentWindow() && GetCurrentWindow()->GetBuffer().TestFlags(FileFlags::Locked))
+    if (mode == EditorMode::Insert && GetCurrentWindow() && GetCurrentWindow()->GetBuffer().TestFlags(FileFlags::ReadOnly))
     {
         mode = EditorMode::Normal;
     }
@@ -498,6 +497,10 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
             }
             GetEditor().SetCurrentTabWindow(pTab);
         }
+        else if (strCommand.find(":repl") == 0)
+        {
+            GetEditor().AddRepl();
+        }
         else if (strCommand.find(":vsplit") == 0)
         {
             auto pTab = GetEditor().GetActiveTabWindow();
@@ -573,16 +576,6 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
                 GetEditor().GetActiveTabWindow()->CloseActiveWindow();
             }
         }
-        else if (strCommand.find(":ZSetLineSpace") == 0)
-        {
-            int space = 1;
-            auto strTok = string_split(strCommand, " ");
-            if (strTok.size() > 1)
-            {
-                space = std::stoi(strTok[1]);
-            }
-            GetEditor().SetLineSpace(space);
-        }
         else if (strCommand.find(":ZTestMarkers") == 0)
         {
             int markerType = 0;
@@ -608,6 +601,14 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
             spMarker->range = BufferRange{ start, end };
             switch (markerType)
             {
+            case 5:
+                spMarker->highlightColor = ThemeColor::Error;
+                spMarker->backgroundColor = ThemeColor::Error;
+                spMarker->textColor = ThemeColor::Text;
+                spMarker->name = "All Marker";
+                spMarker->description = "This is an example tooltip\nThey can be added to any range of characters";
+                spMarker->displayType = RangeMarkerDisplayType::All;
+                break;
             case 4:
                 spMarker->highlightColor = ThemeColor::Error;
                 spMarker->backgroundColor = ThemeColor::Error;
@@ -939,11 +940,18 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         }
     }
     else if (context.command == "J")
-    {
+    { 
         // Delete the CR (and thus join lines)
         context.beginRange = context.buffer.GetLinePos(context.bufferCursor, LineLocation::LineCRBegin);
         context.endRange = context.buffer.GetLinePos(context.bufferCursor, LineLocation::BeyondLineEnd);
-        context.op = CommandOperation::Delete;
+
+        // Skip white space (as the J append command does)
+        context.tempReg.text = " ";
+        context.pRegister = &context.tempReg;
+        context.endRange = buffer.GetLinePos(context.endRange, LineLocation::LineFirstGraphChar);
+        context.replaceRangeMode = ReplaceRangeMode::Replace;
+
+        context.op = CommandOperation::Replace;
     }
     else if (context.command == "v" || context.command == "V")
     {
@@ -1123,6 +1131,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
                 return true;
             }
 
+            context.replaceRangeMode = ReplaceRangeMode::Fill;
             context.op = CommandOperation::Replace;
             context.tempReg.text = context.command[1];
             context.pRegister = &context.tempReg;
@@ -1338,11 +1347,6 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         Undo();
         return true;
     }
-    else if (context.command == "r" && context.modifierKeys == ModifierKey::Ctrl)
-    {
-        Redo();
-        return true;
-    }
     else if (context.command[0] == 'i')
     {
         if (m_currentMode == EditorMode::Visual)
@@ -1517,6 +1521,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
     {
         auto cmd = std::make_shared<ZepCommand_ReplaceRange>(
             context.buffer,
+            context.replaceRangeMode,
             context.beginRange,
             context.endRange,
             context.pRegister->text,
@@ -1570,6 +1575,8 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
 {
     if (!GetCurrentWindow())
         return;
+
+    GetEditor().ResetLastEditTimer();
 
     // Reset command text - we will update it later
     GetEditor().SetCommandText("");

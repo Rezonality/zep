@@ -1,6 +1,7 @@
 #!/bin/sh
 
 if test "${BUILD_TYPE}" = "Coverity"; then
+  source ./prebuild.sh
   mkdir build
   cd build
   cmake .. \
@@ -9,6 +10,7 @@ if test "${BUILD_TYPE}" = "Coverity"; then
     -DPROJECT_UNITTESTS=no
   bash <(curl -s https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh)
 else
+  source ./prebuild.sh
   mkdir build
   cd build
   cmake .. \

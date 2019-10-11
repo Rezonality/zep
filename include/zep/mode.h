@@ -65,6 +65,7 @@ public:
     }
     virtual void AddCommand(std::shared_ptr<ZepCommand> spCmd);
     virtual EditorMode GetEditorMode() const;
+    virtual void SetEditorMode(EditorMode mode);
 
     // Called when we begin editing in this mode
     virtual void Begin() = 0;
@@ -77,7 +78,7 @@ public:
 
     virtual NVec2i GetVisualRange() const;
 
-    virtual bool HandleGlobalCtrlCommand(const std::string& cmd, uint32_t modifiers, bool& needMoreChars) const;
+    virtual bool HandleGlobalCtrlCommand(const std::string& cmd, uint32_t modifiers, bool& needMoreChars);
 
 protected:
     std::stack<std::shared_ptr<ZepCommand>> m_undoStack;

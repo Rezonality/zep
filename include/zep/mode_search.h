@@ -8,10 +8,11 @@
 namespace Zep
 {
 
+class ZepWindow;
 class ZepMode_Search : public ZepMode
 {
 public:
-    ZepMode_Search(ZepEditor& editor);
+    ZepMode_Search(ZepEditor& editor, ZepWindow& previousWindow, ZepWindow& window, const ZepPath& startPath);
     ~ZepMode_Search();
 
     virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
@@ -84,12 +85,9 @@ private:
     std::string m_searchTerm;
     bool m_caseImportant = false;
 
-    // Our temporary window and buffer
-    ZepBuffer* m_pSearchBuffer = nullptr;
-    ZepWindow* m_pSearchWindow = nullptr;
-
-    // The winndow we were launched with
-    ZepWindow* m_pLaunchWindow = nullptr;
+    ZepWindow& m_launchWindow;
+    ZepWindow& m_window;
+    ZepPath m_startPath;
 };
 
 } // namespace Zep

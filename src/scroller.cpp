@@ -155,11 +155,13 @@ void Scroller::Notify(std::shared_ptr<ZepMessage> message)
                 {
                     ClickDown();
                     timer_start(m_start_delay_timer);
+                    message->handled = true;
                 }
                 else if (m_topButtonRegion->rect.Contains(message->pos))
                 {
                     ClickUp();
                     timer_start(m_start_delay_timer);
+                    message->handled = true;
                 }
                 else if (m_mainRegion->rect.Contains(message->pos))
                 {
@@ -169,16 +171,19 @@ void Scroller::Notify(std::shared_ptr<ZepMessage> message)
                         m_mouseDownPos = message->pos;
                         m_mouseDownPercent = vScrollPosition;
                         m_scrollState = ScrollState::Drag;
+                        message->handled = true;
                     }
                     else if (message->pos.y > thumbRect.BottomLeft().y)
                     {
                         PageDown();
                         timer_start(m_start_delay_timer);
+                        message->handled = true;
                     }
                     else if (message->pos.y < thumbRect.TopRight().y)
                     {
                         PageUp();
                         timer_start(m_start_delay_timer);
+                        message->handled = true;
                     }
                 }
             }

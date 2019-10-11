@@ -31,10 +31,7 @@ public:
     ZepWindow* DoMotion(WindowMotion motion);
     ZepWindow* AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, bool vsplit);
     void RemoveWindow(ZepWindow* pWindow);
-    void SetActiveWindow(ZepWindow* pBuffer)
-    {
-        m_pActiveWindow = pBuffer;
-    }
+    void SetActiveWindow(ZepWindow* pBuffer);
     ZepWindow* GetActiveWindow() const
     {
         return m_pActiveWindow;

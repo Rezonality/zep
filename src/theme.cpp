@@ -8,7 +8,7 @@ namespace Zep
 ZepTheme::ZepTheme()
 {
     double golden_ratio_conjugate = 0.618033988749895;
-    double h = .4f;
+    double h = .85f;
     for (int i = 0; i < (int)ThemeColor::UniqueColorLast; i++)
     {
         h += golden_ratio_conjugate;
@@ -41,7 +41,7 @@ ThemeType ZepTheme::GetThemeType() const
 void ZepTheme::SetDarkTheme()
 {
     m_colors[ThemeColor::Text] = NVec4f(1.0f);
-    m_colors[ThemeColor::Background] = NVec4f(0.1f, 0.1f, 0.1f, 1.0f);
+    m_colors[ThemeColor::Background] = NVec4f(0.13f, 0.13f, 0.13f, 1.0f);
     m_colors[ThemeColor::HiddenText] = NVec4f(.9f, .1f, .1f, 1.0f);
     m_colors[ThemeColor::TabBorder] = NVec4f(.55f, .55f, .55f, 1.0f);
     m_colors[ThemeColor::TabInactive] = NVec4f(.4f, .4f, .4f, .55f);
@@ -51,7 +51,7 @@ void ZepTheme::SetDarkTheme()
     m_colors[ThemeColor::LineNumberActive] = NVec4f(.13f, 1.0f, .13f, 1.0f);
     m_colors[ThemeColor::CursorNormal] = NVec4f(130.0f / 255.0f, 140.0f / 255.0f, 230.0f / 255.0f, 1.0f);
     m_colors[ThemeColor::CursorInsert] = NVec4f(1.0f, 1.0f, 1.0f, .9f);
-    m_colors[ThemeColor::CursorLineBackground] = NVec4f(.15f, .15f, .15f, 1.0f);
+    m_colors[ThemeColor::CursorLineBackground] = NVec4f(.2f, .2f, .2f, 1.0f);
     m_colors[ThemeColor::AirlineBackground] = NVec4f(.15f, .15f, .15f, 1.0f);
     m_colors[ThemeColor::Light] = NVec4f(1.0f);
     m_colors[ThemeColor::Dark] = NVec4f(0.0f, 0.0f, 0.0f, 1.0f);
@@ -65,7 +65,7 @@ void ZepTheme::SetDarkTheme()
     m_colors[ThemeColor::Identifier] = NVec4f(1.0f, .75f, 0.5f, 1.0f);
     m_colors[ThemeColor::Number] = NVec4f(0.1f, 1.0f, 1.0f, 1.0f);
     m_colors[ThemeColor::String] = NVec4f(1.0f, 0.5f, 1.0f, 1.0f);
-    m_colors[ThemeColor::Whitespace] = NVec4f(0.15f, .2f, .15f, 1.0f);
+    m_colors[ThemeColor::Whitespace] = NVec4f(0.2f, .2f, .2f, 1.0f);
     
     m_colors[ThemeColor::Error] = NVec4f(0.65f, .2f, .15f, 1.0f);
     m_colors[ThemeColor::Warning] = NVec4f(0.15f, .2f, .65f, 1.0f);
@@ -103,7 +103,7 @@ void ZepTheme::SetLightTheme()
     m_colors[ThemeColor::Identifier] = NVec4f(0.2f, .2f, .1f, 1.0f);
     m_colors[ThemeColor::Number] = NVec4f(0.1f, .3f, .2f, 1.0f);
     m_colors[ThemeColor::String] = NVec4f(0.1f, .1f, .4f, 1.0f);
-    m_colors[ThemeColor::Whitespace] = NVec4f(0.15f, .2f, .15f, 1.0f);
+    m_colors[ThemeColor::Whitespace] = NVec4f(0.2f, .2f, .2f, 1.0f);
     
     m_colors[ThemeColor::Error] = NVec4f(0.89f, .2f, .15f, 1.0f);
     m_colors[ThemeColor::Warning] = NVec4f(0.15f, .2f, .89f, 1.0f);

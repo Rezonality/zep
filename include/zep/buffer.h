@@ -12,6 +12,7 @@ namespace Zep
 
 class ZepSyntax;
 class ZepTheme;
+class ZepMode;
 enum class ThemeColor;
 
 enum class SearchDirection
@@ -42,14 +43,14 @@ enum : uint32_t
     Locked = (1 << 3), // Can this file path ever be written to?
     Dirty = (1 << 4), // Has the file been changed?
     NotYetSaved = (1 << 5),
-    FirstInit = (1 << 6)
 };
 };
 
 enum class BufferType
 {
     Normal,
-    Search
+    Search,
+    Repl
 };
 
 enum class LineLocation
@@ -102,6 +103,14 @@ enum
 };
 };
 
+enum class ToolTipPos
+{
+    AboveLine = 0,
+    BelowLine = 1,
+    RightLine = 2,
+    Count = 3
+};
+
 struct RangeMarker
 {
     long bufferLine = -1;
@@ -112,6 +121,7 @@ struct RangeMarker
     uint32_t displayType = RangeMarkerDisplayType::All;
     std::string name;
     std::string description;
+    ToolTipPos tipPos = ToolTipPos::AboveLine;
 
     bool ContainsLocation(long loc) const
     {
@@ -121,6 +131,12 @@ struct RangeMarker
     {
         return i.first < range.second && i.second > range.first;
     }
+};
+
+struct ZepRepl
+{
+    std::function<std::string(const std::string&)> fnParser;
+    std::function<bool(const std::string&, int&)> fnIsFormComplete;
 };
 
 using tRangeMarkers = std::vector<std::shared_ptr<RangeMarker>>;
@@ -211,10 +227,15 @@ public:
             m_fileFlags &= ~flag;
         }
     }
-    void SetSyntax(std::shared_ptr<ZepSyntax> spSyntax)
+    void SetSyntaxProvider(SyntaxProvider provider)
     {
-        m_spSyntax = spSyntax;
+        if (provider.syntaxID != m_syntaxProvider.syntaxID)
+        {
+            m_spSyntax = provider.factory(this);
+            m_syntaxProvider = provider;
+        }
     }
+
     ZepSyntax* GetSyntax() const
     {
         return m_spSyntax.get();
@@ -244,6 +265,12 @@ public:
     void SetLastLocation(BufferLocation loc);
     BufferLocation GetLastLocation() const;
 
+    ZepMode* GetMode() const;
+    void SetMode(std::shared_ptr<ZepMode> spMode);
+
+    void SetReplProvider(ZepRepl* repl) { m_replProvider = repl; }
+    ZepRepl* GetReplProvider() const { return m_replProvider; }
+
 private:
     // Internal
     GapBuffer<utf8>::const_iterator SearchWord(uint32_t searchType, GapBuffer<utf8>::const_iterator itrBegin, GapBuffer<utf8>::const_iterator itrEnd, SearchDirection dir) const;
@@ -257,7 +284,7 @@ private:
     bool m_dirty = false; // Is the text modified?
     GapBuffer<utf8> m_gapBuffer; // Storage for the text - a gap buffer for efficiency
     std::vector<long> m_lineEnds; // End of each line
-    uint32_t m_fileFlags = FileFlags::NotYetSaved | FileFlags::FirstInit;
+    uint32_t m_fileFlags = FileFlags::NotYetSaved;
     BufferType m_bufferType = BufferType::Normal;
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::string m_strName;
@@ -267,17 +294,21 @@ private:
     BufferRange m_selection;
     tRangeMarkers m_rangeMarkers;
     BufferLocation m_lastLocation{ 0 };
+    std::shared_ptr<ZepMode> m_spMode;
+    ZepRepl* m_replProvider = nullptr; // May not be set
+    SyntaxProvider m_syntaxProvider;
 };
 
 // Notification payload
 enum class BufferMessageType
 {
+    // Inform clients that we are about to mess with the buffer
     PreBufferChange = 0,
     TextChanged,
     TextDeleted,
-    TextAdded,
-    Initialized
+    TextAdded
 };
+
 struct BufferMessage : public ZepMessage
 {
     BufferMessage(ZepBuffer* pBuff, BufferMessageType messageType, const BufferLocation& startLoc, const BufferLocation& endLoc)

@@ -12,6 +12,8 @@ ZepSyntaxAdorn_RainbowBrackets::ZepSyntaxAdorn_RainbowBrackets(ZepSyntax& syntax
     : ZepSyntaxAdorn(syntax, buffer)
 {
     syntax.GetEditor().RegisterCallback(this);
+    
+    Update(0, buffer.EndLocation());
 }
 
 ZepSyntaxAdorn_RainbowBrackets::~ZepSyntaxAdorn_RainbowBrackets()
@@ -55,13 +57,15 @@ SyntaxData ZepSyntaxAdorn_RainbowBrackets::GetSyntaxAt(long offset, bool& found)
     }
 
     found = true;
-    if (itr->second.indent < 0)
+    if (!itr->second.valid)
     {
-        data.foreground = ThemeColor::HiddenText;
+        data.foreground = ThemeColor::Text;
+        data.background = ThemeColor::Error;
     }
     else
     {
         data.foreground = (ThemeColor)(((int32_t)ThemeColor::UniqueColor0 + itr->second.indent) % (int32_t)ThemeColor::UniqueColorLast);
+        data.background = ThemeColor::None;
     }
         
     return data;
@@ -164,7 +168,8 @@ void ZepSyntaxAdorn_RainbowBrackets::RefreshBrackets()
         }
         bracket.indent = indents[int(bracket.type)];
         // Allow one bracket error, before going back to normal
-        if (indents[int(bracket.type)] < 0)
+        bracket.valid = (indents[int(bracket.type)] < 0) ? false : true;
+        if (!bracket.valid)
         {
             indents[int(bracket.type)] = 0;
         }
@@ -173,6 +178,25 @@ void ZepSyntaxAdorn_RainbowBrackets::RefreshBrackets()
             indents[int(bracket.type)]++;
         }
     }
+
+    auto MarkTails = [&](auto type)
+    {
+        if (indents[int(type)] > 0)
+        {
+            for (auto& b : m_brackets)
+            {
+                if (b.second.type == type)
+                {
+                    b.second.valid = false;
+                    return;
+                }
+            }
+
+        }
+    };
+    MarkTails(BracketType::Brace);
+    MarkTails(BracketType::Bracket);
+    MarkTails(BracketType::Group);
 }
 
 } // namespace Zep

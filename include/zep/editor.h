@@ -172,9 +172,34 @@ using tRegisters = std::map<std::string, Register>;
 using tBuffers = std::deque<std::shared_ptr<ZepBuffer>>;
 using tSyntaxFactory = std::function<std::shared_ptr<ZepSyntax>(ZepBuffer*)>;
 
+struct SyntaxProvider
+{
+    std::string syntaxID;
+    tSyntaxFactory factory = nullptr;
+};
+
 const float bottomBorder = 4.0f;
 const float textBorder = 4.0f;
 const float leftBorderChars = 3;
+
+enum class EditorStyle
+{
+    Normal = 0,
+    Minimal
+};
+
+struct EditorConfig
+{
+    uint32_t showScrollBar = 1;
+    EditorStyle style = EditorStyle::Normal;
+    uint32_t lineMarginTop = 1;
+    uint32_t lineMarginBottom = 1;
+    bool showLineNumbers = true;
+    bool showIndicatorRegion = true;
+    bool autoHideCommandRegion = true;
+    bool cursorLineSolid = false;
+    float backgroundFadeTime = 60.0f;
+};
 
 class ZepEditor
 {
@@ -189,16 +214,14 @@ public:
     ZepBuffer* InitWithFileOrDir(const std::string& str);
     ZepBuffer* InitWithText(const std::string& strName, const std::string& strText);
 
-    ZepMode* GetCurrentMode();
-    void RegisterMode(std::shared_ptr<ZepMode> spMode);
-    void SetMode(const std::string& mode);
-    void BeginSecondaryMode(std::shared_ptr<ZepMode> spSecondaryMode);
-    void EndSecondaryMode();
+    ZepMode* GetGlobalMode();
+    void RegisterGlobalMode(std::shared_ptr<ZepMode> spMode);
+    void SetGlobalMode(const std::string& mode);
     ZepMode* GetSecondaryMode() const;
 
     void Display();
 
-    void RegisterSyntaxFactory(const std::vector<std::string>& mappings, tSyntaxFactory factory);
+    void RegisterSyntaxFactory(const std::vector<std::string>& mappings, SyntaxProvider factory);
     bool Broadcast(std::shared_ptr<ZepMessage> payload);
     void RegisterCallback(IZepComponent* pClient)
     {
@@ -240,14 +263,21 @@ public:
     void RemoveTabWindow(ZepTabWindow* pTabWindow);
     const tTabWindows& GetTabWindows() const;
 
+    ZepWindow* AddRepl();
+    ZepWindow* AddSearch();
+
     void ResetCursorTimer();
     bool GetCursorBlinkState() const;
+
+    void ResetLastEditTimer();
+    float GetLastEditElapsedTime() const;
 
     void RequestRefresh();
     bool RefreshRequired();
 
     void SetCommandText(const std::string& strCommand);
 
+    std::string GetCommandText() const;
     const std::vector<std::string>& GetCommandLines()
     {
         return m_commandLines;
@@ -258,14 +288,6 @@ public:
     // Setup the display fixed_size for the editor
     void SetDisplayRegion(const NVec2f& topLeft, const NVec2f& bottomRight);
     void UpdateSize();
-
-    int GetLineSpace() const
-    {
-        return m_lineSpace;
-    }
-
-    // Space between lines in pixels.  Make sure it is DPI aware if you set it!
-    void SetLineSpace(int space);
 
     ZepDisplay& GetDisplay() const
     {
@@ -279,9 +301,9 @@ public:
 
     ZepTheme& GetTheme() const;
 
-    void OnMouseMove(const NVec2f& mousePos);
-    void OnMouseDown(const NVec2f& mousePos, ZepMouseButton button);
-    void OnMouseUp(const NVec2f& mousePos, ZepMouseButton button);
+    bool OnMouseMove(const NVec2f& mousePos);
+    bool OnMouseDown(const NVec2f& mousePos, ZepMouseButton button);
+    bool OnMouseUp(const NVec2f& mousePos, ZepMouseButton button);
     void TickInputState();
     const NVec2f GetMousePos() const;
 
@@ -290,9 +312,9 @@ public:
 
     void SetBufferSyntax(ZepBuffer& buffer) const;
 
-    uint32_t GetShowScrollBar() const
+    EditorConfig GetConfig() const
     {
-        return m_showScrollBar;
+        return m_config;
     }
 
     ThreadPool& GetThreadPool() const;
@@ -314,19 +336,20 @@ private:
     std::set<IZepComponent*> m_notifyClients;
     mutable tRegisters m_registers;
 
-    std::shared_ptr<cpptoml::table> m_spConfig;
     std::shared_ptr<ZepTheme> m_spTheme;
     std::shared_ptr<ZepMode_Vim> m_spVimMode;
     std::shared_ptr<ZepMode_Standard> m_spStandardMode;
-    std::map<std::string, tSyntaxFactory> m_mapSyntax;
+    std::map<std::string, SyntaxProvider> m_mapSyntax;
     std::map<std::string, std::shared_ptr<ZepMode>> m_mapModes;
 
     // Blinking cursor
     timer m_cursorTimer;
 
+    // Last edit
+    timer m_lastEditTimer;
+
     // Active mode
     ZepMode* m_pCurrentMode = nullptr;
-    std::shared_ptr<ZepMode> m_spSecondaryMode;
 
     // Tab windows
     tTabWindows m_tabWindows;
@@ -354,11 +377,9 @@ private:
     ZepPath m_rootPath;
 
     // Config
-    uint32_t m_showScrollBar = 1;
+    EditorConfig m_config;
 
     std::unique_ptr<ThreadPool> m_threadPool;
-
-    int m_lineSpace = 1;
 };
 
 } // namespace Zep

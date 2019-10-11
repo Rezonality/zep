@@ -35,6 +35,11 @@ EditorMode ZepMode::GetEditorMode() const
     return m_currentMode;
 }
 
+void ZepMode::SetEditorMode(EditorMode mode)
+{
+    m_currentMode = mode;
+}
+
 void ZepMode::AddCommandText(std::string strText)
 {
     for (auto& ch : strText)
@@ -130,7 +135,7 @@ NVec2i ZepMode::GetVisualRange() const
     return NVec2i(m_visualBegin, m_visualEnd);
 }
 
-bool ZepMode::HandleGlobalCtrlCommand(const std::string& cmd, uint32_t modifiers, bool& needMoreChars) const
+bool ZepMode::HandleGlobalCtrlCommand(const std::string& cmd, uint32_t modifiers, bool& needMoreChars)
 {
     needMoreChars = false;
 
@@ -255,7 +260,12 @@ bool ZepMode::HandleGlobalCtrlCommand(const std::string& cmd, uint32_t modifiers
     // global search
     else if (cmd == "p" || cmd == ",")
     {
-        GetEditor().BeginSecondaryMode(std::make_shared<ZepMode_Search>(GetEditor()));
+        GetEditor().AddSearch();
+        return true;
+    }
+    else if (cmd == "r")
+    {
+        Redo();
         return true;
     }
     return false;

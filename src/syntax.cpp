@@ -128,11 +128,6 @@ void ZepSyntax::Notify(std::shared_ptr<ZepMessage> spMsg)
             Interrupt();
             QueueUpdateSyntax(spBufferMsg->startLocation, spBufferMsg->endLocation);
         }
-        else if (spBufferMsg->type == BufferMessageType::Initialized)
-        {
-            Interrupt();
-            QueueUpdateSyntax(spBufferMsg->startLocation, spBufferMsg->endLocation);
-        }
     }
 }
 
@@ -145,6 +140,7 @@ void ZepSyntax::UpdateSyntax()
 
     assert(std::distance(itrCurrent, itrEnd) < int(m_syntax.size()));
     assert(m_syntax.size() == buffer.size());
+
 
     std::string delim(" \t.\n;(){}=:");
     std::string lineEnd("\n");
@@ -170,16 +166,19 @@ void ZepSyntax::UpdateSyntax()
     itrEnd = buffer.find_first_of(itrEnd, buffer.end(), lineEnd.begin(), lineEnd.end());
 
     // Mark a region of the syntax buffer with the correct marker
-    auto mark = [&](GapBuffer<utf8>::const_iterator itrA, GapBuffer<utf8>::const_iterator itrB, ThemeColor type) {
-        std::fill(m_syntax.begin() + (itrA - buffer.begin()), m_syntax.begin() + (itrB - buffer.begin()), SyntaxData{ type });
+    auto mark = [&](GapBuffer<utf8>::const_iterator itrA, GapBuffer<utf8>::const_iterator itrB, ThemeColor type, ThemeColor background) {
+        std::fill(m_syntax.begin() + (itrA - buffer.begin()), m_syntax.begin() + (itrB - buffer.begin()), SyntaxData{ type, background });
     };
 
-    auto markSingle = [&](GapBuffer<utf8>::const_iterator itrA, ThemeColor type) {
+    auto markSingle = [&](GapBuffer<utf8>::const_iterator itrA, ThemeColor type, ThemeColor background) {
         (m_syntax.begin() + (itrA - buffer.begin()))->foreground = type;
+        (m_syntax.begin() + (itrA - buffer.begin()))->background = background;
     };
 
     // Update start location
     m_processedChar = long(itrCurrent - buffer.begin());
+
+    LOG(DEBUG) << "Updating Syntax: Start=" << m_processedChar << ", End=" << std::distance(buffer.begin(), itrEnd);
 
     // Walk the buffer updating information about syntax coloring
     while (itrCurrent != itrEnd)
@@ -204,7 +203,7 @@ void ZepSyntax::UpdateSyntax()
         {
             if (*itr == ' ')
             {
-                mark(itr, itr + 1, ThemeColor::Whitespace);
+                mark(itr, itr + 1, ThemeColor::Whitespace, ThemeColor::None);
             }
         }
 
@@ -217,23 +216,23 @@ void ZepSyntax::UpdateSyntax()
 
         if (m_keywords.find(token) != m_keywords.end())
         {
-            mark(itrFirst, itrLast, ThemeColor::Keyword);
+            mark(itrFirst, itrLast, ThemeColor::Keyword, ThemeColor::None);
         }
         else if (m_identifiers.find(token) != m_identifiers.end())
         {
-            mark(itrFirst, itrLast, ThemeColor::Identifier);
+            mark(itrFirst, itrLast, ThemeColor::Identifier, ThemeColor::None);
         }
         else if (token.find_first_not_of("0123456789") == std::string::npos)
         {
-            mark(itrFirst, itrLast, ThemeColor::Number);
+            mark(itrFirst, itrLast, ThemeColor::Number, ThemeColor::None);
         }
         else if (token.find_first_not_of("{}()[]") == std::string::npos)
         {
-            mark(itrFirst, itrLast, ThemeColor::Parenthesis);
+            mark(itrFirst, itrLast, ThemeColor::Parenthesis, ThemeColor::None);
         }
         else
         {
-            mark(itrFirst, itrLast, ThemeColor::Normal);
+            mark(itrFirst, itrLast, ThemeColor::Normal, ThemeColor::None);
         }
 
         // Find String
@@ -249,7 +248,7 @@ void ZepSyntax::UpdateSyntax()
                     if (*itrString == ch)
                     {
                         itrString++;
-                        mark(itrFirst, itrString, ThemeColor::String);
+                        mark(itrFirst, itrString, ThemeColor::String, ThemeColor::None);
                         itrLast = itrString + 1;
                         break;
                     }
@@ -281,7 +280,7 @@ void ZepSyntax::UpdateSyntax()
                 if (*itrComment == '/')
                 {
                     itrLast = buffer.find_first_of(itrCommentStart, buffer.end(), lineEnd.begin(), lineEnd.end());
-                    mark(itrCommentStart, itrLast, ThemeColor::Comment);
+                    mark(itrCommentStart, itrLast, ThemeColor::Comment, ThemeColor::None);
                 }
             }
         }

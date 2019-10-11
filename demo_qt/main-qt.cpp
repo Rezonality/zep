@@ -2,7 +2,7 @@
 #include <QTimer>
 #include <qmainwindow.h>
 #include "mainwindow.h"
-#include "common-qt.h"
+#include "zep/qt/common_qt.h"
 
 int main(int argc, char** argv)
 {

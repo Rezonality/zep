@@ -291,8 +291,10 @@ COMMAND_TEST(syntax_highlight, "void main { float4 } /* multicomment */ 32.0 // 
 
 COMMAND_TEST(dot_command, "one two three four", "daw..", "four");
 
-// Join
-COMMAND_TEST(join_lines, "one\ntwo", "J", "onetwo");
+// Join - leaves a space, skips white space
+COMMAND_TEST(join_lines, "one\ntwo", "J", "one two");
+
+COMMAND_TEST(join_lines_skip_ws, "one\n   two", "J", "one two");
 
 // Insert
 COMMAND_TEST(insert_a_text, "one three", "lllatwo ", "one two three")

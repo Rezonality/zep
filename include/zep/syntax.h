@@ -32,7 +32,7 @@ enum
 struct SyntaxData
 {
     ThemeColor foreground = ThemeColor::Normal;
-    ThemeColor background = ThemeColor::Background;
+    ThemeColor background = ThemeColor::None;
     bool underline = false;
 };
 

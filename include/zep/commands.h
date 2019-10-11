@@ -69,10 +69,16 @@ public:
     std::string m_deleted;
 };
 
+enum class ReplaceRangeMode
+{
+    Fill,
+    Replace,
+};
+
 class ZepCommand_ReplaceRange : public ZepCommand
 {
 public:
-    ZepCommand_ReplaceRange(ZepBuffer& buffer, const BufferLocation& startOffset, const BufferLocation& endOffset, const std::string& ch, const BufferLocation& cursor = BufferLocation{-1}, const BufferLocation& cursorAfter = BufferLocation{-1});
+    ZepCommand_ReplaceRange(ZepBuffer& buffer, ReplaceRangeMode replaceMode, const BufferLocation& startOffset, const BufferLocation& endOffset, const std::string& ch, const BufferLocation& cursor = BufferLocation{-1}, const BufferLocation& cursorAfter = BufferLocation{-1});
     virtual ~ZepCommand_ReplaceRange(){};
 
     virtual void Redo() override;
@@ -83,6 +89,7 @@ public:
 
     std::string m_strDeleted;
     std::string m_strReplace;
+    ReplaceRangeMode m_mode;
 };
 
 class ZepCommand_Insert : public ZepCommand

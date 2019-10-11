@@ -7,6 +7,7 @@ namespace Zep
 
 enum class ThemeColor
 {
+    None,
     TabBorder,
     HiddenText,
     Text,

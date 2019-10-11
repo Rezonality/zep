@@ -3,15 +3,20 @@
 // (SDL is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan graphics context creation, etc.)
 // (GL3W is a helper library to access OpenGL functions since there is no standard header to access modern OpenGL functions easily. Alternatives are GLEW, Glad, etc.)
 
-#include "imgui.h"
+#define NOMINMAX
 
-#include "examples/imgui_impl_opengl3.h"
-#include "examples/imgui_impl_sdl.h"
+#include "imgui/imgui.h"
+
+#include "imgui/examples/imgui_impl_opengl3.h"
+#include "imgui/examples/imgui_impl_sdl.h"
 #include <SDL.h>
 #include <stdio.h>
 #include <thread>
 
-#include "tclap/CmdLine.h"
+#include <mutils/file/file.h>
+#include <mutils/logger/logger.h>
+#include <mutils/chibi/chibi.h>
+#include <tclap/CmdLine.h>
 
 #include "config_app.h"
 
@@ -36,22 +41,25 @@
 #include "zep/imgui/editor_imgui.h"
 #include "zep/mode_standard.h"
 #include "zep/mode_vim.h"
-#include "zep/theme.h"
 #include "zep/tab_window.h"
+#include "zep/theme.h"
 #include "zep/window.h"
 
-#include "tfd/tinyfiledialogs.h"
+#include <tfd/tinyfiledialogs.h>
 
 #ifndef __APPLE__
-#include "FileWatcher/watcher.h"
+#include <FileWatcher/watcher.h>
 #endif
+#define _MATH_DEFINES_DEFINED
+#include "chibi/eval.h"
 
 using namespace Zep;
-
-//#include "src/tests/longtext.tt"
+using namespace MUtils;
 
 namespace
 {
+
+Chibi scheme;
 
 const std::string shader = R"R(
 #version 330 core
@@ -85,9 +93,9 @@ float GetDisplayScale()
     auto res = SDL_GetDisplayDPI(0, &ddpi, &hdpi, &vdpi);
     if (res == 0 && hdpi != 0)
     {
-		return hdpi / 96.0f;
+        return hdpi / 96.0f;
     }
-	return 1.0f;
+    return 1.0f;
 }
 
 } // namespace
@@ -129,7 +137,7 @@ bool ReadCommandLine(int argc, char** argv, int& exitCode)
 }
 
 // A helper struct to init the editor and handle callbacks
-struct ZepContainer : public IZepComponent
+struct ZepContainer : public IZepComponent, public ZepRepl
 {
     ZepContainer(const std::string& startupFilePath)
         : spEditor(std::make_unique<ZepEditor_ImGui>(ZEP_ROOT))
@@ -143,11 +151,24 @@ struct ZepContainer : public IZepComponent
                 spEditor->OnFileChanged(ZepPath(ZEP_ROOT) / path);
             }
         },
-                                             false);
+            false);
 #endif
 
+        chibi_init(scheme, SDL_GetBasePath());
+
+        fnParser = [&](const std::string& str) -> std::string {
+            auto ret = chibi_repl(scheme, NULL, str);
+            ret = RTrim(ret);
+            return ret;
+        };
+
+        fnIsFormComplete = [&](const std::string& str, int& indent)
+        {
+            return IsFormComplete(str, indent);
+        };
+
         spEditor->RegisterCallback(this);
-		spEditor->SetPixelScale(GetDisplayScale());
+        spEditor->SetPixelScale(GetDisplayScale());
 
         if (!startupFilePath.empty())
         {
@@ -164,6 +185,44 @@ struct ZepContainer : public IZepComponent
         spEditor->UnRegisterCallback(this);
     }
 
+    bool IsFormComplete(const std::string& str, int& indent)
+    {
+        int count = 0;
+        for (auto& ch : str)
+        {
+            if (ch == '(')
+                count++;
+            if (ch == ')')
+                count--;
+        }
+
+        if (count < 0)
+        {
+            indent = -1;
+            return false;
+        }
+        else if (count == 0)
+        {
+            return true;
+        }
+
+        int count2 = 0;
+        indent = 1;
+        for (auto& ch : str)
+        {
+            if (ch == '(')
+                count2++;
+            if (ch == ')')
+                count2--;
+            if (count2 == count)
+            {
+                break;
+            }
+            indent++;
+        }
+        return false;
+    }
+
     // Inherited via IZepComponent
     virtual void Notify(std::shared_ptr<ZepMessage> message) override
     {
@@ -172,6 +231,15 @@ struct ZepContainer : public IZepComponent
 #ifndef __APPLE__
             MUtils::Watcher::Instance().Update();
 #endif
+        }
+        else if (message->messageId == Msg::HandleCommand)
+        {
+            if (message->str == ":repl")
+            {
+                GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer().SetReplProvider(this);
+                GetEditor().AddRepl();
+                message->handled = true;
+            }
         }
         else if (message->messageId == Msg::Quit)
         {
@@ -215,10 +283,12 @@ struct ZepContainer : public IZepComponent
 
     bool quit = false;
     std::unique_ptr<ZepEditor_ImGui> spEditor;
+    //malEnvPtr spEnv;
 };
 
 int main(int argc, char** argv)
 {
+    //::AllocConsole();
     int code;
     ReadCommandLine(argc, argv, code);
     if (code != 0)
@@ -319,14 +389,14 @@ int main(int argc, char** argv)
             if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
                 done = true;
 
-			// Keep consuming events if they are stacked up
-			// Bug #39.
-			// This stops keyboard events filling up the queue and replaying after you release the key.
-			// It also makes things more snappy
-			if (SDL_PollEvent(nullptr) == 1)
-			{
-				continue;
-			}
+            // Keep consuming events if they are stacked up
+            // Bug #39.
+            // This stops keyboard events filling up the queue and replaying after you release the key.
+            // It also makes things more snappy
+            if (SDL_PollEvent(nullptr) == 1)
+            {
+                continue;
+            }
         }
         else
         {
@@ -367,22 +437,21 @@ int main(int argc, char** argv)
                 ImGui::EndMenu();
             }
 
-            auto pCurrentWindow = zep.GetEditor().GetActiveTabWindow()->GetActiveWindow();
-            assert(pCurrentWindow);
+            const auto& buffer = zep.GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer();
 
             if (ImGui::BeginMenu("Settings"))
             {
                 if (ImGui::BeginMenu("Editor Mode"))
                 {
-                    bool enabledVim = strcmp(pCurrentWindow->GetMode()->Name(), Zep::ZepMode_Vim::StaticName()) == 0;
+                    bool enabledVim = strcmp(buffer.GetMode()->Name(), Zep::ZepMode_Vim::StaticName()) == 0;
                     bool enabledNormal = !enabledVim;
                     if (ImGui::MenuItem("Vim", "CTRL+2", &enabledVim))
                     {
-                        zep.GetEditor().SetMode(Zep::ZepMode_Vim::StaticName());
+                        zep.GetEditor().SetGlobalMode(Zep::ZepMode_Vim::StaticName());
                     }
                     else if (ImGui::MenuItem("Standard", "CTRL+1", &enabledNormal))
                     {
-                        zep.GetEditor().SetMode(Zep::ZepMode_Standard::StaticName());
+                        zep.GetEditor().SetGlobalMode(Zep::ZepMode_Standard::StaticName());
                     }
                     ImGui::EndMenu();
                 }
@@ -439,33 +508,42 @@ int main(int argc, char** argv)
         int w, h;
         SDL_GetWindowSize(window, &w, &h);
 
-        // This is a bit messy; and I have no idea why I don't need to remove the menu fixed_size from the calculation!
-        auto menuSize = ImGui::GetStyle().FramePadding.y * 2 + ImGui::GetFontSize();
-        ImGui::SetNextWindowPos(ImVec2(0, menuSize));
-        ImGui::SetNextWindowSize(ImVec2(float(w), float(h))); // -menuSize)));
+        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+        if (show_demo_window)
+            ImGui::ShowDemoWindow(&show_demo_window);
 
+        // This is a bit messy; and I have no idea why I don't need to remove the menu fixed_size from the calculation!
+        // The point of this code is to fill the main window with the Zep window
+        // It is only done once so the user can play with the window if they want to for testing
+        auto menuSize = ImGui::GetStyle().FramePadding.y * 2 + ImGui::GetFontSize();
+        ImGui::SetNextWindowPos(ImVec2(0, menuSize), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(float(w), float(h - menuSize)), ImGuiCond_Always);
+
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-        ImGui::Begin("Zep", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar /*| ImGuiWindowFlags_NoScrollbar*/);
-        ImGui::PopStyleVar(4);
+        ImGui::Begin("Zep", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
 
-        // 'hide' the window contents from ImGui, so it doesn't try dragging when we move our scrollbar, etc.
-        ImGui::InvisibleButton("ZepContainer", ImGui::GetWindowSize());
-
-        // TODO: Change only when necessray
-        zep.spEditor->SetDisplayRegion(toNVec2f(ImGui::GetWindowPos()), toNVec2f(ImGui::GetWindowSize()));
+        auto min = ImGui::GetCursorScreenPos();
+        auto max = ImGui::GetContentRegionAvail();
+        max.x = std::max(1.0f, max.x);
+        max.y = std::max(1.0f, max.y);
+        
+        // Fill the window
+        max.x = min.x + max.x;
+        max.y = min.y + max.y;
+        zep.spEditor->SetDisplayRegion(NVec2f(min.x, min.y), NVec2f(max.x, max.y));
 
         // Display the editor inside this window
         zep.spEditor->Display();
         zep.spEditor->HandleInput();
 
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
 
         ImGui::End();
+        ImGui::PopStyleVar(4);
+        ImGui::PopStyleColor(1);
 
         // Rendering
         ImGui::Render();

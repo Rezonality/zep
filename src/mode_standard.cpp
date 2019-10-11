@@ -73,6 +73,8 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
 {
     std::string ch(1, (char)key);
 
+    GetEditor().ResetLastEditTimer();
+
     bool copyRegion = false;
     bool lineWise = false;
     auto& buffer = GetCurrentWindow()->GetBuffer();

@@ -1,27 +1,34 @@
+# Tests cannot be build without the ImGui parts
 
-FILE(GLOB_RECURSE FOUND_TEST_SOURCES "*.test.cpp")
+if (BUILD_TESTS AND BUILD_IMGUI)
 
-LIST(APPEND TEST_SOURCES
+# Evil glob
+file(GLOB_RECURSE FOUND_TEST_SOURCES "*.test.cpp")
+
+list(APPEND TEST_SOURCES
     ${FOUND_TEST_SOURCES}
     tests/main.cpp
 )
 
-# Unit tests
-# Require SDL/IMgui build to work
-# Need to build app to build tests
-IF (BUILD_IMGUI_APP)
 set(CMAKE_AUTOMOC OFF)
 include(tests/list.cmake)
 enable_testing()
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGTEST_HAS_TR1_TUPLE=0")
+
 set (TEST_SOURCES
     ${M3RDPARTY_DIR}/googletest/googletest/src/gtest-all.cc
     ${TEST_SOURCES}
 )
+
 add_executable (unittests ${TEST_SOURCES} )
-add_dependencies(unittests sdl2 ZepImGui Zep)
-target_link_libraries (unittests PRIVATE ZepImGui Zep ${PLATFORM_LINKLIBS} ${CMAKE_THREAD_LIBS_INIT})
+
+add_dependencies(unittests Zep)
+
+target_link_libraries (unittests PRIVATE Zep ${PLATFORM_LINKLIBS} ${CMAKE_THREAD_LIBS_INIT})
+
 add_test(unittests unittests)
+
 target_include_directories(unittests PRIVATE
     ${M3RDPARTY_DIR}/googletest/googletest/include
     ${M3RDPARTY_DIR}/googletest/googletest
@@ -30,11 +37,14 @@ target_include_directories(unittests PRIVATE
     ${CMAKE_BINARY_DIR}
     include
 )
-set_target_properties(unittests PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+
+install(TARGETS unittests
+    EXPORT zep-targets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${LIBLEGACY_INCLUDE_DIRS}
 )
 
-ENDIF()
-    
+endif()
+

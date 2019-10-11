@@ -84,7 +84,9 @@ struct ZepConsole : Zep::IZepComponent
 
         if (blend < 1.0f)
         {
-            zepEditor.GetActiveTabWindow()->GetActiveWindow()->GetMode()->Begin();
+            // TODO: This looks like a hack: investigate why it is needed for the drop down console.
+            // I think the intention here is to ensure the mode is reset while it is dropping down. I don't recall.
+            zepEditor.GetActiveTabWindow()->GetActiveWindow()->GetBuffer().GetMode()->Begin();
         }
 
         ImGui::End();

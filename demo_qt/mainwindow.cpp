@@ -1,4 +1,3 @@
-#include "mainwindow.h"
 #include <QPainter>
 #include <QMenu>
 #include <QMenuBar>
@@ -14,8 +13,8 @@
 #include "zep/window.h"
 
 #include "zep/qt/zepwidget_qt.h"
-
 #include "config_app.h"
+#include "mainwindow.h"
 
 using namespace Zep;
 
@@ -79,8 +78,9 @@ MainWindow::MainWindow()
 
             auto pCurrentWindow = pWidget->GetEditor().GetActiveTabWindow()->GetActiveWindow();
             assert(pCurrentWindow);
+            const auto& buffer = pCurrentWindow->GetBuffer();
 
-            bool enabledVim = strcmp(pCurrentWindow->GetMode()->Name(), Zep::ZepMode_Vim::StaticName()) == 0;
+            bool enabledVim = strcmp(buffer.GetMode()->Name(), Zep::ZepMode_Vim::StaticName()) == 0;
             pVim->setCheckable(true);
             pStandard->setCheckable(true);
             pVim->setChecked(enabledVim);
@@ -89,12 +89,12 @@ MainWindow::MainWindow()
             connect(pVim, &QAction::triggered, this, [pWidget, pVim, pStandard]() {
                 pVim->setChecked(true);
                 pStandard->setChecked(false);
-                pWidget->GetEditor().SetMode(ZepMode_Vim::StaticName());
+                pWidget->GetEditor().SetGlobalMode(ZepMode_Vim::StaticName());
             });
             connect(pStandard, &QAction::triggered, this, [pWidget, pStandard, pVim]() {
                 pVim->setChecked(false);
                 pStandard->setChecked(true);
-                pWidget->GetEditor().SetMode(ZepMode_Standard::StaticName());
+                pWidget->GetEditor().SetGlobalMode(ZepMode_Standard::StaticName());
             });
         }
         auto pTheme = pSettings->addMenu("Theme");

@@ -1,7 +1,3 @@
-#
-# GNU G++ options
-#
-
 MESSAGE(STATUS "G++.cmake")
 
 set(CMAKE_CXX_FLAGS "" )
