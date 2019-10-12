@@ -25,25 +25,25 @@ class ZepDisplay_ImGui : public ZepDisplay
 {
 public:
     // ImGui specific display methods
-    float ZepDisplay_ImGui::GetFontPointSize() const
+    float GetFontPointSize() const
     {
         return ImGui::GetFontSize();
     }
 
-    void ZepDisplay_ImGui::SetFontPointSize(float size)
+    void SetFontPointSize(float size)
     {
         // TODO: Allow change of font size in ImGui
         // See the Qt demo for functional font size changing with CTRL+/-
         (void)size;
     }
 
-    float ZepDisplay_ImGui::GetFontHeightPixels() const
+    float GetFontHeightPixels() const
     {
         // TODO: Check low DPI monitor for correct behavior
         return ImGui::GetFontSize();
     }
 
-    NVec2f ZepDisplay_ImGui::GetTextSize(const utf8* pBegin, const utf8* pEnd = nullptr) const
+    NVec2f GetTextSize(const utf8* pBegin, const utf8* pEnd = nullptr) const
     {
         // This is the code from ImGui internals; we can't call GetTextSize, because it doesn't return the correct 'advance' formula, which we
         // need as we draw one character at a time...
@@ -59,7 +59,7 @@ public:
         return toNVec2f(text_size);
     }
 
-    void ZepDisplay_ImGui::DrawChars(const NVec2f& pos, const NVec4f& col, const utf8* text_begin, const utf8* text_end) const
+    void DrawChars(const NVec2f& pos, const NVec4f& col, const utf8* text_begin, const utf8* text_end) const
     {
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         if (text_end == nullptr)
@@ -78,7 +78,7 @@ public:
         }
     }
 
-    void ZepDisplay_ImGui::DrawLine(const NVec2f& start, const NVec2f& end, const NVec4f& color, float width) const
+    void DrawLine(const NVec2f& start, const NVec2f& end, const NVec4f& color, float width) const
     {
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         // Background rect for numbers
@@ -94,7 +94,7 @@ public:
         }
     }
 
-    void ZepDisplay_ImGui::DrawRectFilled(const NRectf& rc, const NVec4f& color) const
+    void DrawRectFilled(const NRectf& rc, const NVec4f& color) const
     {
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         // Background rect for numbers
@@ -111,7 +111,7 @@ public:
         //LOG(INFO) << "Draw: RC: " << rc << ", Color:" << color;
     }
 
-    void ZepDisplay_ImGui::SetClipRect(const NRectf& rc)
+    void SetClipRect(const NRectf& rc)
     {
         m_clipRect = rc;
     }
