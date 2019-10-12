@@ -11,6 +11,10 @@ linux-gcc: &linux-gcc
       packages:
         - g++-7
         - cmake
+        - jackd2
+        - pulseaudio
+        - libasound2
+        - libasound2-dev
         
 linux-clang: &linux-clang
   os: linux
@@ -24,6 +28,10 @@ linux-clang: &linux-clang
         - clang-6.0
         - cmake
         - g++-7
+        - jackd2
+        - pulseaudio
+        - libasound2
+        - libasound2-dev
         
 osx-gcc: &osx-gcc
   os: osx
