@@ -9,8 +9,7 @@
 (NOTE: Due to a big merge, the automated builds are currently being repaired.  The core library is still dependency free, but the demo application needs the MUtils library to be built first.
 This should be fixed by early next week.)
 
-Zep is a simple embeddable editor, with a rendering agnostic design and optional Vim mode.  It can be included using a single header.  Out of the
-box it can draw to a Qt Widget or an an ImGui window - useful for embedding in a game engine.  A simple syntax highlighting engine is provided,
+Zep is a simple embeddable editor, with a rendering agnostic design and optional Vim mode.  It can optionally be included using a single header; and the core library is dependency-free (the demo application requires an installed package).  Out of the box Zep can draw to a Qt Widget or an an ImGui window - useful for embedding in a game engine.  A simple syntax highlighting engine is provided,
 and can easily be extended. Basic theming support is included, and window tabs and vertical/horizontal splits are also available.  Zep is 'opinionated'
 in how it does things, but is easy to modify and supports many common features.  It is heavliy influenced by Vim, but has a good notepad-style editing mode too.
 
