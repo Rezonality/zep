@@ -1,91 +1,110 @@
 language: cpp
-dist: xenial
+dist: bionic
 
-linux-gcc: &linux-gcc
-  os: linux
-  compiler: gcc
-  addons:
-    apt:
-      sources:
-        - ubuntu-toolchain-r-test
-      packages:
-        - g++-7
-        - cmake
-        - jackd2
-        - pulseaudio
-        - libasound2
-        - libasound2-dev
-        - freeglut3-dev
-        
-linux-clang: &linux-clang
-  os: linux
-  compiler: clang
-  addons:
-    apt:
-      sources:
-        - llvm-toolchain-trusty-6.0
-        - ubuntu-toolchain-r-test
-      packages:
-        - clang-7.0
-        - cmake
-        - g++-7
-        - jackd2
-        - pulseaudio
-        - libasound2
-        - libasound2-dev
-        - freeglut3-dev
-        
-osx-gcc: &osx-gcc
-  os: osx
-  osx_image: xcode10
-  compiler: gcc
-
-osx-clang: &osx-clang
-  os: osx
-  osx_image: xcode10
-  compiler: clang gcc
+before_script:
+  - git clone https://github.com/cmaughan/MUtils
+  - cd MUtils
+  - chmod +x prebuild.sh
+  - chmod +x m3rdparty/packages/install.sh
+  - sudo ./prebuild.sh
+  - cd ..
+  - chmod +x prebuild.sh
+  - chmod +x m3rdparty/packages/install.sh
+  - ./prebuild.sh
+  - mkdir build
+  - cd build
 
 matrix:
   include:
-    - <<: *linux-gcc
-      env: BUILD_TYPE=Debug TEST_TARGET=test CMAKE_C_COMPILER=gcc-7 CMAKE_CXX_COMPILER=g++-7
-    - <<: *linux-gcc
-      env: BUILD_TYPE=Release TEST_TARGET=test CMAKE_C_COMPILER=gcc-7 CMAKE_CXX_COMPILER=g++-7
-    - <<: *linux-clang
-      env: BUILD_TYPE=Debug TEST_TARGET=test CMAKE_C_COMPILER=clang-7.0 CMAKE_CXX_COMPILER=clang++-7.0
-    - <<: *linux-clang
-      env: BUILD_TYPE=Release TEST_TARGET=test CMAKE_C_COMPILER=clang-7.0 CMAKE_CXX_COMPILER=clang++-7.0
-    - <<: *linux-gcc
-      env: BUILD_TYPE=Coverage TEST_TARGET=gen-cov CMAKE_C_COMPILER=gcc-7 CMAKE_CXX_COMPILER=g++-7 GCOV=gcov-7
-    - <<: *linux-gcc
+    - os: linux
+      addons:
+        apt:
+          packages:
+            - freeglut3-dev
+            - jackd2
+            - pulseaudio
+            - libasound2
+            - libasound2-dev
       env:
-        - BUILD_TYPE=Coverity CMAKE_C_COMPILER=gcc-7 CMAKE_CXX_COMPILER=g++-7
-        - COVERITY_SCAN_PROJECT_NAME="cmaughan/zep"
-        - COVERITY_SCAN_NOTIFICATION_EMAIL="${TRAVIS_COVERITY_EMAIL}"
-        - COVERITY_SCAN_BRANCH_PATTERN="coverity_scan"
-        - COVERITY_SCAN_BUILD_COMMAND_PREPEND="cov-configure --comptype gcc --compiler gcc-7 --template"
-        - COVERITY_SCAN_BUILD_COMMAND="cmake --build ."
-        - secure: "hn0cIursjAEmELJ9bpuQep0pmFZMio0637/q6h5MkXXCq97wmyiORj8dCqFPLTBaj/oCYfIaXYoY8LRHBFBpFh4mwMEAo1oVi4rQzmteoIaQElxZPvF/r8Lj2kKbSIKjnqFfmVMHTxuN6bX9fPmMaRkGwEpX+yM1sSqjF2nhorDgeFXJ+smJhKEg8t3aRr7OIkRs05ZhX3Zobx8vwRY7LSFVprXUd3coSXw+IeTJkq/rXHhTF+2Ptk+m4KHdJGovHV+yf8Nyfe/efRZOve8jC46pKuHsYTs+71aZo48qvu+4jouM2Zo643tFykStKFFk7ll0KHt0zn8TzhIX8XXT4Rw4q8DAG1OWm0OZWLmTy7CUx+KrYqT38a755mVTrABiwqwPJX9Sf8C0ZogTaivL5JsfPCwAu0tWQLlByEzXnUSZCnSdRUgq/fjZcpPU/dGQjRRneWO4kBx2KodCBV5lmu/nIgJC5Eya6P8kmHydRQ3SFBpwreBUI+QYGxgqZSD6ynHXqDoZfcOJE+soOpJ1ouiezb4Z3NvVTMDyj+3kAxgyJnSPJf4qBoAV8zqnwjuu+tzgBrjtSZBB2e2EhIwg1H19OFqSHA6AQhxK4Ikt6Ylbp424Te54TpSa3hIaLGDUBVFa7XN/pATc6B1jTnuZlLM5M9E0Y73gAy+kqnIgaiY="
-    - <<: *osx-clang
-      env: BUILD_TYPE=Debug TEST_TARGET=test CMAKE_C_COMPILER=clang CMAKE_CXX_COMPILER=clang++
-    - <<: *osx-clang
-      env: BUILD_TYPE=Release TEST_TARGET=test CMAKE_C_COMPILER=clang CMAKE_CXX_COMPILER=clang++
-      
-before_install: |
-  if test "${BUILD_TYPE}" = "Coverity"; then
-    if test "${TRAVIS_BRANCH}" != "${COVERITY_SCAN_BRANCH_PATTERN}"; then
-      exit 0
-    fi
-    if test "${TRAVIS_PULL_REQUEST}" != "false"; then
-      exit 0
-    fi
-  fi     
+        - TEST="Clang"
+      script:
+        - cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
+        - make
+        - make test
 
-install: |
-  source scripts/travis_install.sh
+      # Coverage
+    - os: linux
+      addons:
+        apt:
+          packages:
+            - freeglut3-dev
+            - jackd2
+            - pulseaudio
+            - libasound2
+            - libasound2-dev
+      env:
+        - TEST="Coveralls"
+      script:
+        - pip install --upgrade --user git+git://github.com/eddyxu/cpp-coveralls.git
+        - cmake -DENABLE_COVERAGE=ON -DCMAKE_CXX_COMPILER="g++" ..
+        - make
+        - make test
+        - cd ..
+        - |
+          coveralls --build-root build --gcov-options '\-lp' \
+          -e include/mutils/tracy \
+          -e build \
+          -e cmake \
+          -e m3rdparty
+        - bash <(curl -s https://codecov.io/bash)
 
-script: |
-  source scripts/travis_script.sh
+      # Google Address Sanitizer
+    - os: linux
+      addons:
+        apt:
+          packages:
+            - freeglut3-dev
+            - jackd2
+            - pulseaudio
+            - libasound2
+            - libasound2-dev
+      env:
+        - TEST="Google Address Sanitizer"
+      script:
+        - cmake -DENABLE_ASAN=ON -DCMAKE_CXX_COMPILER="g++" ..
+        - make
+        - make test
 
-after_success: |
-  source ${TRAVIS_BUILD_DIR}/scripts/travis_success.sh    
+      # Google Undefined Sanitizer
+    - os: linux
+      addons:
+        apt:
+          packages:
+            - freeglut3-dev
+            - jackd2
+            - pulseaudio
+            - libasound2
+            - libasound2-dev
+      env:
+        - TEST="Google Undefined Sanitizer"
+      script:
+        - cmake -DENABLE_USAN=ON -DCMAKE_CXX_COMPILER="g++" ..
+        - make
+        - make test
+
+      # Google Thread Sanitizer
+    - os: linux
+      addons:
+        apt:
+          packages:
+            - freeglut3-dev
+            - jackd2
+            - pulseaudio
+            - libasound2
+            - libasound2-dev
+      env:
+        - TEST="Google Thread Sanitizer"
+      script:
+        - cmake -DENABLE_TSAN=ON -DCMAKE_CXX_COMPILER="g++" ..
+        - make
+        - make test
