@@ -38,6 +38,11 @@ build_script:
   - cd %APPVEYOR_BUILD_FOLDER%
   - dir
   # create folder for an out-of-source-tree build: "c:\projects\build"
+  - git clone https://github.com/cmaughan/MUtils
+  - cd MUtils
+  - ./prebuild.bat
+  - config.bat
+  - build_all.bat
   - cd.. 
   - mkdir build
   - cd build
