@@ -15,6 +15,7 @@ linux-gcc: &linux-gcc
         - pulseaudio
         - libasound2
         - libasound2-dev
+        - freeglut3-dev
         
 linux-clang: &linux-clang
   os: linux
@@ -25,13 +26,14 @@ linux-clang: &linux-clang
         - llvm-toolchain-trusty-6.0
         - ubuntu-toolchain-r-test
       packages:
-        - clang-6.0
+        - clang-7.0
         - cmake
         - g++-7
         - jackd2
         - pulseaudio
         - libasound2
         - libasound2-dev
+        - freeglut3-dev
         
 osx-gcc: &osx-gcc
   os: osx
@@ -50,9 +52,9 @@ matrix:
     - <<: *linux-gcc
       env: BUILD_TYPE=Release TEST_TARGET=test CMAKE_C_COMPILER=gcc-7 CMAKE_CXX_COMPILER=g++-7
     - <<: *linux-clang
-      env: BUILD_TYPE=Debug TEST_TARGET=test CMAKE_C_COMPILER=clang-6.0 CMAKE_CXX_COMPILER=clang++-6.0
+      env: BUILD_TYPE=Debug TEST_TARGET=test CMAKE_C_COMPILER=clang-7.0 CMAKE_CXX_COMPILER=clang++-7.0
     - <<: *linux-clang
-      env: BUILD_TYPE=Release TEST_TARGET=test CMAKE_C_COMPILER=clang-6.0 CMAKE_CXX_COMPILER=clang++-6.0
+      env: BUILD_TYPE=Release TEST_TARGET=test CMAKE_C_COMPILER=clang-7.0 CMAKE_CXX_COMPILER=clang++-7.0
     - <<: *linux-gcc
       env: BUILD_TYPE=Coverage TEST_TARGET=gen-cov CMAKE_C_COMPILER=gcc-7 CMAKE_CXX_COMPILER=g++-7 GCOV=gcov-7
     - <<: *linux-gcc
