@@ -11,7 +11,6 @@ list(APPEND TEST_SOURCES
 )
 
 set(CMAKE_AUTOMOC OFF)
-include(tests/list.cmake)
 enable_testing()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGTEST_HAS_TR1_TUPLE=0")
