@@ -11,8 +11,6 @@
 #include "zep/tab_window.h"
 #include "zep/window.h"
 
-#include "imgui/imgui.h"
-
 namespace Zep
 {
 
@@ -188,12 +186,12 @@ public:
 #else
             if (ImGui::IsKeyPressed('1'))
             {
-                SetMode(ZepMode_Standard::StaticName());
+                SetGlobalMode(ZepMode_Standard::StaticName());
                 handled = true;
             }
             else if (ImGui::IsKeyPressed('2'))
             {
-                SetMode(ZepMode_Vim::StaticName());
+                SetGlobalMode(ZepMode_Vim::StaticName());
                 handled = true;
             }
             else

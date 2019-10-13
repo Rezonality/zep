@@ -1,10 +1,8 @@
 #pragma once
 #include <string>
 
-#include "zep/display.h"
-#include "zep/syntax.h"
-
-#include "imgui/imgui.h"
+#include "../display.h"
+#include "../syntax.h"
 
 // Can't include this publicly
 //#include "zep/mcommon/logger.h"

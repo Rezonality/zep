@@ -7,6 +7,7 @@
 #include "../src/mode.cpp"
 #include "../src/mode_standard.cpp"
 #include "../src/mode_vim.cpp"
+#include "../src/mode_repl.cpp"
 #include "../src/mode_search.cpp"
 #include "../src/scroller.cpp"
 #include "../src/splits.cpp"
@@ -19,17 +20,10 @@
 #include "../src/window.cpp"
 #include "../src/filesystem.cpp"
 #include "../src/mcommon/file/path.cpp"
-#include "../src/mcommon/file/archive.cpp"
 #include "../src/mcommon/string/stringutils.cpp"
 #include "../src/mcommon/animation/timer.cpp"
-#ifdef ZEP_QT
-#include "../src/imgui/display_qt.cpp"
-#include "../src/imgui/editor_qt.cpp"
-#else
-#include "../src/imgui/display_imgui.cpp"
-#include "../src/imgui/editor_imgui.cpp"
-#endif
-
+#include "zep/imgui/display_imgui.h"
+#include "zep/imgui/editor_imgui.h"
 #else
 #include "zep/editor.h"
 #include "zep/syntax.h"
