@@ -12,7 +12,7 @@ before_script:
   - cd build
   - cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
   - make
-  - make install
+  - sudo make install
   - cd ..
   - cd ..
   - mkdir build
