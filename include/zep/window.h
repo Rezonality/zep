@@ -194,7 +194,14 @@ private:
     void GetCursorInfo(NVec2f& pos, NVec2f& size);
 
     void PlaceToolTip(const NVec2f& pos, ToolTipPos location, uint32_t lineGap, const std::shared_ptr<RangeMarker> spMarker);
+
+    void DrawLineWidgets(SpanInfo& lineInfo);
 private:
+    float DPI_Y(float value) const;
+    float DPI_X(float value) const;
+    NVec2f DPI_VEC2(const NVec2f& value) const;
+
+    float GetLineTopMargin(long line);
     NVec2f ToBufferRegion(const NVec2f& pos);
     std::shared_ptr<Region> m_bufferRegion;  // region of the display we are showing on.
     std::shared_ptr<Region> m_textRegion;    // region of the display for text.

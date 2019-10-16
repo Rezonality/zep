@@ -1,6 +1,7 @@
 #pragma once
 
 #include "editor.h"
+#include "zep/line_widgets.h"
 #include "zep/mcommon/file/path.h"
 #include "theme.h"
 
@@ -271,6 +272,11 @@ public:
     void SetReplProvider(ZepRepl* repl) { m_replProvider = repl; }
     ZepRepl* GetReplProvider() const { return m_replProvider; }
 
+    using tLineWidgets = std::vector<std::shared_ptr<ILineWidget>>;
+    void AddLineWidget(long line, std::shared_ptr<ILineWidget> spWidget);
+    void ClearLineWidgets(long line);
+    const tLineWidgets* GetLineWidgets(long line) const;
+
 private:
     // Internal
     GapBuffer<utf8>::const_iterator SearchWord(uint32_t searchType, GapBuffer<utf8>::const_iterator itrBegin, GapBuffer<utf8>::const_iterator itrEnd, SearchDirection dir) const;
@@ -290,6 +296,7 @@ private:
     std::string m_strName;
     ZepPath m_filePath;
     std::shared_ptr<ZepTheme> m_spOverrideTheme;
+    std::map<long, std::vector<std::shared_ptr<ILineWidget>>> m_lineWidgets;
 
     BufferRange m_selection;
     tRangeMarkers m_rangeMarkers;

@@ -192,8 +192,8 @@ struct EditorConfig
 {
     uint32_t showScrollBar = 1;
     EditorStyle style = EditorStyle::Normal;
-    uint32_t lineMarginTop = 1;
-    uint32_t lineMarginBottom = 1;
+    NVec2f lineMargins = NVec2f(1.0f);
+    NVec2f widgetMargins = NVec2f(1.0f);
     bool showLineNumbers = true;
     bool showIndicatorRegion = true;
     bool autoHideCommandRegion = true;

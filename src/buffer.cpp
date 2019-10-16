@@ -1130,4 +1130,34 @@ void ZepBuffer::SetMode(std::shared_ptr<ZepMode> spMode)
     m_spMode = spMode;
 }
 
+void ZepBuffer::AddLineWidget(long line, std::shared_ptr<ILineWidget> spWidget)
+{
+    // TODO: Add layout changed message
+    m_lineWidgets[line].push_back(spWidget);
+    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextChanged, 0, 0));
+}
+
+void ZepBuffer::ClearLineWidgets(long line)
+{
+    if (line != -1)
+    {
+        m_lineWidgets.erase(line);
+    }
+    else
+    {
+        m_lineWidgets.clear();
+    }
+    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextChanged, 0, 0));
+}
+    
+const ZepBuffer::tLineWidgets* ZepBuffer::GetLineWidgets(long line) const
+{
+    auto itrFound = m_lineWidgets.find(line);
+    if (itrFound != m_lineWidgets.end())
+    {
+        return &itrFound->second;
+    }
+    return nullptr;
+}
+
 } // namespace Zep

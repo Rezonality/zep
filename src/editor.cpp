@@ -140,8 +140,10 @@ void ZepEditor::LoadConfig(const ZepPath& config_path)
         m_config.cursorLineSolid = spConfig->get_qualified_as<bool>("editor.cursor_line_solid").value_or(false);
         m_config.backgroundFadeTime = spConfig->get_qualified_as<bool>("editor.background_fade_time").value_or(60.0f);
         m_config.showScrollBar = spConfig->get_qualified_as<uint32_t>("editor.show_scrollbar").value_or(1);
-        m_config.lineMarginTop = spConfig->get_qualified_as<uint32_t>("editor.line_margin_top").value_or(1);
-        m_config.lineMarginBottom = spConfig->get_qualified_as<uint32_t>("editor.line_margin_bottom").value_or(1);
+        m_config.lineMargins.x = (float)spConfig->get_qualified_as<double>("editor.line_margin_top").value_or(1);
+        m_config.lineMargins.y = (float)spConfig->get_qualified_as<double>("editor.line_margin_bottom").value_or(1);
+        m_config.widgetMargins.x = (float)spConfig->get_qualified_as<double>("editor.widget_margin_top").value_or(1);
+        m_config.widgetMargins.y = (float)spConfig->get_qualified_as<double>("editor.widget_margin_bottom").value_or(1);
         auto styleStr = string_tolower(spConfig->get_qualified_as<std::string>("editor.style").value_or("normal"));
         if (styleStr == "normal")
         {

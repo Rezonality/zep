@@ -576,6 +576,12 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
                 GetEditor().GetActiveTabWindow()->CloseActiveWindow();
             }
         }
+        else if (strCommand.find(":ZTestFloatSlider") == 0)
+        {
+            auto line = buffer.GetBufferLine(bufferCursor);
+            auto pSlider = std::make_shared<FloatSlider>(GetEditor());
+            buffer.AddLineWidget(line, pSlider);
+        }
         else if (strCommand.find(":ZTestMarkers") == 0)
         {
             int markerType = 0;

@@ -12,6 +12,7 @@ ${ZEP_ROOT}/src/display.cpp
 ${ZEP_ROOT}/src/tab_window.cpp
 ${ZEP_ROOT}/src/window.cpp
 ${ZEP_ROOT}/src/scroller.cpp
+${ZEP_ROOT}/src/line_widgets.cpp
 ${ZEP_ROOT}/src/syntax.cpp
 ${ZEP_ROOT}/src/syntax_providers.cpp
 ${ZEP_ROOT}/src/syntax_rainbow_brackets.cpp
@@ -30,6 +31,7 @@ ${ZEP_ROOT}/include/zep/buffer.h
 ${ZEP_ROOT}/include/zep/commands.h
 ${ZEP_ROOT}/include/zep/window.h
 ${ZEP_ROOT}/include/zep/scroller.h
+${ZEP_ROOT}/include/zep/line_widgets.h
 ${ZEP_ROOT}/include/zep/syntax.h
 ${ZEP_ROOT}/include/zep/theme.h
 ${ZEP_ROOT}/include/zep/mode_search.h

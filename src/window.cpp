@@ -291,6 +291,29 @@ void ZepWindow::GetCharPointer(BufferLocation loc, const utf8*& pBegin, const ut
     pEnd = pBegin + UTF8_CHAR_LEN(*pBegin);
 }
 
+float ZepWindow::GetLineTopMargin(long line)
+{
+    float height = DPI_Y((float)GetEditor().GetConfig().lineMargins.x);
+    auto pLineWidgets = m_pBuffer->GetLineWidgets(line);
+    if (pLineWidgets)
+    {
+        for (auto& widget : *pLineWidgets)
+        {
+            auto size = DPI_VEC2(widget->GetSize());
+            auto margins = DPI_VEC2(GetEditor().GetConfig().widgetMargins);
+
+            // Each widget has a margin then its height then the bottom
+            height += margins.x;
+            height += size.y;
+            height += margins.y;
+        }
+    }
+    // Add the line margin too, so the widget sits in a space similar to a line
+    height += DPI_Y((float)GetEditor().GetConfig().lineMargins.y);
+
+    return height;
+}
+
 // This is the most expensive part of window update; applying line span generation for wrapped text.
 // It can take about a millisecond to do during editing on release buildj; but this is fast enough for now.
 // There are several ways in which this function can be optimized:
@@ -319,9 +342,7 @@ void ZepWindow::UpdateLineSpans()
 
     auto& display = GetEditor().GetDisplay();
 
-    NVec2f margins = NVec2f((float)GetEditor().GetConfig().lineMarginTop, (float)GetEditor().GetConfig().lineMarginBottom);
     float textHeight = GetEditor().GetDisplay().GetFontHeightPixels();
-    float fullLineHeight = textHeight + margins.x + margins.y;
 
     // Process every buffer line
     for (;;)
@@ -334,6 +355,9 @@ void ZepWindow::UpdateLineSpans()
         BufferRange columnOffsets;
         if (!m_pBuffer->GetLineOffsets(bufferLine, columnOffsets.first, columnOffsets.second))
             break;
+
+        NVec2f margins = NVec2f(GetLineTopMargin(bufferLine), DPI_Y((float)GetEditor().GetConfig().lineMargins.y));
+        float fullLineHeight = textHeight + margins.x + margins.y;
 
         // Start a new line
         SpanInfo* lineInfo = new SpanInfo();
@@ -367,6 +391,11 @@ void ZepWindow::UpdateLineSpans()
                     lineInfo = new SpanInfo();
                     spanLine++;
                     bufferPosYPx += fullLineHeight;
+
+                    // Reset the line margin and height, because when we split a line we don't include a 
+                    // custom widget space above it.  That goes just above the first part of the line
+                    margins.x = (float)GetEditor().GetConfig().lineMargins.x;
+                    fullLineHeight = textHeight + margins.x + margins.y;
 
                     // Now jump to the next 'screen line' for the rest of this 'buffer line'
                     lineInfo->columnOffsets = BufferRange(ch, ch + 1);
@@ -415,7 +444,7 @@ void ZepWindow::UpdateLineSpans()
         m_windowLines.push_back(lineInfo);
     }
 
-    m_bufferSizeYPx = m_windowLines[m_windowLines.size() - 1]->spanYPx + fullLineHeight;
+    m_bufferSizeYPx = m_windowLines[m_windowLines.size() - 1]->spanYPx + textHeight + DPI_Y(GetEditor().GetConfig().lineMargins.y);
 
     UpdateVisibleLineRange();
     m_layoutDirty = true;
@@ -466,9 +495,24 @@ float ZepWindow::ToWindowY(float pos) const
     return pos - m_bufferOffsetYPx + m_bufferRegion->rect.topLeftPx.y;
 }
 
+NVec2f ZepWindow::DPI_VEC2(const NVec2f& value) const
+{
+    return value * GetEditor().GetPixelScale();
+}
+
+float ZepWindow::DPI_Y(float value) const
+{
+    return GetEditor().GetPixelScale() * value;
+}
+
+float ZepWindow::DPI_X(float value) const
+{
+    return GetEditor().GetPixelScale() * value;
+}
+
 float ZepWindow::TipBoxShadowWidth() const
 {
-    return GetEditor().GetPixelScale() * 4.0f;
+    return DPI_X(4.0f);
 }
 
 void ZepWindow::DisplayToolTip(const NVec2f& pos, const RangeMarker& marker) const
@@ -506,6 +550,39 @@ NVec4f ZepWindow::GetBlendedColor(ThemeColor color) const
         col.w = std::max(0.0f, 1.0f - GetEditor().GetLastEditElapsedTime() / 60.0f);
     }
     return col;
+}
+
+void ZepWindow::DrawLineWidgets(SpanInfo& lineInfo)
+{
+    auto pLineWidgets = m_pBuffer->GetLineWidgets(lineInfo.bufferLineNumber);
+    if (!pLineWidgets)
+    {
+        return;
+    }
+
+    auto lineMargins = DPI_VEC2(GetEditor().GetConfig().lineMargins);
+    auto widgetMargins = DPI_VEC2(GetEditor().GetConfig().widgetMargins);
+    auto& display = GetEditor().GetDisplay();
+  
+    float currentY = lineMargins.x;
+    for (auto& pWidget : *pLineWidgets)
+    {
+        auto widgetSize = DPI_VEC2(pWidget->GetSize());
+
+        currentY += widgetMargins.x;
+        display.DrawRectFilled(
+            NRectf(
+                NVec2f(lineInfo.pixelRenderRange.x, ToWindowY(lineInfo.spanYPx + currentY)),
+                NVec2f(lineInfo.pixelRenderRange.x + DPI_X(pWidget->GetSize().x), ToWindowY(lineInfo.spanYPx + currentY + widgetSize.y))),
+            m_pBuffer->GetTheme().GetColor(ThemeColor::TabInactive));
+
+        display.DrawRectFilled(
+            NRectf(
+                NVec2f(lineInfo.pixelRenderRange.x + DPI_X(10.0f), ToWindowY(lineInfo.spanYPx + currentY)),
+                NVec2f(lineInfo.pixelRenderRange.x + DPI_X(20.0f), ToWindowY(lineInfo.spanYPx + currentY + widgetSize.y))),
+            m_pBuffer->GetTheme().GetColor(ThemeColor::TabActive));
+        currentY += widgetMargins.y;
+    }
 }
 
 // TODO: This function draws one char at a time.  It could be more optimal at the expense of some
@@ -556,6 +633,8 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                 NVec2f(lineInfo.pixelRenderRange.x, ToWindowY(lineInfo.spanYPx)),
                 NVec2f(lineInfo.pixelRenderRange.y, ToWindowY(lineInfo.spanYPx + lineInfo.FullLineHeight()))),
             GetBlendedColor(ThemeColor::Background));
+
+        DrawLineWidgets(lineInfo);
 
         if (lineInfo.BufferCursorInside(m_bufferCursor))
         {

@@ -2,7 +2,7 @@
 ===================================================================================================
 
 [![Build Status](https://travis-ci.org/cmaughan/zep.svg?branch=master)](https://travis-ci.org/cmaughan/zep)
-[![Build status](https://ci.appveyor.com/api/projects/status/ts7f8g0d8g3ebqq1?svg=true)](https://ci.appveyor.com/project/cmaughan/zep)
+[![Build status](https://ci.appveyor.com/api/projects/status/k45pdrrxkdmtm1qf/branch/master?svg=true)](https://ci.appveyor.com/project/cmaughan/zep/branch/master)
 [![codecov](https://codecov.io/gh/cmaughan/zep/branch/master/graph/badge.svg)](https://codecov.io/gh/cmaughan/zep)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/cmaughan/zep/blob/master/LICENSE) 
 
