@@ -495,21 +495,6 @@ float ZepWindow::ToWindowY(float pos) const
     return pos - m_bufferOffsetYPx + m_bufferRegion->rect.topLeftPx.y;
 }
 
-NVec2f ZepWindow::DPI_VEC2(const NVec2f& value) const
-{
-    return value * GetEditor().GetPixelScale();
-}
-
-float ZepWindow::DPI_Y(float value) const
-{
-    return GetEditor().GetPixelScale() * value;
-}
-
-float ZepWindow::DPI_X(float value) const
-{
-    return GetEditor().GetPixelScale() * value;
-}
-
 float ZepWindow::TipBoxShadowWidth() const
 {
     return DPI_X(4.0f);
@@ -562,7 +547,6 @@ void ZepWindow::DrawLineWidgets(SpanInfo& lineInfo)
 
     auto lineMargins = DPI_VEC2(GetEditor().GetConfig().lineMargins);
     auto widgetMargins = DPI_VEC2(GetEditor().GetConfig().widgetMargins);
-    auto& display = GetEditor().GetDisplay();
   
     float currentY = lineMargins.x;
     for (auto& pWidget : *pLineWidgets)
@@ -570,17 +554,7 @@ void ZepWindow::DrawLineWidgets(SpanInfo& lineInfo)
         auto widgetSize = DPI_VEC2(pWidget->GetSize());
 
         currentY += widgetMargins.x;
-        display.DrawRectFilled(
-            NRectf(
-                NVec2f(lineInfo.pixelRenderRange.x, ToWindowY(lineInfo.spanYPx + currentY)),
-                NVec2f(lineInfo.pixelRenderRange.x + DPI_X(pWidget->GetSize().x), ToWindowY(lineInfo.spanYPx + currentY + widgetSize.y))),
-            m_pBuffer->GetTheme().GetColor(ThemeColor::TabInactive));
-
-        display.DrawRectFilled(
-            NRectf(
-                NVec2f(lineInfo.pixelRenderRange.x + DPI_X(10.0f), ToWindowY(lineInfo.spanYPx + currentY)),
-                NVec2f(lineInfo.pixelRenderRange.x + DPI_X(20.0f), ToWindowY(lineInfo.spanYPx + currentY + widgetSize.y))),
-            m_pBuffer->GetTheme().GetColor(ThemeColor::TabActive));
+        pWidget->Draw(*m_pBuffer, NVec2f(lineInfo.pixelRenderRange.x, ToWindowY(currentY + lineInfo.spanYPx)));
         currentY += widgetMargins.y;
     }
 }
@@ -633,8 +607,6 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                 NVec2f(lineInfo.pixelRenderRange.x, ToWindowY(lineInfo.spanYPx)),
                 NVec2f(lineInfo.pixelRenderRange.y, ToWindowY(lineInfo.spanYPx + lineInfo.FullLineHeight()))),
             GetBlendedColor(ThemeColor::Background));
-
-        DrawLineWidgets(lineInfo);
 
         if (lineInfo.BufferCursorInside(m_bufferCursor))
         {
@@ -807,6 +779,8 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
         // Second pass, characters
         else
         {
+            DrawLineWidgets(lineInfo);
+
             if (!hiddenChar || m_windowFlags & WindowFlags::ShowCR)
             {
                 auto centerChar = NVec2f(screenPosX + textSize.x / 2, ToWindowY(lineInfo.spanYPx) + textSize.y / 2);

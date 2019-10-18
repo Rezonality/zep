@@ -874,6 +874,46 @@ void ZepBuffer::UpdateForDelete(const BufferLocation& startOffset, const BufferL
             marker->range.second -= dist;
         }
     }
+
+    if (!m_lineWidgets.empty())
+    {
+        std::map<long, long> lineMoves;
+        auto itr = m_lineWidgets.begin();
+        while (itr != m_lineWidgets.end())
+        {
+            auto pWidget = itr->second;
+            if (startOffset >= itr->first)
+            {
+                // Nothing to do, the widgets are behind the area removed
+                break;
+            }
+            else if (startOffset < itr->first)
+            {
+                // Removed before, jump back by this many
+                lineMoves[itr->first] = itr->first - distance;
+            }
+            else
+            {
+                auto overlapStart = std::max(startOffset, itr->first);
+                auto overlapEnd = std::min(endOffset, itr->first);
+                auto dist = overlapEnd - overlapStart;
+                lineMoves[itr->first] = itr->first - dist;
+            }
+            itr++;
+        }
+
+        for (auto& replace : lineMoves)
+        {
+            auto pWidgets = m_lineWidgets[replace.first];
+            m_lineWidgets.erase(replace.first);
+            
+            if (replace.second >= 0 &&
+                replace.second < (m_gapBuffer.size() - 1))
+            {
+                m_lineWidgets[replace.second] = pWidgets;
+            }
+        }
+    }
 }
 
 void ZepBuffer::UpdateForInsert(const BufferLocation& startOffset, const BufferLocation& endOffset)
@@ -893,9 +933,37 @@ void ZepBuffer::UpdateForInsert(const BufferLocation& startOffset, const BufferL
             marker->range.first += distance;
             marker->range.second += distance;
         }
-        else
+    }
+    
+    if (!m_lineWidgets.empty())
+    {
+        std::map<long, long> lineMoves;
+        auto itr = m_lineWidgets.begin();
+        while (itr != m_lineWidgets.end())
         {
-            marker->range.second += distance;
+            auto pWidget = itr->second;
+            if (startOffset > itr->first)
+            {
+                // Nothing to do, the widgets are behind the area inserted
+                break;
+            }
+            else if (startOffset <= itr->first)
+            {
+                // Add
+                lineMoves[itr->first] = itr->first + distance;
+            }
+            itr++;
+        }
+
+        for (auto& replace : lineMoves)
+        {
+            auto pWidgets = m_lineWidgets[replace.first];
+            m_lineWidgets.erase(replace.first);
+            if (replace.second >= 0 &&
+                replace.second < (m_gapBuffer.size() - 1))
+            {
+                m_lineWidgets[replace.second] = pWidgets;
+            }
         }
     }
 }
@@ -1133,7 +1201,10 @@ void ZepBuffer::SetMode(std::shared_ptr<ZepMode> spMode)
 void ZepBuffer::AddLineWidget(long line, std::shared_ptr<ILineWidget> spWidget)
 {
     // TODO: Add layout changed message
-    m_lineWidgets[line].push_back(spWidget);
+    long start, end;
+    GetLineOffsets(line, start, end);
+
+    m_lineWidgets[start].push_back(spWidget);
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextChanged, 0, 0));
 }
 
@@ -1141,7 +1212,9 @@ void ZepBuffer::ClearLineWidgets(long line)
 {
     if (line != -1)
     {
-        m_lineWidgets.erase(line);
+        long start, end;
+        GetLineOffsets(line, start, end);
+        m_lineWidgets.erase(start);
     }
     else
     {
@@ -1152,7 +1225,10 @@ void ZepBuffer::ClearLineWidgets(long line)
     
 const ZepBuffer::tLineWidgets* ZepBuffer::GetLineWidgets(long line) const
 {
-    auto itrFound = m_lineWidgets.find(line);
+    long start, end;
+    GetLineOffsets(line, start, end);
+
+    auto itrFound = m_lineWidgets.find(start);
     if (itrFound != m_lineWidgets.end())
     {
         return &itrFound->second;

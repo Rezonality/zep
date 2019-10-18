@@ -37,6 +37,7 @@ enum class ThemeColor
     Error,
     Warning,
     Info,
+    WidgetBorder,
     WidgetBackground,
     WidgetActive,
     WidgetInactive,

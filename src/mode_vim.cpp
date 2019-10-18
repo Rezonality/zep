@@ -579,7 +579,7 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
         else if (strCommand.find(":ZTestFloatSlider") == 0)
         {
             auto line = buffer.GetBufferLine(bufferCursor);
-            auto pSlider = std::make_shared<FloatSlider>(GetEditor());
+            auto pSlider = std::make_shared<FloatSlider>(GetEditor(), 4);
             buffer.AddLineWidget(line, pSlider);
         }
         else if (strCommand.find(":ZTestMarkers") == 0)

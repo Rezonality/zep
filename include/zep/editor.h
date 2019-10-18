@@ -182,6 +182,11 @@ const float bottomBorder = 4.0f;
 const float textBorder = 4.0f;
 const float leftBorderChars = 3;
 
+#define DPI_VEC2(value) (value * GetEditor().GetPixelScale())
+#define DPI_Y(value) (GetEditor().GetPixelScale() * value)
+#define DPI_X(value) (GetEditor().GetPixelScale() * value)
+#define DPI_RECT(value) (value * GetEditor().GetPixelScale())
+
 enum class EditorStyle
 {
     Normal = 0,

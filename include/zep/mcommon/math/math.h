@@ -82,6 +82,11 @@ inline NVec2<T> operator*(const NVec2<T>& lhs, float val)
     return NVec2<T>(lhs.x * val, lhs.y * val);
 }
 template <class T>
+inline NVec2<T> operator/(const NVec2<T>& lhs, float val)
+{
+    return NVec2<T>(lhs.x / val, lhs.y / val);
+}
+template <class T>
 inline NVec2<T>& operator*=(NVec2<T>& lhs, float val)
 {
     lhs.x *= val;
@@ -453,6 +458,11 @@ struct NRect
     }
 };
 
+template <class T>
+inline NRect<T> operator*(const NRect<T>& lhs, float val)
+{
+    return NRect<T>(lhs.topLeftPx * val, lhs.bottomRightPx * val);
+}
 template<class T>
 inline std::ostream& operator<< (std::ostream& str, const NRect<T>& region)
 {

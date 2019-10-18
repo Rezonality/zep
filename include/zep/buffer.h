@@ -296,7 +296,7 @@ private:
     std::string m_strName;
     ZepPath m_filePath;
     std::shared_ptr<ZepTheme> m_spOverrideTheme;
-    std::map<long, std::vector<std::shared_ptr<ILineWidget>>> m_lineWidgets;
+    std::map<BufferLocation, std::vector<std::shared_ptr<ILineWidget>>> m_lineWidgets;
 
     BufferRange m_selection;
     tRangeMarkers m_rangeMarkers;

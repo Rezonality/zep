@@ -197,9 +197,6 @@ private:
 
     void DrawLineWidgets(SpanInfo& lineInfo);
 private:
-    float DPI_Y(float value) const;
-    float DPI_X(float value) const;
-    NVec2f DPI_VEC2(const NVec2f& value) const;
 
     float GetLineTopMargin(long line);
     NVec2f ToBufferRegion(const NVec2f& pos);
