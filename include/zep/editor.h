@@ -204,6 +204,7 @@ struct EditorConfig
     bool autoHideCommandRegion = true;
     bool cursorLineSolid = false;
     float backgroundFadeTime = 60.0f;
+    float backgroundFadeWait = 60.0f;
 };
 
 class ZepEditor

@@ -532,7 +532,12 @@ NVec4f ZepWindow::GetBlendedColor(ThemeColor color) const
     auto col = m_pBuffer->GetTheme().GetColor(color);
     if (GetEditor().GetConfig().style == EditorStyle::Minimal)
     {
-        col.w = std::max(0.0f, 1.0f - GetEditor().GetLastEditElapsedTime() / 60.0f);
+        float lastEdit = GetEditor().GetLastEditElapsedTime();
+        if (lastEdit > GetEditor().GetConfig().backgroundFadeWait)
+        {
+            lastEdit -= GetEditor().GetConfig().backgroundFadeWait;
+            col.w = std::max(0.0f, 1.0f - lastEdit / GetEditor().GetConfig().backgroundFadeTime);
+        }
     }
     return col;
 }
