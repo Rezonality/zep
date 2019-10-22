@@ -46,6 +46,9 @@ There also is a trivial example of integrating zep into imgui here:
 
 Screenshots
 -----------
+Live Coding in 'Minimal' Mode:
+![LiveCoding](screenshots/livecode.png)
+
 Using the ImGui Renderer:
 ![ImGui](screenshots/sample.png)
 

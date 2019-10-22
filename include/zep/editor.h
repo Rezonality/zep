@@ -215,6 +215,8 @@ public:
     ~ZepEditor();
 
     void LoadConfig(const ZepPath& config_path);
+    void LoadConfig(std::shared_ptr<cpptoml::table> spConfig);
+    void SaveConfig(std::shared_ptr<cpptoml::table> spConfig);
     void Quit();
 
     ZepBuffer* InitWithFileOrDir(const std::string& str);

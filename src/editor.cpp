@@ -1,30 +1,29 @@
 #include "zep/editor.h"
 #include "zep/buffer.h"
 #include "zep/display.h"
-#include "zep/mode_standard.h"
-#include "zep/mode_vim.h"
+#include "zep/filesystem.h"
 #include "zep/mode_repl.h"
 #include "zep/mode_search.h"
+#include "zep/mode_standard.h"
+#include "zep/mode_vim.h"
 #include "zep/syntax.h"
 #include "zep/syntax_providers.h"
 #include "zep/tab_window.h"
 #include "zep/theme.h"
-#include "zep/filesystem.h"
 #include "zep/window.h"
 
-#include "zep/mcommon/file/path.h"
-#include "zep/mcommon/string/stringutils.h"
 #include "zep/mcommon/animation/timer.h"
-#include "zep/mcommon/logger.h"
 #include "zep/mcommon/file/cpptoml.h"
-#include "zep/mcommon/string/stringutils.h"
+#include "zep/mcommon/file/path.h"
+#include "zep/mcommon/logger.h"
 #include "zep/mcommon/string/murmur_hash.h"
+#include "zep/mcommon/string/stringutils.h"
 
 #include <stdexcept>
 
 namespace Zep
 {
-structlog LOGCFG = {true, DEBUG};
+structlog LOGCFG = { true, DEBUG };
 }
 
 namespace Zep
@@ -41,7 +40,7 @@ ZepComponent::~ZepComponent()
     m_editor.UnRegisterCallback(this);
 }
 
-ZepEditor::ZepEditor(ZepDisplay* pDisplay,const ZepPath& root, uint32_t flags, IZepFileSystem* pFileSystem)
+ZepEditor::ZepEditor(ZepDisplay* pDisplay, const ZepPath& root, uint32_t flags, IZepFileSystem* pFileSystem)
     : m_pDisplay(pDisplay)
     , m_pFileSystem(pFileSystem)
     , m_flags(flags)
@@ -134,6 +133,26 @@ void ZepEditor::LoadConfig(const ZepPath& config_path)
         if (spConfig == nullptr)
             return;
 
+        LoadConfig(spConfig);
+    }
+    catch (cpptoml::parse_exception& ex)
+    {
+        std::ostringstream str;
+        str << config_path.filename().string() << " : Failed to parse. " << ex.what();
+        SetCommandText(str.str());
+    }
+    catch (...)
+    {
+        std::ostringstream str;
+        str << config_path.filename().string() << " : Failed to parse. ";
+        SetCommandText(str.str());
+    }
+}
+
+void ZepEditor::LoadConfig(std::shared_ptr<cpptoml::table> spConfig)
+{
+    try
+    {
         m_config.showIndicatorRegion = spConfig->get_qualified_as<bool>("editor.show_indicator_region").value_or(true);
         m_config.showLineNumbers = spConfig->get_qualified_as<bool>("editor.show_line_numbers").value_or(true);
         m_config.autoHideCommandRegion = spConfig->get_qualified_as<bool>("editor.autohide_command_region").value_or(false);
@@ -155,18 +174,41 @@ void ZepEditor::LoadConfig(const ZepPath& config_path)
             m_config.style = EditorStyle::Minimal;
         }
     }
-    catch (cpptoml::parse_exception& ex)
-    {
-        std::ostringstream str;
-        str << config_path.filename().string() << " : Failed to parse. " << ex.what();
-        SetCommandText(str.str());
-    }
     catch (...)
     {
-        std::ostringstream str;
-        str << config_path.filename().string() << " : Failed to parse. ";
-        SetCommandText(str.str());
     }
+}
+
+void ZepEditor::SaveConfig(std::shared_ptr<cpptoml::table> spConfig)
+{
+    auto table = spConfig->get_table("editor");
+    if (!table)
+    {
+        table = cpptoml::make_table();
+        spConfig->insert("editor", table);
+    }
+
+    table->insert("show_indicator_region", m_config.showIndicatorRegion);
+    table->insert("show_line_numbers", m_config.showLineNumbers);
+    table->insert("autohide_command_region", m_config.autoHideCommandRegion);
+    table->insert("cursor_line_solid", m_config.cursorLineSolid);
+    table->insert("background_fade_time", (double)m_config.backgroundFadeTime);
+    table->insert("background_fade_wait", (double)m_config.backgroundFadeWait);
+    table->insert("show_scrollbar", m_config.showScrollBar);
+    
+    table->insert("line_margin_top", m_config.lineMargins.x);
+    table->insert("line_margin_bottom", m_config.lineMargins.y);
+    table->insert("widget_margin_top", m_config.widgetMargins.x);
+    table->insert("widget_margin_bottom", m_config.widgetMargins.y);
+
+    table->insert("style", m_config.style == EditorStyle::Minimal ? "minimal" : "normal");
+
+    /*
+    Example Write:
+    std::ofstream stream("d:/dev/out.txt");
+    cpptoml::toml_writer writer(stream, "");
+    writer.visit(*spConfig);
+    */
 }
 
 void ZepEditor::SaveBuffer(ZepBuffer& buffer)
@@ -227,8 +269,7 @@ void ZepEditor::RemoveBuffer(ZepBuffer* pBuffer)
     }
 
     // Find the buffer in the list of buffers owned by the editor and remove it
-    auto itr = std::find_if(m_buffers.begin(), m_buffers.end(), [pBuffer](std::shared_ptr<ZepBuffer> spBuffer)
-    {
+    auto itr = std::find_if(m_buffers.begin(), m_buffers.end(), [pBuffer](std::shared_ptr<ZepBuffer> spBuffer) {
         return spBuffer.get() == pBuffer;
     });
 
@@ -310,14 +351,13 @@ ZepWindow* ZepEditor::AddSearch()
     return pSearchWindow;
 }
 
-
 ZepTabWindow* ZepEditor::EnsureTab()
 {
     if (m_tabWindows.empty())
     {
         return AddTabWindow();
     }
-    
+
     if (m_pActiveTabWindow)
     {
         return m_pActiveTabWindow;
@@ -625,7 +665,7 @@ void ZepEditor::SetRegister(const std::string& reg, const Register& val)
 
 void ZepEditor::SetRegister(const char reg, const Register& val)
 {
-    std::string str({reg});
+    std::string str({ reg });
     m_registers[str] = val;
 }
 
@@ -636,7 +676,7 @@ void ZepEditor::SetRegister(const std::string& reg, const char* pszText)
 
 void ZepEditor::SetRegister(const char reg, const char* pszText)
 {
-    std::string str({reg});
+    std::string str({ reg });
     m_registers[str] = Register(pszText);
 }
 
@@ -647,7 +687,7 @@ Register& ZepEditor::GetRegister(const std::string& reg)
 
 Register& ZepEditor::GetRegister(const char reg)
 {
-    std::string str({reg});
+    std::string str({ reg });
     return m_registers[str];
 }
 const tRegisters& ZepEditor::GetRegisters() const
