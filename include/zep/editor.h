@@ -253,7 +253,10 @@ public:
     void SetRegister(const char reg, const char* pszText);
     Register& GetRegister(const std::string& reg);
     Register& GetRegister(const char reg);
-    const tRegisters& GetRegisters() const;
+    const tRegisters& GetRegisters();
+
+    void ReadClipboard();
+    void WriteClipboard();
 
     void Notify(std::shared_ptr<ZepMessage> message);
     uint32_t GetFlags() const

@@ -658,40 +658,83 @@ ZepBuffer* ZepEditor::GetMRUBuffer() const
     return m_buffers.front().get();
 }
 
+void ZepEditor::ReadClipboard()
+{
+    auto pMsg = std::make_shared<ZepMessage>(Msg::GetClipBoard);
+    Broadcast(pMsg);
+    if (pMsg->handled)
+    {
+        m_registers["+"] = pMsg->str;
+        m_registers["*"] = pMsg->str;
+    }
+}
+
+void ZepEditor::WriteClipboard()
+{
+    auto pMsg = std::make_shared<ZepMessage>(Msg::SetClipBoard);
+    pMsg->str = m_registers["+"].text;
+    Broadcast(pMsg);
+}
+
 void ZepEditor::SetRegister(const std::string& reg, const Register& val)
 {
     m_registers[reg] = val;
+    if (reg == "+" || reg == "*")
+    {
+        WriteClipboard();
+    }
 }
 
 void ZepEditor::SetRegister(const char reg, const Register& val)
 {
     std::string str({ reg });
     m_registers[str] = val;
+    if (reg == '+' || reg == '*')
+    {
+        WriteClipboard();
+    }
 }
 
 void ZepEditor::SetRegister(const std::string& reg, const char* pszText)
 {
     m_registers[reg] = Register(pszText);
+    if (reg == "+" || reg == "*")
+    {
+        WriteClipboard();
+    }
 }
 
 void ZepEditor::SetRegister(const char reg, const char* pszText)
 {
     std::string str({ reg });
     m_registers[str] = Register(pszText);
+    if (reg == '+' || reg == '*')
+    {
+        WriteClipboard();
+    }
 }
 
 Register& ZepEditor::GetRegister(const std::string& reg)
 {
+    if (reg == "+" || reg == "*")
+    {
+        ReadClipboard();
+    }
     return m_registers[reg];
 }
 
 Register& ZepEditor::GetRegister(const char reg)
 {
+    if (reg == '+' || reg == '*')
+    {
+        ReadClipboard();
+    }
     std::string str({ reg });
     return m_registers[str];
 }
-const tRegisters& ZepEditor::GetRegisters() const
+const tRegisters& ZepEditor::GetRegisters()
 {
+    ReadClipboard();
     return m_registers;
 }
 

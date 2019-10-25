@@ -127,17 +127,17 @@ void CommandContext::UpdateRegisters()
         std::string str = std::string(buffer.GetText().begin() + beginRange, buffer.GetText().begin() + endRange);
         while (!registers.empty())
         {
+            auto& ed = owner.GetEditor();
+
             // Capital letters append to registers instead of replacing them
             if (registers.top() >= 'A' && registers.top() <= 'Z')
             {
-                auto chlow = std::tolower(registers.top());
-                owner.GetEditor().GetRegister((const char)chlow).text += str;
-                owner.GetEditor().GetRegister((const char)chlow).lineWise = (op == CommandOperation::CopyLines);
+                auto chlow = (char)std::tolower(registers.top());
+                ed.SetRegister(chlow, Register(ed.GetRegister(chlow).text + str, (op == CommandOperation::CopyLines)));
             }
             else
             {
-                owner.GetEditor().GetRegister(registers.top()).text = str;
-                owner.GetEditor().GetRegister(registers.top()).lineWise = (op == CommandOperation::CopyLines);
+                ed.SetRegister(registers.top(), Register(str, op == CommandOperation::CopyLines));
             }
             registers.pop();
         }

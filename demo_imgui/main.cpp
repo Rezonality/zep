@@ -16,6 +16,7 @@
 #include <mutils/file/file.h>
 #include <mutils/logger/logger.h>
 #include <mutils/chibi/chibi.h>
+#include <clip/clip.h>
 #include <tclap/CmdLine.h>
 
 #include "config_app.h"
@@ -231,6 +232,16 @@ struct ZepContainer : public IZepComponent, public ZepRepl
 #ifndef __APPLE__
             MUtils::Watcher::Instance().Update();
 #endif
+        }
+        else if (message->messageId == Msg::GetClipBoard)
+        {
+            clip::get_text(message->str);
+            message->handled = true;
+        }
+        else if (message->messageId == Msg::SetClipBoard)
+        {
+            clip::set_text(message->str);
+            message->handled = true;
         }
         else if (message->messageId == Msg::HandleCommand)
         {
