@@ -164,6 +164,7 @@ void ZepEditor::LoadConfig(std::shared_ptr<cpptoml::table> spConfig)
         m_config.lineMargins.y = (float)spConfig->get_qualified_as<double>("editor.line_margin_bottom").value_or(1);
         m_config.widgetMargins.x = (float)spConfig->get_qualified_as<double>("editor.widget_margin_top").value_or(1);
         m_config.widgetMargins.y = (float)spConfig->get_qualified_as<double>("editor.widget_margin_bottom").value_or(1);
+        m_config.shortTabNames = spConfig->get_qualified_as<bool>("editor.short_tab_names").value_or(false);
         auto styleStr = string_tolower(spConfig->get_qualified_as<std::string>("editor.style").value_or("normal"));
         if (styleStr == "normal")
         {
@@ -192,6 +193,7 @@ void ZepEditor::SaveConfig(std::shared_ptr<cpptoml::table> spConfig)
     table->insert("show_line_numbers", m_config.showLineNumbers);
     table->insert("autohide_command_region", m_config.autoHideCommandRegion);
     table->insert("cursor_line_solid", m_config.cursorLineSolid);
+    table->insert("short_tab_names", m_config.shortTabNames);
     table->insert("background_fade_time", (double)m_config.backgroundFadeTime);
     table->insert("background_fade_wait", (double)m_config.backgroundFadeWait);
     table->insert("show_scrollbar", m_config.showScrollBar);
@@ -902,17 +904,28 @@ void ZepEditor::Display()
         NVec2f currentTab = m_tabRegion->rect.topLeftPx;
         for (auto& window : GetTabWindows())
         {
+
             // Show active buffer in tab as tab name
             auto& buffer = window->GetActiveWindow()->GetBuffer();
+            std::string name = buffer.GetName();
+            if (m_config.shortTabNames)
+            {
+                auto pos = name.find_last_of('.');
+                if (pos != std::string::npos)
+                {
+                    name = name.substr(0, pos);
+                }
+            }
+
             auto tabColor = (window == GetActiveTabWindow()) ? GetTheme().GetColor(ThemeColor::TabActive) : GetTheme().GetColor(ThemeColor::TabInactive);
-            auto tabLength = m_pDisplay->GetTextSize((const utf8*)buffer.GetName().c_str()).x + textBorder * 2;
+            auto tabLength = m_pDisplay->GetTextSize((const utf8*)name.c_str()).x + textBorder * 2;
 
             // Tab background rect
             NRectf tabRect(currentTab, currentTab + NVec2f(tabLength, m_tabRegion->rect.Height()));
             m_pDisplay->DrawRectFilled(tabRect, tabColor);
 
             // Tab text
-            m_pDisplay->DrawChars(currentTab + NVec2f(textBorder, textBorder), NVec4f(1.0f), (const utf8*)buffer.GetName().c_str());
+            m_pDisplay->DrawChars(currentTab + NVec2f(textBorder, textBorder), NVec4f(1.0f), (const utf8*)name.c_str());
 
             currentTab.x += tabLength + textBorder;
             m_tabRects[window] = tabRect;
