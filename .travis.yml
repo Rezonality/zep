@@ -31,6 +31,7 @@ matrix:
             - libasound2
             - libasound2-dev
             - libx11-dev
+            - xcb
       env:
         - TEST="Clang"
       script:
@@ -50,6 +51,7 @@ matrix:
             - libasound2
             - libasound2-dev
             - libx11-dev
+            - xcb
       env:
         - TEST="Coveralls"
       script:
@@ -78,6 +80,7 @@ matrix:
             - libasound2
             - libasound2-dev
             - libx11-dev
+            - xcb
       env:
         - TEST="Google Address Sanitizer"
       script:
@@ -97,6 +100,7 @@ matrix:
             - libasound2
             - libasound2-dev
             - libx11-dev
+            - xcb
       env:
         - TEST="Google Undefined Sanitizer"
       script:
@@ -116,6 +120,7 @@ matrix:
             - libasound2
             - libasound2-dev
             - libx11-dev
+            - xcb
       env:
         - TEST="Google Thread Sanitizer"
       script:
