@@ -606,6 +606,8 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
     // Drawing commands for the whole line
     if (displayPass == WindowPass::Background)
     {
+        display.SetClipRect(m_textRegion->rect);
+
         // Fill the background of the line
         display.DrawRectFilled(
             NRectf(
@@ -660,9 +662,12 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                 }
             }
         }
+        display.SetClipRect(m_bufferRegion->rect);
 
         if (GetEditor().GetConfig().showIndicatorRegion)
         {
+            display.SetClipRect(m_indicatorRegion->rect);
+
             // Show any markers in the left indicator region
             for (auto& marker : m_pBuffer->GetRangeMarkers())
             {
@@ -683,11 +688,15 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                     }
                 }
             }
+
+            display.SetClipRect(m_bufferRegion->rect);
         }
 
         if (GetEditor().GetConfig().showLineNumbers)
         {
+            display.SetClipRect(m_numberRegion->rect);
             displayLineNumber();
+            display.SetClipRect(m_bufferRegion->rect);
         }
     }
 
@@ -695,6 +704,8 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
     auto pSyntax = m_pBuffer->GetSyntax();
 
     auto tipTimeSeconds = timer_get_elapsed_seconds(m_toolTipTimer);
+
+    display.SetClipRect(m_textRegion->rect);
 
     // Walk from the start of the line to the end of the line (in buffer chars)
     for (auto ch = lineInfo.columnOffsets.first; ch < lineInfo.columnOffsets.second; ch++)
@@ -828,7 +839,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
 
         screenPosX += textSize.x;
     }
-
+    
     DisplayCursor();
 
     display.SetClipRect(NRectf{});

@@ -30,6 +30,7 @@ matrix:
             - pulseaudio
             - libasound2
             - libasound2-dev
+            - libx11-dev
       env:
         - TEST="Clang"
       script:
@@ -48,6 +49,7 @@ matrix:
             - pulseaudio
             - libasound2
             - libasound2-dev
+            - libx11-dev
       env:
         - TEST="Coveralls"
       script:
@@ -75,6 +77,7 @@ matrix:
             - pulseaudio
             - libasound2
             - libasound2-dev
+            - libx11-dev
       env:
         - TEST="Google Address Sanitizer"
       script:
@@ -93,6 +96,7 @@ matrix:
             - pulseaudio
             - libasound2
             - libasound2-dev
+            - libx11-dev
       env:
         - TEST="Google Undefined Sanitizer"
       script:
@@ -111,6 +115,7 @@ matrix:
             - pulseaudio
             - libasound2
             - libasound2-dev
+            - libx11-dev
       env:
         - TEST="Google Thread Sanitizer"
       script:
