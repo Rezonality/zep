@@ -18,5 +18,6 @@ LIST(APPEND PLATFORM_LINKLIBS
 	dl 
     Threads::Threads
 	stdc++fs
+    xcb
     ${OPENGL_LIBRARY}
 	)
