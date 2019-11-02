@@ -44,6 +44,8 @@ enum : uint32_t
     Locked = (1 << 3), // Can this file path ever be written to?
     Dirty = (1 << 4), // Has the file been changed?
     NotYetSaved = (1 << 5),
+    HasWarnings = (1 << 6),
+    HasErrors = (1 << 7)
 };
 };
 

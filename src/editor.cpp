@@ -904,7 +904,6 @@ void ZepEditor::Display()
         NVec2f currentTab = m_tabRegion->rect.topLeftPx;
         for (auto& window : GetTabWindows())
         {
-
             // Show active buffer in tab as tab name
             auto& buffer = window->GetActiveWindow()->GetBuffer();
             std::string name = buffer.GetName();
@@ -918,6 +917,15 @@ void ZepEditor::Display()
             }
 
             auto tabColor = (window == GetActiveTabWindow()) ? GetTheme().GetColor(ThemeColor::TabActive) : GetTheme().GetColor(ThemeColor::TabInactive);
+            if (buffer.TestFlags(FileFlags::HasWarnings))
+            {
+                tabColor = GetTheme().GetColor(ThemeColor::Warning);
+            }
+            // Errors win for coloring
+            if (buffer.TestFlags(FileFlags::HasErrors))
+            {
+                tabColor = GetTheme().GetColor(ThemeColor::Error);
+            }
             auto tabLength = m_pDisplay->GetTextSize((const utf8*)name.c_str()).x + textBorder * 2;
 
             // Tab background rect
