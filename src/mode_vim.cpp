@@ -155,7 +155,7 @@ void CommandContext::GetCommandAndCount()
     std::string command2;
 
     auto itr = commandText.begin();
-    while (itr != commandText.end() && std::isdigit(*itr))
+    while (itr != commandText.end() && std::isdigit((unsigned char)*itr))
     {
         count1 += *itr;
         itr++;
@@ -170,7 +170,7 @@ void CommandContext::GetCommandAndCount()
         if (*itr == 'f' || *itr == 'F' || *itr == 'c' || *itr == 'r')
         {
             while (itr != commandText.end()
-                && std::isgraph(*itr))
+                && std::isgraph(ToASCII(*itr)))
             {
                 command1 += *itr;
                 itr++;
@@ -179,7 +179,7 @@ void CommandContext::GetCommandAndCount()
         else
         {
             while (itr != commandText.end()
-                && std::isgraph(*itr) && !std::isdigit(*itr))
+                && std::isgraph(ToASCII(*itr)) && !std::isdigit(ToASCII(*itr)))
             {
                 command1 += *itr;
                 itr++;
@@ -191,7 +191,7 @@ void CommandContext::GetCommandAndCount()
     if (command1[0] != '\"' && command1[0] != ':' && command1[0] != '/')
     {
         while (itr != commandText.end()
-            && std::isdigit(*itr))
+            && std::isdigit(ToASCII(*itr)))
         {
             count2 += *itr;
             itr++;
@@ -199,7 +199,7 @@ void CommandContext::GetCommandAndCount()
     }
 
     while (itr != commandText.end()
-        && (std::isgraph(*itr) || *itr == ' '))
+        && (std::isgraph(ToASCII(*itr)) || *itr == ' '))
     {
         command2 += *itr;
         itr++;
@@ -443,7 +443,7 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
     }
     else
     {
-        if (std::isgraph(key) || std::isblank(key))
+        if (std::isgraph(ToASCII(key)) || std::isblank(ToASCII(key)))
         {
             m_currentCommand += char(key);
         }
@@ -996,7 +996,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         else
         {
             // Don't allow x to delete beyond the end of the line
-            if (context.command != "x" || std::isgraph(context.buffer.GetText()[loc]) || std::isblank(context.buffer.GetText()[loc]))
+            if (context.command != "x" || std::isgraph(ToASCII(context.buffer.GetText()[loc])) || std::isblank(ToASCII(context.buffer.GetText()[loc])))
             {
                 context.beginRange = loc;
                 context.endRange = std::min(context.buffer.GetLinePos(loc, LineLocation::LineCRBegin),

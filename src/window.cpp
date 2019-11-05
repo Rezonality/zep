@@ -1285,6 +1285,14 @@ void ZepWindow::Display()
             }
         }
     }
+    else
+    {
+        // No hanging tooltips if the markers on the page have gone
+        if (m_pBuffer->GetRangeMarkers().empty())
+        {
+            m_toolTips.clear();
+        }
+    }
 
     // No tooltip, and we can show one, then ask for tooltips
     if (!m_tipDisabledTillMove && (timer_get_elapsed_seconds(m_toolTipTimer) > 0.5f) && m_toolTips.empty() && m_lastTipQueryPos != m_mouseHoverPos)

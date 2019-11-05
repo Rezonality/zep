@@ -13,19 +13,12 @@
 
 #include "zep/mcommon/logger.h"
 
-namespace
+
+namespace Zep
 {
 
-// Ensure the character is >=0 and <=127 as in the ASCII standard,
-// used by the functions below.
-// isalnum, for example will assert on debug build if not in this range.
-inline int ToASCII(const char ch)
+namespace
 {
-    auto ret = (unsigned int)ch;
-    ret = std::max(0u, ret);
-    ret = std::min(ret, 127u);
-    return ret;
-}
 
 // A VIM-like definition of a word.  Actually, in Vim this can be changed, but this editor
 // assumes a word is alphanumeric or underscore for consistency
@@ -73,10 +66,6 @@ inline bool IsNewlineOrEnd(const char c)
 using fnMatch = std::function<bool>(const char);
 
 } // namespace
-
-namespace Zep
-{
-
 ZepBuffer::ZepBuffer(ZepEditor& editor, const std::string& strName)
     : ZepComponent(editor)
     , m_strName(strName)
@@ -805,7 +794,7 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
 
     case LineLocation::LineFirstGraphChar:
     {
-        while (bufferLocation < (long)m_gapBuffer.size() && !std::isgraph(m_gapBuffer[bufferLocation]) && m_gapBuffer[bufferLocation] != '\n')
+        while (bufferLocation < (long)m_gapBuffer.size() && !std::isgraph(ToASCII(m_gapBuffer[bufferLocation])) && m_gapBuffer[bufferLocation] != '\n')
         {
             bufferLocation++;
         }
@@ -842,7 +831,7 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
             bufferLocation++;
         }
 
-        while (bufferLocation > 0 && bufferLocation < (long)m_gapBuffer.size() && !std::isgraph(m_gapBuffer[bufferLocation]))
+        while (bufferLocation > 0 && bufferLocation < (long)m_gapBuffer.size() && !std::isgraph(ToASCII(m_gapBuffer[bufferLocation])))
         {
             bufferLocation--;
         }

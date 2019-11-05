@@ -49,6 +49,16 @@ enum : uint32_t
 };
 };
 
+// Ensure the character is >=0 and <=127 as in the ASCII standard,
+// isalnum, for example will assert on debug build if not in this range.
+inline int ToASCII(const char ch)
+{
+    auto ret = (unsigned int)ch;
+    ret = std::max(0u, ret);
+    ret = std::min(ret, 127u);
+    return ret;
+}
+
 enum class BufferType
 {
     Normal,
