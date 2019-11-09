@@ -5,6 +5,7 @@ set(DEMO_NAME ZepDemo)
 
 find_package(SDL2 REQUIRED)
 find_package(MUtils REQUIRED)
+find_package(Freetype REQUIRED)
 
 IF(WIN32)
 # Let windows know that the app is DPI Aware
@@ -21,6 +22,7 @@ add_executable (${DEMO_NAME} WIN32 # Win32 ignored on windows
 target_include_directories(${DEMO_NAME}
     PRIVATE
         include
+	${FREETYPE_INCLUDE_DIRS}
         ${SDL2_ROOT_DIR}
         ${CMAKE_BINARY_DIR}
         ${M3RDPARTY_DIR})
@@ -34,7 +36,7 @@ target_link_libraries (${DEMO_NAME}
         MUtils::MUtils
         SDL2::SDL2-static
         SDL2::SDL2main
-        ${MUTILS_LIB_DIR}/freetype2/lib/freetype$<$<CONFIG:DEBUG>:d>.lib
+	${FREETYPE_LIBRARIES}
         ${PLATFORM_LINKLIBS})
 
 # Install the font

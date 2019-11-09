@@ -16,8 +16,10 @@ endif(NOT OPENGL_FOUND)
 
 LIST(APPEND PLATFORM_LINKLIBS
 	dl 
-    Threads::Threads
+	Threads::Threads
 	stdc++fs
-    xcb
+    z
+   	xcb
+	png
     ${OPENGL_LIBRARY}
 	)
