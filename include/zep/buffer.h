@@ -54,7 +54,6 @@ enum : uint32_t
 inline int ToASCII(const char ch)
 {
     auto ret = (unsigned int)ch;
-    ret = std::max(0u, ret);
     ret = std::min(ret, 127u);
     return ret;
 }
