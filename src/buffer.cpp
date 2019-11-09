@@ -70,7 +70,13 @@ ZepBuffer::ZepBuffer(ZepEditor& editor, const std::string& strName)
     : ZepComponent(editor)
     , m_strName(strName)
 {
-    SetText("");
+    Clear();
+}
+
+ZepBuffer::ZepBuffer(ZepEditor& editor, const ZepPath& path)
+    : ZepComponent(editor)
+{
+    Load(path);
 }
 
 ZepBuffer::~ZepBuffer()
@@ -502,63 +508,6 @@ BufferLocation ZepBuffer::ChangeWordMotion(BufferLocation start, uint32_t search
     return start;
 }
 
-void ZepBuffer::ProcessInput(const std::string& text)
-{
-    // Inform clients we are about to change the buffer
-    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, 0, BufferLocation(m_gapBuffer.size() - 1)));
-
-    m_gapBuffer.clear();
-    m_lineEnds.clear();
-
-    if (text.empty())
-    {
-        m_fileFlags |= FileFlags::TerminatedWithZero;
-        m_gapBuffer.push_back(0);
-    }
-    else
-    {
-        // Since incremental insertion of a big file into a gap buffer gives us worst case performance,
-        // We build the buffer in a seperate array and assign it.  Much faster.
-        // This is because we remove \r and convert tabs. Tabs are considered 'always evil' and should be
-        // 4 spaces.  Take it up with your local code police if you feel aggrieved.
-        std::vector<utf8> input;
-
-        // Update the gap buffer with the text
-        // We remove \r, we only care about \n
-        for (auto& ch : text)
-        {
-            if (ch == '\r')
-            {
-                m_fileFlags |= FileFlags::StrippedCR;
-            }
-            else if (ch == '\t')
-            {
-                input.push_back(' ');
-                input.push_back(' ');
-                input.push_back(' ');
-                input.push_back(' ');
-            }
-            else
-            {
-                input.push_back(ch);
-                if (ch == '\n')
-                {
-                    m_lineEnds.push_back(long(input.size()));
-                }
-            }
-        }
-        m_gapBuffer.assign(input.begin(), input.end());
-    }
-
-    if (m_gapBuffer[m_gapBuffer.size() - 1] != 0)
-    {
-        m_fileFlags |= FileFlags::TerminatedWithZero;
-        m_gapBuffer.push_back(0);
-    }
-
-    m_lineEnds.push_back(long(m_gapBuffer.size()));
-}
-
 bool ZepBuffer::InsideBuffer(BufferLocation loc) const
 {
     if (loc >= 0 && loc < BufferLocation(m_gapBuffer.size()))
@@ -604,6 +553,7 @@ bool ZepBuffer::GetLineOffsets(const long line, long& lineStart, long& lineEnd) 
 // the file path in case you want to write later
 void ZepBuffer::Load(const ZepPath& path)
 {
+    // Set the name from the path
     if (path.has_filename())
     {
         m_strName = path.filename().string();
@@ -613,27 +563,25 @@ void ZepBuffer::Load(const ZepPath& path)
         m_strName = m_filePath.string();
     }
 
+    // Must set the syntax before the first buffer change messages
+    GetEditor().SetBufferSyntax(*this);
+
     if (GetEditor().GetFileSystem().Exists(path))
     {
         m_filePath = GetEditor().GetFileSystem().Canonical(path);
         auto read = GetEditor().GetFileSystem().Read(path);
         if (!read.empty())
         {
-            SetText(read);
-
-            // It was loaded, so no need to remember it hasn't been written to the location yet!
-            ClearFlags(FileFlags::NotYetSaved);
+            SetText(read, true);
         }
     }
     else
     {
         // Can't canonicalize a non-existent path.
         // But we may have a path we haven't save to yet!
+        Clear();
         m_filePath = path;
-        SetFlags(FileFlags::NotYetSaved);
     }
-    
-    GetEditor().SetBufferSyntax(*this);
 }
 
 bool ZepBuffer::Save(int64_t& size)
@@ -675,7 +623,6 @@ bool ZepBuffer::Save(int64_t& size)
 
     if (GetEditor().GetFileSystem().Write(m_filePath, &str[0], (size_t)size))
     {
-        ClearFlags(FileFlags::NotYetSaved);
         ClearFlags(FileFlags::Dirty);
         return true;
     }
@@ -707,26 +654,112 @@ void ZepBuffer::SetFilePath(const ZepPath& path)
     if (!GetEditor().GetFileSystem().Equivalent(testPath, m_filePath))
     {
         m_filePath = testPath;
-        SetFlags(FileFlags::NotYetSaved);
     }
     GetEditor().SetBufferSyntax(*this);
 }
 
-// Replace the buffer buffer with the text
-// This is also called on Load
-void ZepBuffer::SetText(const std::string& text)
+// Remember that we updated the buffer and dirty the state
+// Clients can use these values to figure out update times and dirty state
+void ZepBuffer::MarkUpdate()
 {
-    if (m_gapBuffer.size() != 0)
+    m_updateCount++;
+    m_lastUpdateTime = timer_get_time_now();
+    
+    SetFlags(FileFlags::Dirty);
+}
+
+// Clear this buffer.  If it was previously not clear, it has been updated.
+// Otherwise it is just reset to default state.  A new buffer is always initially cleared.
+void ZepBuffer::Clear()
+{
+    bool changed = false;
+    if (m_gapBuffer.size() > 1)
     {
-        GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextDeleted, BufferLocation{ 0 }, BufferLocation{ long(m_gapBuffer.size()) }));
+        // Inform clients we are about to change the buffer
+        GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, 0, BufferLocation(m_gapBuffer.size() - 1)));
+        changed = true;
+    }
+    
+    m_gapBuffer.clear();
+    m_gapBuffer.push_back(0);
+    m_lineEnds.clear();
+    SetFlags(FileFlags::TerminatedWithZero);
+
+    m_lineEnds.push_back(long(m_gapBuffer.size()));
+   
+    if (changed)
+    {
+        MarkUpdate();
+        GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextDeleted, 0, BufferLocation(m_gapBuffer.size() - 1)));
+    }
+}
+
+// Replace the buffer buffer with the text
+void ZepBuffer::SetText(const std::string& text, bool initFromFile)
+{
+    // First, clear it
+    Clear();
+
+    if (!text.empty())
+    {
+        // Since incremental insertion of a big file into a gap buffer gives us worst case performance,
+        // We build the buffer in a seperate array and assign it.  Much faster.
+        // This is because we remove \r and convert tabs. Tabs are considered 'always evil' and should be
+        // 4 spaces.  Take it up with your local code police if you feel aggrieved.
+        std::vector<utf8> input;
+
+        m_lineEnds.clear();
+
+        // Update the gap buffer with the text
+        // We remove \r, we only care about \n
+        for (auto& ch : text)
+        {
+            if (ch == '\r')
+            {
+                m_fileFlags |= FileFlags::StrippedCR;
+            }
+            else if (ch == '\t')
+            {
+                input.push_back(' ');
+                input.push_back(' ');
+                input.push_back(' ');
+                input.push_back(' ');
+            }
+            else
+            {
+                input.push_back(ch);
+                if (ch == '\n')
+                {
+                    m_lineEnds.push_back(long(input.size()));
+                }
+            }
+        }
+        m_gapBuffer.assign(input.begin(), input.end());
     }
 
-    ProcessInput(text);
+    if (m_gapBuffer[m_gapBuffer.size() - 1] != 0)
+    {
+        m_fileFlags |= FileFlags::TerminatedWithZero;
+        m_gapBuffer.push_back(0);
+    }
 
-    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextAdded, BufferLocation{ 0 }, BufferLocation{ long(m_gapBuffer.size()) }));
+    // TODO: Why is a line end needed always?
+    m_lineEnds.push_back(long(m_gapBuffer.size()));
+    
+    MarkUpdate();
 
-    // Doc is not dirty
-    ClearFlags(FileFlags::Dirty);
+    // When loading a file, send the Loaded message to distinguish it from adding to a buffer, and remember that the buffer is not dirty in this case
+    if (initFromFile)
+    {
+        GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::Loaded, BufferLocation{ 0 }, BufferLocation{ long(m_gapBuffer.size()) }));
+
+        // Doc is not dirty
+        ClearFlags(FileFlags::Dirty);
+    }
+    else
+    {
+        GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextAdded, BufferLocation{ 0 }, BufferLocation{ long(m_gapBuffer.size()) }));
+    }
 }
 
 // TODO: This can be cleaner
@@ -1018,10 +1051,10 @@ bool ZepBuffer::Insert(const BufferLocation& startOffset, const std::string& str
 
     m_gapBuffer.insert(m_gapBuffer.begin() + startOffset, str.begin(), str.end());
 
+    MarkUpdate();
+
     // This is the range we added (not valid any more in the buffer)
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextAdded, startOffset, startOffset + changeRange));
-
-    SetFlags(FileFlags::Dirty);
 
     return true;
 }
@@ -1043,10 +1076,10 @@ bool ZepBuffer::Replace(const BufferLocation& startOffset, const BufferLocation&
         m_gapBuffer[loc] = str[0];
     }
 
+    MarkUpdate();
+
     // This is the range we added (not valid any more in the buffer)
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextChanged, startOffset, endOffset));
-
-    SetFlags(FileFlags::Dirty);
 
     return true;
 }
@@ -1096,18 +1129,20 @@ bool ZepBuffer::Delete(const BufferLocation& startOffset, const BufferLocation& 
     m_gapBuffer.erase(m_gapBuffer.begin() + startOffset, m_gapBuffer.begin() + endOffset);
     assert(m_gapBuffer.size() > 0 && m_gapBuffer[m_gapBuffer.size() - 1] == 0);
 
+    MarkUpdate();
+
     // This is the range we deleted (not valid any more in the buffer)
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextDeleted, startOffset, endOffset));
-
-    SetFlags(FileFlags::Dirty);
 
     return true;
 }
 
 BufferLocation ZepBuffer::EndLocation() const
 {
-    auto end = m_gapBuffer.size() - 1;
-    return LocationFromOffset(long(end));
+    // TODO: This isn't safe? What if the buffer is empty
+    // I've clamped it for now
+    auto end = std::max((BufferLocation)0, (BufferLocation)m_gapBuffer.size() - 1);
+    return LocationFromOffset(end);
 }
 
 ZepTheme& ZepBuffer::GetTheme() const
@@ -1223,6 +1258,12 @@ const ZepBuffer::tLineWidgets* ZepBuffer::GetLineWidgets(long line) const
         return &itrFound->second;
     }
     return nullptr;
+}
+
+bool ZepBuffer::IsHidden() const
+{
+    auto windows = GetEditor().FindBufferWindows(this);
+    return windows.empty();
 }
 
 } // namespace Zep

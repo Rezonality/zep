@@ -34,7 +34,8 @@ void ZepSyntaxAdorn_RainbowBrackets::Notify(std::shared_ptr<ZepMessage> spMsg)
         {
             Clear(spBufferMsg->startLocation, spBufferMsg->endLocation);
         }
-        else if (spBufferMsg->type == BufferMessageType::TextAdded)
+        else if (spBufferMsg->type == BufferMessageType::TextAdded ||
+            spBufferMsg->type == BufferMessageType::Loaded)
         {
             Insert(spBufferMsg->startLocation, spBufferMsg->endLocation);
             Update(spBufferMsg->startLocation, spBufferMsg->endLocation);

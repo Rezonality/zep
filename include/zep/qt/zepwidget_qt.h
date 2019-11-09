@@ -47,7 +47,7 @@ public:
 
     void Notify(std::shared_ptr<ZepMessage> message)
     {
-        if (message->messageId == Msg::Quit)
+        if (message->messageId == Msg::RequestQuit)
         {
             qApp->quit();
         }

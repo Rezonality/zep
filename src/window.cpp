@@ -970,6 +970,7 @@ void ZepWindow::DisableToolTipTillMove()
 void ZepWindow::SetBuffer(ZepBuffer* pBuffer)
 {
     assert(pBuffer);
+
     m_pBuffer = pBuffer;
     m_layoutDirty = true;
     m_bufferOffsetYPx = 0;

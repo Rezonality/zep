@@ -117,7 +117,8 @@ void ZepSyntax::Notify(std::shared_ptr<ZepMessage> spMsg)
             m_syntax.erase(m_syntax.begin() + spBufferMsg->startLocation, m_syntax.begin() + spBufferMsg->endLocation);
             QueueUpdateSyntax(spBufferMsg->startLocation, spBufferMsg->endLocation);
         }
-        else if (spBufferMsg->type == BufferMessageType::TextAdded)
+        else if (spBufferMsg->type == BufferMessageType::TextAdded ||
+            spBufferMsg->type == BufferMessageType::Loaded)
         {
             Interrupt();
             m_syntax.insert(m_syntax.begin() + spBufferMsg->startLocation, spBufferMsg->endLocation - spBufferMsg->startLocation, SyntaxData{});

@@ -143,6 +143,19 @@ void ZepTabWindow::SetActiveWindow(ZepWindow* pBuffer)
 // If you split a window, you effectively create a stacked region within the parent region.
 ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, bool vsplit)
 {
+    // If we are replacing a default/unmodified start buffer, then this new window will replace it
+    // This makes for nice behavior where adding a top-level window to the tab will nuke the default buffer
+    if (m_windows.size() == 1 && pParent == nullptr)
+    {
+        auto& buffer = m_windows[0]->GetBuffer();
+        if (buffer.TestFlags(FileFlags::DefaultBuffer) &&
+            !buffer.TestFlags(FileFlags::Dirty))
+        {
+            m_windows[0]->SetBuffer(pBuffer);
+            return m_windows[0];
+        }
+    }
+
     // Make a new window
     auto pWin = new ZepWindow(*this, pBuffer);
     m_windows.push_back(pWin);
@@ -246,12 +259,8 @@ void ZepTabWindow::CloseActiveWindow()
 {
     if (m_pActiveWindow)
     {
+        // Note: cannot do anything after this call if this is the last window to close!
         RemoveWindow(m_pActiveWindow);
-    }
-
-    if (!m_windows.empty())
-    {
-        SetDisplayRegion(m_lastRegionRect, true);
     }
 }
 
@@ -348,7 +357,6 @@ void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
         LOG(INFO) << "RemoveWindow, Regions: ";
         LOG(INFO) << *m_spRootRegion;
     }
-    
 }
 
 void ZepTabWindow::Notify(std::shared_ptr<ZepMessage> pMsg)
@@ -384,6 +392,7 @@ void ZepTabWindow::SetDisplayRegion(const NRectf& region, bool force)
 
         for (auto& w : m_windows)
         {
+            // TODO: Crash here rect is NULL?
             w->SetDisplayRegion(m_windowRegions[w]->rect);
         }
     }

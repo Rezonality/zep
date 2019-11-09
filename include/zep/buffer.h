@@ -43,11 +43,11 @@ enum : uint32_t
     ReadOnly = (1 << 2),
     Locked = (1 << 3), // Can this file path ever be written to?
     Dirty = (1 << 4), // Has the file been changed?
-    NotYetSaved = (1 << 5),
     HasWarnings = (1 << 6),
-    HasErrors = (1 << 7)
+    HasErrors = (1 << 7),
+    DefaultBuffer = (1 << 8) // Default startup buffer
 };
-};
+}
 
 // Ensure the character is >=0 and <=127 as in the ASCII standard,
 // isalnum, for example will assert on debug build if not in this range.
@@ -163,8 +163,11 @@ class ZepBuffer : public ZepComponent
 {
 public:
     ZepBuffer(ZepEditor& editor, const std::string& strName);
+    ZepBuffer(ZepEditor& editor, const ZepPath& path);
     virtual ~ZepBuffer();
-    void SetText(const std::string& strText);
+
+    void Clear();
+    void SetText(const std::string& strText, bool initFromFile = false);
     void Load(const ZepPath& path);
     bool Save(int64_t& size);
 
@@ -289,11 +292,15 @@ public:
     void ClearLineWidgets(long line);
     const tLineWidgets* GetLineWidgets(long line) const;
 
+    uint64_t GetLastUpdateTime() const { return m_lastUpdateTime; }
+    uint64_t GetUpdateCount() const { return m_updateCount; }
+
+    bool IsHidden() const;
 private:
     // Internal
     GapBuffer<utf8>::const_iterator SearchWord(uint32_t searchType, GapBuffer<utf8>::const_iterator itrBegin, GapBuffer<utf8>::const_iterator itrEnd, SearchDirection dir) const;
 
-    void ProcessInput(const std::string& str);
+    void MarkUpdate();
 
     void UpdateForInsert(const BufferLocation& startOffset, const BufferLocation& endOffset);
     void UpdateForDelete(const BufferLocation& startOffset, const BufferLocation& endOffset);
@@ -302,7 +309,7 @@ private:
     bool m_dirty = false; // Is the text modified?
     GapBuffer<utf8> m_gapBuffer; // Storage for the text - a gap buffer for efficiency
     std::vector<long> m_lineEnds; // End of each line
-    uint32_t m_fileFlags = FileFlags::NotYetSaved;
+    uint32_t m_fileFlags = 0;
     BufferType m_bufferType = BufferType::Normal;
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::string m_strName;
@@ -316,6 +323,8 @@ private:
     std::shared_ptr<ZepMode> m_spMode;
     ZepRepl* m_replProvider = nullptr; // May not be set
     SyntaxProvider m_syntaxProvider;
+    uint64_t m_updateCount = 0;
+    uint64_t m_lastUpdateTime = 0;
 };
 
 // Notification payload
@@ -325,7 +334,8 @@ enum class BufferMessageType
     PreBufferChange = 0,
     TextChanged,
     TextDeleted,
-    TextAdded
+    TextAdded,
+    Loaded
 };
 
 struct BufferMessage : public ZepMessage

@@ -25,7 +25,7 @@ target_include_directories(${DEMO_NAME}
         ${CMAKE_BINARY_DIR}
         ${M3RDPARTY_DIR})
 
-copy_existing_files(${DEMO_NAME} ${MUTILS_INCLUDE_DIR}/imgui/misc/fonts/ProggyClean.ttf ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
+copy_existing_files(${DEMO_NAME} ${MUTILS_INCLUDE_DIR}/imgui/misc/fonts/Cousine-Regular.ttf ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
 copy_existing_files(${DEMO_NAME} ${MUTILS_INCLUDE_DIR}/chibi/init-7.scm ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
 
 target_link_libraries (${DEMO_NAME} 
@@ -34,10 +34,11 @@ target_link_libraries (${DEMO_NAME}
         MUtils::MUtils
         SDL2::SDL2-static
         SDL2::SDL2main
+        ${MUTILS_LIB_DIR}/freetype2/lib/freetype$<$<CONFIG:DEBUG>:d>.lib
         ${PLATFORM_LINKLIBS})
 
 # Install the font
-install(FILES ${MUTILS_INCLUDE_DIR}/imgui/misc/fonts/ProggyClean.ttf
+install(FILES ${MUTILS_INCLUDE_DIR}/imgui/misc/fonts/Cousine-Regular.ttf
     DESTINATION ${CMAKE_INSTALL_BINDIR}/imgui
 )
 

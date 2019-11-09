@@ -1,0 +1,6 @@
+Tests needed:
+
+Default created buffer goes away if replaced without edit.
+Stays behind if split then entered with another file
+
+Integration tests of file load/replace/split/behavior

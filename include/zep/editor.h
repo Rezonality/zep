@@ -76,7 +76,7 @@ enum class ZepMouseButton
 enum class Msg
 {
     HandleCommand,
-    Quit,
+    RequestQuit,
     GetClipBoard,
     SetClipBoard,
     MouseMove,
@@ -218,8 +218,9 @@ public:
     void LoadConfig(const ZepPath& config_path);
     void LoadConfig(std::shared_ptr<cpptoml::table> spConfig);
     void SaveConfig(std::shared_ptr<cpptoml::table> spConfig);
-    void Quit();
+    void RequestQuit();
 
+    void Reset();
     ZepBuffer* InitWithFileOrDir(const std::string& str);
     ZepBuffer* InitWithText(const std::string& strName, const std::string& strText);
 
@@ -247,6 +248,7 @@ public:
     ZepBuffer* GetFileBuffer(const ZepPath& filePath, uint32_t fileFlags = 0, bool create = true);
     ZepBuffer* GetEmptyBuffer(const std::string& name, uint32_t fileFlags = 0);
     void RemoveBuffer(ZepBuffer* pBuffer);
+    std::vector<ZepWindow*> FindBufferWindows(const ZepBuffer* pBuffer) const;
 
     void SetRegister(const std::string& reg, const Register& val);
     void SetRegister(const char reg, const Register& val);
@@ -316,7 +318,6 @@ public:
     bool OnMouseMove(const NVec2f& mousePos);
     bool OnMouseDown(const NVec2f& mousePos, ZepMouseButton button);
     bool OnMouseUp(const NVec2f& mousePos, ZepMouseButton button);
-    void TickInputState();
     const NVec2f GetMousePos() const;
 
     void SetPixelScale(float pt);
@@ -337,6 +338,7 @@ public:
 private:
     // Call GetBuffer publicly, to stop creation of duplicate buffers refering to the same file
     ZepBuffer* CreateNewBuffer(const std::string& bufferName);
+    ZepBuffer* CreateNewBuffer(const ZepPath& path);
 
     // Ensure there is a valid tab window and return it
     ZepTabWindow* EnsureTab();

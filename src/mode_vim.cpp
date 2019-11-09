@@ -435,7 +435,7 @@ bool ZepMode_Vim::GetOperationRange(const std::string& op, EditorMode mode, Buff
     return beginRange != -1;
 }
 
-bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
+bool ZepMode_Vim::HandleExCommand(std::string strCommand, const char key)
 {
     if (key == ExtKeys::BACKSPACE && !strCommand.empty())
     {
@@ -490,10 +490,6 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
                     auto pBuffer = GetEditor().GetFileBuffer(fname);
                     pTab->AddWindow(pBuffer, nullptr, true);
                 }
-            }
-            else
-            {
-                pTab->AddWindow(GetEditor().GetEmptyBuffer("Empty"), nullptr, true);
             }
             GetEditor().SetCurrentTabWindow(pTab);
         }
@@ -685,6 +681,15 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
                 {
                     std::string displayText = editor_buffer->GetName();
                     displayText = string_replace(displayText, "\n", "^J");
+                    if (editor_buffer->IsHidden())
+                    {
+                        str << "h";
+                    }
+                    else
+                    {
+                        str << " ";
+                    }
+
                     if (&GetCurrentWindow()->GetBuffer() == editor_buffer.get())
                     {
                         str << "*";
@@ -693,6 +698,7 @@ bool ZepMode_Vim::HandleExCommand(const std::string& strCommand, const char key)
                     {
                         str << " ";
                     }
+
                     if (editor_buffer->TestFlags(FileFlags::Dirty))
                     {
                         str << "+";

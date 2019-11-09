@@ -5,17 +5,19 @@
 
 #define NOMINMAX
 
-#include "imgui/imgui.h"
-
-#include "imgui/examples/imgui_impl_opengl3.h"
-#include "imgui/examples/imgui_impl_sdl.h"
 #include <SDL.h>
 #include <stdio.h>
 #include <thread>
 
+#include <imgui/imgui.h>
+#include <imgui/examples/imgui_impl_opengl3.h>
+#include <imgui/examples/imgui_impl_sdl.h>
+#include <imgui/misc/freetype/imgui_freetype.h>
+
 #include <mutils/file/file.h>
 #include <mutils/logger/logger.h>
 #include <mutils/chibi/chibi.h>
+
 #include <clip/clip.h>
 #include <tclap/CmdLine.h>
 
@@ -252,7 +254,7 @@ struct ZepContainer : public IZepComponent, public ZepRepl
                 message->handled = true;
             }
         }
-        else if (message->messageId == Msg::Quit)
+        else if (message->messageId == Msg::RequestQuit)
         {
             quit = true;
         }
@@ -372,10 +374,22 @@ int main(int argc, char** argv)
     // Setup style
     ImGui::StyleColorsDark();
 
+    // Font for editor
+    static const ImWchar ranges[] = {
+        0x0020,
+        0x00FF, // Basic Latin + Latin Supplement
+        0,
+    };
+
     ImFontConfig cfg;
     cfg.OversampleH = 3;
     cfg.OversampleV = 3;
-    io.Fonts->AddFontFromFileTTF((std::string(SDL_GetBasePath()) + "ProggyClean.ttf").c_str(), 15.0f * GetDisplayScale(), &cfg);
+
+    io.Fonts->AddFontFromFileTTF((std::string(SDL_GetBasePath()) + "Cousine-Regular.ttf").c_str(), 16 * GetDisplayScale(), &cfg, ranges);
+    
+    unsigned int flags = 0;// ImGuiFreeType::NoHinting;
+    ImGuiFreeType::BuildFontAtlas(io.Fonts, flags);
+
     bool show_demo_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 

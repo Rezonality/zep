@@ -23,6 +23,9 @@ static std::set<std::string> cpp_identifiers = {
     "std", "string", "vector", "map", "unordered_map", "set", "unordered_set", "min", "max"
 };
 
+static std::set<std::string> toml_keywords = {};
+static std::set<std::string> toml_identifiers = {};
+
 static std::set<std::string> hlsl_keywords = {
     "CompileShader", "const", "continue", "ComputeShader", "ConsumeStructuredBuffer", "default", "DepthStencilState", "DepthStencilView", "discard", "do", "double", "DomainShader", "dword", "else",
     "export", "extern", "false", "float", "for", "fxgroup", "GeometryShader", "groupshared", "half", "Hullshader", "if", "in", "inline", "inout", "InputPatch", "int", "interface", "line", "lineadj",
@@ -148,6 +151,10 @@ void RegisterSyntaxProviders(ZepEditor& editor)
     
     editor.RegisterSyntaxFactory({ ".cmake", "CMakeLists.txt" }, SyntaxProvider{ "cmake", tSyntaxFactory([](ZepBuffer* pBuffer) {
         return std::make_shared<ZepSyntax>(*pBuffer, cmake_keywords, cmake_identifiers, ZepSyntaxFlags::CaseInsensitive);
+    }) });
+    
+    editor.RegisterSyntaxFactory({ ".toml"  }, SyntaxProvider{ "cpp", tSyntaxFactory([](ZepBuffer* pBuffer) {
+        return std::make_shared<ZepSyntax>(*pBuffer, toml_keywords, toml_identifiers, ZepSyntaxFlags::CaseInsensitive);
     }) });
 }
 
