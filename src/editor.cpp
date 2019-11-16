@@ -971,7 +971,7 @@ void ZepEditor::Display()
                 }
             }
 
-            auto tabColor = (window == GetActiveTabWindow()) ? GetTheme().GetColor(ThemeColor::TabActive) : GetTheme().GetColor(ThemeColor::TabInactive);
+            auto tabColor = GetTheme().GetColor(ThemeColor::TabActive);
             if (buffer.TestFlags(FileFlags::HasWarnings))
             {
                 tabColor = GetTheme().GetColor(ThemeColor::Warning);
@@ -980,6 +980,12 @@ void ZepEditor::Display()
             if (buffer.TestFlags(FileFlags::HasErrors))
             {
                 tabColor = GetTheme().GetColor(ThemeColor::Error);
+            }
+            if (window != GetActiveTabWindow())
+            {
+                // Desaturate unselected ones
+                tabColor = tabColor * .66f;
+                tabColor.w = 1.0f;
             }
             auto tabLength = m_pDisplay->GetTextSize((const utf8*)name.c_str()).x + textBorder * 2;
 
