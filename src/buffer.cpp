@@ -13,7 +13,6 @@
 
 #include "zep/mcommon/logger.h"
 
-
 namespace Zep
 {
 
@@ -363,6 +362,29 @@ BufferRange ZepBuffer::InnerWordMotion(BufferLocation start, uint32_t searchType
     return r;
 }
 
+BufferLocation ZepBuffer::Find(BufferLocation start, const utf8* pBegin, const utf8* pEnd) const
+{
+    if (pEnd == nullptr)
+    {
+        pEnd = pBegin;
+        while (*pEnd != 0)
+        {
+            pEnd++;
+        }
+    }
+
+    auto itrBuffer = m_gapBuffer.begin() + start;
+
+    for (auto pCurrent = pBegin; pCurrent != pEnd; pCurrent++)
+    {
+        while (*itrBuffer != *pCurrent)
+        {
+            itrBuffer++;
+            continue;
+        }
+    }
+}
+
 BufferLocation ZepBuffer::FindOnLineMotion(BufferLocation start, const utf8* pCh, SearchDirection dir) const
 {
     auto entry = start;
@@ -664,7 +686,7 @@ void ZepBuffer::MarkUpdate()
 {
     m_updateCount++;
     m_lastUpdateTime = timer_get_time_now();
-    
+
     SetFlags(FileFlags::Dirty);
 }
 
@@ -679,14 +701,14 @@ void ZepBuffer::Clear()
         GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, 0, BufferLocation(m_gapBuffer.size() - 1)));
         changed = true;
     }
-    
+
     m_gapBuffer.clear();
     m_gapBuffer.push_back(0);
     m_lineEnds.clear();
     SetFlags(FileFlags::TerminatedWithZero);
 
     m_lineEnds.push_back(long(m_gapBuffer.size()));
-   
+
     if (changed)
     {
         MarkUpdate();
@@ -745,7 +767,7 @@ void ZepBuffer::SetText(const std::string& text, bool initFromFile)
 
     // TODO: Why is a line end needed always?
     m_lineEnds.push_back(long(m_gapBuffer.size()));
-    
+
     MarkUpdate();
 
     // When loading a file, send the Loaded message to distinguish it from adding to a buffer, and remember that the buffer is not dirty in this case
@@ -877,11 +899,10 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
 void ZepBuffer::UpdateForDelete(const BufferLocation& startOffset, const BufferLocation& endOffset)
 {
     auto distance = endOffset - startOffset;
-    for (auto& marker : m_rangeMarkers)
-    {
+    ForEachMarker(Zep::SearchDirection::Forward, [&](const std::shared_ptr<RangeMarker>& marker) {
         if (startOffset >= marker->range.second)
         {
-            continue;
+            return true;
         }
         else if (endOffset <= marker->range.first)
         {
@@ -895,7 +916,8 @@ void ZepBuffer::UpdateForDelete(const BufferLocation& startOffset, const BufferL
             auto dist = overlapEnd - overlapStart;
             marker->range.second -= dist;
         }
-    }
+        return true;
+    });
 
     if (!m_lineWidgets.empty())
     {
@@ -928,9 +950,8 @@ void ZepBuffer::UpdateForDelete(const BufferLocation& startOffset, const BufferL
         {
             auto pWidgets = m_lineWidgets[replace.first];
             m_lineWidgets.erase(replace.first);
-            
-            if (replace.second >= 0 &&
-                replace.second < (m_gapBuffer.size() - 1))
+
+            if (replace.second >= 0 && replace.second < (m_gapBuffer.size() - 1))
             {
                 m_lineWidgets[replace.second] = pWidgets;
             }
@@ -943,11 +964,11 @@ void ZepBuffer::UpdateForInsert(const BufferLocation& startOffset, const BufferL
     // Move the markers after the insert point forwards, or
     // expand the marker range if inserting inside it (that's a guess!)
     auto distance = endOffset - startOffset;
-    for (auto& marker : m_rangeMarkers)
-    {
+
+    ForEachMarker(SearchDirection::Forward, [&](const std::shared_ptr<RangeMarker>& marker) {
         if (marker->range.second <= startOffset)
         {
-            continue;
+            return true;
         }
 
         if (marker->range.first >= startOffset)
@@ -955,7 +976,8 @@ void ZepBuffer::UpdateForInsert(const BufferLocation& startOffset, const BufferL
             marker->range.first += distance;
             marker->range.second += distance;
         }
-    }
+        return true;
+    });
     
     if (!m_lineWidgets.empty())
     {
@@ -981,8 +1003,7 @@ void ZepBuffer::UpdateForInsert(const BufferLocation& startOffset, const BufferL
         {
             auto pWidgets = m_lineWidgets[replace.first];
             m_lineWidgets.erase(replace.first);
-            if (replace.second >= 0 &&
-                replace.second < (m_gapBuffer.size() - 1))
+            if (replace.second >= 0 && replace.second < (m_gapBuffer.size() - 1))
             {
                 m_lineWidgets[replace.second] = pWidgets;
             }
@@ -1175,12 +1196,44 @@ void ZepBuffer::SetSelection(const BufferRange& selection)
 
 void ZepBuffer::AddRangeMarker(std::shared_ptr<RangeMarker> spMarker)
 {
-    m_rangeMarkers.emplace_back(spMarker);
+    m_rangeMarkers[spMarker->range.first].insert(spMarker);
+    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::MarkersChanged, 0, BufferLocation(m_gapBuffer.size() - 1)));
 }
 
 void ZepBuffer::ClearRangeMarkers()
 {
     m_rangeMarkers.clear();
+    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::MarkersChanged, 0, BufferLocation(m_gapBuffer.size() - 1)));
+}
+
+void ZepBuffer::ForEachMarker(SearchDirection dir, std::function<bool(const std::shared_ptr<RangeMarker>&)> fnCB) const
+{
+    if (dir == SearchDirection::Forward)
+    {
+        for (auto& markerPair : m_rangeMarkers)
+        {
+            for (auto& markerItem : markerPair.second)
+            {
+                if (!fnCB(markerItem))
+                {
+                    return;
+                }
+            }
+        }
+    }
+    else
+    {
+        for (auto itrMarkerPair = m_rangeMarkers.rbegin(); itrMarkerPair != m_rangeMarkers.rend(); itrMarkerPair++)
+        {
+            for (auto& markerItem : itrMarkerPair->second)
+            {
+                if (!fnCB(markerItem))
+                {
+                    return;
+                }
+            }
+        }
+    }
 }
 
 const tRangeMarkers& ZepBuffer::GetRangeMarkers() const
@@ -1198,16 +1251,16 @@ BufferType ZepBuffer::GetBufferType() const
     return m_bufferType;
 }
 
-void ZepBuffer::SetLastLocation(BufferLocation loc)
+void ZepBuffer::SetLastEditLocation(BufferLocation loc)
 {
-    m_lastLocation = loc;
+    m_lastEditLocation = loc;
 }
 
-BufferLocation ZepBuffer::GetLastLocation() const
+BufferLocation ZepBuffer::GetLastEditLocation() const
 {
-    return m_lastLocation;
+    return m_lastEditLocation;
 }
-    
+
 ZepMode* ZepBuffer::GetMode() const
 {
     if (m_spMode)
@@ -1246,7 +1299,7 @@ void ZepBuffer::ClearLineWidgets(long line)
     }
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextChanged, 0, 0));
 }
-    
+
 const ZepBuffer::tLineWidgets* ZepBuffer::GetLineWidgets(long line) const
 {
     long start, end;

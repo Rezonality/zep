@@ -10,6 +10,7 @@
 
 #include "zep/mcommon/animation/timer.h"
 #include "zep/mcommon/string/stringutils.h"
+#include "zep/mcommon/logger.h"
 
 // Note:
 // This is a very basic implementation of the common Vim commands that I use: the bare minimum I can live with.
@@ -347,10 +348,18 @@ void ZepMode_Vim::SwitchMode(EditorMode mode)
         m_pendingEscape = false;
         break;
     case EditorMode::Visual:
+    {
         GetCurrentWindow()->SetCursorType(CursorType::Visual);
         ResetCommand();
         m_pendingEscape = false;
-        break;
+    }
+    break;
+    case EditorMode::Ex:
+    {
+        GetCurrentWindow()->SetCursorType(CursorType::Hidden);
+        m_pendingEscape = false;
+    }
+    break;
     default:
     case EditorMode::None:
         break;
@@ -447,6 +456,12 @@ bool ZepMode_Vim::HandleExCommand(std::string strCommand, const char key)
         {
             m_currentCommand += char(key);
         }
+    }
+
+    // Deleted and swapped out of Ex mode
+    if (m_currentCommand.empty())
+    {
+        return true;
     }
 
     if (key == ExtKeys::RETURN)
@@ -744,6 +759,18 @@ bool ZepMode_Vim::HandleExCommand(std::string strCommand, const char key)
         m_currentCommand.clear();
         return true;
     }
+    else if (!strCommand.empty() && strCommand[0] == '/')
+    {
+        // TODO: Busy editing the search string; do the search
+        if (strCommand.length() > 1)
+        {
+            /*LOG(INFO) << "Command: " << strCommand.substr(1);
+            auto pWindow = GetEditor().GetActiveTabWindow()->GetActiveWindow();
+            auto& buffer = pWindow->GetBuffer();
+            //buffer.FindOnLineMotion
+            */
+        }
+    }
     return false;
 }
 
@@ -754,7 +781,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
 
     // CTRL + keys common to modes
     bool needMoreChars = false;
-    if ((context.modifierKeys & ModifierKey::Ctrl) && HandleGlobalCtrlCommand(context.command, context.modifierKeys, needMoreChars))
+    if (HandleGlobalCommand(context.commandText, context.modifierKeys, needMoreChars))
     {
         if (needMoreChars)
         {
@@ -1593,7 +1620,7 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     // Reset command text - we will update it later
     GetEditor().SetCommandText("");
 
-    if (m_currentMode == EditorMode::Normal || m_currentMode == EditorMode::Visual)
+    if (m_currentMode == EditorMode::Normal || m_currentMode == EditorMode::Visual || m_currentMode == EditorMode::Ex)
     {
         // Escape wins all
         if (key == ExtKeys::ESCAPE)
@@ -1612,6 +1639,7 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
                 {
                     GetEditor().ResetCursorTimer();
                 }
+                SwitchMode(EditorMode::Normal);
                 return;
             }
         }
@@ -1620,6 +1648,11 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         if (m_currentCommand[0] == ':' || m_currentCommand[0] == '/' || m_settings.ShowNormalModeKeyStrokes)
         {
             GetEditor().SetCommandText(m_currentCommand);
+            if (m_currentMode != EditorMode::Ex)
+            {
+                m_exCommandStartLocation = GetCurrentWindow()->GetBufferCursor();
+                SwitchMode(EditorMode::Ex);
+            }
             return;
         }
 

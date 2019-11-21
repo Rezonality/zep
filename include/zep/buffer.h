@@ -1,12 +1,14 @@
 #pragma once
 
+#include <functional>
+#include <set>
+
 #include "editor.h"
+#include "theme.h"
 #include "zep/line_widgets.h"
 #include "zep/mcommon/file/path.h"
-#include "theme.h"
 
 #include "gap_buffer.h"
-#include <set>
 
 namespace Zep
 {
@@ -104,13 +106,13 @@ namespace RangeMarkerDisplayType
 {
 enum
 {
-    Underline = (1 << 0),           // Underline the range
-    Background = (1 << 1),          // Add a background to the range
-    Tooltip = (1 << 2),             // Show a tooltip using the name/description
-    TooltipAtLine = (1 << 3),       // Tooltip shown if the user hovers the line
-    CursorTip = (1 << 4),           // Tooltip shown if the user cursor is on the Mark
-    CursorTipAtLine = (1 << 5),     // Tooltip shown if the user cursor is on the Mark line
-    Indicator = (1 << 6),           // Show an indicator on the left side
+    Underline = (1 << 0), // Underline the range
+    Background = (1 << 1), // Add a background to the range
+    Tooltip = (1 << 2), // Show a tooltip using the name/description
+    TooltipAtLine = (1 << 3), // Tooltip shown if the user hovers the line
+    CursorTip = (1 << 4), // Tooltip shown if the user cursor is on the Mark
+    CursorTipAtLine = (1 << 5), // Tooltip shown if the user cursor is on the Mark line
+    Indicator = (1 << 6), // Show an indicator on the left side
     All = Underline | Tooltip | TooltipAtLine | CursorTip | CursorTipAtLine | Indicator | Background
 };
 };
@@ -125,7 +127,6 @@ enum class ToolTipPos
 
 struct RangeMarker
 {
-    long bufferLine = -1;
     BufferRange range;
     ThemeColor textColor = ThemeColor::Text;
     ThemeColor backgroundColor = ThemeColor::Background;
@@ -151,7 +152,7 @@ struct ZepRepl
     std::function<bool(const std::string&, int&)> fnIsFormComplete;
 };
 
-using tRangeMarkers = std::vector<std::shared_ptr<RangeMarker>>;
+using tRangeMarkers = std::map<long, std::set<std::shared_ptr<RangeMarker>>>;
 
 const long InvalidOffset = -1;
 
@@ -190,6 +191,7 @@ public:
     bool SkipOne(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const;
     bool SkipNot(fnMatch IsToken, BufferLocation& start, SearchDirection dir) const;
 
+    BufferLocation Find(BufferLocation start, const utf8* pBegin, const utf8* pEnd) const;
     BufferLocation FindOnLineMotion(BufferLocation start, const utf8* pCh, SearchDirection dir) const;
     BufferLocation WordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
     BufferLocation EndWordMotion(BufferLocation start, uint32_t searchType, SearchDirection dir) const;
@@ -274,27 +276,42 @@ public:
     void ClearRangeMarkers();
     const tRangeMarkers& GetRangeMarkers() const;
 
+    void ForEachMarker(SearchDirection dir, std::function<bool(const std::shared_ptr<RangeMarker>&)> fnCB) const;
+
     void SetBufferType(BufferType type);
     BufferType GetBufferType() const;
 
-    void SetLastLocation(BufferLocation loc);
-    BufferLocation GetLastLocation() const;
+    void SetLastEditLocation(BufferLocation loc);
+    BufferLocation GetLastEditLocation() const;
 
     ZepMode* GetMode() const;
     void SetMode(std::shared_ptr<ZepMode> spMode);
 
-    void SetReplProvider(ZepRepl* repl) { m_replProvider = repl; }
-    ZepRepl* GetReplProvider() const { return m_replProvider; }
+    void SetReplProvider(ZepRepl* repl)
+    {
+        m_replProvider = repl;
+    }
+    ZepRepl* GetReplProvider() const
+    {
+        return m_replProvider;
+    }
 
     using tLineWidgets = std::vector<std::shared_ptr<ILineWidget>>;
     void AddLineWidget(long line, std::shared_ptr<ILineWidget> spWidget);
     void ClearLineWidgets(long line);
     const tLineWidgets* GetLineWidgets(long line) const;
 
-    uint64_t GetLastUpdateTime() const { return m_lastUpdateTime; }
-    uint64_t GetUpdateCount() const { return m_updateCount; }
+    uint64_t GetLastUpdateTime() const
+    {
+        return m_lastUpdateTime;
+    }
+    uint64_t GetUpdateCount() const
+    {
+        return m_updateCount;
+    }
 
     bool IsHidden() const;
+
 private:
     // Internal
     GapBuffer<utf8>::const_iterator SearchWord(uint32_t searchType, GapBuffer<utf8>::const_iterator itrBegin, GapBuffer<utf8>::const_iterator itrEnd, SearchDirection dir) const;
@@ -318,7 +335,7 @@ private:
 
     BufferRange m_selection;
     tRangeMarkers m_rangeMarkers;
-    BufferLocation m_lastLocation{ 0 };
+    BufferLocation m_lastEditLocation{ 0 };
     std::shared_ptr<ZepMode> m_spMode;
     ZepRepl* m_replProvider = nullptr; // May not be set
     SyntaxProvider m_syntaxProvider;
@@ -334,7 +351,8 @@ enum class BufferMessageType
     TextChanged,
     TextDeleted,
     TextAdded,
-    Loaded
+    Loaded,
+    MarkersChanged
 };
 
 struct BufferMessage : public ZepMessage

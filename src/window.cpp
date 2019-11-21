@@ -392,7 +392,7 @@ void ZepWindow::UpdateLineSpans()
                     spanLine++;
                     bufferPosYPx += fullLineHeight;
 
-                    // Reset the line margin and height, because when we split a line we don't include a 
+                    // Reset the line margin and height, because when we split a line we don't include a
                     // custom widget space above it.  That goes just above the first part of the line
                     margins.x = (float)GetEditor().GetConfig().lineMargins.x;
                     fullLineHeight = textHeight + margins.x + margins.y;
@@ -552,7 +552,7 @@ void ZepWindow::DrawLineWidgets(SpanInfo& lineInfo)
 
     auto lineMargins = DPI_VEC2(GetEditor().GetConfig().lineMargins);
     auto widgetMargins = DPI_VEC2(GetEditor().GetConfig().widgetMargins);
-  
+
     float currentY = lineMargins.x;
     for (auto& pWidget : *pLineWidgets)
     {
@@ -669,8 +669,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
             display.SetClipRect(m_indicatorRegion->rect);
 
             // Show any markers in the left indicator region
-            for (auto& marker : m_pBuffer->GetRangeMarkers())
-            {
+            m_pBuffer->ForEachMarker(SearchDirection::Forward, [&](const std::shared_ptr<RangeMarker>& marker) {
                 // >|< Text.  This is the bit between the arrows <-.  A vertical bar in the 'margin'
                 if (marker->displayType & RangeMarkerDisplayType::Indicator)
                 {
@@ -687,7 +686,8 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                             m_pBuffer->GetTheme().GetColor(marker->highlightColor));
                     }
                 }
-            }
+                return true;
+            });
 
             display.SetClipRect(m_bufferRegion->rect);
         }
@@ -732,8 +732,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
             }
 
             // Show any markers
-            for (auto& marker : m_pBuffer->GetRangeMarkers())
-            {
+            m_pBuffer->ForEachMarker(SearchDirection::Forward, [&](const std::shared_ptr<RangeMarker>& marker) {
                 auto sel = marker->range;
                 if (marker->ContainsLocation(ch))
                 {
@@ -777,7 +776,8 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                         }
                     }
                 }
-            }
+                return true;
+            });
 
             // Draw the visual selection marker second
             if (IsActiveWindow())
@@ -839,7 +839,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
 
         screenPosX += textSize.x;
     }
-    
+
     DisplayCursor();
 
     display.SetClipRect(NRectf{});
@@ -974,7 +974,7 @@ void ZepWindow::SetBuffer(ZepBuffer* pBuffer)
     m_pBuffer = pBuffer;
     m_layoutDirty = true;
     m_bufferOffsetYPx = 0;
-    m_bufferCursor = pBuffer->Clamp(pBuffer->GetLastLocation());
+    m_bufferCursor = pBuffer->Clamp(pBuffer->GetLastEditLocation());
     m_lastCursorColumn = 0;
     m_cursorMoved = false;
 }
@@ -1266,8 +1266,7 @@ void ZepWindow::Display()
             return ret;
         };
 
-        for (auto& marker : m_pBuffer->GetRangeMarkers())
-        {
+        m_pBuffer->ForEachMarker(SearchDirection::Forward, [&](const std::shared_ptr<RangeMarker>& marker) {
             auto sel = marker->range;
             if (marker->displayType & RangeMarkerDisplayType::CursorTip)
             {
@@ -1284,7 +1283,8 @@ void ZepWindow::Display()
                     PlaceToolTip(tipPos(*marker), marker->tipPos, 2, marker);
                 }
             }
-        }
+            return true;
+        });
     }
     else
     {
@@ -1340,6 +1340,15 @@ void ZepWindow::Display()
 }
 
 // *** Motions ***
+void ZepWindow::MoveToBufferLine(long line, LineLocation clampLocation)
+{
+    long start, end;
+    m_pBuffer->GetLineOffsets(line, start, end);
+
+    auto targetDisplayCursor = BufferToDisplay(start);
+    MoveCursorY(targetDisplayCursor.y - BufferToDisplay().y, clampLocation);
+}
+
 void ZepWindow::MoveCursorY(int yDistance, LineLocation clampLocation)
 {
     UpdateLayout();
@@ -1381,6 +1390,12 @@ void ZepWindow::MoveCursorY(int yDistance, LineLocation clampLocation)
     BufferLocation clampOffset = line.columnOffsets.second;
     switch (clampLocation)
     {
+    case LineLocation::LineBegin:
+        clampOffset = line.columnOffsets.first;
+        break;
+    case LineLocation::LineFirstGraphChar:
+        clampOffset = line.columnOffsets.first;
+        break;
     case LineLocation::BeyondLineEnd:
         clampOffset = line.columnOffsets.second;
         break;
@@ -1406,7 +1421,7 @@ void ZepWindow::MoveCursorY(int yDistance, LineLocation clampLocation)
     m_cursorMoved = true;
     GetEditor().ResetCursorTimer();
 
-    m_pBuffer->SetLastLocation(m_bufferCursor);
+    m_pBuffer->SetLastEditLocation(m_bufferCursor);
 }
 
 NVec2i ZepWindow::BufferToDisplay()

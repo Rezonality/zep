@@ -131,6 +131,7 @@ public:
     void DisplayCursor();
 
     void MoveCursorY(int yDistance, LineLocation clampLocation = LineLocation::LineLastNonCR);
+    void MoveToBufferLine(long line, LineLocation clampLocation = LineLocation::LineFirstGraphChar);
 
     BufferLocation GetBufferCursor();
     void SetBufferCursor(BufferLocation location);
@@ -199,7 +200,6 @@ private:
 private:
 
     float GetLineTopMargin(long line);
-    NVec2f ToBufferRegion(const NVec2f& pos);
     std::shared_ptr<Region> m_bufferRegion;  // region of the display we are showing on.
     std::shared_ptr<Region> m_textRegion;    // region of the display for text.
     std::shared_ptr<Region> m_airlineRegion; // Airline

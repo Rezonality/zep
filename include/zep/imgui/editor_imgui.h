@@ -32,6 +32,21 @@ public:
 
         uint32_t mod = 0;
 
+        static std::map<int, int> MapUSBKeys =
+        {
+            { KEY_F1, ExtKeys::F1},
+            { KEY_F2, ExtKeys::F2},
+            { KEY_F3, ExtKeys::F3},
+            { KEY_F4, ExtKeys::F4},
+            { KEY_F5, ExtKeys::F5},
+            { KEY_F6, ExtKeys::F6},
+            { KEY_F7, ExtKeys::F7},
+            { KEY_F8, ExtKeys::F8},
+            { KEY_F9, ExtKeys::F9},
+            { KEY_F10, ExtKeys::F10},
+            { KEY_F11, ExtKeys::F11},
+            { KEY_F12, ExtKeys::F12}
+        };
         if (io.MouseDelta.x != 0 || io.MouseDelta.y != 0)
         {
             OnMouseMove(toNVec2f(io.MousePos));
@@ -84,6 +99,16 @@ public:
 
         auto pWindow = GetActiveTabWindow()->GetActiveWindow();
         const auto& buffer = pWindow->GetBuffer();
+
+        // Check USB Keys
+        for (auto& usbKey : MapUSBKeys)
+        {
+            if (ImGui::IsKeyPressed(usbKey.first))
+            {
+                buffer.GetMode()->AddKeyPress(usbKey.second, mod);
+                return;
+            }
+        }
 
         if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Tab)))
         {

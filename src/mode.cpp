@@ -135,6 +135,58 @@ NVec2i ZepMode::GetVisualRange() const
     return NVec2i(m_visualBegin, m_visualEnd);
 }
 
+bool ZepMode::HandleGlobalCommand(const std::string& cmd, uint32_t modifiers, bool& needMoreChars)
+{
+    if (modifiers & ModifierKey::Ctrl)
+    {
+        return HandleGlobalCtrlCommand(cmd, modifiers, needMoreChars);
+    }
+
+    if (cmd[0] == ExtKeys::F8)
+    {
+        auto pWindow = GetCurrentWindow();
+        auto& buffer = pWindow->GetBuffer();
+        if (!buffer.GetRangeMarkers().empty())
+        {
+            auto cursor = GetCurrentWindow()->GetBufferCursor();
+
+            auto dir = (modifiers & ModifierKey::Shift) != 0 ? SearchDirection::Backward : SearchDirection::Forward;
+            bool found = false;
+            auto search = [&]() {
+                buffer.ForEachMarker(dir, [&](const std::shared_ptr<RangeMarker>& marker) {
+                    if (dir == SearchDirection::Forward)
+                    {
+                        if (marker->range.first <= cursor)
+                        {
+                            return true;
+                        }
+                    }
+                    else
+                    {
+                        if (marker->range.first >= cursor)
+                        {
+                            return true;
+                        }
+                    }
+
+                    found = true;
+                    GetCurrentWindow()->SetBufferCursor(marker->range.first);
+                    return false;
+                });
+            };
+
+            search();
+            if (!found)
+            {
+                cursor = (dir == SearchDirection::Forward ? 0 : buffer.EndLocation());
+                search();
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
 bool ZepMode::HandleGlobalCtrlCommand(const std::string& cmd, uint32_t modifiers, bool& needMoreChars)
 {
     needMoreChars = false;

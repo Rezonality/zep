@@ -146,6 +146,8 @@ private:
     bool m_pendingEscape = false;
     timer m_insertEscapeTimer;
     VimSettings m_settings;
+
+    BufferLocation m_exCommandStartLocation = 0;
 };
 
 } // namespace Zep

@@ -51,7 +51,7 @@ void ZepTheme::SetDarkTheme()
     m_colors[ThemeColor::LineNumberActive] = NVec4f(.13f, 1.0f, .13f, 1.0f);
     m_colors[ThemeColor::CursorNormal] = NVec4f(130.0f / 255.0f, 140.0f / 255.0f, 230.0f / 255.0f, 1.0f);
     m_colors[ThemeColor::CursorInsert] = NVec4f(1.0f, 1.0f, 1.0f, .9f);
-    m_colors[ThemeColor::CursorLineBackground] = NVec4f(.2f, .2f, .2f, 1.0f);
+    m_colors[ThemeColor::CursorLineBackground] = NVec4f(.25f, .25f, .25f, 1.0f);
     m_colors[ThemeColor::AirlineBackground] = NVec4f(.15f, .15f, .15f, 1.0f);
     m_colors[ThemeColor::Light] = NVec4f(1.0f);
     m_colors[ThemeColor::Dark] = NVec4f(0.0f, 0.0f, 0.0f, 1.0f);
