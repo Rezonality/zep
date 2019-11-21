@@ -383,6 +383,7 @@ BufferLocation ZepBuffer::Find(BufferLocation start, const utf8* pBegin, const u
             continue;
         }
     }
+    return 0;
 }
 
 BufferLocation ZepBuffer::FindOnLineMotion(BufferLocation start, const utf8* pCh, SearchDirection dir) const
