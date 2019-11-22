@@ -583,7 +583,9 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
             return;
         auto cursorBufferLine = GetCursorLineInfo(cursorCL.y).bufferLineNumber;
         std::string strNum;
-        if (m_displayMode == DisplayMode::Vim)
+
+        // In Vim mode show relative lines, unless in Ex mode (with hidden cursor)
+        if (m_displayMode == DisplayMode::Vim && m_cursorType != CursorType::Hidden)
         {
             strNum = std::to_string(std::abs(lineInfo.bufferLineNumber - cursorBufferLine));
         }
@@ -669,7 +671,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
             display.SetClipRect(m_indicatorRegion->rect);
 
             // Show any markers in the left indicator region
-            m_pBuffer->ForEachMarker(SearchDirection::Forward, [&](const std::shared_ptr<RangeMarker>& marker) {
+            m_pBuffer->ForEachMarker(RangeMarkerType::Message, SearchDirection::Forward, lineInfo.columnOffsets.first, lineInfo.columnOffsets.second, [&](const std::shared_ptr<RangeMarker>& marker) {
                 // >|< Text.  This is the bit between the arrows <-.  A vertical bar in the 'margin'
                 if (marker->displayType & RangeMarkerDisplayType::Indicator)
                 {
@@ -732,7 +734,14 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
             }
 
             // Show any markers
-            m_pBuffer->ForEachMarker(SearchDirection::Forward, [&](const std::shared_ptr<RangeMarker>& marker) {
+            m_pBuffer->ForEachMarker(RangeMarkerType::All, SearchDirection::Forward, lineInfo.columnOffsets.first, lineInfo.columnOffsets.second, [&](const std::shared_ptr<RangeMarker>& marker) {
+
+                // Don't show hidden markers 
+                if (marker->displayType == RangeMarkerDisplayType::Hidden)
+                {
+                    return true;
+                }
+
                 auto sel = marker->range;
                 if (marker->ContainsLocation(ch))
                 {
@@ -782,7 +791,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
             // Draw the visual selection marker second
             if (IsActiveWindow())
             {
-                if (GetBuffer().GetMode()->GetEditorMode() == EditorMode::Visual)
+                if (GetBuffer().HasSelection())
                 {
                     auto sel = m_pBuffer->GetSelection();
                     if (sel.ContainsLocation(ch) && !hiddenChar)
@@ -1266,7 +1275,12 @@ void ZepWindow::Display()
             return ret;
         };
 
-        m_pBuffer->ForEachMarker(SearchDirection::Forward, [&](const std::shared_ptr<RangeMarker>& marker) {
+        m_pBuffer->ForEachMarker(RangeMarkerType::All, SearchDirection::Forward, cursorLine.columnOffsets.first, cursorLine.columnOffsets.second, [&](const std::shared_ptr<RangeMarker>& marker) {
+            if (marker->displayType == RangeMarkerDisplayType::Hidden)
+            {
+                return true;
+            }
+
             auto sel = marker->range;
             if (marker->displayType & RangeMarkerDisplayType::CursorTip)
             {
@@ -1289,7 +1303,7 @@ void ZepWindow::Display()
     else
     {
         // No hanging tooltips if the markers on the page have gone
-        if (m_pBuffer->GetRangeMarkers().empty())
+        if (m_pBuffer->GetRangeMarkers(RangeMarkerType::Message).empty())
         {
             m_toolTips.clear();
         }

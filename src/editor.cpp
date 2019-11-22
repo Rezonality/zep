@@ -984,7 +984,7 @@ void ZepEditor::Display()
             if (window != GetActiveTabWindow())
             {
                 // Desaturate unselected ones
-                tabColor = tabColor * .66f;
+                tabColor = tabColor * .55f;
                 tabColor.w = 1.0f;
             }
             auto tabLength = m_pDisplay->GetTextSize((const utf8*)name.c_str()).x + textBorder * 2;

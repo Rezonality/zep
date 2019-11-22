@@ -364,6 +364,11 @@ BufferRange ZepBuffer::InnerWordMotion(BufferLocation start, uint32_t searchType
 
 BufferLocation ZepBuffer::Find(BufferLocation start, const utf8* pBegin, const utf8* pEnd) const
 {
+    if (start > EndLocation())
+    {
+        return InvalidOffset;
+    }
+
     if (pEnd == nullptr)
     {
         pEnd = pBegin;
@@ -374,16 +379,33 @@ BufferLocation ZepBuffer::Find(BufferLocation start, const utf8* pBegin, const u
     }
 
     auto itrBuffer = m_gapBuffer.begin() + start;
-
-    for (auto pCurrent = pBegin; pCurrent != pEnd; pCurrent++)
+    auto itrEnd = m_gapBuffer.end();
+    while (itrBuffer != itrEnd)
     {
-        while (*itrBuffer != *pCurrent)
+        auto itrNext = itrBuffer;
+
+        // Loop the string
+        auto pCurrent = pBegin;
+        while (pCurrent != pEnd && itrNext != itrEnd)
         {
-            itrBuffer++;
-            continue;
+            if (*pCurrent != *itrNext)
+            {
+                break;
+            }
+            pCurrent++;
+            itrNext++;
+        };
+
+        // We sucesfully got to the end
+        if (pCurrent == pEnd)
+        {
+            return (BufferLocation)(itrBuffer - m_gapBuffer.begin());
         }
-    }
-    return 0;
+
+        itrBuffer++;
+    };
+
+    return InvalidOffset;
 }
 
 BufferLocation ZepBuffer::FindOnLineMotion(BufferLocation start, const utf8* pCh, SearchDirection dir) const
@@ -900,7 +922,7 @@ BufferLocation ZepBuffer::GetLinePos(BufferLocation bufferLocation, LineLocation
 void ZepBuffer::UpdateForDelete(const BufferLocation& startOffset, const BufferLocation& endOffset)
 {
     auto distance = endOffset - startOffset;
-    ForEachMarker(Zep::SearchDirection::Forward, [&](const std::shared_ptr<RangeMarker>& marker) {
+    ForEachMarker(RangeMarkerType::All, Zep::SearchDirection::Forward, startOffset, EndLocation(), [&](const std::shared_ptr<RangeMarker>& marker) {
         if (startOffset >= marker->range.second)
         {
             return true;
@@ -966,7 +988,7 @@ void ZepBuffer::UpdateForInsert(const BufferLocation& startOffset, const BufferL
     // expand the marker range if inserting inside it (that's a guess!)
     auto distance = endOffset - startOffset;
 
-    ForEachMarker(SearchDirection::Forward, [&](const std::shared_ptr<RangeMarker>& marker) {
+    ForEachMarker(RangeMarkerType::All, SearchDirection::Forward, startOffset, EndLocation(), [&](const std::shared_ptr<RangeMarker>& marker) {
         if (marker->range.second <= startOffset)
         {
             return true;
@@ -979,7 +1001,7 @@ void ZepBuffer::UpdateForInsert(const BufferLocation& startOffset, const BufferL
         }
         return true;
     });
-    
+
     if (!m_lineWidgets.empty())
     {
         std::map<long, long> lineMoves;
@@ -1181,6 +1203,16 @@ void ZepBuffer::SetTheme(std::shared_ptr<ZepTheme> spTheme)
     m_spOverrideTheme = spTheme;
 }
 
+bool ZepBuffer::HasSelection() const
+{
+    return m_selection.first != m_selection.second;
+}
+
+void ZepBuffer::ClearSelection()
+{
+    m_selection.first = m_selection.second = 0;
+}
+
 BufferRange ZepBuffer::GetSelection() const
 {
     return m_selection;
@@ -1201,20 +1233,68 @@ void ZepBuffer::AddRangeMarker(std::shared_ptr<RangeMarker> spMarker)
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::MarkersChanged, 0, BufferLocation(m_gapBuffer.size() - 1)));
 }
 
-void ZepBuffer::ClearRangeMarkers()
+void ZepBuffer::ClearRangeMarker(std::shared_ptr<RangeMarker> spMarker)
 {
-    m_rangeMarkers.clear();
+    std::set<BufferLocation> emptyLocations;
+    for (auto& markerPair : m_rangeMarkers)
+    {
+        markerPair.second.erase(spMarker);
+        if (markerPair.second.empty())
+        {
+            emptyLocations.insert(markerPair.first);
+        }
+    }
+
+    for (auto& victim : emptyLocations)
+    {
+        m_rangeMarkers.erase(victim);
+    }
+}
+
+void ZepBuffer::ClearRangeMarkers(const std::set<std::shared_ptr<RangeMarker>>& markers)
+{
+    for (auto& marker : markers)
+    {
+        ClearRangeMarker(marker);
+    }
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::MarkersChanged, 0, BufferLocation(m_gapBuffer.size() - 1)));
 }
 
-void ZepBuffer::ForEachMarker(SearchDirection dir, std::function<bool(const std::shared_ptr<RangeMarker>&)> fnCB) const
+void ZepBuffer::ClearRangeMarkers(uint32_t markerType)
 {
+    std::set<std::shared_ptr<RangeMarker>> markers;
+    ForEachMarker(markerType, SearchDirection::Forward, 0, EndLocation(), [&](const std::shared_ptr<RangeMarker>& pMarker) {
+        markers.insert(pMarker);
+        return true;
+    });
+
+    for (auto& victim : markers)
+    {
+        ClearRangeMarker(victim);
+    }
+
+    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::MarkersChanged, 0, BufferLocation(m_gapBuffer.size() - 1)));
+}
+
+void ZepBuffer::ForEachMarker(uint32_t markerType, SearchDirection dir, BufferLocation begin, BufferLocation end, std::function<bool(const std::shared_ptr<RangeMarker>&)> fnCB) const
+{
+    auto itrStart = m_rangeMarkers.lower_bound(begin);
+    if (itrStart == m_rangeMarkers.end())
+        return;
+
+    auto itrEnd = m_rangeMarkers.upper_bound(end);
+
     if (dir == SearchDirection::Forward)
     {
-        for (auto& markerPair : m_rangeMarkers)
+        for (auto itr = itrStart; itr != itrEnd; itr++)
         {
-            for (auto& markerItem : markerPair.second)
+            for (auto& markerItem : itr->second)
             {
+                if ((markerItem->markerType & markerType) == 0)
+                {
+                    continue;
+                }
+
                 if (!fnCB(markerItem))
                 {
                     return;
@@ -1224,9 +1304,12 @@ void ZepBuffer::ForEachMarker(SearchDirection dir, std::function<bool(const std:
     }
     else
     {
-        for (auto itrMarkerPair = m_rangeMarkers.rbegin(); itrMarkerPair != m_rangeMarkers.rend(); itrMarkerPair++)
+        auto itrRStart = std::make_reverse_iterator(itrStart);
+        auto itrREnd = std::make_reverse_iterator(itrEnd);
+         
+        for (auto itr = itrRStart; itr != itrREnd; itr++)
         {
-            for (auto& markerItem : itrMarkerPair->second)
+            for (auto& markerItem : itr->second)
             {
                 if (!fnCB(markerItem))
                 {
@@ -1237,9 +1320,74 @@ void ZepBuffer::ForEachMarker(SearchDirection dir, std::function<bool(const std:
     }
 }
 
-const tRangeMarkers& ZepBuffer::GetRangeMarkers() const
+void ZepBuffer::HideMarkers(uint32_t markerType)
 {
-    return m_rangeMarkers;
+    ForEachMarker(markerType, SearchDirection::Forward, 0, EndLocation(), [&](const std::shared_ptr<RangeMarker>& spMarker) {
+        if ((spMarker->markerType & markerType) != 0)
+        {
+            spMarker->displayType = RangeMarkerDisplayType::Hidden;
+        }
+        return true;
+    });
+}
+
+void ZepBuffer::ShowMarkers(uint32_t markerType, uint32_t displayType)
+{
+    ForEachMarker(markerType, SearchDirection::Forward, 0, EndLocation(), [&](const std::shared_ptr<RangeMarker>& spMarker) {
+        if ((spMarker->markerType & markerType) != 0)
+        {
+            spMarker->displayType = displayType;
+        }
+        return true;
+    });
+}
+
+tRangeMarkers ZepBuffer::GetRangeMarkers(uint32_t markerType) const
+{
+    tRangeMarkers markers;
+    ForEachMarker(markerType, SearchDirection::Forward, 0, EndLocation(), [&](const std::shared_ptr<RangeMarker>& spMarker) {
+        if ((spMarker->markerType & markerType) != 0)
+        {
+            markers[spMarker->range.first].insert(spMarker);
+        }
+        return true;
+    });
+    return markers;
+}
+
+std::shared_ptr<RangeMarker> ZepBuffer::FindNextMarker(BufferLocation start, SearchDirection dir, uint32_t markerType)
+{
+    std::shared_ptr<RangeMarker> spFound;
+    auto search = [&]() {
+        ForEachMarker(markerType, dir, 0, EndLocation(), [&](const std::shared_ptr<RangeMarker>& marker) {
+            if (dir == SearchDirection::Forward)
+            {
+                if (marker->range.first <= start)
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                if (marker->range.first >= start)
+                {
+                    return true;
+                }
+            }
+
+            spFound = marker;
+            return false;
+        });
+    };
+
+    search();
+    if (spFound == nullptr)
+    {
+        // Wrap
+        start = (dir == SearchDirection::Forward ? 0 : EndLocation());
+        search();
+    }
+    return spFound;
 }
 
 void ZepBuffer::SetBufferType(BufferType type)

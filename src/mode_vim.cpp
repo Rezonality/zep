@@ -9,8 +9,8 @@
 #include "zep/window.h"
 
 #include "zep/mcommon/animation/timer.h"
-#include "zep/mcommon/string/stringutils.h"
 #include "zep/mcommon/logger.h"
+#include "zep/mcommon/string/stringutils.h"
 
 // Note:
 // This is a very basic implementation of the common Vim commands that I use: the bare minimum I can live with.
@@ -61,6 +61,8 @@
 // ci[({})]"'
 // ct[char]/dt[char] Change to and delete to
 // vi[Ww], va[Ww] Visual inner and word selections
+// f[char] find on line
+// /[string] find in file, 'n' find next
 
 namespace Zep
 {
@@ -189,7 +191,7 @@ void CommandContext::GetCommandAndCount()
     }
 
     // If not a register target, then another count
-    if (command1[0] != '\"' && command1[0] != ':' && command1[0] != '/')
+    if (command1[0] != '\"' && command1[0] != ':' && command1[0] != '/' && command1[0] != '?')
     {
         while (itr != commandText.end()
             && std::isdigit(ToASCII(*itr)))
@@ -332,12 +334,19 @@ void ZepMode_Vim::SwitchMode(EditorMode mode)
         mode = EditorMode::Normal;
     }
 
+    // When leaving Ex mode, reset search markers
+    if (m_currentMode == EditorMode::Ex)
+    {
+        GetCurrentWindow()->GetBuffer().HideMarkers(RangeMarkerType::Search);
+    }
+
     m_currentMode = mode;
     switch (mode)
     {
     case EditorMode::Normal:
     {
         GetCurrentWindow()->SetCursorType(CursorType::Normal);
+        GetCurrentWindow()->GetBuffer().ClearSelection();
         ClampCursorForMode();
         ResetCommand();
     }
@@ -345,6 +354,7 @@ void ZepMode_Vim::SwitchMode(EditorMode mode)
     case EditorMode::Insert:
         m_insertBegin = GetCurrentWindow()->GetBufferCursor();
         GetCurrentWindow()->SetCursorType(CursorType::Insert);
+        GetCurrentWindow()->GetBuffer().ClearSelection();
         m_pendingEscape = false;
         break;
     case EditorMode::Visual:
@@ -461,6 +471,7 @@ bool ZepMode_Vim::HandleExCommand(std::string strCommand, const char key)
     // Deleted and swapped out of Ex mode
     if (m_currentCommand.empty())
     {
+        GetEditor().GetActiveTabWindow()->GetActiveWindow()->SetBufferCursor(m_exCommandStartLocation);
         return true;
     }
 
@@ -604,7 +615,7 @@ bool ZepMode_Vim::HandleExCommand(std::string strCommand, const char key)
             auto spMarker = std::make_shared<RangeMarker>();
             long start, end;
 
-            if (m_currentMode == EditorMode::Visual)
+            if (GetCurrentWindow()->GetBuffer().HasSelection())
             {
                 auto range = GetCurrentWindow()->GetBuffer().GetSelection();
                 start = range.first;
@@ -759,16 +770,57 @@ bool ZepMode_Vim::HandleExCommand(std::string strCommand, const char key)
         m_currentCommand.clear();
         return true;
     }
-    else if (!strCommand.empty() && strCommand[0] == '/')
+    else if (!m_currentCommand.empty() && m_currentCommand[0] == '/' || m_currentCommand[0] == '?')
     {
         // TODO: Busy editing the search string; do the search
-        if (strCommand.length() > 1)
+        if (m_currentCommand.length() > 0)
         {
-            /*LOG(INFO) << "Command: " << strCommand.substr(1);
             auto pWindow = GetEditor().GetActiveTabWindow()->GetActiveWindow();
             auto& buffer = pWindow->GetBuffer();
-            //buffer.FindOnLineMotion
-            */
+            auto searchString = m_currentCommand.substr(1);
+
+            buffer.ClearRangeMarkers(RangeMarkerType::Search);
+
+            uint32_t numMarkers = 0;
+            BufferLocation start = 0;
+
+            if (!searchString.empty())
+            {
+                static const uint32_t MaxMarkers = 1000;
+                while (numMarkers < MaxMarkers)
+                {
+                    auto found = buffer.Find(start, (utf8*)& searchString[0], (utf8*)& searchString[searchString.length()]);
+                    if (found == InvalidOffset)
+                    {
+                        break;
+                    }
+
+                    start = found + 1;
+
+                    auto spMarker = std::make_shared<RangeMarker>();
+                    spMarker->backgroundColor = ThemeColor::VisualSelectBackground;
+                    spMarker->textColor = ThemeColor::Text;
+                    spMarker->range = BufferRange(found, BufferLocation(found + searchString.length()));
+                    spMarker->displayType = RangeMarkerDisplayType::Background;
+                    spMarker->markerType = RangeMarkerType::Search;
+                    buffer.AddRangeMarker(spMarker);
+
+                    numMarkers++;
+                }
+            }
+
+            SearchDirection dir = (m_currentCommand[0] == '/') ? SearchDirection::Forward : SearchDirection::Backward;
+            m_lastSearchDirection = dir;
+            auto pMark = buffer.FindNextMarker(m_exCommandStartLocation, dir, RangeMarkerType::Search);
+            if (pMark)
+            {
+                pWindow->SetBufferCursor(pMark->range.first);
+                pMark->backgroundColor = ThemeColor::Info;
+            }
+            else
+            {
+                pWindow->SetBufferCursor(m_exCommandStartLocation);
+            }
         }
     }
     return false;
@@ -979,7 +1031,7 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         }
     }
     else if (context.command == "J")
-    { 
+    {
         // Delete the CR (and thus join lines)
         context.beginRange = context.buffer.GetLinePos(context.bufferCursor, LineLocation::LineCRBegin);
         context.endRange = context.buffer.GetLinePos(context.bufferCursor, LineLocation::BeyondLineEnd);
@@ -1514,6 +1566,24 @@ bool ZepMode_Vim::GetCommand(CommandContext& context)
         }
         context.commandResult.flags |= CommandResultFlags::NeedMoreChars;
     }
+    else if (context.command[0] == 'n')
+    {
+        auto pMark = buffer.FindNextMarker(context.bufferCursor, m_lastSearchDirection, RangeMarkerType::Search);
+        if (pMark)
+        {
+            GetCurrentWindow()->SetBufferCursor(pMark->range.first);
+        }
+        return true;
+    }
+    else if (context.command[0] == 'N')
+    {
+        auto pMark = buffer.FindNextMarker(context.bufferCursor, m_lastSearchDirection == SearchDirection::Forward ? SearchDirection::Backward : SearchDirection::Forward, RangeMarkerType::Search);
+        if (pMark)
+        {
+            GetCurrentWindow()->SetBufferCursor(pMark->range.first);
+        }
+        return true;
+    }
     else if (context.lastKey == ExtKeys::RETURN)
     {
         if (context.mode == EditorMode::Normal)
@@ -1625,14 +1695,25 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         // Escape wins all
         if (key == ExtKeys::ESCAPE)
         {
+            if (m_currentMode == EditorMode::Ex)
+            {
+                // Bailed out of ex mode; reset the start location
+                GetCurrentWindow()->SetBufferCursor(m_exCommandStartLocation);
+            }
             SwitchMode(EditorMode::Normal);
             return;
         }
 
         // Update the typed command
         // TODO: Cursor keys on the command line
-        if (key == ':' || m_currentCommand[0] == ':' || key == '/' || m_currentCommand[0] == '/')
+        // TODO: Clean this up.
+        if (key == ':' || m_currentCommand[0] == ':' || key == '/' || m_currentCommand[0] == '/' || m_currentCommand[0] == '?' || key == '?')
         {
+            if (m_currentMode != EditorMode::Ex)
+            {
+                m_exCommandStartLocation = GetCurrentWindow()->GetBufferCursor();
+                SwitchMode(EditorMode::Ex);
+            }
             if (HandleExCommand(m_currentCommand, (const char)key))
             {
                 if (GetCurrentWindow())
@@ -1645,14 +1726,9 @@ void ZepMode_Vim::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         }
 
         // ... and show it in the command bar if desired
-        if (m_currentCommand[0] == ':' || m_currentCommand[0] == '/' || m_settings.ShowNormalModeKeyStrokes)
+        if (m_currentMode == EditorMode::Ex || m_settings.ShowNormalModeKeyStrokes)
         {
             GetEditor().SetCommandText(m_currentCommand);
-            if (m_currentMode != EditorMode::Ex)
-            {
-                m_exCommandStartLocation = GetCurrentWindow()->GetBufferCursor();
-                SwitchMode(EditorMode::Ex);
-            }
             return;
         }
 

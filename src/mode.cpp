@@ -146,41 +146,12 @@ bool ZepMode::HandleGlobalCommand(const std::string& cmd, uint32_t modifiers, bo
     {
         auto pWindow = GetCurrentWindow();
         auto& buffer = pWindow->GetBuffer();
-        if (!buffer.GetRangeMarkers().empty())
+        auto dir = (modifiers & ModifierKey::Shift) != 0 ? SearchDirection::Backward : SearchDirection::Forward;
+
+        auto pFound = buffer.FindNextMarker(GetCurrentWindow()->GetBufferCursor(), dir, RangeMarkerType::Message);
+        if (pFound)
         {
-            auto cursor = GetCurrentWindow()->GetBufferCursor();
-
-            auto dir = (modifiers & ModifierKey::Shift) != 0 ? SearchDirection::Backward : SearchDirection::Forward;
-            bool found = false;
-            auto search = [&]() {
-                buffer.ForEachMarker(dir, [&](const std::shared_ptr<RangeMarker>& marker) {
-                    if (dir == SearchDirection::Forward)
-                    {
-                        if (marker->range.first <= cursor)
-                        {
-                            return true;
-                        }
-                    }
-                    else
-                    {
-                        if (marker->range.first >= cursor)
-                        {
-                            return true;
-                        }
-                    }
-
-                    found = true;
-                    GetCurrentWindow()->SetBufferCursor(marker->range.first);
-                    return false;
-                });
-            };
-
-            search();
-            if (!found)
-            {
-                cursor = (dir == SearchDirection::Forward ? 0 : buffer.EndLocation());
-                search();
-            }
+            GetCurrentWindow()->SetBufferCursor(pFound->range.first);
         }
         return true;
     }

@@ -106,6 +106,7 @@ namespace RangeMarkerDisplayType
 {
 enum
 {
+    Hidden = 0,
     Underline = (1 << 0), // Underline the range
     Background = (1 << 1), // Add a background to the range
     Tooltip = (1 << 2), // Show a tooltip using the name/description
@@ -125,6 +126,16 @@ enum class ToolTipPos
     Count = 3
 };
 
+namespace RangeMarkerType
+{
+enum
+{
+    Message = (1 << 0),
+    Search = (1 << 1),
+    All = (Message | Search)
+};
+};
+
 struct RangeMarker
 {
     BufferRange range;
@@ -132,6 +143,7 @@ struct RangeMarker
     ThemeColor backgroundColor = ThemeColor::Background;
     ThemeColor highlightColor = ThemeColor::Background;
     uint32_t displayType = RangeMarkerDisplayType::All;
+    uint32_t markerType = RangeMarkerType::Message;
     std::string name;
     std::string description;
     ToolTipPos tipPos = ToolTipPos::AboveLine;
@@ -271,12 +283,18 @@ public:
 
     void SetSelection(const BufferRange& sel);
     BufferRange GetSelection() const;
+    bool HasSelection() const;
+    void ClearSelection();
 
     void AddRangeMarker(std::shared_ptr<RangeMarker> spMarker);
-    void ClearRangeMarkers();
-    const tRangeMarkers& GetRangeMarkers() const;
+    void ClearRangeMarkers(const std::set<std::shared_ptr<RangeMarker>>& markers);
+    void ClearRangeMarkers(uint32_t types);
+    tRangeMarkers GetRangeMarkers(uint32_t types) const;
+    void HideMarkers(uint32_t markerType);
+    void ShowMarkers(uint32_t markerType, uint32_t displayType);
 
-    void ForEachMarker(SearchDirection dir, std::function<bool(const std::shared_ptr<RangeMarker>&)> fnCB) const;
+    void ForEachMarker(uint32_t types, SearchDirection dir, BufferLocation begin, BufferLocation end, std::function<bool(const std::shared_ptr<RangeMarker>&)> fnCB) const;
+    std::shared_ptr<RangeMarker> FindNextMarker(BufferLocation start, SearchDirection dir, uint32_t markerType);
 
     void SetBufferType(BufferType type);
     BufferType GetBufferType() const;
@@ -315,6 +333,7 @@ public:
 private:
     // Internal
     GapBuffer<utf8>::const_iterator SearchWord(uint32_t searchType, GapBuffer<utf8>::const_iterator itrBegin, GapBuffer<utf8>::const_iterator itrEnd, SearchDirection dir) const;
+    void ClearRangeMarker(std::shared_ptr<RangeMarker> spMarker);
 
     void MarkUpdate();
 

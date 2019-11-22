@@ -148,6 +148,7 @@ private:
     VimSettings m_settings;
 
     BufferLocation m_exCommandStartLocation = 0;
+    SearchDirection m_lastSearchDirection = SearchDirection::Forward;
 };
 
 } // namespace Zep
