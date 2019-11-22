@@ -811,7 +811,15 @@ bool ZepMode_Vim::HandleExCommand(std::string strCommand, const char key)
 
             SearchDirection dir = (m_currentCommand[0] == '/') ? SearchDirection::Forward : SearchDirection::Backward;
             m_lastSearchDirection = dir;
-            auto pMark = buffer.FindNextMarker(m_exCommandStartLocation, dir, RangeMarkerType::Search);
+
+            // Find the one on or in front of the cursor, in either direction.
+            auto startLocation = m_exCommandStartLocation;
+            if (dir == SearchDirection::Forward)
+                startLocation--;
+            else
+                startLocation++;
+
+            auto pMark = buffer.FindNextMarker(startLocation, dir, RangeMarkerType::Search);
             if (pMark)
             {
                 pWindow->SetBufferCursor(pMark->range.first);

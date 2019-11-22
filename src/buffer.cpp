@@ -1304,13 +1304,17 @@ void ZepBuffer::ForEachMarker(uint32_t markerType, SearchDirection dir, BufferLo
     }
     else
     {
-        auto itrRStart = std::make_reverse_iterator(itrStart);
-        auto itrREnd = std::make_reverse_iterator(itrEnd);
+        auto itrREnd = std::make_reverse_iterator(itrStart);
+        auto itrRStart = std::make_reverse_iterator(itrEnd);
          
         for (auto itr = itrRStart; itr != itrREnd; itr++)
         {
             for (auto& markerItem : itr->second)
             {
+                if ((markerItem->markerType & markerType) == 0)
+                {
+                    continue;
+                }
                 if (!fnCB(markerItem))
                 {
                     return;
@@ -1357,6 +1361,8 @@ tRangeMarkers ZepBuffer::GetRangeMarkers(uint32_t markerType) const
 
 std::shared_ptr<RangeMarker> ZepBuffer::FindNextMarker(BufferLocation start, SearchDirection dir, uint32_t markerType)
 {
+    start = std::max(0l, start);
+
     std::shared_ptr<RangeMarker> spFound;
     auto search = [&]() {
         ForEachMarker(markerType, dir, 0, EndLocation(), [&](const std::shared_ptr<RangeMarker>& marker) {
