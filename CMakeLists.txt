@@ -22,6 +22,7 @@ if (CMAKE_BUILD_TYPE MATCHES Coverage)
 endif()
 
 set(CMAKE_DEBUG_POSTFIX "-debug")
+set(CMAKE_RELWITHDEBINFO_POSTFIX "-reldbg")
 
 project(Zep
     LANGUAGES CXX C
