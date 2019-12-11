@@ -179,7 +179,7 @@ void ZepSyntax::UpdateSyntax()
     // Update start location
     m_processedChar = long(itrCurrent - buffer.begin());
 
-    LOG(DEBUG) << "Updating Syntax: Start=" << m_processedChar << ", End=" << std::distance(buffer.begin(), itrEnd);
+    //LOG(DEBUG) << "Updating Syntax: Start=" << m_processedChar << ", End=" << std::distance(buffer.begin(), itrEnd);
 
     // Walk the buffer updating information about syntax coloring
     while (itrCurrent != itrEnd)
