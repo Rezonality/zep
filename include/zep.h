@@ -19,6 +19,7 @@
 #include "../src/display.cpp"
 #include "../src/window.cpp"
 #include "../src/filesystem.cpp"
+#include "../src/line_widgets.cpp"
 #include "../src/mcommon/file/path.cpp"
 #include "../src/mcommon/string/stringutils.cpp"
 #include "../src/mcommon/animation/timer.cpp"
