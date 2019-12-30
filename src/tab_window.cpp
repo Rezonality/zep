@@ -250,8 +250,8 @@ ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, bool 
 
     SetDisplayRegion(m_lastRegionRect, true);
 
-    LOG(INFO) << "AddWindow, Regions: ";
-    LOG(INFO) << *m_spRootRegion;
+    //LOG(INFO) << "AddWindow, Regions: ";
+    //LOG(INFO) << *m_spRootRegion;
     return pWin;
 }
 
@@ -354,8 +354,8 @@ void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
         SetDisplayRegion(m_lastRegionRect, true);
         assert(!m_spRootRegion->children.empty());
     
-        LOG(INFO) << "RemoveWindow, Regions: ";
-        LOG(INFO) << *m_spRootRegion;
+        //LOG(INFO) << "RemoveWindow, Regions: ";
+        //LOG(INFO) << *m_spRootRegion;
     }
 }
 
