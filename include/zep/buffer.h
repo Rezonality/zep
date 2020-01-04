@@ -64,7 +64,9 @@ enum class BufferType
 {
     Normal,
     Search,
-    Repl
+    Repl,
+    DataGrid,
+    Tree
 };
 
 enum class LineLocation
@@ -184,6 +186,7 @@ public:
     bool Save(int64_t& size);
 
     ZepPath GetFilePath() const;
+    std::string GetFileExtension() const;
     void SetFilePath(const ZepPath& path);
 
     BufferLocation Search(const std::string& str, BufferLocation start, SearchDirection dir = SearchDirection::Forward, BufferLocation end = BufferLocation{ -1l }) const;

@@ -199,7 +199,7 @@ void ZepEditor::SaveConfig(std::shared_ptr<cpptoml::table> spConfig)
     table->insert("background_fade_time", (double)m_config.backgroundFadeTime);
     table->insert("background_fade_wait", (double)m_config.backgroundFadeWait);
     table->insert("show_scrollbar", m_config.showScrollBar);
-    
+
     table->insert("line_margin_top", m_config.lineMargins.x);
     table->insert("line_margin_bottom", m_config.lineMargins.y);
     table->insert("widget_margin_top", m_config.widgetMargins.x);
@@ -342,6 +342,13 @@ ZepWindow* ZepEditor::AddRepl()
     return pReplWindow;
 }
 
+ZepWindow* ZepEditor::AddOrca()
+{
+    auto pOrcaBuffer = GetEmptyBuffer("Orca.orca");
+    GetActiveTabWindow()->GetActiveWindow()->SetBuffer(pOrcaBuffer);
+    return GetActiveTabWindow()->GetActiveWindow();
+}
+
 ZepWindow* ZepEditor::AddSearch()
 {
     if (!GetActiveTabWindow())
@@ -448,8 +455,7 @@ void ZepEditor::UpdateWindowState()
     std::vector<ZepBuffer*> victims;
     for (auto& buffer : m_buffers)
     {
-        if (!buffer->TestFlags(FileFlags::DefaultBuffer) ||
-            buffer->TestFlags(FileFlags::Dirty))
+        if (!buffer->TestFlags(FileFlags::DefaultBuffer) || buffer->TestFlags(FileFlags::Dirty))
         {
             continue;
         }
@@ -691,6 +697,40 @@ const std::deque<std::shared_ptr<ZepBuffer>>& ZepEditor::GetBuffers() const
     return m_buffers;
 }
 
+void ZepEditor::InitDataGrid(ZepBuffer& buffer, const NVec2i& dimensions)
+{
+    std::ostringstream str;
+    for (int column = 0; column < dimensions.y; column++)
+    {
+        for (int row = 0; row < dimensions.x; row++)
+        {
+            str << ".";
+        }
+        str << "\n";
+    }
+    buffer.SetText(str.str());
+}
+
+// Do any special buffer processing
+void ZepEditor::InitBuffer(ZepBuffer& buffer)
+{
+    auto ext = buffer.GetFileExtension();
+    if (ext == ".orca")
+    {
+        buffer.SetBufferType(BufferType::DataGrid);
+
+        if (buffer.GetFilePath().empty())
+        {
+            const NVec2i DefaultDataGridSize = NVec2i(20, 15);
+            InitDataGrid(buffer, DefaultDataGridSize);
+        }
+
+        // Use vim mode for editing orca buffers
+        auto pMode = std::make_shared<ZepMode_Vim>(*this);
+        buffer.SetMode(pMode);
+    }
+}
+
 ZepBuffer* ZepEditor::CreateNewBuffer(const std::string& str)
 {
     auto pBuffer = std::make_shared<ZepBuffer>(*this, str);
@@ -700,6 +740,8 @@ ZepBuffer* ZepEditor::CreateNewBuffer(const std::string& str)
 
     m_buffers.push_front(pBuffer);
 
+    InitBuffer(*pBuffer);
+
     return pBuffer.get();
 }
 
@@ -707,6 +749,9 @@ ZepBuffer* ZepEditor::CreateNewBuffer(const ZepPath& path)
 {
     auto pBuffer = std::make_shared<ZepBuffer>(*this, path);
     m_buffers.push_front(pBuffer);
+
+    InitBuffer(*pBuffer);
+
     return pBuffer.get();
 }
 

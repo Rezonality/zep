@@ -278,6 +278,7 @@ public:
     const tTabWindows& GetTabWindows() const;
 
     ZepWindow* AddRepl();
+    ZepWindow* AddOrca();
     ZepWindow* AddSearch();
 
     void ResetCursorTimer();
@@ -339,6 +340,9 @@ private:
     // Call GetBuffer publicly, to stop creation of duplicate buffers refering to the same file
     ZepBuffer* CreateNewBuffer(const std::string& bufferName);
     ZepBuffer* CreateNewBuffer(const ZepPath& path);
+
+    void InitBuffer(ZepBuffer& buffer);
+    void InitDataGrid(ZepBuffer& buffer, const NVec2i& dimensions);
 
     // Ensure there is a valid tab window and return it
     ZepTabWindow* EnsureTab();

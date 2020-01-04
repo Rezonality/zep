@@ -594,6 +594,26 @@ bool ZepBuffer::GetLineOffsets(const long line, long& lineStart, long& lineEnd) 
     return true;
 }
 
+
+std::string ZepBuffer::GetFileExtension() const
+{
+    std::string ext;
+    if (GetFilePath().has_filename() && GetFilePath().filename().has_extension())
+    {
+        ext = string_tolower(GetFilePath().filename().extension().string());
+    }
+    else
+    {
+        auto str = GetName();
+        size_t dot_pos = str.find_last_of(".");
+        if (dot_pos != std::string::npos)
+        {
+            ext = string_tolower(str.substr(dot_pos, str.length() - dot_pos));
+        }
+    }
+    return ext;
+}
+
 // Basic load suppot; read a file if it's present, but keep
 // the file path in case you want to write later
 void ZepBuffer::Load(const ZepPath& path)
@@ -609,6 +629,7 @@ void ZepBuffer::Load(const ZepPath& path)
     }
 
     // Must set the syntax before the first buffer change messages
+    // TODO: I believe that some of this buffer config should move to Editor.cpp
     GetEditor().SetBufferSyntax(*this);
 
     if (GetEditor().GetFileSystem().Exists(path))
