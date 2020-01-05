@@ -21,6 +21,7 @@ ${ZEP_ROOT}/src/mode.cpp
 ${ZEP_ROOT}/src/mode_standard.cpp
 ${ZEP_ROOT}/src/mode_vim.cpp
 ${ZEP_ROOT}/src/mode_repl.cpp
+${ZEP_ROOT}/src/mode_tree.cpp
 ${ZEP_ROOT}/src/mode_search.cpp
 ${ZEP_ROOT}/src/theme.cpp
 ${ZEP_ROOT}/src/CMakeLists.txt
@@ -40,6 +41,7 @@ ${ZEP_ROOT}/include/zep/mode_search.h
 ${ZEP_ROOT}/include/zep/mode_standard.h
 ${ZEP_ROOT}/include/zep/mode_vim.h
 ${ZEP_ROOT}/include/zep/mode_repl.h
+${ZEP_ROOT}/include/zep/mode_tree.h
 ${ZEP_ROOT}/include/zep/mode.h
 ${ZEP_ROOT}/include/zep/syntax_rainbow_brackets.h
 ${ZEP_ROOT}/include/zep/syntax_providers.h

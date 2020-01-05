@@ -3,6 +3,7 @@
 #include "zep/display.h"
 #include "zep/filesystem.h"
 #include "zep/mode_repl.h"
+#include "zep/mode_tree.h"
 #include "zep/mode_search.h"
 #include "zep/mode_standard.h"
 #include "zep/mode_vim.h"
@@ -347,6 +348,20 @@ ZepWindow* ZepEditor::AddOrca()
     auto pOrcaBuffer = GetEmptyBuffer("Orca.orca");
     GetActiveTabWindow()->GetActiveWindow()->SetBuffer(pOrcaBuffer);
     return GetActiveTabWindow()->GetActiveWindow();
+}
+
+ZepWindow* ZepEditor::AddTree()
+{
+    auto pTree = GetEmptyBuffer("Tree.tree");
+    auto pTreeWindow = GetActiveTabWindow()->AddWindow(pTree, nullptr, true);
+
+    auto pActiveWindow = GetActiveTabWindow()->GetActiveWindow();
+    pActiveWindow->SetBuffer(pTree);
+    
+    auto pMode = std::make_shared<ZepMode_Tree>(*this, *pActiveWindow, *pTreeWindow);
+    pTree->SetMode(pMode);
+    pMode->Begin();
+    return pActiveWindow;
 }
 
 ZepWindow* ZepEditor::AddSearch()

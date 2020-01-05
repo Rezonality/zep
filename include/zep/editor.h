@@ -279,6 +279,7 @@ public:
 
     ZepWindow* AddRepl();
     ZepWindow* AddOrca();
+    ZepWindow* AddTree();
     ZepWindow* AddSearch();
 
     void ResetCursorTimer();

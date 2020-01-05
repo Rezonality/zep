@@ -86,58 +86,6 @@ void ZepSyntax_Orca::UpdateSyntax()
             mark(itrCurrent, itrCurrent+1, ThemeColor::Normal, ThemeColor::None);
         }
 
-        // Find String
-        /*
-        auto findString = [&](utf8 ch) {
-            auto itrString = itrFirst;
-            if (*itrString == ch)
-            {
-                itrString++;
-
-                while (itrString < buffer.end())
-                {
-                    // handle end of string
-                    if (*itrString == ch)
-                    {
-                        itrString++;
-                        mark(itrFirst, itrString, ThemeColor::String, ThemeColor::None);
-                        itrLast = itrString + 1;
-                        break;
-                    }
-
-                    if (itrString < (buffer.end() - 1))
-                    {
-                        auto itrNext = itrString + 1;
-                        // Ignore quoted
-                        if (*itrString == '\\' && *itrNext == ch)
-                        {
-                            itrString++;
-                        }
-                    }
-
-                    itrString++;
-                }
-            }
-        };
-        findString('\"');
-        findString('\'');
-
-        std::string commentStr = "/";
-        auto itrComment = buffer.find_first_of(itrFirst, itrLast, commentStr.begin(), commentStr.end());
-        if (itrComment != buffer.end())
-        {
-            auto itrCommentStart = itrComment++;
-            if (itrComment < buffer.end())
-            {
-                if (*itrComment == '/')
-                {
-                    itrLast = buffer.find_first_of(itrCommentStart, buffer.end(), lineEnd.begin(), lineEnd.end());
-                    mark(itrCommentStart, itrLast, ThemeColor::Comment, ThemeColor::None);
-                }
-            }
-        }
-        */
-
         itrCurrent++;
     }
 

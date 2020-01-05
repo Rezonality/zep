@@ -527,6 +527,10 @@ bool ZepMode_Vim::HandleExCommand(std::string strCommand, const char key)
         {
             GetEditor().AddOrca();
         }
+        else if (strCommand.find(":tree") == 0)
+        {
+            GetEditor().AddTree();
+        }
         else if (strCommand.find(":vsplit") == 0)
         {
             auto pTab = GetEditor().GetActiveTabWindow();
