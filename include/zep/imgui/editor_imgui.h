@@ -260,7 +260,7 @@ public:
                     }
                 }
 
-                if (ImGui::IsKeyPressed(KEY_SPACE))
+                if (ImGui::IsKeyPressed(ZEP_KEY_SPACE))
                 {
                     buffer.GetMode()->AddKeyPress(' ', mod);
                     handled = true;
