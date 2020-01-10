@@ -357,8 +357,17 @@ ZepWindow* ZepEditor::AddTree()
 
     auto pActiveWindow = GetActiveTabWindow()->GetActiveWindow();
     pActiveWindow->SetBuffer(pTree);
-    
-    auto pMode = std::make_shared<ZepMode_Tree>(*this, *pActiveWindow, *pTreeWindow);
+   
+    auto pTreeModel = std::make_shared<ZepFileTree>();
+    auto pRoot = pTreeModel->GetRoot();
+
+    pRoot->AddChild(std::make_shared<ZepFileNode>("Child1", ZepTreeNodeFlags::IsFolder));
+    auto pChild2 = pRoot->AddChild(std::make_shared<ZepFileNode>("Child2", ZepTreeNodeFlags::IsFolder));
+    pChild2->AddChild(std::make_shared<ZepFileNode>("Child2_1"));
+
+    pRoot->ExpandAll(true);
+
+    auto pMode = std::make_shared<ZepMode_Tree>(*this, pTreeModel, *pActiveWindow, *pTreeWindow);
     pTree->SetMode(pMode);
     pMode->Begin();
     return pActiveWindow;

@@ -15,6 +15,7 @@ ${ZEP_ROOT}/src/scroller.cpp
 ${ZEP_ROOT}/src/line_widgets.cpp
 ${ZEP_ROOT}/src/syntax.cpp
 ${ZEP_ROOT}/src/syntax_orca.cpp
+${ZEP_ROOT}/src/syntax_tree.cpp
 ${ZEP_ROOT}/src/syntax_providers.cpp
 ${ZEP_ROOT}/src/syntax_rainbow_brackets.cpp
 ${ZEP_ROOT}/src/mode.cpp
@@ -36,6 +37,7 @@ ${ZEP_ROOT}/include/zep/scroller.h
 ${ZEP_ROOT}/include/zep/line_widgets.h
 ${ZEP_ROOT}/include/zep/syntax.h
 ${ZEP_ROOT}/include/zep/syntax_orca.h
+${ZEP_ROOT}/include/zep/syntax_tree.h
 ${ZEP_ROOT}/include/zep/theme.h
 ${ZEP_ROOT}/include/zep/mode_search.h
 ${ZEP_ROOT}/include/zep/mode_standard.h

@@ -2,6 +2,7 @@
 #include "zep/editor.h"
 #include "zep/syntax.h"
 #include "zep/syntax_orca.h"
+#include "zep/syntax_tree.h"
 
 namespace Zep
 {
@@ -126,6 +127,9 @@ static std::set<std::string> lisp_identifiers = {
 static std::set<std::string> orca_keywords = {};
 static std::set<std::string> orca_identifiers = {};
 
+static std::set<std::string> tree_keywords = {};
+static std::set<std::string> tree_identifiers = {};
+
 void RegisterSyntaxProviders(ZepEditor& editor)
 {
     editor.RegisterSyntaxFactory({ ".vert", ".frag" }, SyntaxProvider{ "gl_shader", tSyntaxFactory([](ZepBuffer* pBuffer) {
@@ -158,6 +162,12 @@ void RegisterSyntaxProviders(ZepEditor& editor)
         { ".orca" },
         SyntaxProvider{ "orca", tSyntaxFactory([](ZepBuffer* pBuffer) {
                            return std::make_shared<ZepSyntax_Orca>(*pBuffer, orca_keywords, orca_identifiers, ZepSyntaxFlags::CaseInsensitive);
+                       }) });
+
+    editor.RegisterSyntaxFactory(
+        { ".tree" },
+        SyntaxProvider{ "tree", tSyntaxFactory([](ZepBuffer* pBuffer) {
+                           return std::make_shared<ZepSyntax_Tree>(*pBuffer, tree_keywords, tree_identifiers, ZepSyntaxFlags::CaseInsensitive);
                        }) });
 }
 

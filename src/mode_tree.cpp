@@ -1,8 +1,8 @@
 #include "zep/mode_tree.h"
+#include "zep/editor.h"
 #include "zep/filesystem.h"
 #include "zep/tab_window.h"
 #include "zep/window.h"
-#include "zep/editor.h"
 
 #include "zep/mcommon/logger.h"
 #include "zep/mcommon/threadutils.h"
@@ -10,10 +10,24 @@
 namespace Zep
 {
 
-ZepMode_Tree::ZepMode_Tree(ZepEditor& editor, ZepWindow& launchWindow, ZepWindow& window)
-    : ZepMode(editor),
-    m_launchWindow(launchWindow),
-    m_window(window)
+ZepTreeNode::ZepTreeNode(const std::string& strName, uint32_t flags)
+    : m_strName(strName),
+    m_flags(flags)
+{
+}
+
+ZepFileTree::ZepFileTree()
+{
+    // Root node is 'invisible' and always expanded
+    m_spRoot = std::make_shared<ZepFileNode>("Root");
+    m_spRoot->Expand(true);
+}
+
+ZepMode_Tree::ZepMode_Tree(ZepEditor& editor, std::shared_ptr<ZepTree> spTree, ZepWindow& launchWindow, ZepWindow& window)
+    : ZepMode(editor)
+    , m_spTree(spTree)
+    , m_launchWindow(launchWindow)
+    , m_window(window)
 {
 }
 
@@ -52,7 +66,7 @@ void ZepMode_Tree::AddKeyPress(uint32_t key, uint32_t modifiers)
         }
         return;
     }
-  
+
     // Set the cursor to the end of the buffer while inserting text
     m_window.SetBufferCursor(MaxCursorMove);
     m_window.SetCursorType(CursorType::Insert);
@@ -65,7 +79,7 @@ void ZepMode_Tree::AddKeyPress(uint32_t key, uint32_t modifiers)
         GetEditor().GetGlobalMode()->SetEditorMode(EditorMode::Normal);
         m_currentMode = Zep::EditorMode::Normal;
         return;
-    } 
+    }
     else if (key == ExtKeys::RETURN)
     {
         auto& buffer = m_window.GetBuffer();
@@ -177,6 +191,51 @@ void ZepMode_Tree::BeginInput()
     m_startLocation = m_window.GetBufferCursor();
 }
 
+void ZepMode_Tree::BuildTree()
+{
+    auto& buffer = m_window.GetBuffer();
+
+    std::ostringstream strBuffer;
+    std::function<void(ZepTreeNode*, uint32_t indent)> fnVisit;
+
+    fnVisit = [&](ZepTreeNode* pNode, uint32_t indent) {
+        for (uint32_t i = 0; i < indent; i++)
+        {
+            strBuffer << " ";
+        }
+
+        if (pNode->HasChildren())
+        {
+            strBuffer << (pNode->IsExpanded() ? "~ " : "+ ");
+        }
+        else
+        {
+            strBuffer << "  ";
+        }
+
+        strBuffer << pNode->GetName() << std::endl;
+
+        if (pNode->IsExpanded())
+        {
+            for (auto& pChild : pNode->GetChildren())
+            {
+                fnVisit(pChild.get(), indent + 2);
+            }
+        }
+    };
+
+    if (m_spTree->GetRoot()->IsExpanded())
+    {
+        for (auto pChild : m_spTree->GetRoot()->GetChildren())
+        {
+            fnVisit(pChild.get(), 0);
+        }
+    }
+
+    buffer.Clear();
+    buffer.Insert(0, strBuffer.str());
+}
+
 void ZepMode_Tree::Begin()
 {
     // Default insert mode
@@ -186,7 +245,9 @@ void ZepMode_Tree::Begin()
     m_window.SetCursorType(CursorType::Insert);
 
     GetEditor().SetCommandText("");
-    
+
+    BuildTree();
+
     BeginInput();
 }
 
