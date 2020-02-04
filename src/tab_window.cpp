@@ -372,9 +372,9 @@ void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
         assert(!m_spRootRegion->children.empty());
     }
 
-    LOG(INFO) << "CloseWindow, Regions: ";
-    LOG(INFO) << "\n"
-              << *m_spRootRegion;
+    //LOG(INFO) << "CloseWindow, Regions: ";
+    //LOG(INFO) << "\n"
+    //         << *m_spRootRegion;
 }
 
 void ZepTabWindow::Notify(std::shared_ptr<ZepMessage> pMsg)

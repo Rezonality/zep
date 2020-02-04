@@ -15,13 +15,9 @@ if(NOT OPENGL_FOUND)
 endif(NOT OPENGL_FOUND)
 
 LIST(APPEND PLATFORM_LINKLIBS
-	dl 
-	Threads::Threads
-	stdc++fs
-   	xcb
-    freetype
-    harfbuzz
-    png16
-    z
+    dl 
+    Threads::Threads
+    stdc++fs
+    xcb
     ${OPENGL_LIBRARY}
-	)
+    )
