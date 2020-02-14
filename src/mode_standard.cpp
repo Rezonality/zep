@@ -1,7 +1,4 @@
 #include "zep/mode_standard.h"
-#include "zep/commands.h"
-#include "zep/window.h"
-
 #include "zep/mcommon/string/stringutils.h"
 
 // Note:
@@ -29,10 +26,56 @@ namespace Zep
 ZepMode_Standard::ZepMode_Standard(ZepEditor& editor)
     : ZepMode(editor)
 {
+    Init();
 }
 
 ZepMode_Standard::~ZepMode_Standard()
 {
+}
+
+void ZepMode_Standard::Init()
+{
+    // In standard mode, we always show the insert cursor type
+    m_visualCursorType = CursorType::Insert;
+
+    m_modeFlags |= ModeFlags::InsertModeGroupUndo;
+
+    for (int i = 0; i <= 9; i++)
+    {
+        GetEditor().SetRegister('0' + (const char)i, "");
+    }
+    GetEditor().SetRegister('"', "");
+    
+    // Insert Mode
+    keymap_add({ &m_insertMap }, { "<Backspace>" }, id_Backspace);
+    keymap_add({ &m_insertMap }, { "<Return>" }, id_InsertCarriageReturn);
+    keymap_add({ &m_insertMap }, { "<Tab>" }, id_InsertTab);
+    keymap_add({ &m_insertMap }, { "<Del>" }, id_Delete);
+    keymap_add({ &m_insertMap }, { "<C-y>" }, id_Redo);
+    keymap_add({ &m_insertMap }, { "<C-z>" }, id_Undo);
+
+    keymap_add({ &m_insertMap }, { "<Left>" }, id_MotionStandardLeft);
+    keymap_add({ &m_insertMap }, { "<Right>" }, id_MotionStandardRight);
+    keymap_add({ &m_insertMap }, { "<Up>" }, id_MotionStandardUp);
+    keymap_add({ &m_insertMap }, { "<Down>" }, id_MotionStandardDown);
+   
+    keymap_add({ &m_insertMap }, { "<C-Left>" }, id_MotionStandardLeftWord);
+    keymap_add({ &m_insertMap }, { "<C-Right>" }, id_MotionStandardRightWord);
+    
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<C-S-Left>" }, id_MotionStandardLeftWordSelect);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<C-S-Right>" }, id_MotionStandardRightWordSelect);
+
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<S-Left>" }, id_MotionStandardLeftSelect);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<S-Right>" }, id_MotionStandardRightSelect);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<S-Up>" }, id_MotionStandardUpSelect);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<S-Down>" }, id_MotionStandardDownSelect);
+
+    keymap_add({ &m_visualMap }, { "<C-x>" }, id_Delete);
+    
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<C-v>" }, id_StandardPaste);
+    keymap_add({ &m_visualMap }, { "<C-c>" }, id_StandardCopy);
+
+    keymap_add({ &m_normalMap, &m_visualMap, &m_insertMap }, { "<Escape>" }, id_InsertMode);
 }
 
 void ZepMode_Standard::Begin()
@@ -41,39 +84,12 @@ void ZepMode_Standard::Begin()
     SwitchMode(EditorMode::Insert);
 }
 
-bool ZepMode_Standard::SwitchMode(EditorMode mode)
+/*void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
 {
-    assert(mode == EditorMode::Insert || mode == EditorMode::Visual);
-    if (mode == m_currentMode)
-    {
-        return false;
-    }
+    ZepMode::AddKeyPress(key, modifierKeys);
 
-    m_currentMode = mode;
-
-    if (GetCurrentWindow())
-    {
-        // Cursor is always in insert mode for standard
-        GetCurrentWindow()->SetCursorType(CursorType::Insert);
-    }
-
-    if (mode == EditorMode::Insert)
-    {
-        m_visualBegin = m_visualEnd = 0;
-    }
-    else
-    {
-        m_visualBegin = GetCurrentWindow()->GetBufferCursor();
-        m_visualEnd = m_visualBegin;
-    }
-    return true;
-}
-
-void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
-{
+    /*
     std::string ch(1, (char)key);
-
-    GetEditor().ResetLastEditTimer();
 
     bool copyRegion = false;
     bool lineWise = false;
@@ -82,14 +98,6 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     BufferLocation startOffset = bufferCursor;
     BufferLocation endOffset = buffer.LocationFromOffsetByChars(bufferCursor, long(ch.length()));
 
-    enum class CommandOperation
-    {
-        None,
-        Delete,
-        Insert,
-        Copy,
-        Paste
-    };
     CommandOperation op = CommandOperation::None;
 
     auto normalizeOffsets = [&]() {
@@ -105,7 +113,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     if (key == ExtKeys::ESCAPE)
     {
         SwitchMode(EditorMode::Insert);
-        return;
+        return spContext;
     }
 
     bool begin_shift = false;
@@ -122,7 +130,8 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         case ExtKeys::PAGEUP:
             if (modifierKeys & ModifierKey::Shift)
             {
-                begin_shift = SwitchMode(EditorMode::Visual);
+                begin_shift = (m_currentMode != EditorMode::Visual) ? true : false;
+                SwitchMode(EditorMode::Visual);
             }
             else
             {
@@ -138,42 +147,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     // CTRL + ...
     if (modifierKeys & ModifierKey::Ctrl)
     {
-        // CTRL + keys common to modes
-        bool needMoreChars = false; // TODO in standard mode!
-        keyCache += (const char)key;
-        if (HandleGlobalCtrlCommand(keyCache, modifierKeys, needMoreChars))
-        {
-            if (!needMoreChars)
-            {
-                keyCache.clear();
-            }
-            return;
-        }
-        keyCache.clear();
-       
-        // Undo
-        if (key == 'z')
-        {
-            Undo();
-            return;
-        }
-        // Redo
-        else if (key == 'y')
-        {
-            Redo();
-            return;
-        }
         // Motions fall through to selection code
-        else if (key == ExtKeys::RIGHT)
-        {
-            auto target = buffer.StandardCtrlMotion(bufferCursor, SearchDirection::Forward);
-            GetCurrentWindow()->SetBufferCursor(target.second);
-        }
-        else if (key == ExtKeys::LEFT)
-        {
-            auto target = buffer.StandardCtrlMotion(bufferCursor, SearchDirection::Backward);
-            GetCurrentWindow()->SetBufferCursor(target.second);
-        }
         else if (key == ExtKeys::HOME)
         {
             // CTRL HOME = top of file
@@ -250,35 +224,6 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         auto pos = buffer.GetLinePos(bufferCursor, LineLocation::LineCRBegin);
         GetCurrentWindow()->SetBufferCursor(pos);
         GetEditor().ResetCursorTimer();
-    }
-    else if (key == ExtKeys::RIGHT)
-    {
-        GetCurrentWindow()->SetBufferCursor(bufferCursor + 1);
-        GetEditor().ResetCursorTimer();
-    }
-    else if (key == ExtKeys::LEFT)
-    {
-        GetCurrentWindow()->SetBufferCursor(bufferCursor - 1);
-        GetEditor().ResetCursorTimer();
-    }
-    else if (key == ExtKeys::UP)
-    {
-        GetCurrentWindow()->MoveCursorY(-1, LineLocation::LineCRBegin);
-    }
-    else if (key == ExtKeys::DOWN)
-    {
-        GetCurrentWindow()->MoveCursorY(1, LineLocation::LineCRBegin);
-    }
-    else if (key == ExtKeys::RETURN)
-    {
-        ch = "\n";
-        op = CommandOperation::Insert;
-    }
-    else if (key == ExtKeys::TAB)
-    {
-        // 4 Spaces, obviously :)
-        ch = "    ";
-        op = CommandOperation::Insert;
     }
     else if (key == ExtKeys::DEL)
     {
@@ -407,5 +352,7 @@ void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         buffer.SetSelection(BufferRange{m_visualBegin, m_visualEnd});
     }
 }
+*/
+
 
 } // namespace Zep

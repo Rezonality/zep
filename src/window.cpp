@@ -134,9 +134,9 @@ void ZepWindow::UpdateAirline()
     m_airline.rightBoxes.push_back(AirBox{ std::to_string(m_pBuffer->GetLineEnds().size()) + " Lines", m_pBuffer->GetTheme().GetColor(ThemeColor::LineNumberBackground) });
 }
 
-void ZepWindow::SetCursorType(CursorType mode)
+void ZepWindow::SetCursorType(CursorType currentMode)
 {
-    m_cursorType = mode;
+    m_cursorType = currentMode;
     GetEditor().ResetCursorTimer();
 }
 
@@ -903,7 +903,7 @@ void ZepWindow::DisplayCursor()
 
         case CursorType::Insert:
         {
-            GetEditor().GetDisplay().DrawRectFilled(NRectf(NVec2f(pos.x - 1, pos.y), NVec2f(pos.x, pos.y + cursorSize.y)), m_pBuffer->GetTheme().GetColor(ThemeColor::CursorInsert));
+            GetEditor().GetDisplay().DrawRectFilled(NRectf(NVec2f(pos.x, pos.y), NVec2f(pos.x + 1, pos.y + cursorSize.y)), m_pBuffer->GetTheme().GetColor(ThemeColor::CursorInsert));
         }
         break;
 

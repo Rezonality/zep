@@ -6,6 +6,7 @@
 
 #include <QKeyEvent>
 #include <QDesktopWidget>
+#include <QDebug>
 
 #include "zep/editor.h"
 #include "zep/mode.h"
@@ -154,14 +155,19 @@ public:
         }
         else
         {
-            QString input = ev->text();
-            for (auto& i : input)
+            auto input = ev->text().toUtf8();
+            if (!input.isEmpty())
             {
-                auto ch = i.toLatin1();
-                if (ch != 0)
+                uint8_t* pIn = (uint8_t*)input.data();
+
+                // Convert to UTF8 DWORD; not used yet
+                uint32_t dw = 0;
+                for (int i = 0; i < input.size(); i++)
                 {
-                    pMode->AddKeyPress(i.toLatin1(), mod);
+                    dw |= ((DWORD)pIn[i]) << ((input.size() - i - 1) * 8);
                 }
+
+                pMode->AddKeyPress(dw, mod);
             }
         }
         update();

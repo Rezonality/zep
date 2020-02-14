@@ -352,7 +352,7 @@ ZepWindow* ZepEditor::AddOrca()
 
 ZepWindow* ZepEditor::AddTree()
 {
-    auto pTree = GetEmptyBuffer("Tree.tree");
+    auto pTree = GetEmptyBuffer("Tree.tree", FileFlags::Locked | FileFlags::ReadOnly);
     auto pTreeWindow = GetActiveTabWindow()->AddWindow(pTree, nullptr, true);
 
     auto pActiveWindow = GetActiveTabWindow()->GetActiveWindow();
@@ -622,9 +622,9 @@ void ZepEditor::RegisterGlobalMode(std::shared_ptr<ZepMode> spMode)
     m_mapModes[spMode->Name()] = spMode;
 }
 
-void ZepEditor::SetGlobalMode(const std::string& mode)
+void ZepEditor::SetGlobalMode(const std::string& currentMode)
 {
-    auto itrMode = m_mapModes.find(mode);
+    auto itrMode = m_mapModes.find(currentMode);
     if (itrMode != m_mapModes.end())
     {
         m_pCurrentMode = itrMode->second.get();

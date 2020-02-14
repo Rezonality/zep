@@ -19,7 +19,6 @@ public:
         // Disable threads for consistent tests, at the expense of not catching thread errors!
         // TODO : Fix/understand test failures with threading
         spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZEP_ROOT, ZepEditorFlags::DisableThreads);
-        spMode = std::make_shared<ZepMode_Standard>(*spEditor);
         pBuffer = spEditor->InitWithText("Test Buffer", "");
 
         pTabWindow = spEditor->GetActiveTabWindow();
@@ -29,6 +28,9 @@ public:
         spEditor->SetDisplayRegion(NVec2f(0.0f, 0.0f), NVec2f(1024.0f, 1024.0f));
 
         pWindow->SetBufferCursor(0);
+    
+        spEditor->SetGlobalMode(Zep::ZepMode_Standard::StaticName());
+        spMode = spEditor->GetGlobalMode();
     }
 
     ~StandardTest()
@@ -40,7 +42,7 @@ public:
     ZepBuffer* pBuffer;
     ZepWindow* pWindow;
     ZepTabWindow* pTabWindow;
-    std::shared_ptr<ZepMode_Standard> spMode;
+    ZepMode* spMode;
 };
 
 TEST_F(StandardTest, CheckDisplaySucceeds)
@@ -51,6 +53,10 @@ TEST_F(StandardTest, CheckDisplaySucceeds)
     ASSERT_FALSE(pTabWindow->GetWindows().empty());
 }
 
+// TODO
+// These tests were written before i added conversion of modifiers from Ext to <C-f>, etc.
+// So this odd syntax probably isn't necessary, and we could call the mapped function with the 
+// decoded keystrokes
 // Given a sample text, a keystroke list and a target text, check the test returns the right thing
 #define COMMAND_TEST(name, source, command, target)                \
     TEST_F(StandardTest, name)                                     \
@@ -225,6 +231,16 @@ TEST_F(StandardTest, BACKSPACE)
                     spMode->AddKeyPress(ExtKeys::LEFT, mod);  \
                     mod = 0;                                  \
                 }                                             \
+                else if (ch == 'u')                           \
+                {                                             \
+                    spMode->AddKeyPress(ExtKeys::UP, mod);    \
+                    mod = 0;                                  \
+                }                                             \
+                else if (ch == 'd')                           \
+                {                                             \
+                    spMode->AddKeyPress(ExtKeys::DOWN, mod);  \
+                    mod = 0;                                  \
+                }                                             \
             }                                                 \
             else if (ch == '\n')                              \
             {                                                 \
@@ -274,6 +290,16 @@ TEST_F(StandardTest, BACKSPACE)
                     spMode->AddKeyPress(ExtKeys::RIGHT, mod); \
                     mod = 0;                                  \
                 }                                             \
+                else if (ch == 'd')                           \
+                {                                             \
+                    spMode->AddKeyPress(ExtKeys::DOWN, mod); \
+                    mod = 0;                                  \
+                }                                             \
+                else if (ch == 'u')                           \
+                {                                             \
+                    spMode->AddKeyPress(ExtKeys::UP, mod); \
+                    mod = 0;                                  \
+                }                                             \
                 else if (ch == 'l')                           \
                 {                                             \
                     spMode->AddKeyPress(ExtKeys::LEFT, mod);  \
@@ -291,15 +317,22 @@ TEST_F(StandardTest, BACKSPACE)
                 mod = 0;                                      \
             }                                                 \
         }                                                     \
-        ASSERT_EQ(spMode->GetVisualRange().x, start);         \
-        ASSERT_EQ(spMode->GetVisualRange().y, end);           \
+        ASSERT_EQ(spMode->GetNormalizedVisualRange().x, start);         \
+        ASSERT_EQ(spMode->GetNormalizedVisualRange().y, end);           \
     }
 
+CURSOR_TEST(motion_right, "one two", "%r", 1, 0);
+CURSOR_TEST(motion_left, "one two", "%r%r%l", 1, 0);
+CURSOR_TEST(motion_down, "one\ntwo", "%d", 0, 1);
+CURSOR_TEST(motion_up, "one\ntwo", "%d%u", 0, 0);
+
 // NOTE: Cursor lands on the character after the shift select - i.e. the next 'Word'
-CURSOR_TEST(motion_right, "one two", "%c%r", 4, 0);
-CURSOR_TEST(motion_right_twice, "one two", "%c%r%c%r", 7, 0);
-CURSOR_TEST(motion_right_twice_back, "one two", "%c%r%c%r%c%l", 4, 0);
-CURSOR_TEST(motion_left, "one two", "%r%r%r%r%c%l", 0, 0);
+CURSOR_TEST(motion_right_word, "one two", "%c%r", 4, 0);
+CURSOR_TEST(motion_right_twice_word, "one two", "%c%r%c%r", 7, 0);
+CURSOR_TEST(motion_right_twice_back_word, "one two", "%c%r%c%r%c%l", 4, 0);
+CURSOR_TEST(motion_left_word, "one two", "%r%r%r%r%c%l", 0, 0);
+
+CURSOR_TEST(paste_over_cursor_after, "one", "%c%s%r%cc%cv", 3, 0);
 
 // Visual Range selection
 VISUAL_TEST(visual_shift_right, "one two", "%c%s%r", 0, 4);

@@ -4,6 +4,7 @@
 #include "../src/buffer.cpp"
 #include "../src/commands.cpp"
 #include "../src/editor.cpp"
+#include "../src/keymap.cpp"
 #include "../src/mode.cpp"
 #include "../src/mode_standard.cpp"
 #include "../src/mode_vim.cpp"

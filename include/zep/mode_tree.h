@@ -135,25 +135,21 @@ public:
     ZepMode_Tree(ZepEditor& editor, std::shared_ptr<ZepTree> spTree, ZepWindow& launchWindow, ZepWindow& replWindow);
     ~ZepMode_Tree();
 
-    virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
-    virtual void Begin() override;
-    virtual void Notify(std::shared_ptr<ZepMessage> message) override;
-    
     static const char* StaticName()
     {
         return "TREE";
     }
-    virtual const char* Name() const override
-    {
-        return StaticName();
-    }
+    virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
+    virtual void Begin() override;
+    virtual void Notify(std::shared_ptr<ZepMessage> message) override;
+    virtual void PreDisplay() override;
+    virtual const char* Name() const override { return StaticName(); }
 
 private:
-    void Close();
     void BuildTree();
 
 private:
-    void BeginInput();
+    std::shared_ptr<ZepMode_Vim> m_spVim;
     std::shared_ptr<ZepTree> m_spTree;
     BufferLocation m_startLocation = BufferLocation{ 0 };
     ZepWindow& m_launchWindow;

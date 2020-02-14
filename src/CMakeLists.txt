@@ -18,6 +18,7 @@ ${ZEP_ROOT}/src/syntax_orca.cpp
 ${ZEP_ROOT}/src/syntax_tree.cpp
 ${ZEP_ROOT}/src/syntax_providers.cpp
 ${ZEP_ROOT}/src/syntax_rainbow_brackets.cpp
+${ZEP_ROOT}/src/keymap.cpp
 ${ZEP_ROOT}/src/mode.cpp
 ${ZEP_ROOT}/src/mode_standard.cpp
 ${ZEP_ROOT}/src/mode_vim.cpp
@@ -39,6 +40,7 @@ ${ZEP_ROOT}/include/zep/syntax.h
 ${ZEP_ROOT}/include/zep/syntax_orca.h
 ${ZEP_ROOT}/include/zep/syntax_tree.h
 ${ZEP_ROOT}/include/zep/theme.h
+${ZEP_ROOT}/include/zep/keymap.h
 ${ZEP_ROOT}/include/zep/mode_search.h
 ${ZEP_ROOT}/include/zep/mode_standard.h
 ${ZEP_ROOT}/include/zep/mode_vim.h

@@ -1,4 +1,5 @@
 #include "zep/mode_tree.h"
+#include "zep/mode_vim.h"
 #include "zep/editor.h"
 #include "zep/filesystem.h"
 #include "zep/tab_window.h"
@@ -11,8 +12,8 @@ namespace Zep
 {
 
 ZepTreeNode::ZepTreeNode(const std::string& strName, uint32_t flags)
-    : m_strName(strName),
-    m_flags(flags)
+    : m_strName(strName)
+    , m_flags(flags)
 {
 }
 
@@ -29,29 +30,28 @@ ZepMode_Tree::ZepMode_Tree(ZepEditor& editor, std::shared_ptr<ZepTree> spTree, Z
     , m_launchWindow(launchWindow)
     , m_window(window)
 {
+    m_spVim = std::make_shared<ZepMode_Vim>(GetEditor());
 }
 
 ZepMode_Tree::~ZepMode_Tree()
 {
 }
 
-void ZepMode_Tree::Close()
+void ZepMode_Tree::Notify(std::shared_ptr<ZepMessage> message)
 {
-    GetEditor().RemoveBuffer(&m_window.GetBuffer());
+
+}
+
+void ZepMode_Tree::PreDisplay()
+{
+    m_spVim->PreDisplay();
 }
 
 void ZepMode_Tree::AddKeyPress(uint32_t key, uint32_t modifiers)
 {
-    auto pGlobalMode = GetEditor().GetGlobalMode();
+    m_spVim->AddKeyPress(key, modifiers);
 
-    GetEditor().ResetLastEditTimer();
-
-    if (key == 'r' && modifiers == ModifierKey::Ctrl)
-    {
-        Close();
-        return;
-    }
-
+    /*
     // If not in insert mode, then let the normal mode do its thing
     if (pGlobalMode->GetEditorMode() != Zep::EditorMode::Insert)
     {
@@ -156,7 +156,6 @@ void ZepMode_Tree::AddKeyPress(uint32_t key, uint32_t modifiers)
             ret.push_back('\n');
             buffer.Insert(buffer.EndLocation(), ret);
         }
-        */
 
         BeginInput();
         return;
@@ -179,16 +178,7 @@ void ZepMode_Tree::AddKeyPress(uint32_t key, uint32_t modifiers)
 
     // Ensure cursor is at buffer end
     m_window.SetBufferCursor(MaxCursorMove);
-}
-
-void ZepMode_Tree::BeginInput()
-{
-    // Input arrows
-    //auto& buffer = m_window.GetBuffer();
-    //buffer.Insert(buffer.EndLocation(), PromptString);
-
-    m_window.SetBufferCursor(MaxCursorMove);
-    m_startLocation = m_window.GetBufferCursor();
+    */
 }
 
 void ZepMode_Tree::BuildTree()
@@ -239,21 +229,9 @@ void ZepMode_Tree::BuildTree()
 void ZepMode_Tree::Begin()
 {
     // Default insert mode
-    GetEditor().GetGlobalMode()->Begin();
-    GetEditor().GetGlobalMode()->SetEditorMode(EditorMode::Insert);
-    m_currentMode = EditorMode::Insert;
-    m_window.SetCursorType(CursorType::Insert);
-
-    GetEditor().SetCommandText("");
+    m_spVim->Begin();
 
     BuildTree();
-
-    BeginInput();
-}
-
-void ZepMode_Tree::Notify(std::shared_ptr<ZepMessage> message)
-{
-    ZepMode::Notify(message);
 }
 
 } // namespace Zep

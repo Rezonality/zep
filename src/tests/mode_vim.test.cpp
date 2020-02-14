@@ -6,12 +6,14 @@
 #include "zep/mode_vim.h"
 #include "zep/tab_window.h"
 #include "zep/window.h"
+#include "zep/mcommon/logger.h"
 
 #include <gtest/gtest.h>
+#include <regex>
 
 // TESTS
 // TODO:
-// - A check that navigation up/down on wrapped lines is correct.  Needs to setup a window with a long buffer 
+// - A check that navigation up/down on wrapped lines is correct.  Needs to setup a window with a long buffer
 // line that wraps, and that navigation moves correctly
 
 using namespace Zep;
@@ -160,7 +162,7 @@ TEST_F(VimTest, BACKSPACE)
     spMode->AddCommandText("lli");
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
     ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hllo");
-   
+
     // Check that appending on the line then hitting backspace removes the last char
     // A bug that showed up at some point
     pBuffer->SetText("AB");
@@ -296,6 +298,8 @@ COMMAND_TEST(join_lines, "one\ntwo", "J", "one two");
 
 COMMAND_TEST(join_lines_skip_ws, "one\n   two", "J", "one two");
 
+COMMAND_TEST(join_visual, "one\ntwo", "vlJ", "one two");
+
 // Insert
 COMMAND_TEST(insert_a_text, "one three", "lllatwo ", "one two three")
 COMMAND_TEST(insert_i_text, "one three", "lllitwo", "onetwo three")
@@ -321,9 +325,9 @@ COMMAND_TEST(change_cc, "one two", "cchellojk", "hello")
 COMMAND_TEST(change_C, "one two", "llChellojk", "onhello")
 COMMAND_TEST(change_d_dollar, "one two", "llc$hellojk", "onhello")
 
-COMMAND_TEST(change_S, "one two", "Shellojk", "hello")
-COMMAND_TEST(change_s, "one two", "lsnlyjk", "onlye two")
-COMMAND_TEST(change_s_visual, "one two", "vllstwo", "two two")
+COMMAND_TEST(Substitute_S, "one two", "Shellojk", "hello")
+COMMAND_TEST(Substitute_s, "one two", "lsnlyjk", "onlye two")
+COMMAND_TEST(Substitute_s_visual, "one two", "vllstwo", "two two")
 
 COMMAND_TEST(unfinished_d, "one two", "d", "one two")
 COMMAND_TEST(unfinished_y, "one two", "y", "one two")
@@ -339,7 +343,10 @@ COMMAND_TEST(visual_switch_V, "one", "lVlV", "one");
 
 COMMAND_TEST(chage_to, "one two", "ctthey", "heytwo");
 
-COMMAND_TEST(chage_to_digit, "one 1wo", "ct1hey", "hey1wo");
+COMMAND_TEST(change_to_digit, "one 1wo", "ct1hey", "hey1wo");
+
+COMMAND_TEST(delete_to_char, "one 1wo", "dt1", "1wo");
+COMMAND_TEST(delete_to_digit, "one two", "dtt", "two");
 
 COMMAND_TEST(visual_inner_word, "one-three", "lviwd", "-three");
 COMMAND_TEST(visual_inner_word_undo, "one-three", "lviwdu", "one-three");
@@ -385,11 +392,11 @@ CURSOR_TEST(motion_kup_limit, "one\ntwo", "kkkkkkkk", 0, 0);
 CURSOR_TEST(motion_jdown_limit, "one\ntwo", "jjjjjjjjj", 0, 1);
 CURSOR_TEST(motion_jklh_find_center, "one\ntwo\nthree", "jjlk", 1, 1);
 CURSOR_TEST(motion_goto_endline, "one two", "$", 6, 0);
+CURSOR_TEST(motion_find_jumpto, "one two", "/two\n", 4, 0);
 CURSOR_TEST(motion_G_goto_enddoc, "one\ntwo", "G", 0, 1);
 CURSOR_TEST(motion_3G, "one\ntwo\nthree\nfour\n", "3G", 0, 2); // Note: Goto line3, offset 2!
 CURSOR_TEST(motion_0G, "one\ntwo\nthree\nfour\n", "0G", 0, 4); // Note: 0 means go to last line
 CURSOR_TEST(motion_goto_begindoc, "one\ntwo", "lljgg", 0, 0);
-CURSOR_TEST(motion_goto_beginline, "one two", "lllll0", 0, 0);
 CURSOR_TEST(motion_goto_firstlinechar, "   one two", "^", 3, 0);
 CURSOR_TEST(motion_2w, "one two three", "2w", 8, 0);
 CURSOR_TEST(motion_w, "one! two three", "w", 3, 0);
@@ -426,5 +433,20 @@ CURSOR_TEST(find_a_char_stay_on_line, "one two\nthree", "fefe", 2, 0);
 CURSOR_TEST(find_a_char_repeat, "one one one", "fo;", 8, 0);
 CURSOR_TEST(find_a_char_num, "one2 one2", "2f2", 8, 0);
 CURSOR_TEST(find_a_char_beside, "ooo", "fo;", 2, 0);
+CURSOR_TEST(find_backwards, "foo", "lllllFf", 0, 0);
 
+TEST(Regex, VimRegex)
+{
+    auto rx = MakeCommandRegex("y");
+    std::regex re(rx);
 
+    std::smatch match;
+    std::string testString("3y");
+    if (std::regex_match(testString, match, re))
+    {
+        for (auto& m : match)
+        {
+            LOG(DEBUG) << "Match: " << m.str();
+        }
+    }
+}

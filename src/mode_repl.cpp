@@ -167,6 +167,8 @@ void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
 
     // Ensure cursor is at buffer end
     m_replWindow.SetBufferCursor(MaxCursorMove);
+    
+    return;
 }
 
 void ZepMode_Repl::BeginInput()

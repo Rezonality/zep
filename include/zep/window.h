@@ -119,7 +119,7 @@ public:
 
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
-    void SetCursorType(CursorType mode);
+    void SetCursorType(CursorType currentMode);
     void UpdateAirline();
     void UpdateScrollers();
 
