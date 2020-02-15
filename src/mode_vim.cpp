@@ -194,8 +194,8 @@ void ZepMode_Vim::Init()
     keymap_vim({ &m_normalMap }, { "I" }, id_InsertAtFirstChar);
     keymap_vim({ &m_normalMap }, { ";" }, id_FindNext);
 
-    keymap_vim({ &m_normalMap }, { "n" }, id_MotionNextMarker);
-    keymap_vim({ &m_normalMap }, { "N" }, id_MotionPreviousMarker);
+    keymap_vim({ &m_normalMap }, { "n" }, id_MotionNextSearch);
+    keymap_vim({ &m_normalMap }, { "N" }, id_MotionPreviousSearch);
     keymap_vim({ &m_normalMap }, { "<F8>" }, id_MotionNextMarker);
     keymap_vim({ &m_normalMap }, { "<S-F8>" }, id_MotionPreviousMarker);
 
@@ -225,30 +225,10 @@ void ZepMode_Vim::Init()
     keymap_add({ &m_insertMap }, { "<Tab>" }, id_InsertTab);
     keymap_add({ &m_insertMap }, { "jk" }, id_NormalMode);
     keymap_add({ &m_insertMap }, { "<Escape>" }, id_NormalMode);
-
-    /*
-    // These searches are for substrings...
-    // Counts are any digit sequences in the command
-    // Match any digit; but not as the very last character
-    std::regex countGroup(R"((\d+)\D+)"); 
-
-    // Match any register; currently ascii or _ 
-    std::regex registerGroup(R"(("\w))");
-   
-    // Potentially unfinished text.
-    // Any number of digits at the beginning of the line, and possibly 1 "
-    std::regex unfinishedGroup1(R"(^\d*"?$)");
-
-    m_normalMap.m_countGroups.push_back(countGroup);
-    m_normalMap.m_registerGroups.push_back(registerGroup);
-    m_normalMap.m_unfinishedGroups.push_back(unfinishedGroup1);
-    m_normalMap.ignoreFinalDigit = true;
-
-    m_visualMap.m_countGroups.push_back(countGroup);
-    m_visualMap.m_registerGroups.push_back(registerGroup);
-    m_visualMap.m_unfinishedGroups.push_back(unfinishedGroup1);
-    m_visualMap.ignoreFinalDigit = true;
-    */
+    keymap_add({ &m_insertMap }, { "<Down>" }, id_MotionDown);
+    keymap_add({ &m_insertMap }, { "<Up>" }, id_MotionUp);
+    keymap_add({ &m_insertMap }, { "<Right>" }, id_MotionRight);
+    keymap_add({ &m_insertMap }, { "<Left>" }, id_MotionLeft);
 }
 
 void ZepMode_Vim::Begin()

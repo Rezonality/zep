@@ -96,7 +96,7 @@ struct StringId
     }
     StringId(const char* pszString);
     StringId(const std::string& str);
-    StringId(uint32_t _id)
+    explicit StringId(uint32_t _id)
     {
         id = _id;
     }

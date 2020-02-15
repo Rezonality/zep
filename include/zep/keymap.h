@@ -100,6 +100,9 @@ DECLARE_COMMANDID(Redo)
 DECLARE_COMMANDID(MotionNextMarker)
 DECLARE_COMMANDID(MotionPreviousMarker)
 
+DECLARE_COMMANDID(MotionNextSearch)
+DECLARE_COMMANDID(MotionPreviousSearch)
+
 DECLARE_COMMANDID(MotionLineEnd)
 DECLARE_COMMANDID(MotionLineBegin)
 DECLARE_COMMANDID(MotionLineFirstChar)
@@ -173,9 +176,6 @@ struct CommandNode
 
 struct KeyMap
 {
-    std::vector<std::regex> m_countGroups;
-    std::vector<std::regex> m_registerGroups;
-    std::vector<std::regex> m_unfinishedGroups;
     bool ignoreFinalDigit = false;
     std::shared_ptr<CommandNode> spRoot = std::make_shared<CommandNode>();
 };

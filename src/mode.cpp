@@ -658,6 +658,24 @@ bool ZepMode::GetCommand(CommandContext& context)
         }
         return true;
     }
+    else if (mappedCommand == id_MotionNextSearch)
+    {
+        auto pFound = buffer.FindNextMarker(GetCurrentWindow()->GetBufferCursor(), m_lastSearchDirection, RangeMarkerType::Search);
+        if (pFound)
+        {
+            GetCurrentWindow()->SetBufferCursor(pFound->range.first);
+        }
+        return true;
+    }
+    else if (mappedCommand == id_MotionPreviousSearch)
+    {
+        auto pFound = buffer.FindNextMarker(GetCurrentWindow()->GetBufferCursor(), m_lastSearchDirection == SearchDirection::Forward ? SearchDirection::Backward : SearchDirection::Forward, RangeMarkerType::Search);
+        if (pFound)
+        {
+            GetCurrentWindow()->SetBufferCursor(pFound->range.first);
+        }
+        return true;
+    }
     else if (mappedCommand == id_SwitchToAlternateFile)
     {
         // This is a quick and easy 'alternate file swap'.
@@ -1771,6 +1789,13 @@ bool ZepMode::HandleExCommand(std::string strCommand)
         m_currentCommand = strCommand;
         return false;
     }
+
+    if (m_lastKey == ExtKeys::ESCAPE)
+    {
+        GetEditor().GetActiveTabWindow()->GetActiveWindow()->SetBufferCursor(m_exCommandStartLocation);
+        return true;
+    }
+
     if (m_lastKey == ExtKeys::RETURN)
     {
         auto pWindow = GetEditor().GetActiveTabWindow()->GetActiveWindow();
@@ -1813,7 +1838,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
         else if (strCommand == ":map")
         {
             std::ostringstream str;
-           
+
             // TODO: CM: this overflows; need to page the output
             str << "--- Mappings ---" << std::endl;
             str << "Normal Maps:" << std::endl;

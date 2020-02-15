@@ -260,21 +260,17 @@ void keymap_find(const KeyMap& map, const std::string& strCommand, KeyMapResult&
             std::string token;
 
             // Consume wildcards
-            bool foundWildcard = false;
             if (consumeDigits(spChildNode, itr, itrEnd, nodeCaptures.captureNumbers, strCaptures))
             {
                 token = spChildNode->token;
-                foundWildcard = true;
             }
             else if (consumeRegister(spChildNode, itr, itrEnd, nodeCaptures.captureRegisters, strCaptures))
             {
                 token = spChildNode->token;
-                foundWildcard = true;
             }
             else if (consumeChar(spChildNode, itr, itrEnd, nodeCaptures.captureChars, strCaptures))
             {
                 token = spChildNode->token;
-                foundWildcard = true;
             }
             else
             {
@@ -286,13 +282,9 @@ void keymap_find(const KeyMap& map, const std::string& strCommand, KeyMapResult&
                     token = std::string(itr, itr + 1);
                     string_eat_char(itr, itrEnd);
                 }
-                else
-                {
-                    foundWildcard = true;
-                }
             }
 
-            if (token.empty() && child.second->commandId == 0 && !spChildNode->children.empty())
+            if (token.empty() && child.second->commandId == StringId() && !spChildNode->children.empty())
             {
                 result.searchPath += "(...)";
                 result.needMoreChars = true;
@@ -308,19 +300,13 @@ void keymap_find(const KeyMap& map, const std::string& strCommand, KeyMapResult&
                 // Remember if this is a valid match for something
                 result.foundMapping = spChildNode->commandId;
 
-                // Remember the unadorned command without counts (where do we use this?)
-                if (!foundWildcard)
-                {
-                    result.commandWithoutGroups += token;
-                }
-
                 // Append our capture groups to the current hierarchy level
                 nodeCaptures.captureChars.insert(nodeCaptures.captureChars.end(), captures.captureChars.begin(), captures.captureChars.end());
                 nodeCaptures.captureNumbers.insert(nodeCaptures.captureNumbers.end(), captures.captureNumbers.begin(), captures.captureNumbers.end());
                 nodeCaptures.captureRegisters.insert(nodeCaptures.captureRegisters.end(), captures.captureRegisters.begin(), captures.captureRegisters.end());
 
                 // This node doesn't have a mapping, so look harder
-                if (result.foundMapping == 0)
+                if (result.foundMapping == StringId())
                 {
                     // There are more children, and we haven't got any more characters, keep asking for more
                     if (!spChildNode->children.empty() && itr == itrEnd)
@@ -365,20 +351,18 @@ void keymap_find(const KeyMap& map, const std::string& strCommand, KeyMapResult&
         else
         {
             findResult.searchPath += "(Unknown)";
+        
+            // Didn't find anything, return sanitized text for possible input
+            auto itr = strCommand.begin();
+            auto token = string_slurp_if(itr, strCommand.end(), '<', '>');
+            if (token.empty())
+            {
+                token = strCommand;
+            }
+            findResult.commandWithoutGroups = token;
         }
     }
 
-    if (findResult.foundMapping == 0 && !findResult.needMoreChars)
-    {
-        // Didn't find anything, return sanitized text for possible input
-        auto itr = strCommand.begin();
-        auto token = string_slurp_if(itr, strCommand.end(), '<', '>');
-        if (token.empty())
-        {
-            token = strCommand;
-        }
-        findResult.commandWithoutGroups = token;
-    }
     LOG(DEBUG) << strCommand << " - " << findResult.searchPath;
 }
 
