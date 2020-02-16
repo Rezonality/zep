@@ -363,7 +363,7 @@ void keymap_find(const KeyMap& map, const std::string& strCommand, KeyMapResult&
         }
     }
 
-    LOG(DEBUG) << strCommand << " - " << findResult.searchPath;
+    //LOG(DEBUG) << strCommand << " - " << findResult.searchPath;
 }
 
 } // namespace Zep

@@ -156,6 +156,7 @@ void ZepEditor::LoadConfig(std::shared_ptr<cpptoml::table> spConfig)
 {
     try
     {
+        m_config.showNormalModeKeyStrokes = spConfig->get_qualified_as<bool>("editor.show_normal_mode_keystrokes").value_or(false);
         m_config.showIndicatorRegion = spConfig->get_qualified_as<bool>("editor.show_indicator_region").value_or(true);
         m_config.showLineNumbers = spConfig->get_qualified_as<bool>("editor.show_line_numbers").value_or(true);
         m_config.autoHideCommandRegion = spConfig->get_qualified_as<bool>("editor.autohide_command_region").value_or(false);
@@ -192,6 +193,7 @@ void ZepEditor::SaveConfig(std::shared_ptr<cpptoml::table> spConfig)
         spConfig->insert("editor", table);
     }
 
+    table->insert("show_normal_mode_keystrokes", m_config.showNormalModeKeyStrokes);
     table->insert("show_indicator_region", m_config.showIndicatorRegion);
     table->insert("show_line_numbers", m_config.showLineNumbers);
     table->insert("autohide_command_region", m_config.autoHideCommandRegion);

@@ -13,11 +13,6 @@ namespace Zep
 
 class ZepEditor;
 
-struct ModeSettings
-{
-    bool ShowNormalModeKeyStrokes = true;
-};
-
 // NOTE: These are input keys mapped to Zep's internal keymapping; they live below 'space'/32
 // Key mapping needs a rethink for international keyboards.  But for modes, this is the remapped key definitions for anything that isn't
 // basic ascii symbol.  ASCII 0-31 are mostly ununsed these days anyway.
@@ -223,7 +218,6 @@ protected:
 
     BufferLocation m_exCommandStartLocation = 0;
     bool m_pendingEscape = false;
-    ModeSettings m_settings;
 
     CursorType m_visualCursorType = CursorType::Visual;
     uint32_t m_modeFlags = ModeFlags::None;

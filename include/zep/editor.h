@@ -209,6 +209,7 @@ struct EditorConfig
     bool showIndicatorRegion = true;
     bool autoHideCommandRegion = true;
     bool cursorLineSolid = false;
+    bool showNormalModeKeyStrokes = false;
     float backgroundFadeTime = 60.0f;
     float backgroundFadeWait = 60.0f;
 };
@@ -314,7 +315,7 @@ public:
     {
         return *m_pDisplay;
     }
-    
+
     IZepFileSystem& GetFileSystem() const
     {
         return *m_pFileSystem;
@@ -332,7 +333,7 @@ public:
 
     void SetBufferSyntax(ZepBuffer& buffer) const;
 
-    EditorConfig GetConfig() const
+    EditorConfig& GetConfig()
     {
         return m_config;
     }

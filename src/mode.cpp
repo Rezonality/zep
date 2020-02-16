@@ -3,6 +3,7 @@
 #include "zep/filesystem.h"
 #include "zep/mode_search.h"
 #include "zep/tab_window.h"
+#include "zep/buffer.h"
 
 #include "zep/mcommon/logger.h"
 
@@ -394,6 +395,14 @@ void ZepMode::HandleMappedInput(const std::string& input)
     // Figure out the command we have typed. foundCommand means that the command was interpreted and understood.
     // If spCommand is returned, then there is an atomic command operation that needs to be done.
     auto spContext = std::make_shared<CommandContext>(m_currentCommand, *this, m_currentMode);
+   
+    // Before handling the command, change the command text, since the command might override it
+    if (GetEditor().GetConfig().showNormalModeKeyStrokes && 
+        (m_currentMode == EditorMode::Normal || m_currentMode == EditorMode::Visual))
+    {
+        GetEditor().SetCommandText(spContext->keymap.searchPath);
+    }
+
     spContext->foundCommand = GetCommand(*spContext);
 
     // A lambda to check for a pending mode switch after the command
@@ -1848,7 +1857,10 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             str << "Visual Maps:" << std::endl;
             keymap_dump(m_visualMap, str);
 
-            GetEditor().SetCommandText(str.str());
+            auto pMapBuffer = GetEditor().GetEmptyBuffer("Mappings");
+            pMapBuffer->SetFlags(FileFlags::Locked | FileFlags::ReadOnly);
+            pMapBuffer->SetText(str.str());
+            GetEditor().GetActiveTabWindow()->AddWindow(pMapBuffer, nullptr, false);
         }
         else if (strCommand.find(":tabedit") == 0)
         {
@@ -2036,6 +2048,10 @@ bool ZepMode::HandleExCommand(std::string strCommand)
         else if (strCommand == ":ZShowCR")
         {
             pWindow->ToggleFlag(WindowFlags::ShowCR);
+        }
+        else if (strCommand == ":ZShowInput")
+        {
+            GetEditor().GetConfig().showNormalModeKeyStrokes = !GetEditor().GetConfig().showNormalModeKeyStrokes;
         }
         else if (strCommand == ":ZThemeToggle")
         {
