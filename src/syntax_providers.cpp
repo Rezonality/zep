@@ -113,7 +113,7 @@ static std::set<std::string> lua_identifiers = {
     "pow", "frexp", "ldexp", "log10", "pi", "huge", "maxinteger", "mininteger", "loadlib", "searchpath", "seeall", "preload", "cpath", "path", "searchers", "loaded", "module", "require", "clock",
     "date", "difftime", "execute", "exit", "getenv", "remove", "rename", "setlocale", "time", "tmpname", "byte", "char", "dump", "find", "format", "gmatch", "gsub", "len", "lower", "match", "rep",
     "reverse", "sub", "upper", "pack", "packsize", "unpack", "concat", "maxn", "insert", "pack", "unpack", "remove", "move", "sort", "offset", "codepoint", "char", "len", "codes", "charpattern",
-    "coroutine", "table", "io", "os", "string", "utf8", "bit32", "math", "debug", "package"
+    "coroutine", "table", "io", "os", "string", "uint8_t", "bit32", "math", "debug", "package"
 };
 
 static std::set<std::string> lisp_keywords = {

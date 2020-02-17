@@ -54,12 +54,12 @@ class IZepFileSystem;
 
 struct Region;
 
-using utf8 = uint8_t;
-
 // Helpers 
-inline bool ZTestFlag(uint32_t flag, uint32_t value) { return ((flag & value) ? true : false); }
-inline void ZSetFlag(uint32_t& flag, uint32_t value, bool set = true) { if (set) { flag |= value; } }
-inline void ZClearFlag(uint32_t& flag, uint32_t value) { flag &= ~value; }
+inline bool ZTestFlags(uint32_t flag, uint32_t value) { return ((flag & value) == flag ? true : false); }
+inline void ZSetFlags(uint32_t& flag, uint32_t value, bool set = true) { if (set) { flag |= value; } }
+inline void ZClearFlags(uint32_t& flag, uint32_t value) { flag &= ~value; }
+
+#define UTF8_CHAR_LEN(byte) ((0xE5000000 >> ((byte >> 3) & 0x1e)) & 3) + 1
 
 namespace ZepEditorFlags
 {
@@ -158,7 +158,7 @@ struct Register
         , lineWise(lw)
     {
     }
-    Register(utf8* ch, bool lw = false)
+    Register(uint8_t* ch, bool lw = false)
         : text((const char*)ch)
         , lineWise(lw)
     {

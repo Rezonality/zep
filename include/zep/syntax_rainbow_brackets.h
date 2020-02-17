@@ -38,7 +38,7 @@ private:
         bool is_open;
         bool valid = true;
     };
-    std::map<BufferLocation, Bracket> m_brackets;
+    std::map<ByteIndex, Bracket> m_brackets;
 };
 
 } // namespace Zep

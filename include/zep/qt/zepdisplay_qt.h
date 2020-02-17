@@ -65,7 +65,7 @@ public:
         return m_fontHeight;
     }
 
-    NVec2f GetTextSize(const utf8* pBegin, const utf8* pEnd) const
+    NVec2f GetTextSize(const uint8_t* pBegin, const uint8_t* pEnd) const
     {
         QFontMetrics met(qApp->font());
         if (pEnd == nullptr)
@@ -77,7 +77,7 @@ public:
         return NVec2f(rc.width(), rc.height());
     }
 
-    void DrawChars(const NVec2f& pos, const NVec4f& col, const utf8* text_begin, const utf8* text_end) const
+    void DrawChars(const NVec2f& pos, const NVec4f& col, const uint8_t* text_begin, const uint8_t* text_end) const
     {
         if (text_end == nullptr)
         {

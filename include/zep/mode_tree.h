@@ -151,7 +151,7 @@ private:
 private:
     std::shared_ptr<ZepMode_Vim> m_spVim;
     std::shared_ptr<ZepTree> m_spTree;
-    BufferLocation m_startLocation = BufferLocation{ 0 };
+    ByteIndex m_startLocation = ByteIndex{ 0 };
     ZepWindow& m_launchWindow;
     ZepWindow& m_window;
 };

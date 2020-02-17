@@ -31,11 +31,11 @@ void ZepSyntax_Orca::UpdateSyntax()
     assert(m_syntax.size() == buffer.size());
 
     // Mark a region of the syntax buffer with the correct marker
-    auto mark = [&](GapBuffer<utf8>::const_iterator itrA, GapBuffer<utf8>::const_iterator itrB, ThemeColor type, ThemeColor background) {
+    auto mark = [&](GapBuffer<uint8_t>::const_iterator itrA, GapBuffer<uint8_t>::const_iterator itrB, ThemeColor type, ThemeColor background) {
         std::fill(m_syntax.begin() + (itrA - buffer.begin()), m_syntax.begin() + (itrB - buffer.begin()), SyntaxData{ type, background });
     };
 
-    auto markSingle = [&](GapBuffer<utf8>::const_iterator itrA, ThemeColor type, ThemeColor background) {
+    auto markSingle = [&](GapBuffer<uint8_t>::const_iterator itrA, ThemeColor type, ThemeColor background) {
         (m_syntax.begin() + (itrA - buffer.begin()))->foreground = type;
         (m_syntax.begin() + (itrA - buffer.begin()))->background = background;
     };

@@ -33,8 +33,8 @@ void CommandContext::UpdateRegisters()
 
     if (op == CommandOperation::Delete || op == CommandOperation::DeleteLines)
     {
-        beginRange = std::max(beginRange, BufferLocation{ 0 });
-        endRange = std::max(endRange, BufferLocation{ 0 });
+        beginRange = std::max(beginRange, ByteIndex{ 0 });
+        endRange = std::max(endRange, ByteIndex{ 0 });
         if (beginRange > endRange)
         {
             std::swap(beginRange, endRange);
@@ -61,8 +61,8 @@ void CommandContext::UpdateRegisters()
     }
     else if (op == CommandOperation::Copy || op == CommandOperation::CopyLines)
     {
-        beginRange = std::max(beginRange, BufferLocation{ 0 });
-        endRange = std::max(endRange, BufferLocation{ 0 });
+        beginRange = std::max(beginRange, ByteIndex{ 0 });
+        endRange = std::max(endRange, ByteIndex{ 0 });
         if (beginRange > endRange)
         {
             std::swap(beginRange, endRange);
@@ -430,7 +430,7 @@ void ZepMode::HandleMappedInput(const std::string& input)
         if (spContext->commandResult.spCommand)
         {
             // If not in insert mode, begin the group, because we have started a new operation
-            if (m_currentMode != EditorMode::Insert || ZTestFlag(spContext->commandResult.flags, CommandResultFlags::BeginUndoGroup))
+            if (m_currentMode != EditorMode::Insert || ZTestFlags(spContext->commandResult.flags, CommandResultFlags::BeginUndoGroup))
             {
                 AddCommand(std::make_shared<ZepCommand_GroupMarker>(spContext->buffer));
 
@@ -633,7 +633,7 @@ bool ZepMode::GetCommand(CommandContext& context)
 
     // This flag is for non-modal editors which like to break insertions into undo groups.
     // Vim, for example, doesn't do that; an insert mode operation is a single 'group'
-    bool shouldGroupInserts = ZTestFlag(m_modeFlags, ModeFlags::InsertModeGroupUndo);
+    bool shouldGroupInserts = ZTestFlags(m_modeFlags, ModeFlags::InsertModeGroupUndo);
 
     auto mappedCommand = context.keymap.foundMapping;
     if (mappedCommand == id_NormalMode)
@@ -848,8 +848,7 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_MotionRight)
     {
-        auto lineEnd = context.buffer.GetLinePos(context.bufferCursor, LineLocation::LineLastNonCR);
-        GetCurrentWindow()->SetBufferCursor(std::min(context.bufferCursor + context.keymap.TotalCount(), lineEnd));
+        GetCurrentWindow()->SetBufferCursor(context.buffer.CPOffset(context.bufferCursor, context.keymap.TotalCount(), LineLocation::LineLastNonCR));
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
@@ -1072,7 +1071,7 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_MotionGotoBeginning)
     {
-        GetCurrentWindow()->SetBufferCursor(BufferLocation{ 0 });
+        GetCurrentWindow()->SetBufferCursor(ByteIndex{ 0 });
         return true;
     }
     else if (mappedCommand == id_JoinLines)
@@ -1088,7 +1087,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         context.replaceRangeMode = ReplaceRangeMode::Replace;
 
         context.op = CommandOperation::Replace;
-        ZSetFlag(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
+        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
     }
     else if (mappedCommand == id_VisualMode || mappedCommand == id_VisualLineMode)
     {
@@ -1150,7 +1149,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         context.pRegister = &context.tempReg;
         context.op = CommandOperation::Insert;
         context.commandResult.modeSwitch = EditorMode::Insert;
-        ZSetFlag(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
+        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
     }
     else if (mappedCommand == id_InsertCarriageReturn)
     {
@@ -1159,7 +1158,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         context.pRegister = &context.tempReg;
         context.op = CommandOperation::Insert;
         context.commandResult.modeSwitch = EditorMode::Insert;
-        ZSetFlag(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
+        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
     }
     else if (mappedCommand == id_InsertTab)
     {
@@ -1168,7 +1167,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         context.pRegister = &context.tempReg;
         context.op = CommandOperation::Insert;
         context.commandResult.modeSwitch = EditorMode::Insert;
-        ZSetFlag(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
+        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
     }
     else if (mappedCommand == id_OpenLineAbove)
     {
@@ -1178,7 +1177,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         context.op = CommandOperation::Insert;
         context.commandResult.modeSwitch = EditorMode::Insert;
         context.cursorAfterOverride = context.bufferCursor;
-        ZSetFlag(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
+        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
     }
     else if (mappedCommand == id_YankLine)
     {
@@ -1228,7 +1227,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             auto range = GetNormalizedVisualRange();
             context.beginRange = range.x;
             context.endRange = range.y;
-            context.cursorAfterOverride = context.beginRange + BufferLocation(context.pRegister->text.length());
+            context.cursorAfterOverride = context.beginRange + ByteIndex(context.pRegister->text.length());
             context.commandResult.modeSwitch = EditorMode::Insert;
         }
         else
@@ -1236,7 +1235,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             context.beginRange = context.bufferCursor;
             context.op = CommandOperation::Insert;
         }
-        ZSetFlag(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
+        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
     }
     else if (mappedCommand == id_PasteAfter)
     {
@@ -1253,7 +1252,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             }
             context.op = CommandOperation::Insert;
         }
-        ZSetFlag(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
+        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
     }
     else if (mappedCommand == id_PasteBefore)
     {
@@ -1269,7 +1268,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             }
             context.op = CommandOperation::Insert;
         }
-        ZSetFlag(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
+        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
     }
     else if (mappedCommand == id_InsertMode)
     {
@@ -1490,7 +1489,7 @@ bool ZepMode::GetCommand(CommandContext& context)
     {
         if (!context.keymap.captureChars.empty())
         {
-            GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (const utf8*)&context.keymap.captureChars[0], SearchDirection::Forward));
+            GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (const uint8_t*)&context.keymap.captureChars[0], SearchDirection::Forward));
             m_lastFind = context.keymap.captureChars[0];
             m_lastFindDirection = SearchDirection::Forward;
         }
@@ -1500,7 +1499,7 @@ bool ZepMode::GetCommand(CommandContext& context)
     {
         if (!context.keymap.captureChars.empty())
         {
-            GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (const utf8*)&context.keymap.captureChars[0], SearchDirection::Backward));
+            GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (const uint8_t*)&context.keymap.captureChars[0], SearchDirection::Backward));
             m_lastFind = context.keymap.captureChars[0];
             m_lastFindDirection = SearchDirection::Backward;
         }
@@ -1508,7 +1507,7 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_FindNext)
     {
-        GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (const utf8*)m_lastFind.c_str(), m_lastFindDirection));
+        GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (const uint8_t*)m_lastFind.c_str(), m_lastFindDirection));
         return true;
     }
     else if (mappedCommand == id_Append)
@@ -1568,7 +1567,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         if (!context.keymap.captureChars.empty())
         {
             context.beginRange = bufferCursor;
-            context.endRange = buffer.FindOnLineMotion(bufferCursor, (const utf8*)&context.keymap.captureChars[0], SearchDirection::Forward);
+            context.endRange = buffer.FindOnLineMotion(bufferCursor, (const uint8_t*)&context.keymap.captureChars[0], SearchDirection::Forward);
             context.op = CommandOperation::Delete;
             context.commandResult.modeSwitch = EditorMode::Insert;
         }
@@ -1578,7 +1577,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         if (!context.keymap.captureChars.empty())
         {
             context.beginRange = bufferCursor;
-            context.endRange = buffer.FindOnLineMotion(bufferCursor, (const utf8*)&context.keymap.captureChars[0], SearchDirection::Forward);
+            context.endRange = buffer.FindOnLineMotion(bufferCursor, (const uint8_t*)&context.keymap.captureChars[0], SearchDirection::Forward);
             context.op = CommandOperation::Delete;
         }
     }
@@ -1598,7 +1597,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             // Insert grouping command if necessary
             if (context.fullCommand == " ")
             {
-                ZSetFlag(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
+                ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
             }
         }
         else
@@ -1619,7 +1618,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             context.endRange,
             context.bufferCursor);
         context.commandResult.spCommand = std::static_pointer_cast<ZepCommand>(cmd);
-        ZSetFlag(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
+        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
         return true;
     }
     else if (context.op == CommandOperation::Insert && !context.pRegister->text.empty())
@@ -1661,12 +1660,12 @@ void ZepMode::ResetCommand()
     m_currentCommand.clear();
 }
 
-bool ZepMode::GetOperationRange(const std::string& op, EditorMode currentMode, BufferLocation& beginRange, BufferLocation& endRange) const
+bool ZepMode::GetOperationRange(const std::string& op, EditorMode currentMode, ByteIndex& beginRange, ByteIndex& endRange) const
 {
     auto& buffer = GetCurrentWindow()->GetBuffer();
     const auto bufferCursor = GetCurrentWindow()->GetBufferCursor();
 
-    beginRange = BufferLocation{ -1 };
+    beginRange = ByteIndex{ -1 };
     if (op == "visual")
     {
         if (currentMode == EditorMode::Visual)
@@ -1764,7 +1763,7 @@ void ZepMode::UpdateVisualSelection()
         }
 
         auto range = GetNormalizedVisualRange();
-        GetCurrentWindow()->GetBuffer().SetSelection(BufferRange{ range.x, range.y });
+        GetCurrentWindow()->GetBuffer().SetSelection(BufferByteRange{ range.x, range.y });
     }
 }
 
@@ -1996,7 +1995,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
                 start = buffer.GetLinePos(bufferCursor, LineLocation::LineFirstGraphChar);
                 end = buffer.GetLinePos(bufferCursor, LineLocation::LineLastGraphChar) + 1;
             }
-            spMarker->range = BufferRange{ start, end };
+            spMarker->range = BufferByteRange{ start, end };
             switch (markerType)
             {
             case 5:
@@ -2154,15 +2153,15 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             buffer.ClearRangeMarkers(RangeMarkerType::Search);
 
             uint32_t numMarkers = 0;
-            BufferLocation start = 0;
+            ByteIndex start = 0;
 
             if (!searchString.empty())
             {
                 static const uint32_t MaxMarkers = 1000;
                 while (numMarkers < MaxMarkers)
                 {
-                    auto found = buffer.Find(start, (utf8*)&searchString[0], (utf8*)&searchString[searchString.length()]);
-                    if (found == InvalidOffset)
+                    auto found = buffer.Find(start, (uint8_t*)&searchString[0], (uint8_t*)&searchString[searchString.length()]);
+                    if (found == InvalidByteIndex)
                     {
                         break;
                     }
@@ -2172,7 +2171,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
                     auto spMarker = std::make_shared<RangeMarker>();
                     spMarker->backgroundColor = ThemeColor::VisualSelectBackground;
                     spMarker->textColor = ThemeColor::Text;
-                    spMarker->range = BufferRange(found, BufferLocation(found + searchString.length()));
+                    spMarker->range = BufferByteRange(found, ByteIndex(found + searchString.length()));
                     spMarker->displayType = RangeMarkerDisplayType::Background;
                     spMarker->markerType = RangeMarkerType::Search;
                     buffer.AddRangeMarker(spMarker);

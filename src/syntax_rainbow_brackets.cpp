@@ -76,7 +76,7 @@ void ZepSyntaxAdorn_RainbowBrackets::Insert(long start, long end)
 {
     // Adjust all the brackets after us by the same distance
     auto diff = end - start;
-    std::map<BufferLocation, Bracket> replace;
+    std::map<ByteIndex, Bracket> replace;
     for (auto& b : m_brackets)
     {
         if (b.first < start)
@@ -94,12 +94,12 @@ void ZepSyntaxAdorn_RainbowBrackets::Clear(long start, long end)
     // Remove brackets in the erased section
     for (auto current = start; current < end; current++)
     {
-        m_brackets.erase(BufferLocation(current));
+        m_brackets.erase(ByteIndex(current));
     }
 
     // Adjust remaining brackets by the difference
     auto diff = end - start;
-    std::map<BufferLocation, Bracket> replace;
+    std::map<ByteIndex, Bracket> replace;
     for (auto& b : m_brackets)
     {
         if (b.first < start)
@@ -123,31 +123,31 @@ void ZepSyntaxAdorn_RainbowBrackets::Update(long start, long end)
         auto offset = itrBracket - buffer.begin();
         if (*itrBracket == '(')
         {
-            m_brackets[BufferLocation(offset)] = Bracket{0, BracketType::Bracket, true};
+            m_brackets[ByteIndex(offset)] = Bracket{0, BracketType::Bracket, true};
         }
         else if (*itrBracket == ')')
         {
-            m_brackets[BufferLocation(offset)] = Bracket{0, BracketType::Bracket, false};
+            m_brackets[ByteIndex(offset)] = Bracket{0, BracketType::Bracket, false};
         }
         else if (*itrBracket == '[')
         {
-            m_brackets[BufferLocation(offset)] = Bracket{0, BracketType::Group, true};
+            m_brackets[ByteIndex(offset)] = Bracket{0, BracketType::Group, true};
         }
         else if (*itrBracket == ']')
         {
-            m_brackets[BufferLocation(offset)] = Bracket{0, BracketType::Group, false};
+            m_brackets[ByteIndex(offset)] = Bracket{0, BracketType::Group, false};
         }
         else if (*itrBracket == '{')
         {
-            m_brackets[BufferLocation(offset)] = Bracket{0, BracketType::Brace, true};
+            m_brackets[ByteIndex(offset)] = Bracket{0, BracketType::Brace, true};
         }
         else if (*itrBracket == '}')
         {
-            m_brackets[BufferLocation(offset)] = Bracket{0, BracketType::Brace, false};
+            m_brackets[ByteIndex(offset)] = Bracket{0, BracketType::Brace, false};
         }
         else
         {
-            auto itr = m_brackets.find(BufferLocation(offset));
+            auto itr = m_brackets.find(ByteIndex(offset));
             if (itr != std::end(m_brackets))
             {
                 m_brackets.erase(itr);

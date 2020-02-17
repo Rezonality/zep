@@ -124,13 +124,13 @@ public:
     KeyMapResult keymap;
 
     ReplaceRangeMode replaceRangeMode = ReplaceRangeMode::Fill;
-    BufferLocation beginRange{-1};
-    BufferLocation endRange{-1};
+    ByteIndex beginRange{-1};
+    ByteIndex endRange{-1};
     ZepBuffer& buffer;
 
     // Cursor State
-    BufferLocation bufferCursor{-1};
-    BufferLocation cursorAfterOverride{-1};
+    ByteIndex bufferCursor{-1};
+    ByteIndex cursorAfterOverride{-1};
 
     // Register state
     std::stack<char> registers;
@@ -183,7 +183,7 @@ public:
     virtual bool GetCommand(CommandContext& context);
     virtual void ResetCommand();
 
-    virtual bool GetOperationRange(const std::string& op, EditorMode currentMode, BufferLocation& beginRange, BufferLocation& endRange) const;
+    virtual bool GetOperationRange(const std::string& op, EditorMode currentMode, ByteIndex& beginRange, ByteIndex& endRange) const;
 
     virtual void UpdateVisualSelection();
 
@@ -200,8 +200,8 @@ protected:
     std::stack<std::shared_ptr<ZepCommand>> m_redoStack;
     EditorMode m_currentMode = EditorMode::Normal;
     bool m_lineWise = false;
-    BufferLocation m_visualBegin = 0;
-    BufferLocation m_visualEnd = 0;
+    ByteIndex m_visualBegin = 0;
+    ByteIndex m_visualEnd = 0;
     std::string m_dotCommand;
 
     // Keyboard mappings
@@ -216,7 +216,7 @@ protected:
     std::string m_lastInsertString;
     std::string m_lastFind;
 
-    BufferLocation m_exCommandStartLocation = 0;
+    ByteIndex m_exCommandStartLocation = 0;
     bool m_pendingEscape = false;
 
     CursorType m_visualCursorType = CursorType::Visual;

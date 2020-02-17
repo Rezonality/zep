@@ -319,7 +319,7 @@ void ZepMode_Search::OpenSelection(OpenType type)
     GetEditor().GetActiveTabWindow()->RemoveWindow(&m_window);
     GetEditor().GetActiveTabWindow()->SetActiveWindow(&m_launchWindow);
 
-    BufferLocation count = 0;
+    ByteIndex count = 0;
     for (auto& index : m_indexTree.back()->indices)
     {
         if (count == line)

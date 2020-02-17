@@ -34,7 +34,7 @@ private:
 
 private:
     void BeginInput();
-    BufferLocation m_startLocation = BufferLocation{ 0 };
+    ByteIndex m_startLocation = ByteIndex{ 0 };
     ZepWindow& m_launchWindow;
     ZepWindow& m_replWindow;
     ZepRepl* m_pRepl = nullptr;

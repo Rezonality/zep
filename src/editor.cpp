@@ -1007,8 +1007,8 @@ void ZepEditor::Display()
     {
         if (!commandLines[i].empty())
         {
-            auto textSize = m_pDisplay->GetTextSize((const utf8*)commandLines[i].c_str(), (const utf8*)commandLines[i].c_str() + commandLines[i].size());
-            m_pDisplay->DrawChars(screenPosYPx, GetTheme().GetColor(ThemeColor::Text), (const utf8*)commandLines[i].c_str());
+            auto textSize = m_pDisplay->GetTextSize((const uint8_t*)commandLines[i].c_str(), (const uint8_t*)commandLines[i].c_str() + commandLines[i].size());
+            m_pDisplay->DrawChars(screenPosYPx, GetTheme().GetColor(ThemeColor::Text), (const uint8_t*)commandLines[i].c_str());
         }
 
         screenPosYPx.y += m_pDisplay->GetFontHeightPixels();
@@ -1058,14 +1058,14 @@ void ZepEditor::Display()
                 tabColor = tabColor * .55f;
                 tabColor.w = 1.0f;
             }
-            auto tabLength = m_pDisplay->GetTextSize((const utf8*)name.c_str()).x + textBorder * 2;
+            auto tabLength = m_pDisplay->GetTextSize((const uint8_t*)name.c_str()).x + textBorder * 2;
 
             // Tab background rect
             NRectf tabRect(currentTab, currentTab + NVec2f(tabLength, m_tabRegion->rect.Height()));
             m_pDisplay->DrawRectFilled(tabRect, tabColor);
 
             // Tab text
-            m_pDisplay->DrawChars(currentTab + NVec2f(textBorder, textBorder), NVec4f(1.0f), (const utf8*)name.c_str());
+            m_pDisplay->DrawChars(currentTab + NVec2f(textBorder, textBorder), NVec4f(1.0f), (const uint8_t*)name.c_str());
 
             currentTab.x += tabLength + textBorder;
             m_tabRects[window] = tabRect;

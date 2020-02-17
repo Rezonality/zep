@@ -72,7 +72,7 @@ void ZepSyntax::Interrupt()
     m_stop = false;
 }
 
-void ZepSyntax::QueueUpdateSyntax(BufferLocation startLocation, BufferLocation endLocation)
+void ZepSyntax::QueueUpdateSyntax(ByteIndex startLocation, ByteIndex endLocation)
 {
     assert(startLocation >= 0);
     assert(endLocation >= startLocation);
@@ -167,11 +167,11 @@ void ZepSyntax::UpdateSyntax()
     itrEnd = buffer.find_first_of(itrEnd, buffer.end(), lineEnd.begin(), lineEnd.end());
 
     // Mark a region of the syntax buffer with the correct marker
-    auto mark = [&](GapBuffer<utf8>::const_iterator itrA, GapBuffer<utf8>::const_iterator itrB, ThemeColor type, ThemeColor background) {
+    auto mark = [&](GapBuffer<uint8_t>::const_iterator itrA, GapBuffer<uint8_t>::const_iterator itrB, ThemeColor type, ThemeColor background) {
         std::fill(m_syntax.begin() + (itrA - buffer.begin()), m_syntax.begin() + (itrB - buffer.begin()), SyntaxData{ type, background });
     };
 
-    auto markSingle = [&](GapBuffer<utf8>::const_iterator itrA, ThemeColor type, ThemeColor background) {
+    auto markSingle = [&](GapBuffer<uint8_t>::const_iterator itrA, ThemeColor type, ThemeColor background) {
         (m_syntax.begin() + (itrA - buffer.begin()))->foreground = type;
         (m_syntax.begin() + (itrA - buffer.begin()))->background = background;
     };
@@ -237,7 +237,7 @@ void ZepSyntax::UpdateSyntax()
         }
 
         // Find String
-        auto findString = [&](utf8 ch) {
+        auto findString = [&](uint8_t ch) {
             auto itrString = itrFirst;
             if (*itrString == ch)
             {

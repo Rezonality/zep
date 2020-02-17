@@ -41,7 +41,7 @@ public:
         return ImGui::GetFontSize();
     }
 
-    NVec2f GetTextSize(const utf8* pBegin, const utf8* pEnd = nullptr) const
+    NVec2f GetTextSize(const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const
     {
         // This is the code from ImGui internals; we can't call GetTextSize, because it doesn't return the correct 'advance' formula, which we
         // need as we draw one character at a time...
@@ -51,13 +51,13 @@ public:
         if (text_size.x == 0.0)
         {
             // Make invalid characters a default fixed_size
-            return GetTextSize((const utf8*)"A");
+            return GetTextSize((const uint8_t*)"A");
         }
 
         return toNVec2f(text_size);
     }
 
-    void DrawChars(const NVec2f& pos, const NVec4f& col, const utf8* text_begin, const utf8* text_end) const
+    void DrawChars(const NVec2f& pos, const NVec4f& col, const uint8_t* text_begin, const uint8_t* text_end) const
     {
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         if (text_end == nullptr)

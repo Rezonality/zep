@@ -3,6 +3,9 @@
 #include "zep/mcommon/logger.h"
 #include "zep/mcommon/string/stringutils.h"
 
+#define UTF_CPP_CPLUSPLUS 201103L // C++ 11 or later
+#include "zep/mcommon/utf8/unchecked.h"
+
 // A 'window' is like a vim window; i.e. a region inside a tab
 namespace Zep
 {
@@ -15,11 +18,11 @@ void ZepDisplay::InvalidateCharCache()
 void ZepDisplay::BuildCharCache()
 {
     const char chA = 'A';
-    m_defaultCharSize = GetTextSize((const utf8*)&chA, (const utf8*)&chA + 1);
-    for (int i = 0; i < 256; i++)
+    m_defaultCharSize = GetTextSize((const uint8_t*)&chA, (const uint8_t*)&chA + 1);
+    for (int i = 0; i < 127; i++)
     {
-        utf8 ch = (utf8)i;
-        m_charCache[i] = GetTextSize(&ch, &ch + 1);
+        uint8_t ch = (uint8_t)i;
+        m_charCacheASCII[i] = GetTextSize(&ch, &ch + 1);
     }
     m_charCacheDirty = false;
 }
@@ -33,13 +36,41 @@ const NVec2f& ZepDisplay::GetDefaultCharSize()
     return m_defaultCharSize;
 }
 
-NVec2f ZepDisplay::GetCharSize(const utf8* pCh)
+uint32_t ZepDisplay::GetCodePointCount(const uint8_t* pCh, const uint8_t* pEnd) const
+{
+    uint32_t count = 0;
+    while (pCh < pEnd)
+    {
+        pCh += UTF8_CHAR_LEN(*pCh);
+        count++;
+    }
+    return count;
+}
+
+NVec2f ZepDisplay::GetCharSize(const uint8_t* pCh)
 {
     if (m_charCacheDirty)
     {
         BuildCharCache();
     }
-    return m_charCache[*pCh];
+
+    if (UTF8_CHAR_LEN(*pCh) == 1)
+    {
+        return m_charCacheASCII[*pCh];
+    }
+ 
+    auto ch32 = utf8::unchecked::next(pCh);
+
+    auto itr = m_charCache.find((uint32_t)ch32);
+    if (itr != m_charCache.end())
+    {
+        return itr->second;
+    }
+     
+    auto sz = GetTextSize(pCh, pCh + UTF8_CHAR_LEN(*pCh));
+    m_charCache[(uint32_t)ch32] = sz;
+
+    return sz;
 }
 
 }

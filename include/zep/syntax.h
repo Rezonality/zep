@@ -62,7 +62,7 @@ public:
     virtual void Notify(std::shared_ptr<ZepMessage> payload) override;
 
 private:
-    virtual void QueueUpdateSyntax(BufferLocation startLocation, BufferLocation endLocation);
+    virtual void QueueUpdateSyntax(ByteIndex startLocation, ByteIndex endLocation);
 
 protected:
     ZepBuffer& m_buffer;

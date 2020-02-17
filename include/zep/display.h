@@ -11,8 +11,8 @@ class ZepTabWindow;
 struct SelectRegion
 {
     // For vertical select, we will have a list of spans...
-    BufferLocation start = 0;
-    BufferLocation end = 0;
+    ByteIndex start = 0;
+    ByteIndex end = 0;
     bool visible = true;
     bool vertical = false; // Not yet supported
 };
@@ -25,7 +25,7 @@ public:
 
     // Renderer specific overrides
     // Implement these to draw the buffer using whichever system you prefer
-    virtual NVec2f GetTextSize(const utf8* pBegin, const utf8* pEnd = nullptr) const = 0;
+    virtual NVec2f GetTextSize(const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const = 0;
     virtual float GetFontPointSize() const = 0;
     virtual void SetFontPointSize(float size)
     {
@@ -33,11 +33,12 @@ public:
     };
     virtual float GetFontHeightPixels() const = 0;
     virtual void DrawLine(const NVec2f& start, const NVec2f& end, const NVec4f& color = NVec4f(1.0f), float width = 1.0f) const = 0;
-    virtual void DrawChars(const NVec2f& pos, const NVec4f& col, const utf8* text_begin, const utf8* text_end = nullptr) const = 0;
+    virtual void DrawChars(const NVec2f& pos, const NVec4f& col, const uint8_t* text_begin, const uint8_t* text_end = nullptr) const = 0;
     virtual void DrawRectFilled(const NRectf& rc, const NVec4f& col = NVec4f(1.0f)) const = 0;
     virtual void SetClipRect(const NRectf& rc) = 0;
 
-    virtual NVec2f GetCharSize(const utf8* pChar);
+    virtual uint32_t GetCodePointCount(const uint8_t* pCh, const uint8_t* pEnd) const;
+    virtual NVec2f GetCharSize(const uint8_t* pChar);
     virtual const NVec2f& GetDefaultCharSize();
     virtual void InvalidateCharCache();
 
@@ -46,7 +47,9 @@ protected:
 
 protected:
     bool m_charCacheDirty = true;
-    NVec2f m_charCache[256];
+    std::unordered_map<uint32_t, NVec2f> m_charCache;
+    NVec2f m_charCacheASCII[256];
+
     NVec2f m_defaultCharSize;
 };
 
@@ -56,7 +59,7 @@ protected:
 class ZepDisplayNull : public ZepDisplay
 {
 public:
-    virtual NVec2f GetTextSize(const utf8* pBegin, const utf8* pEnd = nullptr) const override
+    virtual NVec2f GetTextSize(const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const override
     {
         return NVec2f(float(pEnd - pBegin), 10.0f);
     }
@@ -75,7 +78,7 @@ public:
         (void)color;
         (void)width;
     };
-    virtual void DrawChars(const NVec2f& pos, const NVec4f& col, const utf8* text_begin, const utf8* text_end = nullptr) const override
+    virtual void DrawChars(const NVec2f& pos, const NVec4f& col, const uint8_t* text_begin, const uint8_t* text_end = nullptr) const override
     {
         (void)pos;
         (void)col;
