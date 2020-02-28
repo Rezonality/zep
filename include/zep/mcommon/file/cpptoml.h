@@ -59,7 +59,7 @@ template <class T>
 class option
 {
   public:
-    option() : empty_{true}
+    option() : empty_{true}, value_()
     {
         // nothing
     }

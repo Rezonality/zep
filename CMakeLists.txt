@@ -54,6 +54,7 @@ include(cmake/all.cmake)
 include(m3rdparty/cmake/copy_files.cmake)
 
 # The main library
+include(${ZEP_ROOT}/extensions/CMakeLists.txt)
 include(src/CMakeLists.txt)
 
 include (tests/CMakeLists.txt)

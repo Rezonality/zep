@@ -15,20 +15,27 @@ namespace RegionFlags
 enum Flags
 {
     Fixed = (1 << 0),
-    Expanding = (1 << 1)
+    Expanding = (1 << 1),
+    AlignCenter = (1 << 2)
 };
+};
+
+enum class RegionLayoutType
+{
+    VBox,
+    HBox
 };
 
 struct Region
 {
-    const char* pszName = nullptr;
+    RegionLayoutType layoutType = RegionLayoutType::VBox;
+
     uint32_t flags = RegionFlags::Expanding;
-    float ratio = 1.0f;
     NRectf rect;
-    NVec2f min_size = NVec2f(0.0f, 0.0f);
     NVec2f fixed_size = NVec2f(0.0f, 0.0f);
-    bool vertical = true;
-    NVec2f margin = NVec2f(0.0f, 0.0f);
+    NVec2f padding = NVec2f(0.0f, 0.0f);
+    NVec4f margin = NVec4f(0.0f, 0.0f, 0.0f, 0.0f);
+    std::string name;
 
     std::shared_ptr<Region> pParent;
     std::vector<std::shared_ptr<Region>> children;
@@ -40,9 +47,7 @@ inline std::ostream& operator<<(std::ostream& str, const Region& region)
     auto do_indent = [&str](int sz) { for (int i = 0; i < sz; i++) str << " "; };
 
     do_indent(indent);
-    if (region.pszName)
-        str << region.pszName << " ";
-    str << std::hex << &region << " -> ";
+    str << std::hex << &region << "(" << region.name << ") -> ";
 
     str << "RC: " << region.rect << ", pParent: " << std::hex << region.pParent;
     if (!region.children.empty())

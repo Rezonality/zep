@@ -24,7 +24,8 @@ TEST(GapBuffer, PushPop)
     out = buffer.string(true);
     ASSERT_EQ(out, "|9|");
 
-    EXPECT_DEBUG_DEATH(buffer.pop_back(), ".*!empty.*");
+    // Causes annoying break in debugger when trapping asserts
+    //EXPECT_DEBUG_DEATH(buffer.pop_back(), ".*!empty.*");
 }
 
 TEST(GapBuffer, FrontBack)

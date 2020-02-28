@@ -11,6 +11,9 @@
 #include "zep/mode_vim.h"
 #include "zep/tab_window.h"
 #include "zep/window.h"
+#include "zep/regress.h"
+
+#include "orca/mode_orca.h"
 
 #include "zep/qt/zepwidget_qt.h"
 #include "config_app.h"
@@ -42,7 +45,6 @@ void main()
 
 MainWindow::MainWindow()
 {
-
     QCommandLineParser parser;
     parser.setApplicationDescription("Test helper");
     parser.addHelpOption();
@@ -52,6 +54,9 @@ MainWindow::MainWindow()
     parser.process(*qApp);
 
     auto* pWidget = new ZepWidget_Qt(this, ZEP_ROOT);
+
+    ZepMode_Orca::Register(pWidget->GetEditor());
+    ZepRegress::Register(pWidget->GetEditor());
 
     const QStringList args = parser.positionalArguments();
     if (args.size() > 0)

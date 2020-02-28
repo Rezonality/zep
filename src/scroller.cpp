@@ -23,12 +23,12 @@ Scroller::Scroller(ZepEditor& editor, Region& parent)
     m_bottomButtonRegion->flags = RegionFlags::Fixed;
     m_mainRegion->flags = RegionFlags::Expanding;
 
-    m_region->vertical = false;
+    m_region->layoutType = RegionLayoutType::VBox;
 
     const float scrollButtonMargin = 3.0f * editor.GetPixelScale();
-    m_topButtonRegion->margin = NVec2f(scrollButtonMargin, scrollButtonMargin);
-    m_bottomButtonRegion->margin = NVec2f(scrollButtonMargin, scrollButtonMargin);
-    m_mainRegion->margin = NVec2f(scrollButtonMargin, 0.0f);
+    m_topButtonRegion->padding = NVec2f(scrollButtonMargin, scrollButtonMargin);
+    m_bottomButtonRegion->padding = NVec2f(scrollButtonMargin, scrollButtonMargin);
+    m_mainRegion->padding = NVec2f(scrollButtonMargin, 0.0f);
 
     const float scrollButtonSize = 16.0f * editor.GetPixelScale();
     m_topButtonRegion->fixed_size = NVec2f(0.0f, scrollButtonSize);

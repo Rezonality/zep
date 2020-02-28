@@ -157,6 +157,16 @@ inline void string_eat_char(std::string::const_iterator& itr, std::string::const
 std::string string_slurp_if(std::string::const_iterator& itr, std::string::const_iterator itrEnd, char first, char last);
 std::string string_slurp_if(std::string::const_iterator& itr, std::string::const_iterator itrEnd, std::function<bool(char)> fnIs);
 
+inline bool utf8_is_trailing(uint8_t ch)
+{
+    return (ch >> 6) == 0x2;
+}
+
+inline long utf8_codepoint_length(uint8_t ch)
+{
+    return ((0xE5000000 >> ((ch >> 3) & 0x1e)) & 3) + 1;
+}
+
 } // namespace Zep
 
 namespace std

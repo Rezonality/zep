@@ -14,9 +14,13 @@ IF (BUILD_DEMOS AND BUILD_IMGUI)
         # Let windows know that the app is DPI Aware
         set(MANIFEST_SOURCE ${ZEP_ROOT}/dpiawarescaling.manifest)
     ENDIF()
+
     set(DEMO_SOURCE_IMGUI
         ${ZEP_ROOT}/demo_imgui/main.cpp
-        ${ZEP_ROOT}/demo_imgui/CMakeLists.txt)
+        ${ZEP_ROOT}/demo_imgui/CMakeLists.txt
+        ${ZEP_ROOT}/include/zep/imgui/display_imgui.h
+        ${ZEP_ROOT}/include/zep/imgui/editor_imgui.h
+        )
 
     add_executable (${DEMO_NAME} WIN32 # Win32 ignored on windows 
         ${DEMO_SOURCE_IMGUI}
@@ -25,6 +29,7 @@ IF (BUILD_DEMOS AND BUILD_IMGUI)
     target_include_directories(${DEMO_NAME}
         PRIVATE
         include
+        extensions
         ${FREETYPE_INCLUDE_DIRS}
         ${SDL2_ROOT_DIR}
         ${CMAKE_BINARY_DIR}
@@ -37,6 +42,8 @@ IF (BUILD_DEMOS AND BUILD_IMGUI)
     endif()
 
     copy_existing_files(${DEMO_NAME} ${MUTILS_INCLUDE_DIR}/imgui/misc/fonts/Cousine-Regular.ttf ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
+    copy_existing_files(${DEMO_NAME} ${MUTILS_INCLUDE_DIR}/imgui/misc/fonts/DroidSans.ttf ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
+    copy_existing_files(${DEMO_NAME} ${MUTILS_INCLUDE_DIR}/imgui/misc/fonts/Roboto-Medium.ttf ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
     copy_existing_files(${DEMO_NAME} ${MUTILS_INCLUDE_DIR}/chibi/init-7.scm ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
 
     target_link_libraries (${DEMO_NAME} 

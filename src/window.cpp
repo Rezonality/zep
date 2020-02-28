@@ -26,7 +26,7 @@ struct WindowPass
         Max
     };
 };
-}
+} // namespace
 
 // A 'window' is like a vim window; i.e. a region inside a tab
 namespace Zep
@@ -46,7 +46,7 @@ ZepWindow::ZepWindow(ZepTabWindow& window, ZepBuffer* buffer)
     m_vScrollRegion = std::make_shared<Region>();
 
     m_bufferRegion->flags = RegionFlags::Expanding;
-    m_bufferRegion->vertical = false;
+    m_bufferRegion->layoutType = RegionLayoutType::VBox;
 
     m_numberRegion->flags = RegionFlags::Fixed;
     m_indicatorRegion->flags = RegionFlags::Fixed;
@@ -54,15 +54,24 @@ ZepWindow::ZepWindow(ZepTabWindow& window, ZepBuffer* buffer)
     m_textRegion->flags = RegionFlags::Expanding;
     m_airlineRegion->flags = RegionFlags::Fixed;
 
-    auto pHorzRegion = std::make_shared<Region>();
-    pHorzRegion->flags = RegionFlags::Expanding;
-    pHorzRegion->vertical = true;
+    m_editRegion = std::make_shared<Region>();
+    m_editRegion->flags = RegionFlags::Expanding;
+    m_editRegion->layoutType = RegionLayoutType::HBox;
 
-    m_bufferRegion->children.push_back(pHorzRegion);
-    pHorzRegion->children.push_back(m_numberRegion);
-    pHorzRegion->children.push_back(m_indicatorRegion);
-    pHorzRegion->children.push_back(m_textRegion);
-    pHorzRegion->children.push_back(m_vScrollRegion);
+    // A little daylight between the indicators
+    m_textRegion->padding = NVec2f(DPI_X(8), 0);
+
+    // Ensure that the main area with text, numbers, indicators fills the remaining space
+    m_expandingEditRegion = std::make_shared<Region>();
+    m_expandingEditRegion->flags = RegionFlags::Expanding;
+    m_expandingEditRegion->layoutType = RegionLayoutType::HBox;
+    m_expandingEditRegion->children.push_back(m_editRegion);
+
+    m_bufferRegion->children.push_back(m_expandingEditRegion);
+    m_editRegion->children.push_back(m_numberRegion);
+    m_editRegion->children.push_back(m_indicatorRegion);
+    m_editRegion->children.push_back(m_textRegion);
+    m_editRegion->children.push_back(m_vScrollRegion);
 
     m_bufferRegion->children.push_back(m_airlineRegion);
 
@@ -88,12 +97,12 @@ void ZepWindow::UpdateScrollers()
         m_scrollVisibilityChanged = (old_percent != m_vScroller->vScrollVisiblePercent);
         return;
     }
-    m_vScroller->vScrollVisiblePercent = std::min(float(m_maxDisplayLines) / float(m_windowLines.size()), 1.0f);
-    m_vScroller->vScrollPosition = std::abs(m_bufferOffsetYPx) / m_bufferSizeYPx;
+    m_vScroller->vScrollVisiblePercent = std::min(m_textRegion->rect.Height() / m_textSizePx.y, 1.0f);
+    m_vScroller->vScrollPosition = std::abs(m_textOffsetPx) / m_textSizePx.y;
     m_vScroller->vScrollLinePercent = 1.0f / m_windowLines.size();
     m_vScroller->vScrollPagePercent = m_vScroller->vScrollVisiblePercent;
 
-    if (GetEditor().GetConfig().showScrollBar == 0)
+    if (GetEditor().GetConfig().showScrollBar == 0 || ZTestFlags(GetWindowFlags(), WindowFlags::HideScrollBar))
     {
         m_vScrollRegion->fixed_size = NVec2f(0.0f);
     }
@@ -101,7 +110,7 @@ void ZepWindow::UpdateScrollers()
     {
         if (m_vScroller->vScrollVisiblePercent >= 1.0f && GetEditor().GetConfig().showScrollBar != 2)
         {
-            m_vScrollRegion->fixed_size = NVec2f(0.0f, 0.0f);
+            m_vScrollRegion->fixed_size = NVec2f(0.0f);
         }
         else
         {
@@ -169,6 +178,7 @@ void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
             // Make sure the cursor is on its 'display' part of the flash cycle after an edit.
             GetEditor().ResetCursorTimer();
         }
+
         // Remove tooltips that might be present
         DisableToolTipTillMove();
     }
@@ -177,7 +187,7 @@ void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
         if (payload->pComponent == m_vScroller.get())
         {
             auto pScroller = dynamic_cast<Scroller*>(payload->pComponent);
-            m_bufferOffsetYPx = pScroller->vScrollPosition * (m_windowLines.size() * GetEditor().GetDisplay().GetFontHeightPixels());
+            m_textOffsetPx = pScroller->vScrollPosition * m_textSizePx.y;
             UpdateVisibleLineRange();
             EnsureCursorVisible();
             DisableToolTipTillMove();
@@ -215,6 +225,8 @@ void ZepWindow::SetDisplayRegion(const NRectf& region)
         return;
     }
 
+    m_displayRect = region;
+
     m_layoutDirty = true;
     m_bufferRegion->rect = region;
 
@@ -231,14 +243,14 @@ void ZepWindow::EnsureCursorVisible()
     {
         if (line->lineByteRange.first <= loc && line->lineByteRange.second > loc)
         {
-            auto cursorLine = line->lineIndex;
-            if (cursorLine < m_visibleLineRange.x)
+            auto cursorLine = line->spanLineIndex;
+            if (cursorLine < m_visibleLineIndices.x)
             {
-                MoveCursorY(std::abs(m_visibleLineRange.x - cursorLine));
+                MoveCursorY(std::abs(m_visibleLineIndices.x - cursorLine));
             }
-            else if (cursorLine >= m_visibleLineRange.y)
+            else if (cursorLine >= m_visibleLineIndices.y)
             {
-                MoveCursorY((long(m_visibleLineRange.y) - cursorLine) - 1);
+                MoveCursorY((long(m_visibleLineIndices.y) - cursorLine) - 1);
             }
             m_cursorMoved = false;
             return;
@@ -253,23 +265,25 @@ void ZepWindow::ScrollToCursor()
         return;
     }
 
-    auto old_offset = m_bufferOffsetYPx;
-    auto two_lines = (GetEditor().GetDisplay().GetFontHeightPixels() * 2);
+    auto lineMargins = DPI_VEC2(GetEditor().GetConfig().lineMargins);
+    auto old_offset = m_textOffsetPx;
+    auto two_lines = (GetEditor().GetDisplay().GetFontHeightPixels() * 2); // +(lineMargins.x + lineMargins.y) * 2;
     auto& cursorLine = GetCursorLineInfo(BufferToDisplay().y);
 
-    if (m_bufferOffsetYPx > (cursorLine.spanYPx - two_lines))
+    // If the buffer is beyond two lines above the cursor position, move it back by the difference
+    if (m_textOffsetPx > (cursorLine.yOffsetPx - two_lines))
     {
-        m_bufferOffsetYPx -= (m_bufferOffsetYPx - (cursorLine.spanYPx - two_lines));
+        m_textOffsetPx -= (m_textOffsetPx - (cursorLine.yOffsetPx - two_lines));
     }
-    else if ((m_bufferOffsetYPx + m_textRegion->rect.Height() - two_lines) < cursorLine.spanYPx)
+    else if ((m_textOffsetPx + m_textRegion->rect.Height() - two_lines) < cursorLine.yOffsetPx)
     {
-        m_bufferOffsetYPx += cursorLine.spanYPx - (m_bufferOffsetYPx + m_textRegion->rect.Height() - two_lines);
+        m_textOffsetPx += cursorLine.yOffsetPx - (m_textOffsetPx + m_textRegion->rect.Height() - two_lines);
     }
 
-    m_bufferOffsetYPx = std::min(m_bufferOffsetYPx, m_bufferSizeYPx - float(m_maxDisplayLines) * (two_lines * .5f));
-    m_bufferOffsetYPx = std::max(0.f, m_bufferOffsetYPx);
+    m_textOffsetPx = std::min(m_textOffsetPx, m_textSizePx.y - m_textRegion->rect.Height());
+    m_textOffsetPx = std::max(0.f, m_textOffsetPx);
 
-    if (old_offset != m_bufferOffsetYPx)
+    if (old_offset != m_textOffsetPx)
     {
         UpdateVisibleLineRange();
     }
@@ -288,7 +302,7 @@ void ZepWindow::GetCharPointer(ByteIndex loc, const uint8_t*& pBegin, const uint
     if (*pBegin == '\n' || *pBegin == 0)
     {
         invalidChar = '@' + *pBegin;
-        if (m_windowFlags & WindowFlags::ShowCR)
+        if (GetWindowFlags() & WindowFlags::ShowCR)
         {
             pBegin = (const uint8_t*)&invalidChar;
         }
@@ -299,10 +313,10 @@ void ZepWindow::GetCharPointer(ByteIndex loc, const uint8_t*& pBegin, const uint
         hiddenChar = true;
     }
 
-    pEnd = pBegin + UTF8_CHAR_LEN(*pBegin);
+    pEnd = pBegin + utf8_codepoint_length(*pBegin);
 }
 
-float ZepWindow::GetLineTopMargin(long line)
+float ZepWindow::GetLineTopPadding(long line)
 {
     float height = DPI_Y((float)GetEditor().GetConfig().lineMargins.x);
     auto pLineWidgets = m_pBuffer->GetLineWidgets(line);
@@ -319,13 +333,11 @@ float ZepWindow::GetLineTopMargin(long line)
             height += margins.y;
         }
     }
-    // Add the line margin too, so the widget sits in a space similar to a line
-    height += DPI_Y((float)GetEditor().GetConfig().lineMargins.y);
 
     return height;
 }
 
-// This is the most expensive part of window update; applying line span generation for wrapped text and unicode 
+// This is the most expensive part of window update; applying line span generation for wrapped text and unicode
 // character sizes which may vary in byte count and physical pixel width
 // It can take about a millisecond to do during editing on release buildj; but this is fast enough for now.
 // There are several ways in which this function can be optimized:
@@ -337,14 +349,15 @@ void ZepWindow::UpdateLineSpans()
 {
     TIME_SCOPE(UpdateLineSpans);
 
+    //LOG(DEBUG) << "UpdateLineSpans: " << (uint64_t)this << ", " << m_pBuffer->GetName();
     m_maxDisplayLines = (long)std::max(0.0f, std::floor(m_textRegion->rect.Height() / m_defaultLineSize));
-    float screenPosX = m_textRegion->rect.topLeftPx.x;
 
     const auto& textBuffer = m_pBuffer->GetText();
 
     long bufferLine = 0;
     long spanLine = 0;
     float bufferPosYPx = 0.0f;
+    float xOffset = m_xPad;
 
     // Nuke the existing spans
     // In future we can in-place modify for speed
@@ -367,36 +380,37 @@ void ZepWindow::UpdateLineSpans()
         if (!m_pBuffer->GetLineOffsets(bufferLine, lineByteRange.first, lineByteRange.second))
             break;
 
-        NVec2f margins = NVec2f(GetLineTopMargin(bufferLine), DPI_Y((float)GetEditor().GetConfig().lineMargins.y));
-        float fullLineHeight = textHeight + margins.x + margins.y;
+        NVec2f padding = NVec2f(GetLineTopPadding(bufferLine), DPI_Y((float)GetEditor().GetConfig().lineMargins.y));
+        float fullLineHeight = textHeight + padding.x + padding.y;
 
         // Start a new line
         SpanInfo* lineInfo = new SpanInfo();
         lineInfo->bufferLineNumber = bufferLine;
-        lineInfo->lineIndex = spanLine;
+        lineInfo->spanLineIndex = spanLine;
         lineInfo->lineByteRange.first = lineByteRange.first;
         lineInfo->lineByteRange.second = lineByteRange.first;
-        lineInfo->spanYPx = bufferPosYPx;
-        lineInfo->margins = margins;
-        lineInfo->textHeight = textHeight;
-        lineInfo->pixelRenderRange.x = screenPosX;
+        lineInfo->yOffsetPx = bufferPosYPx;
+        lineInfo->padding = padding;
+        lineInfo->textSizePx.x = xOffset;
+        lineInfo->textSizePx.y = textHeight;
+        lineInfo->isSplitContinuation = false;
 
         // These offsets are 0 -> n + 1, i.e. the last offset the buffer returns is 1 beyond the current
         // Note: Must not use pointers into the character buffer!
-        for (auto ch = lineByteRange.first; ch < lineByteRange.second; ch += UTF8_CHAR_LEN(textBuffer[ch]))
+        for (auto ch = lineByteRange.first; ch < lineByteRange.second; ch += utf8_codepoint_length(textBuffer[ch]))
         {
             const uint8_t* pCh = &textBuffer[ch];
             const auto textSize = display.GetCharSize(pCh);
 
             // Wrap if we have displayed at least one char, and we have to
-            if (m_wrap && ch != lineByteRange.first)
+            if (ZTestFlags(GetWindowFlags(), WindowFlags::WrapText) && ch != lineByteRange.first)
             {
                 // At least a single char has wrapped; close the old line, start a new one
-                if (((screenPosX + textSize.x) + textSize.x) >= (m_textRegion->rect.bottomRightPx.x))
+                if (((xOffset + textSize.x) + textSize.x) >= (m_textRegion->rect.Width()))
                 {
                     // Remember the offset beyond the end of the line
                     lineInfo->lineByteRange.second = ch;
-                    lineInfo->pixelRenderRange.y = screenPosX;
+                    lineInfo->textSizePx.x = xOffset;
                     m_windowLines.push_back(lineInfo);
 
                     // Next line
@@ -406,30 +420,44 @@ void ZepWindow::UpdateLineSpans()
 
                     // Reset the line margin and height, because when we split a line we don't include a
                     // custom widget space above it.  That goes just above the first part of the line
-                    margins.x = (float)GetEditor().GetConfig().lineMargins.x;
-                    fullLineHeight = textHeight + margins.x + margins.y;
+                    padding.x = (float)GetEditor().GetConfig().lineMargins.x;
+                    fullLineHeight = textHeight + padding.x + padding.y;
 
                     // Now jump to the next 'screen line' for the rest of this 'buffer line'
-                    lineInfo->lineByteRange = BufferByteRange(ch, UTF8_CHAR_LEN(textBuffer[ch]));
-                    lineInfo->lastNonCROffset = 0;
-                    lineInfo->lineIndex = spanLine;
+                    lineInfo->lineByteRange = BufferByteRange(ch, utf8_codepoint_length(textBuffer[ch]));
+                    lineInfo->spanLineIndex = spanLine;
                     lineInfo->bufferLineNumber = bufferLine;
-                    lineInfo->spanYPx = bufferPosYPx;
-                    lineInfo->margins = margins;
-                    lineInfo->textHeight = textHeight;
-                    screenPosX = m_textRegion->rect.topLeftPx.x;
-                    lineInfo->pixelRenderRange.x = screenPosX;
+                    lineInfo->yOffsetPx = bufferPosYPx;
+                    lineInfo->padding = padding;
+                    lineInfo->textSizePx.y = textHeight;
+                    lineInfo->textSizePx.x = xOffset;
+                    lineInfo->isSplitContinuation = true;
+
+                    xOffset = m_xPad;
                 }
                 else
                 {
-                    screenPosX += textSize.x;
+                    xOffset += textSize.x + m_xPad;
                 }
             }
+            else
+            {
+                xOffset += textSize.x + m_xPad;
+            }
 
-            lineInfo->spanYPx = bufferPosYPx;
-            lineInfo->lineByteRange.second = ch + UTF8_CHAR_LEN(textBuffer[ch]);
-            lineInfo->pixelRenderRange.y = screenPosX;
-            lineInfo->lastNonCROffset = std::max(ch, 0l);
+            if (*pCh == '\n' && !ZTestFlags(GetWindowFlags(), WindowFlags::ShowCR))
+            {
+                xOffset -= (textSize.x + m_xPad);
+            }
+
+            if (*pCh == 0)
+            {
+                xOffset -= (textSize.x + m_xPad);
+            }
+
+            lineInfo->yOffsetPx = bufferPosYPx;
+            lineInfo->lineByteRange.second = ch + utf8_codepoint_length(textBuffer[ch]);
+            lineInfo->textSizePx.x = std::max(lineInfo->textSizePx.x, xOffset);
         }
 
         // Complete the line
@@ -438,7 +466,7 @@ void ZepWindow::UpdateLineSpans()
         // Next time round - down a buffer line, down a span line
         bufferLine++;
         spanLine++;
-        screenPosX = m_textRegion->rect.topLeftPx.x;
+        xOffset = m_xPad;
         bufferPosYPx += fullLineHeight;
     }
 
@@ -448,38 +476,34 @@ void ZepWindow::UpdateLineSpans()
         SpanInfo* lineInfo = new SpanInfo();
         lineInfo->lineByteRange.first = 0;
         lineInfo->lineByteRange.second = 0;
-        lineInfo->lastNonCROffset = 0;
-        lineInfo->margins = NVec2f(0.0f);
-        lineInfo->textHeight = 0.0f;
+        lineInfo->padding = NVec2f(0.0f);
+        lineInfo->textSizePx = NVec2f(0.0f);
         lineInfo->bufferLineNumber = 0;
-        lineInfo->pixelRenderRange = NVec2f(0.0f, 0.0f);
         m_windowLines.push_back(lineInfo);
     }
 
+    // Now build the codepoint offsets
     for (auto& line : m_windowLines)
     {
         auto ch = line->lineByteRange.first;
-        
+
         // TODO: Optimize
         line->lineCodePoints.clear();
         uint32_t points = 0;
         while (ch < line->lineByteRange.second)
         {
             LineCharInfo info;
-            
-            // Important note: We can't navigate the text buffer by pointers!
-            // It is a gap buffer, so the pointers may not be contiguous.  Need to use operators or iterators
-            long len = UTF8_CHAR_LEN(textBuffer[ch]);
-            info.byteIndex = ByteIndex(ch);
-            info.size = display.GetTextSize(&textBuffer[ch], &textBuffer[ch] + len);
-            line->lineCodePoints.push_back(info);
 
-            ch += len;
+            // Important note: We can't navigate the text buffer by pointers!
+            // The gap buffer will get in the way; so need to be careful to use [] or an iterator
+            // GetCharSize is cached for speed on debug builds.
+            info.byteIndex = ByteIndex(ch);
+            info.size = display.GetCharSize(&textBuffer[ch]);
+            line->lineCodePoints.push_back(info);
+            ch += utf8_codepoint_length(textBuffer[ch]);
             points++;
         }
     }
-
-    m_bufferSizeYPx = m_windowLines[m_windowLines.size() - 1]->spanYPx + textHeight + DPI_Y(GetEditor().GetConfig().lineMargins.y);
 
     UpdateVisibleLineRange();
     m_layoutDirty = true;
@@ -489,30 +513,33 @@ void ZepWindow::UpdateVisibleLineRange()
 {
     TIME_SCOPE(UpdateVisibleLineRange);
 
-    m_visibleLineExtents = NVec2f(m_bufferRegion->rect.Width(), 0);
-
-    m_visibleLineRange.x = (long)m_windowLines.size();
-    m_visibleLineRange.y = 0;
+    m_visibleLineIndices.x = (long)m_windowLines.size();
+    m_visibleLineIndices.y = 0;
+    m_textSizePx.x = 0;
     for (long line = 0; line < long(m_windowLines.size()); line++)
     {
         auto& windowLine = *m_windowLines[line];
-        if ((windowLine.spanYPx + windowLine.FullLineHeightPx()) <= m_bufferOffsetYPx)
+        m_textSizePx.x = std::max(m_textSizePx.x, windowLine.textSizePx.x);
+
+        if ((windowLine.yOffsetPx + windowLine.FullLineHeightPx()) <= m_textOffsetPx)
         {
             continue;
         }
 
-        if ((windowLine.spanYPx - m_bufferOffsetYPx) >= m_textRegion->rect.Height())
+        if ((windowLine.yOffsetPx - m_textOffsetPx) >= m_textRegion->rect.Height())
         {
             break;
         }
 
-        m_visibleLineRange.x = std::min(m_visibleLineRange.x, long(line));
-        m_visibleLineRange.y = long(line);
-
-        m_visibleLineExtents.x = std::min(windowLine.pixelRenderRange.x, m_visibleLineExtents.x);
-        m_visibleLineExtents.y = std::max(windowLine.pixelRenderRange.y, m_visibleLineExtents.y);
+        m_visibleLineIndices.x = std::min(m_visibleLineIndices.x, long(line));
+        m_visibleLineIndices.y = long(line);
     }
-    m_visibleLineRange.y++;
+
+    m_textSizePx.y = m_windowLines[m_windowLines.size() - 1]->yOffsetPx + GetEditor().GetDisplay().GetFontHeightPixels() + DPI_Y(GetEditor().GetConfig().lineMargins.y) + DPI_Y(GetEditor().GetConfig().lineMargins.x);
+
+    //LOG(DEBUG) << "Text Size: " << m_textSizePx;
+
+    m_visibleLineIndices.y++;
     UpdateScrollers();
 }
 
@@ -527,7 +554,7 @@ const SpanInfo& ZepWindow::GetCursorLineInfo(long y)
 // Convert a normalized y coordinate to the window region
 float ZepWindow::ToWindowY(float pos) const
 {
-    return pos - m_bufferOffsetYPx + m_bufferRegion->rect.topLeftPx.y;
+    return pos - m_textOffsetPx + m_textRegion->rect.topLeftPx.y;
 }
 
 float ZepWindow::TipBoxShadowWidth() const
@@ -547,7 +574,10 @@ void ZepWindow::DisplayToolTip(const NVec2f& pos, const RangeMarker& marker) con
 
     auto& display = GetEditor().GetDisplay();
 
-    display.SetClipRect(m_textRegion->rect);
+    // Don't clip the scroll bar
+    auto clip = m_expandingEditRegion->rect;
+    clip.SetSize(clip.Size() - NVec2f(m_vScrollRegion->rect.Width(), 0.0f));
+    display.SetClipRect(clip);
     display.DrawRectFilled(tipBox, m_pBuffer->GetTheme().GetColor(ThemeColor::Background));
 
     // Draw a lighter inner and a border the same color as the marker theme
@@ -579,6 +609,9 @@ NVec4f ZepWindow::GetBlendedColor(ThemeColor color) const
 
 void ZepWindow::DrawLineWidgets(SpanInfo& lineInfo)
 {
+    if (lineInfo.isSplitContinuation)
+        return;
+
     auto pLineWidgets = m_pBuffer->GetLineWidgets(lineInfo.bufferLineNumber);
     if (!pLineWidgets)
     {
@@ -588,13 +621,14 @@ void ZepWindow::DrawLineWidgets(SpanInfo& lineInfo)
     auto lineMargins = DPI_VEC2(GetEditor().GetConfig().lineMargins);
     auto widgetMargins = DPI_VEC2(GetEditor().GetConfig().widgetMargins);
 
+    NVec2f linePx = GetSpanPixelRange(lineInfo);
     float currentY = lineMargins.x;
     for (auto& pWidget : *pLineWidgets)
     {
         auto widgetSize = DPI_VEC2(pWidget->GetSize());
 
         currentY += widgetMargins.x;
-        pWidget->Draw(*m_pBuffer, NVec2f(lineInfo.pixelRenderRange.x, ToWindowY(currentY + lineInfo.spanYPx)));
+        pWidget->Draw(*m_pBuffer, NVec2f(linePx.x, ToWindowY(currentY + lineInfo.yOffsetPx)));
         currentY += widgetMargins.y;
     }
 }
@@ -614,8 +648,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
 
     // Draw line numbers
     auto displayLineNumber = [&]() {
-
-        if (!IsInsideTextRegion(NVec2i(0, lineInfo.lineIndex)))
+        if (!IsInsideTextRegion(NVec2i(0, lineInfo.spanLineIndex)))
             return;
 
         auto cursorBufferLine = GetCursorLineInfo(cursorCL.y).bufferLineNumber;
@@ -640,7 +673,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
         }
 
         // Numbers
-        display.DrawChars(NVec2f(m_numberRegion->rect.bottomRightPx.x - textSize.x, ToWindowY(lineInfo.spanYPx + lineInfo.margins.x)), digitCol, (const uint8_t*)strNum.c_str(), (const uint8_t*)(strNum.c_str() + strNum.size()));
+        display.DrawChars(NVec2f(m_numberRegion->rect.bottomRightPx.x - textSize.x, ToWindowY(lineInfo.yOffsetPx + lineInfo.padding.x)), digitCol, (const uint8_t*)strNum.c_str(), (const uint8_t*)(strNum.c_str() + strNum.size()));
     };
 
     // Drawing commands for the whole line
@@ -648,11 +681,14 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
     {
         display.SetClipRect(m_textRegion->rect);
 
+        NVec2f linePx = GetSpanPixelRange(lineInfo);
+
         // Fill the background of the line
+        // TODO: Adjust pixelRenderRange
         display.DrawRectFilled(
             NRectf(
-                NVec2f(lineInfo.pixelRenderRange.x, ToWindowY(lineInfo.spanYPx)),
-                NVec2f(lineInfo.pixelRenderRange.y, ToWindowY(lineInfo.spanYPx + lineInfo.FullLineHeightPx()))),
+                NVec2f(linePx.x, ToWindowY(lineInfo.yOffsetPx)),
+                NVec2f(linePx.y, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx()))),
             GetBlendedColor(ThemeColor::Background));
 
         if (lineInfo.BufferCursorInside(m_bufferCursor))
@@ -670,32 +706,32 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
 
                         // Normal mode spans the whole buffer, otherwise we just cover the visible text range
                         // This is all about making minimal mode as non-invasive as possible.
-                        auto right = GetEditor().GetConfig().style == EditorStyle::Normal ? m_textRegion->rect.bottomRightPx.x : m_visibleLineExtents.y;
+                        auto right = GetEditor().GetConfig().style == EditorStyle::Normal ? m_textRegion->rect.bottomRightPx.x : m_textSizePx.y;
 
                         if (GetEditor().GetConfig().cursorLineSolid)
                         {
                             // Cursor line
-                            display.DrawRectFilled(NRectf(NVec2f(m_textRegion->rect.topLeftPx.x, cursorLine.spanYPx - m_bufferOffsetYPx + m_textRegion->rect.topLeftPx.y), NVec2f(right, cursorLine.spanYPx - m_bufferOffsetYPx + m_textRegion->rect.topLeftPx.y + cursorLine.FullLineHeightPx())), GetBlendedColor(ThemeColor::CursorLineBackground));
+                            display.DrawRectFilled(NRectf(NVec2f(m_textRegion->rect.topLeftPx.x, cursorLine.yOffsetPx - m_textOffsetPx + m_textRegion->rect.topLeftPx.y), NVec2f(right, cursorLine.yOffsetPx - m_textOffsetPx + m_textRegion->rect.topLeftPx.y + cursorLine.FullLineHeightPx())), GetBlendedColor(ThemeColor::CursorLineBackground));
                         }
                         else
                         {
                             // Cursor line
                             display.DrawRectFilled(
                                 NRectf(
-                                    NVec2f(m_textRegion->rect.Left(), ToWindowY(cursorLine.spanYPx)),
-                                    NVec2f(right, ToWindowY(cursorLine.spanYPx + lineSize))),
+                                    NVec2f(m_textRegion->rect.Left(), ToWindowY(cursorLine.yOffsetPx)),
+                                    NVec2f(right, ToWindowY(cursorLine.yOffsetPx + lineSize))),
                                 GetBlendedColor(ThemeColor::TabInactive));
 
                             display.DrawRectFilled(
                                 NRectf(
-                                    NVec2f(m_textRegion->rect.Left(), ToWindowY(cursorLine.spanYPx + cursorLine.FullLineHeightPx() - lineSize)),
-                                    NVec2f(right, ToWindowY(cursorLine.spanYPx + cursorLine.FullLineHeightPx()))),
+                                    NVec2f(m_textRegion->rect.Left(), ToWindowY(cursorLine.yOffsetPx + cursorLine.FullLineHeightPx() - lineSize)),
+                                    NVec2f(right, ToWindowY(cursorLine.yOffsetPx + cursorLine.FullLineHeightPx()))),
                                 GetBlendedColor(ThemeColor::TabInactive));
 
                             display.DrawRectFilled(
                                 NRectf(
-                                    NVec2f(right, ToWindowY(cursorLine.spanYPx)),
-                                    NVec2f(right + lineSize, ToWindowY(cursorLine.spanYPx + cursorLine.FullLineHeightPx()))),
+                                    NVec2f(right, ToWindowY(cursorLine.yOffsetPx)),
+                                    NVec2f(right + lineSize, ToWindowY(cursorLine.yOffsetPx + cursorLine.FullLineHeightPx()))),
                                 GetBlendedColor(ThemeColor::TabInactive));
                         }
                     }
@@ -704,7 +740,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
         }
         display.SetClipRect(m_bufferRegion->rect);
 
-        if (GetEditor().GetConfig().showIndicatorRegion)
+        if (m_indicatorRegion->rect.Width() > 0)
         {
             display.SetClipRect(m_indicatorRegion->rect);
 
@@ -719,10 +755,10 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                             NRectf(
                                 NVec2f(
                                     m_indicatorRegion->rect.Center().x - m_indicatorRegion->rect.Width() / 4,
-                                    ToWindowY(lineInfo.spanYPx + lineInfo.margins.x)),
+                                    ToWindowY(lineInfo.yOffsetPx + lineInfo.padding.x)),
                                 NVec2f(
                                     m_indicatorRegion->rect.Center().x + m_indicatorRegion->rect.Width() / 4,
-                                    ToWindowY(lineInfo.spanYPx + lineInfo.margins.x) + display.GetFontHeightPixels())),
+                                    ToWindowY(lineInfo.yOffsetPx + lineInfo.padding.x) + display.GetFontHeightPixels())),
                             m_pBuffer->GetTheme().GetColor(marker->highlightColor));
                     }
                 }
@@ -732,7 +768,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
             display.SetClipRect(m_bufferRegion->rect);
         }
 
-        if (GetEditor().GetConfig().showLineNumbers)
+        if (m_numberRegion->rect.Width() > 0)
         {
             display.SetClipRect(m_numberRegion->rect);
             displayLineNumber();
@@ -740,7 +776,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
         }
     }
 
-    auto screenPosX = m_textRegion->rect.topLeftPx.x;
+    auto screenPosX = m_textRegion->rect.Left() + m_xPad;
     auto pSyntax = m_pBuffer->GetSyntax();
 
     auto tipTimeSeconds = timer_get_elapsed_seconds(m_toolTipTimer);
@@ -759,7 +795,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
         // TODO : Cache this for speed - a little sluggish on debug builds.
         if (displayPass == WindowPass::Background)
         {
-            NRectf charRect(NVec2f(screenPosX, ToWindowY(lineInfo.spanYPx)), NVec2f(screenPosX + cp.size.x, ToWindowY(lineInfo.spanYPx + lineInfo.FullLineHeightPx())));
+            NRectf charRect(NVec2f(screenPosX, ToWindowY(lineInfo.yOffsetPx)), NVec2f(screenPosX + cp.size.x, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx())));
             if (charRect.Contains(m_mouseHoverPos))
             {
                 // Record the mouse-over buffer location
@@ -785,7 +821,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                 {
                     if (marker->displayType & RangeMarkerDisplayType::Underline)
                     {
-                        display.DrawRectFilled(NRectf(NVec2f(screenPosX, ToWindowY(lineInfo.spanYPx + lineInfo.FullLineHeightPx()) - 1), NVec2f(screenPosX + cp.size.x, ToWindowY(lineInfo.spanYPx + lineInfo.FullLineHeightPx()))), m_pBuffer->GetTheme().GetColor(marker->highlightColor));
+                        display.DrawRectFilled(NRectf(NVec2f(screenPosX, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx()) - 1), NVec2f(screenPosX + cp.size.x, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx()))), m_pBuffer->GetTheme().GetColor(marker->highlightColor));
                     }
 
                     if (marker->displayType & RangeMarkerDisplayType::Background)
@@ -811,7 +847,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                         {
                             // TODO: This should be a helper function
                             // Checks for mouse pos inside a line string
-                            if (m_mouseHoverPos.y >= ToWindowY(lineInfo.spanYPx) && m_mouseHoverPos.y < (ToWindowY(lineInfo.spanYPx) + cp.size.y) && (m_mouseHoverPos.x < m_textRegion->rect.topLeftPx.x + lineInfo.ByteLength() * cp.size.x))
+                            if (m_mouseHoverPos.y >= ToWindowY(lineInfo.yOffsetPx) && m_mouseHoverPos.y < (ToWindowY(lineInfo.yOffsetPx) + cp.size.y) && (m_mouseHoverPos.x < m_textRegion->rect.topLeftPx.x + lineInfo.ByteLength() * cp.size.x))
                             {
                                 showTip = true;
                             }
@@ -833,9 +869,9 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                 if (GetBuffer().HasSelection())
                 {
                     auto sel = m_pBuffer->GetSelection();
-                    if (sel.ContainsLocation(cp.byteIndex) && !hiddenChar)
+                    if (sel.ContainsLocation(cp.byteIndex))
                     {
-                        display.DrawRectFilled(NRectf(NVec2f(screenPosX, ToWindowY(lineInfo.spanYPx)), NVec2f(screenPosX + cp.size.x, ToWindowY(lineInfo.spanYPx + lineInfo.FullLineHeightPx()))), m_pBuffer->GetTheme().GetColor(ThemeColor::VisualSelectBackground));
+                        display.DrawRectFilled(NRectf(NVec2f(screenPosX, ToWindowY(lineInfo.yOffsetPx)), NVec2f(screenPosX + cp.size.x, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx()))), m_pBuffer->GetTheme().GetColor(ThemeColor::VisualSelectBackground));
                     }
                 }
             }
@@ -845,13 +881,13 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
         {
             DrawLineWidgets(lineInfo);
 
-            if (!hiddenChar || m_windowFlags & WindowFlags::ShowCR)
+            if (!hiddenChar || GetWindowFlags() & WindowFlags::ShowCR)
             {
-                auto centerChar = NVec2f(screenPosX + cp.size.x / 2, ToWindowY(lineInfo.spanYPx) + cp.size.y / 2);
-                if ((m_windowFlags & WindowFlags::ShowWhiteSpace) && pSyntax && pSyntax->GetSyntaxAt(cp.byteIndex).foreground == ThemeColor::Whitespace)
+                auto centerChar = NVec2f(screenPosX + cp.size.x / 2, ToWindowY(lineInfo.yOffsetPx) + cp.size.y / 2);
+                if ((GetWindowFlags() & WindowFlags::ShowWhiteSpace) && pSyntax && pSyntax->GetSyntaxAt(cp.byteIndex).foreground == ThemeColor::Whitespace)
                 {
                     // Show a dot
-                    display.DrawRectFilled(NRectf(centerChar - NVec2f(1.0f, 1.0f), centerChar + NVec2f(1.0f, 1.0f)), m_pBuffer->GetTheme().GetColor(ThemeColor::Whitespace));
+                    display.DrawRectFilled(NRectf(centerChar - DPI_VEC2(NVec2f(1.0f, 1.0f)), centerChar + DPI_VEC2(NVec2f(1.0f, 1.0f))), m_pBuffer->GetTheme().GetColor(ThemeColor::Whitespace));
                 }
                 else
                 {
@@ -880,12 +916,12 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                             display.DrawRectFilled(NRectf(centerChar - NVec2f(1.0f, 1.0f), centerChar + NVec2f(1.0f, 1.0f)), m_pBuffer->GetTheme().GetColor(backgroundColor));
                         }
                     }
-                    display.DrawChars(NVec2f(screenPosX, ToWindowY(lineInfo.spanYPx + lineInfo.margins.x)), col, pCh, pEnd);
+                    display.DrawChars(NVec2f(screenPosX, ToWindowY(lineInfo.yOffsetPx + lineInfo.padding.x)), col, pCh, pEnd);
                 }
             }
         }
 
-        screenPosX += cp.size.x;
+        screenPosX += cp.size.x + m_xPad;
     }
 
     DisplayCursor();
@@ -897,7 +933,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
 
 bool ZepWindow::IsInsideTextRegion(NVec2i pos) const
 {
-    if (pos.y < m_visibleLineRange.x || pos.y >= m_visibleLineRange.y)
+    if (pos.y < m_visibleLineIndices.x || pos.y >= m_visibleLineIndices.y)
     {
         return false;
     }
@@ -960,23 +996,35 @@ ZepTabWindow& ZepWindow::GetTabWindow() const
 
 void ZepWindow::SetWindowFlags(uint32_t windowFlags)
 {
-    m_windowFlags = windowFlags;
+    if (windowFlags != m_windowFlags)
+    {
+        m_windowFlags = windowFlags;
+
+        m_layoutDirty = true;
+    }
 }
 
 uint32_t ZepWindow::GetWindowFlags() const
 {
-    return m_windowFlags;
+    auto flags = m_windowFlags;
+
+    if (m_pBuffer && m_pBuffer->GetMode())
+    {
+        flags = m_pBuffer->GetMode()->ModifyWindowFlags(flags);
+    }
+
+    return flags;
 }
 
 void ZepWindow::ToggleFlag(uint32_t flag)
 {
-    if (m_windowFlags & flag)
+    if (ZTestFlags(m_windowFlags, flag))
     {
-        m_windowFlags &= ~flag;
+        SetWindowFlags(m_windowFlags & ~flag);
     }
     else
     {
-        m_windowFlags |= flag;
+        SetWindowFlags(m_windowFlags | flag);
     }
 }
 
@@ -1018,7 +1066,7 @@ void ZepWindow::SetBuffer(ZepBuffer* pBuffer)
 
     m_pBuffer = pBuffer;
     m_layoutDirty = true;
-    m_bufferOffsetYPx = 0;
+    m_textOffsetPx = 0;
     m_bufferCursor = pBuffer->Clamp(pBuffer->GetLastEditLocation());
     m_lastCursorColumn = 0;
     m_cursorMoved = false;
@@ -1026,6 +1074,9 @@ void ZepWindow::SetBuffer(ZepBuffer* pBuffer)
 
 ByteIndex ZepWindow::GetBufferCursor()
 {
+    // Ensure cursor is always valid inside the buffer
+    m_bufferCursor = m_pBuffer->Clamp(m_bufferCursor);
+
     return m_bufferCursor;
 }
 
@@ -1063,92 +1114,101 @@ void ZepWindow::UpdateLayout(bool force)
     if (m_layoutDirty || force)
     {
         // Border, and move the text across a bit
-        if (GetEditor().GetConfig().showLineNumbers)
+        if (ZTestFlags(GetWindowFlags(), WindowFlags::ShowLineNumbers) && GetEditor().GetConfig().showLineNumbers)
         {
-            m_numberRegion->fixed_size = NVec2f(float(leftBorderChars) * GetEditor().GetDisplay().GetDefaultCharSize().x, 0);
+            m_numberRegion->fixed_size = NVec2f(float(leftBorderChars) * GetEditor().GetDisplay().GetDefaultCharSize().x, 0.0f);
         }
         else
         {
-            m_numberRegion->fixed_size = NVec2f(0, 0);
+            m_numberRegion->fixed_size = NVec2f(0.0f);
         }
 
-        if (GetEditor().GetConfig().showIndicatorRegion)
+        if (ZTestFlags(GetWindowFlags(), WindowFlags::ShowIndicators) && GetEditor().GetConfig().showIndicatorRegion)
         {
             m_indicatorRegion->fixed_size = NVec2f(GetEditor().GetDisplay().GetDefaultCharSize().x * 1.5f, 0.0f);
         }
         else
         {
-            m_indicatorRegion->fixed_size = NVec2f(0, 0);
+            m_indicatorRegion->fixed_size = NVec2f(0.0f);
         }
 
-        LayoutRegion(*m_bufferRegion);
+        // When wrapping text, we fit the text to the available window space
+        if (ZTestFlags(GetWindowFlags(), WindowFlags::WrapText))
+        {
+            m_editRegion->flags = RegionFlags::Expanding;
+            m_editRegion->fixed_size = NVec2f(0.0f);
 
-        UpdateLineSpans();
+            // First layout
+            LayoutRegion(*m_bufferRegion);
+
+            // Then update the text alignment
+            UpdateLineSpans();
+        }
+        else
+        {
+            // First update the text, since it is always the same size without wrapping
+            UpdateLineSpans();
+
+            // Fix the edit region size at the text size
+            m_editRegion->flags = RegionFlags::AlignCenter;
+
+            // Take into account the extra regions to the sides with padding
+            m_editRegion->fixed_size = m_textSizePx;
+            m_editRegion->fixed_size += m_numberRegion->fixed_size;
+            m_editRegion->fixed_size += m_indicatorRegion->fixed_size;
+
+            m_editRegion->fixed_size.x += m_textRegion->padding.x + m_textRegion->padding.y;
+            m_editRegion->fixed_size.x += m_numberRegion->padding.x + m_numberRegion->padding.y;
+            m_editRegion->fixed_size.x += m_indicatorRegion->padding.x + m_indicatorRegion->padding.y;
+
+            LayoutRegion(*m_bufferRegion);
+
+            // Finally, we have to update the line visibility again because the layout has changed!
+            UpdateVisibleLineRange();
+        }
 
         m_layoutDirty = false;
     }
 }
 
+NVec2f ZepWindow::GetSpanPixelRange(SpanInfo& span) const
+{
+    // Need to take account of the text rect offset
+    return NVec2f(m_textRegion->rect.Left(),
+        span.textSizePx.x + m_textRegion->rect.Left());
+}
+
 void ZepWindow::GetCursorInfo(NVec2f& pos, NVec2f& size)
 {
-    auto& display = GetEditor().GetDisplay();
     auto cursorCL = BufferToDisplay();
     auto cursorBufferLine = GetCursorLineInfo(cursorCL.y);
 
     NVec2f cursorSize;
-    auto& tex = m_pBuffer->GetText();
     bool found = false;
-    float xPos = m_textRegion->rect.topLeftPx.x;
-    for (auto ch = cursorBufferLine.lineByteRange.first; ch < cursorBufferLine.lineByteRange.second; ch++)
+    float xPos = m_textRegion->rect.topLeftPx.x + m_xPad;
+
+    int count = 0;
+    for (auto ch : cursorBufferLine.lineCodePoints)
     {
-        cursorSize = display.GetCharSize(&tex[ch]);
-        if ((ch - cursorBufferLine.lineByteRange.first) == cursorCL.x)
+        if (count == cursorCL.x)
         {
             found = true;
+            cursorSize = ch.size;
             break;
         }
-        xPos += cursorSize.x;
+        count++;
+        xPos += ch.size.x + m_xPad;
     }
+
     if (!found)
     {
         cursorSize = GetEditor().GetDisplay().GetDefaultCharSize();
         xPos += cursorSize.x;
     }
 
-    pos = NVec2f(xPos, cursorBufferLine.spanYPx + cursorBufferLine.margins.x - m_bufferOffsetYPx + m_textRegion->rect.topLeftPx.y);
+    pos = NVec2f(xPos, cursorBufferLine.yOffsetPx + cursorBufferLine.padding.x - m_textOffsetPx + m_textRegion->rect.topLeftPx.y);
     size = cursorSize;
-    size.y = cursorBufferLine.textHeight;
-}
-
-bool ZepWindow::RectFits(const NRectf& area, const NRectf& rect, FitCriteria criteria)
-{
-    if (criteria == FitCriteria::X)
-    {
-        auto xDiff = rect.bottomRightPx.x - area.bottomRightPx.x;
-        if (xDiff > 0)
-        {
-            return false;
-        }
-        xDiff = rect.topLeftPx.x - area.topLeftPx.x;
-        if (xDiff < 0)
-        {
-            return false;
-        }
-    }
-    else
-    {
-        auto yDiff = rect.bottomRightPx.y - area.bottomRightPx.y;
-        if (yDiff > 0)
-        {
-            return false;
-        }
-        yDiff = rect.topLeftPx.y - area.topLeftPx.y;
-        if (yDiff < 0)
-        {
-            return false;
-        }
-    }
-    return true;
+    size.y = cursorBufferLine.textSizePx.y;
 }
 
 void ZepWindow::PlaceToolTip(const NVec2f& pos, ToolTipPos location, uint32_t lineGap, const std::shared_ptr<RangeMarker> spMarker)
@@ -1179,7 +1239,7 @@ void ZepWindow::PlaceToolTip(const NVec2f& pos, ToolTipPos location, uint32_t li
         };
 
         genBox();
-        if (!RectFits(m_textRegion->rect, tipBox, FitCriteria::X))
+        if (!NRectFits(m_textRegion->rect, tipBox, FitCriteria::X))
         {
             // If it is above or below, slide it to the left to fit
             if (location != ToolTipPos::RightLine)
@@ -1191,7 +1251,7 @@ void ZepWindow::PlaceToolTip(const NVec2f& pos, ToolTipPos location, uint32_t li
         }
 
         // Swap above below
-        if (!RectFits(m_textRegion->rect, tipBox, FitCriteria::Y))
+        if (!NRectFits(m_textRegion->rect, tipBox, FitCriteria::Y))
         {
             switch (location)
             {
@@ -1215,9 +1275,41 @@ void ZepWindow::PlaceToolTip(const NVec2f& pos, ToolTipPos location, uint32_t li
     m_toolTips[tipBox.topLeftPx] = spMarker;
 }
 
+void ZepWindow::DisplayGridMarkers()
+{
+    auto& display = GetEditor().GetDisplay();
+
+    auto rc = m_textRegion->rect;
+    rc.Adjust(-1, -1, 1, 1);
+
+    // Border around the edge
+    display.DrawRect(rc, GetBlendedColor(ThemeColor::TabActive));
+
+    /*
+    for (long windowLine = m_visibleLineIndices.x; windowLine < m_visibleLineIndices.y; windowLine++)
+    {
+        auto& lineInfo = *m_windowLines[windowLine];
+        auto pos = m_textRegion->rect.topLeftPx + NVec2f(m_xPad, 0.0f);
+        for (int i = 0; i < lineInfo.lineCodePoints.size(); i++)
+        {
+            auto cp = lineInfo.lineCodePoints[i];
+
+            if (i != 0 && i % 8 == 0)
+            {
+                display.DrawLine(NVec2f(pos.x - m_xPad / 2, pos.y), NVec2f(pos.x - m_xPad / 2, pos.y + DPI_Y(3.0f)), NVec4f(1.0f));
+            }
+            pos.x += cp.size.x + m_xPad;
+        }
+    }
+    */
+}
+
 void ZepWindow::Display()
 {
     TIME_SCOPE(Display);
+
+    auto pMode = GetBuffer().GetMode();
+    pMode->PreDisplay(*this);
 
     // Ensure line spans are valid; updated if the text is changed or the window dimensions change
     UpdateLayout();
@@ -1251,12 +1343,12 @@ void ZepWindow::Display()
         display.DrawRectFilled(m_textRegion->rect, GetBlendedColor(ThemeColor::Background));
     }
 
-    if (GetEditor().GetConfig().showLineNumbers)
+    if (m_numberRegion->rect.Width() > 0)
     {
         display.DrawRectFilled(m_numberRegion->rect, GetBlendedColor(ThemeColor::LineNumberBackground));
     }
 
-    if (GetEditor().GetConfig().showIndicatorRegion)
+    if (m_indicatorRegion->rect.Width() > 0)
     {
         display.DrawRectFilled(m_indicatorRegion->rect, GetBlendedColor(ThemeColor::LineNumberBackground));
     }
@@ -1264,20 +1356,17 @@ void ZepWindow::Display()
     DisplayScrollers();
 
     // This is a line down the middle of a split
-    if (GetEditor().GetConfig().style == EditorStyle::Normal)
+    if (GetEditor().GetConfig().style == EditorStyle::Normal && !ZTestFlags(GetWindowFlags(), WindowFlags::HideSplitMark))
     {
-        if (m_numberRegion->rect.topLeftPx.x > m_numberRegion->rect.Width())
-        {
-            display.DrawRectFilled(
-                NRectf(NVec2f(m_numberRegion->rect.topLeftPx.x, m_numberRegion->rect.topLeftPx.y), NVec2f(m_numberRegion->rect.topLeftPx.x + 1, m_numberRegion->rect.bottomRightPx.y)), GetBlendedColor(ThemeColor::TabInactive));
-        }
+        display.DrawRectFilled(
+            NRectf(NVec2f(m_expandingEditRegion->rect.topLeftPx.x, m_expandingEditRegion->rect.topLeftPx.y), NVec2f(m_expandingEditRegion->rect.topLeftPx.x + 1, m_expandingEditRegion->rect.bottomRightPx.y)), GetBlendedColor(ThemeColor::TabInactive));
     }
 
     {
         TIME_SCOPE(DrawLine);
         for (int displayPass = 0; displayPass < WindowPass::Max; displayPass++)
         {
-            for (long windowLine = m_visibleLineRange.x; windowLine < m_visibleLineRange.y; windowLine++)
+            for (long windowLine = m_visibleLineIndices.x; windowLine < m_visibleLineIndices.y; windowLine++)
             {
                 auto& lineInfo = *m_windowLines[windowLine];
                 if (!DisplayLine(lineInfo, displayPass))
@@ -1286,6 +1375,11 @@ void ZepWindow::Display()
                 }
             }
         }
+    }
+
+    if (ZTestFlags(GetWindowFlags(), WindowFlags::GridStyle))
+    {
+        DisplayGridMarkers();
     }
 
     // Is the cursor on a tooltip row or mark?
@@ -1300,13 +1394,14 @@ void ZepWindow::Display()
         // Calculate our desired location for the tip.
         auto tipPos = [&](RangeMarker& marker) {
             NVec2f ret;
+            NVec2f linePx = GetSpanPixelRange(cursorLine);
             if (marker.tipPos == ToolTipPos::RightLine)
             {
-                ret = NVec2f(cursorLine.pixelRenderRange.y, pos.y);
+                ret = NVec2f(linePx.y, pos.y);
             }
             else
             {
-                ret = NVec2f(cursorLine.pixelRenderRange.x, pos.y);
+                ret = NVec2f(linePx.x, pos.y);
             }
             return ret;
         };
@@ -1389,16 +1484,6 @@ void ZepWindow::Display()
     }
 }
 
-// *** Motions ***
-void ZepWindow::MoveToBufferLine(long line, LineLocation clampLocation)
-{
-    long start, end;
-    m_pBuffer->GetLineOffsets(line, start, end);
-
-    auto targetDisplayCursor = BufferToDisplay(start);
-    MoveCursorY(targetDisplayCursor.y - BufferToDisplay().y, clampLocation);
-}
-
 void ZepWindow::MoveCursorY(int yDistance, LineLocation clampLocation)
 {
     UpdateLayout();
@@ -1422,53 +1507,42 @@ void ZepWindow::MoveCursorY(int yDistance, LineLocation clampLocation)
     if (target.x < m_lastCursorColumn)
         target.x = m_lastCursorColumn;
 
-    // Update the master buffer cursor
-    m_bufferCursor = line.lineByteRange.first + target.x;
+    assert(!line.lineCodePoints.empty());
 
-    // Ensure the current x offset didn't walk us off the line
-    // We are clamping to visible line here
-    m_bufferCursor = std::max(m_bufferCursor, line.lineByteRange.first);
-    m_bufferCursor = std::min(m_bufferCursor, line.lineByteRange.second - 1);
+    // Move to the same codepoint offset on the line below
+    target.x = std::min(target.x, long(line.lineCodePoints.size() - 1));
+    target.x = std::max(target.x, long(0));
+
+    GlyphIterator cursorItr(*m_pBuffer, line.lineCodePoints[target.x].byteIndex);
 
     // We can't call the buffer's LineLocation code, because when moving in span lines,
     // we are technically not moving in buffer lines; we are stepping in wrapped buffer lines.
-    // But this function still requires a line end clamp! So we calculate it here based on the line info
-    // In practice, we only care about LastNonCR and CRBegin, which are the Y Motions that Standard and Vim
-    // Require (because standard has the cursor _on_ the CR sometimes, but Vim modes do not.
-    // Because the LineLastNonCR might find a 'split' line which has a line end in the middle of the line,
-    // it has to be more tricky to find the last 'Non CR' character, as here
-    ByteIndex clampOffset = line.lineByteRange.second;
     switch (clampLocation)
     {
-    case LineLocation::LineBegin:
-        clampOffset = line.lineByteRange.first;
-        break;
-    case LineLocation::LineFirstGraphChar:
-        clampOffset = line.lineByteRange.first;
-        break;
-    case LineLocation::BeyondLineEnd:
-        clampOffset = line.lineByteRange.second;
-        break;
-    case LineLocation::LineLastNonCR:
-        if ((line.lineByteRange.second > 0) && (m_pBuffer->GetText()[line.lineByteRange.second - 1] == '\n' || m_pBuffer->GetText()[line.lineByteRange.second - 1] == 0))
-        {
-            clampOffset = std::max(line.lineByteRange.first, line.lineByteRange.second - 2);
-        }
-        else
-        {
-            clampOffset = std::max(line.lineByteRange.first, line.lineByteRange.second - 1);
-        }
-        break;
-    case LineLocation::LineCRBegin:
-        clampOffset = line.lineByteRange.second - 1;
-        break;
     default:
+    case LineLocation::LineBegin:
+    case LineLocation::LineFirstGraphChar:
+    case LineLocation::BeyondLineEnd:
         assert(!"Not supported Y motion line clamp!");
         break;
+    case LineLocation::LineLastNonCR: {
+        // Don't skip back if we are right at the start of the line
+        // (i.e. an empty line)
+        if (target.x != 0 && (cursorItr.Char() == '\n' || cursorItr.Char() == 0))
+        {
+            cursorItr.MoveClamped(-1, LineLocation::LineLastNonCR);
+        }
     }
-    m_bufferCursor = std::min(m_bufferCursor, clampOffset);
+    break;
+    case LineLocation::LineCRBegin:
+        // We already clamped to here above by testing for max codepoint
+        // Last codepoint is the carriage return
+        break;
+    }
 
+    m_bufferCursor = cursorItr.ToByteIndex();
     m_cursorMoved = true;
+
     GetEditor().ResetCursorTimer();
 
     m_pBuffer->SetLastEditLocation(m_bufferCursor);
@@ -1486,21 +1560,37 @@ NVec2i ZepWindow::BufferToDisplay(const ByteIndex& loc)
     NVec2i ret(0, 0);
     int line_number = 0;
 
-    // TODO:  A map
+    // TODO: Performance; quick lookup for line
     for (auto& line : m_windowLines)
     {
+        // If inside the line...
         if (line->lineByteRange.first <= loc && line->lineByteRange.second > loc)
         {
             ret.y = line_number;
-            ret.x = loc - line->lineByteRange.first;
-            return ret;
+            ret.x = 0;
+
+            // Scan the code points for where we are
+            for (auto& ch : line->lineCodePoints)
+            {
+                if (ch.byteIndex == loc)
+                {
+                    return ret;
+                }
+                ret.x++;
+            }
         }
         line_number++;
     }
 
-    // Max
-    ret.y = int(m_windowLines.size() - 1);
-    ret.x = m_windowLines[m_windowLines.size() - 1]->lineByteRange.second - 1;
+    assert(!m_windowLines.empty());
+    if (m_windowLines.empty())
+    {
+        return NVec2i(0, 0);
+    }
+
+    // Max Last line, last code point offset
+    ret.y = long(m_windowLines.size() - 1);
+    ret.x = long(m_windowLines[m_windowLines.size() - 1]->lineCodePoints.size() - 1);
     return ret;
 }
 

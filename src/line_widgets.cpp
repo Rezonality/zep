@@ -43,15 +43,15 @@ void FloatSlider::Draw(const ZepBuffer& buffer, const NVec2f& loc)
             NVec2f(location.x, location.y),
             NVec2f(location.x + size.x, location.y + size.y));
 
-        NVec2f margin = NVec2f(1, 1);
+        NVec2f padding = NVec2f(1, 1);
         NRectf rcInner = rc;
-        rcInner.Adjust(margin.x, margin.y, -margin.x, -margin.y);
+        rcInner.Adjust(padding.x, padding.y, -padding.x, -padding.y);
 
         display.DrawRectFilled(DPI_RECT(rc), buffer.GetTheme().GetColor(ThemeColor::WidgetBorder));
         display.DrawRectFilled(DPI_RECT(rcInner), buffer.GetTheme().GetColor(ThemeColor::WidgetBackground));
 
         NRectf rcThumb = rcInner;
-        rcThumb.Adjust(margin.x, margin.y, -margin.x, -margin.y);
+        rcThumb.Adjust(padding.x, padding.y, -padding.x, -padding.y);
         rcThumb = NRectf(rcThumb.Left() + 10.0f, rcThumb.Top(), 10.0f, rcThumb.Size().y);
         display.DrawRectFilled(DPI_RECT(rcThumb), buffer.GetTheme().GetColor(ThemeColor::WidgetActive));
     }

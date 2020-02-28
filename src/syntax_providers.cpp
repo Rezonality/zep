@@ -1,7 +1,6 @@
 #include "zep/buffer.h"
 #include "zep/editor.h"
 #include "zep/syntax.h"
-#include "zep/syntax_orca.h"
 #include "zep/syntax_tree.h"
 
 namespace Zep
@@ -124,9 +123,6 @@ static std::set<std::string> lisp_identifiers = {
     "cdr", "car"
 };
 
-static std::set<std::string> orca_keywords = {};
-static std::set<std::string> orca_identifiers = {};
-
 static std::set<std::string> tree_keywords = {};
 static std::set<std::string> tree_identifiers = {};
 
@@ -156,12 +152,6 @@ void RegisterSyntaxProviders(ZepEditor& editor)
         { ".toml" },
         SyntaxProvider{ "cpp", tSyntaxFactory([](ZepBuffer* pBuffer) {
                            return std::make_shared<ZepSyntax>(*pBuffer, toml_keywords, toml_identifiers, ZepSyntaxFlags::CaseInsensitive);
-                       }) });
-
-    editor.RegisterSyntaxFactory(
-        { ".orca" },
-        SyntaxProvider{ "orca", tSyntaxFactory([](ZepBuffer* pBuffer) {
-                           return std::make_shared<ZepSyntax_Orca>(*pBuffer, orca_keywords, orca_identifiers, ZepSyntaxFlags::CaseInsensitive);
                        }) });
 
     editor.RegisterSyntaxFactory(

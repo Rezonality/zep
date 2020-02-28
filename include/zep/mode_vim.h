@@ -32,18 +32,17 @@ public:
     // Zep Mode
     virtual void Begin() override;
     virtual const char* Name() const override { return StaticName(); }
-    virtual void PreDisplay() override;
+    virtual void PreDisplay(ZepWindow& win) override;
+    virtual void SetupKeyMaps();
+    virtual void AddOverStrikeMaps();
+    virtual void AddCopyMaps();
+    virtual void AddPasteMaps();
+    virtual void Init() override;
 
 private:
     void HandleInsert(uint32_t key);
-    void Init();
 
     timer m_insertEscapeTimer;
 };
-
-inline std::string MakeCommandRegex(const std::string& command)
-{
-    return std::string(R"((?:(\d)|(<\S>*)|("\w?)*)()") + command + ")";
-}
 
 } // namespace Zep

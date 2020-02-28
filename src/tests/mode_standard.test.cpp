@@ -171,6 +171,9 @@ TEST_F(StandardTest, DELETE)
     spMode->AddKeyPress(ExtKeys::DEL);
     ASSERT_STREQ(pBuffer->GetText().string().c_str(), "vlllo");
 
+    // Doesn't delete H because the cursor was previously at the end?
+    // Is this a behavior expectation or a bug?  Should the cursor clamp to the previously 
+    // set text end, or reset to 0??
     pBuffer->SetText("H");
     spMode->AddKeyPress(ExtKeys::DEL);
     ASSERT_STREQ(pBuffer->GetText().string().c_str(), "H");

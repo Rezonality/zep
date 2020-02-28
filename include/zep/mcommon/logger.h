@@ -11,6 +11,7 @@
 #include <sstream>
 
 #ifdef WIN32
+#pragma warning(disable: 26812)
 // A reference to the debug API on windows, to help the logger output in VC.  This is better
 // than out to the console sometimes, and as long as you are building on Windows, you are referencing the necessary
 // kernel32.dll....
@@ -85,22 +86,25 @@ private:
         std::string label;
         switch (type)
         {
-            case DEBUG:
-                label = "DEBUG";
-                break;
-            case INFO:
-                label = "INFO ";
-                break;
-            case WARN:
-                label = "WARN ";
-                break;
-            case ERROR:
-                label = "ERROR";
-                break;
+        case DEBUG:
+            label = "DEBUG";
+            break;
+        case INFO:
+            label = "INFO ";
+            break;
+        case WARN:
+            label = "WARN ";
+            break;
+        case ERROR:
+            label = "ERROR";
+            break;
         }
         return label;
     }
     std::ostringstream out;
 };
 
+#ifdef WIN32
+#pragma warning(default: 26812)
+#endif
 } // namespace Zep

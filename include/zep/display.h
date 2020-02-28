@@ -41,6 +41,7 @@ public:
     virtual NVec2f GetCharSize(const uint8_t* pChar);
     virtual const NVec2f& GetDefaultCharSize();
     virtual void InvalidateCharCache();
+    virtual void DrawRect(const NRectf& rc, const NVec4f& col = NVec4f(1.0f)) const;
 
 protected:
     void BuildCharCache();

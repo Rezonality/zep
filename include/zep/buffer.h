@@ -3,12 +3,16 @@
 #include <functional>
 #include <set>
 
-#include "editor.h"
-#include "theme.h"
-#include "zep/line_widgets.h"
 #include "zep/mcommon/file/path.h"
+#include "zep/mcommon/utf8/unchecked.h"
+#include "zep/mcommon/string/stringutils.h"
+#include "zep/mcommon/logger.h"
 
 #include "gap_buffer.h"
+
+#include "editor.h"
+#include "line_widgets.h"
+#include "theme.h"
 
 namespace Zep
 {
@@ -222,9 +226,7 @@ public:
         return long(m_lineEnds.size());
     }
     long GetBufferLine(ByteIndex offset) const;
-    
-    ByteIndex CPOffset(const ByteIndex& location, long offset, LineLocation loc = LineLocation::None) const;
-    ByteIndex LocationFromOffsetByChars(const ByteIndex& location, long offset, LineLocation loc = LineLocation::None) const;
+
     ByteIndex EndLocation() const;
 
     const GapBuffer<uint8_t>& GetText() const
@@ -324,7 +326,7 @@ public:
     {
         return m_lastUpdateTime;
     }
-    
+
     uint64_t GetUpdateCount() const
     {
         return m_updateCount;
@@ -398,6 +400,154 @@ struct BufferMessage : public ZepMessage
     BufferMessageType type;
     ByteIndex startLocation;
     ByteIndex endLocation;
+};
+
+class GlyphIterator
+{
+public:
+    using itrGlyph = GapBuffer<uint8_t>::const_iterator;
+
+    GlyphIterator(const ZepBuffer& buffer, ByteIndex offset = 0)
+        : m_buffer(buffer),
+        m_itr(buffer.GetText().begin() + offset)
+    {
+        assert(Valid());
+    }
+
+    itrGlyph Itr() const { return m_itr; }
+
+    bool Valid() const
+    {
+        return true;
+        /*
+        // End iterator is OK
+        if (m_itr == m_buffer.GetText().end())
+        {
+            return true;
+        }
+        return (!utf8_is_trailing(Char()));
+        */
+    }
+
+    itrGlyph Begin() const
+    {
+        return m_buffer.GetText().begin();
+    }
+
+    itrGlyph End() const
+    {
+        return m_buffer.GetText().end();
+    }
+
+    bool operator<(const GlyphIterator& rhs) const
+    {
+        return m_itr < rhs.Itr();
+    }
+
+    bool operator<=(const GlyphIterator& rhs) const
+    {
+        return m_itr <= rhs.Itr();
+    }
+    bool operator>(const GlyphIterator& rhs) const
+    {
+        return m_itr > rhs.Itr();
+    }
+
+    bool operator>=(const GlyphIterator& rhs) const
+    {
+        return m_itr >= rhs.Itr();
+    }
+
+    bool operator==(const GlyphIterator& rhs) const
+    {
+        return m_itr == rhs.Itr();
+    }
+
+    bool operator!=(const GlyphIterator& rhs) const
+    {
+        return m_itr != rhs.Itr();
+    }
+
+    ByteIndex ToByteIndex() const
+    {
+        return ByteIndex(m_itr - Begin());
+    }
+
+    operator ByteIndex()
+    {
+        return ByteIndex(m_itr - Begin());
+    }
+
+    char Char() const
+    {
+        return (char)*m_itr;
+    }
+
+    GlyphIterator& MoveClamped(long count, LineLocation clamp = LineLocation::LineLastNonCR)
+    {
+        if (count >= 0)
+        {
+            auto lineEnd = GlyphIterator(m_buffer, m_buffer.GetLinePos(ToByteIndex(), clamp));
+            for (long c = 0; c < count; c++)
+            {
+                if (m_itr >= lineEnd.Itr())
+                {
+                    break;
+                }
+                m_itr += utf8_codepoint_length(*m_itr);
+            }
+        }
+        else
+        {
+            auto lineBegin = GlyphIterator(m_buffer, m_buffer.GetLinePos(ToByteIndex(), LineLocation::LineBegin));
+            for (long c = count; c < 0; c++)
+            {
+                while ((m_itr > lineBegin.Itr()) && utf8_is_trailing(*(--m_itr)));
+            }
+        }
+        assert(Valid());
+
+        return *this;
+    }
+
+    GlyphIterator& Move(long count)
+    {
+        if (count >= 0)
+        {
+            for (long c = 0; c < count; c++)
+            {
+                m_itr += utf8_codepoint_length(*m_itr);
+            }
+        }
+        else
+        {
+            auto itrBegin = Begin();
+            for (long c = count; c < 0; c++)
+            {
+                while ((m_itr > itrBegin) && utf8::internal::is_trail(*(--m_itr)));
+            }
+        }
+        assert(Valid());
+        return *this;
+    }
+
+    GlyphIterator Peek(long count)
+    {
+        GlyphIterator copy(m_buffer, ToByteIndex());
+        copy.Move(count);
+        return copy;
+    }
+
+    GlyphIterator PeekClamped(long count, LineLocation clamp = LineLocation::LineLastNonCR)
+    {
+        GlyphIterator copy(m_buffer, ToByteIndex());
+        copy.MoveClamped(count, clamp);
+        return copy;
+    }
+
+private:
+    const ZepBuffer& m_buffer;
+    itrGlyph m_itr;
 };
 
 } // namespace Zep

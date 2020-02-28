@@ -1,11 +1,11 @@
 #include "zep/mode.h"
+#include "zep/buffer.h"
 #include "zep/editor.h"
 #include "zep/filesystem.h"
 #include "zep/mode_search.h"
 #include "zep/tab_window.h"
-#include "zep/buffer.h"
-
 #include "zep/mcommon/logger.h"
+#include "zep/regress.h"
 
 namespace Zep
 {
@@ -395,10 +395,9 @@ void ZepMode::HandleMappedInput(const std::string& input)
     // Figure out the command we have typed. foundCommand means that the command was interpreted and understood.
     // If spCommand is returned, then there is an atomic command operation that needs to be done.
     auto spContext = std::make_shared<CommandContext>(m_currentCommand, *this, m_currentMode);
-   
+
     // Before handling the command, change the command text, since the command might override it
-    if (GetEditor().GetConfig().showNormalModeKeyStrokes && 
-        (m_currentMode == EditorMode::Normal || m_currentMode == EditorMode::Visual))
+    if (GetEditor().GetConfig().showNormalModeKeyStrokes && (m_currentMode == EditorMode::Normal || m_currentMode == EditorMode::Visual))
     {
         GetEditor().SetCommandText(spContext->keymap.searchPath);
     }
@@ -635,6 +634,8 @@ bool ZepMode::GetCommand(CommandContext& context)
     // Vim, for example, doesn't do that; an insert mode operation is a single 'group'
     bool shouldGroupInserts = ZTestFlags(m_modeFlags, ModeFlags::InsertModeGroupUndo);
 
+    GlyphIterator cursorItr(buffer, bufferCursor);
+
     auto mappedCommand = context.keymap.foundMapping;
     if (mappedCommand == id_NormalMode)
     {
@@ -848,25 +849,24 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_MotionRight)
     {
-        GetCurrentWindow()->SetBufferCursor(context.buffer.CPOffset(context.bufferCursor, context.keymap.TotalCount(), LineLocation::LineLastNonCR));
+        GetCurrentWindow()->SetBufferCursor(cursorItr.MoveClamped(context.keymap.TotalCount()));
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
     else if (mappedCommand == id_MotionLeft)
     {
-        auto lineStart = context.buffer.GetLinePos(context.bufferCursor, LineLocation::LineBegin);
-        GetCurrentWindow()->SetBufferCursor(std::max(context.bufferCursor - context.keymap.TotalCount(), lineStart));
+        GetCurrentWindow()->SetBufferCursor(cursorItr.MoveClamped(-context.keymap.TotalCount()));
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
     else if (mappedCommand == id_MotionStandardRight)
     {
-        GetCurrentWindow()->SetBufferCursor(bufferCursor + 1);
+        GetCurrentWindow()->SetBufferCursor(cursorItr.MoveClamped(1, LineLocation::LineCRBegin));
         return true;
     }
     else if (mappedCommand == id_MotionStandardLeft)
     {
-        GetCurrentWindow()->SetBufferCursor(bufferCursor - 1);
+        GetCurrentWindow()->SetBufferCursor(cursorItr.MoveClamped(-1, LineLocation::LineCRBegin));
         return true;
     }
     else if (mappedCommand == id_MotionStandardUp)
@@ -1014,11 +1014,9 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_Backspace)
     {
-        auto loc = context.bufferCursor;
-
         // In insert mode, we are 'on' the character after the one we want to delete
-        context.beginRange = context.buffer.LocationFromOffsetByChars(loc, -1);
-        context.endRange = context.buffer.LocationFromOffsetByChars(loc, 0);
+        context.beginRange = cursorItr.PeekClamped(-1);
+        context.endRange = cursorItr;
         context.op = CommandOperation::Delete;
     }
     else if (mappedCommand == id_MotionWord)
@@ -1083,7 +1081,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         // Skip white space (as the J append command does)
         context.tempReg.text = " ";
         context.pRegister = &context.tempReg;
-        context.endRange = buffer.GetLinePos(context.endRange, LineLocation::LineFirstGraphChar);
+        context.endRange = std::max(context.endRange, buffer.GetLinePos(context.endRange, LineLocation::LineFirstGraphChar));
         context.replaceRangeMode = ReplaceRangeMode::Replace;
 
         context.op = CommandOperation::Replace;
@@ -1114,8 +1112,6 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_Delete)
     {
-        auto loc = context.bufferCursor;
-
         if (m_currentMode == EditorMode::Visual)
         {
             auto range = GetNormalizedVisualRange();
@@ -1126,20 +1122,11 @@ bool ZepMode::GetCommand(CommandContext& context)
         }
         else
         {
-            // Don't allow x to delete beyond the end of the line
-            // Not sure what/where this is from!
-            if (context.keymap.commandWithoutGroups != "x" || std::isgraph(ToASCII(context.buffer.GetText()[loc])) || std::isblank(ToASCII(context.buffer.GetText()[loc])))
-            {
-                context.beginRange = loc;
-                context.endRange = std::min(context.buffer.GetLinePos(loc, LineLocation::LineCRBegin),
-                    context.buffer.LocationFromOffsetByChars(loc, context.keymap.TotalCount()));
-                context.op = CommandOperation::Delete;
-                context.commandResult.flags |= CommandResultFlags::HandledCount;
-            }
-            else
-            {
-                ResetCommand();
-            }
+            // Remember all ranges are exclusive of the end; so we allow to delete to the line end
+            context.beginRange = cursorItr;
+            context.endRange = cursorItr.PeekClamped(context.keymap.TotalCount(), LineLocation::LineCRBegin);
+            context.op = CommandOperation::Delete;
+            context.commandResult.flags |= CommandResultFlags::HandledCount;
         }
     }
     else if (mappedCommand == id_OpenLineBelow)
@@ -1248,7 +1235,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             }
             else
             {
-                context.beginRange = context.buffer.LocationFromOffsetByChars(context.bufferCursor, 1, LineLocation::LineCRBegin);
+                context.beginRange = cursorItr.PeekClamped(1, LineLocation::LineCRBegin);
             }
             context.op = CommandOperation::Insert;
         }
@@ -1555,8 +1542,8 @@ bool ZepMode::GetCommand(CommandContext& context)
             // Get the range from visual, or use the cursor location
             if (!GetOperationRange("visual", context.currentMode, context.beginRange, context.endRange))
             {
-                context.beginRange = bufferCursor;
-                context.endRange = buffer.LocationFromOffsetByChars(bufferCursor, context.keymap.TotalCount());
+                context.beginRange = cursorItr;
+                context.endRange = cursorItr.PeekClamped(context.keymap.TotalCount(), LineLocation::LineCRBegin);
             }
 
             context.commandResult.modeSwitch = EditorMode::Normal;
@@ -1733,8 +1720,9 @@ bool ZepMode::GetOperationRange(const std::string& op, EditorMode currentMode, B
     }
     else if (op == "cursor")
     {
-        beginRange = bufferCursor;
-        endRange = buffer.LocationFromOffsetByChars(bufferCursor, 1);
+        auto cursorItr = GlyphIterator(buffer, bufferCursor);
+        beginRange = cursorItr;
+        endRange = cursorItr.PeekClamped(1);
     }
     return beginRange != -1;
 }
@@ -1758,7 +1746,7 @@ void ZepMode::UpdateVisualSelection()
             }
             else
             {
-                m_visualEnd = GetCurrentWindow()->GetBuffer().LocationFromOffsetByChars(GetCurrentWindow()->GetBufferCursor(), 1);
+                m_visualEnd = GlyphIterator(GetCurrentWindow()->GetBuffer(), GetCurrentWindow()->GetBufferCursor()).PeekClamped(1, LineLocation::LineCRBegin);
             }
         }
 
@@ -1828,7 +1816,13 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             return true;
         }
 
-        if (strCommand == ":reg")
+        auto pCommand = GetEditor().FindExCommand(strCommand.substr(1));
+        if (pCommand)
+        {
+            auto strTok = string_split(strCommand, " ");
+            pCommand->Run(strTok);
+        }
+        else if (strCommand == ":reg")
         {
             std::ostringstream str;
             str << "--- Registers ---" << '\n';
@@ -1859,7 +1853,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             auto pMapBuffer = GetEditor().GetEmptyBuffer("Mappings");
             pMapBuffer->SetFlags(FileFlags::Locked | FileFlags::ReadOnly);
             pMapBuffer->SetText(str.str());
-            GetEditor().GetActiveTabWindow()->AddWindow(pMapBuffer, nullptr, false);
+            GetEditor().GetActiveTabWindow()->AddWindow(pMapBuffer, nullptr, RegionLayoutType::VBox);
         }
         else if (strCommand.find(":tabedit") == 0)
         {
@@ -1869,24 +1863,16 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             {
                 if (strTok[1] == "%")
                 {
-                    pTab->AddWindow(&buffer, nullptr, true);
+                    pTab->AddWindow(&buffer, nullptr, RegionLayoutType::HBox);
                 }
                 else
                 {
                     auto fname = strTok[1];
                     auto pBuffer = GetEditor().GetFileBuffer(fname);
-                    pTab->AddWindow(pBuffer, nullptr, true);
+                    pTab->AddWindow(pBuffer, nullptr, RegionLayoutType::HBox);
                 }
             }
             GetEditor().SetCurrentTabWindow(pTab);
-        }
-        else if (strCommand.find(":repl") == 0)
-        {
-            GetEditor().AddRepl();
-        }
-        else if (strCommand.find(":orca") == 0)
-        {
-            GetEditor().AddOrca();
         }
         else if (strCommand.find(":tree") == 0)
         {
@@ -1900,18 +1886,18 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             {
                 if (strTok[1] == "%")
                 {
-                    pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pWindow, true);
+                    pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pWindow, RegionLayoutType::HBox);
                 }
                 else
                 {
                     auto fname = strTok[1];
                     auto pBuffer = GetEditor().GetFileBuffer(fname);
-                    pTab->AddWindow(pBuffer, pWindow, true);
+                    pTab->AddWindow(pBuffer, pWindow, RegionLayoutType::HBox);
                 }
             }
             else
             {
-                pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pWindow, true);
+                pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pWindow, RegionLayoutType::HBox);
             }
         }
         else if (strCommand.find(":hsplit") == 0 || strCommand.find(":split") == 0)
@@ -1922,18 +1908,18 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             {
                 if (strTok[1] == "%")
                 {
-                    pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pWindow, false);
+                    pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pWindow, RegionLayoutType::VBox);
                 }
                 else
                 {
                     auto fname = strTok[1];
                     auto pBuffer = GetEditor().GetFileBuffer(fname);
-                    pTab->AddWindow(pBuffer, pWindow, false);
+                    pTab->AddWindow(pBuffer, pWindow, RegionLayoutType::VBox);
                 }
             }
             else
             {
-                pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pWindow, false);
+                pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pWindow, RegionLayoutType::VBox);
             }
         }
         else if (strCommand.find(":e") == 0)
@@ -2047,6 +2033,20 @@ bool ZepMode::HandleExCommand(std::string strCommand)
         else if (strCommand == ":ZShowCR")
         {
             pWindow->ToggleFlag(WindowFlags::ShowCR);
+        }
+        else if (strCommand == ":ZShowLineNumbers")
+        {
+            pWindow->ToggleFlag(WindowFlags::ShowLineNumbers);
+        }
+        else if (strCommand == ":ZWrapText")
+        {
+            // Wrapping is not fully supported yet, but useful for the Orca optional mode.
+            // To enable wrapping fully, the editor needs to scroll in X as well as Y...
+            pWindow->ToggleFlag(WindowFlags::WrapText);
+        }
+        else if (strCommand == ":ZShowIndicators")
+        {
+            pWindow->ToggleFlag(WindowFlags::ShowIndicators);
         }
         else if (strCommand == ":ZShowInput")
         {
@@ -2216,6 +2216,94 @@ const KeyMap& ZepMode::GetKeyMappings(EditorMode mode) const
         return m_normalMap;
     }
     return m_insertMap;
+}
+
+void ZepMode::AddKeyMapWithCountRegisters(const std::vector<KeyMap*>& maps, const std::vector<std::string>& commands, const StringId& id)
+{
+    for (auto& m : maps)
+    {
+        for (auto& c : commands)
+        {
+            keymap_add({ m }, { "<D><R>" + c }, id);
+            keymap_add({ m }, { "<R>" + c }, id);
+            keymap_add({ m }, { "<D>" + c }, id);
+            keymap_add({ m }, { c }, id);
+        }
+    }
+}
+
+void ZepMode::AddNavigationKeyMaps(bool allowInVisualMode)
+{
+    std::vector<KeyMap*> navigationMaps = { &m_normalMap };
+    if (allowInVisualMode)
+    {
+        navigationMaps.push_back(&m_visualMap);
+    }
+
+    // Up/Down/Left/Right
+    AddKeyMapWithCountRegisters(navigationMaps, { "j", "<Down>" }, id_MotionDown);
+    AddKeyMapWithCountRegisters(navigationMaps, { "k", "<Up>" }, id_MotionUp);
+    AddKeyMapWithCountRegisters(navigationMaps, { "l", "<Right>" }, id_MotionRight);
+    AddKeyMapWithCountRegisters(navigationMaps, { "h", "<Left>", "<Backspace>" }, id_MotionLeft);
+
+    // Page Motions
+    AddKeyMapWithCountRegisters(navigationMaps, { "<C-f>", "<PageDown>" }, id_MotionPageForward);
+    AddKeyMapWithCountRegisters(navigationMaps, { "<C-b>", "<PageUp>" }, id_MotionPageBackward);
+    AddKeyMapWithCountRegisters(navigationMaps, { "<C-d>" }, id_MotionHalfPageForward);
+    AddKeyMapWithCountRegisters(navigationMaps, { "<C-u>" }, id_MotionHalfPageBackward);
+    AddKeyMapWithCountRegisters(navigationMaps, { "G" }, id_MotionGotoLine);
+
+    // Line Motions
+    AddKeyMapWithCountRegisters(navigationMaps, { "$" }, id_MotionLineEnd);
+    AddKeyMapWithCountRegisters(navigationMaps, { "^" }, id_MotionLineFirstChar);
+    keymap_add(navigationMaps, { "0" }, id_MotionLineBegin);
+
+    // Word motions
+    AddKeyMapWithCountRegisters(navigationMaps, { "w" }, id_MotionWord);
+    AddKeyMapWithCountRegisters(navigationMaps, { "b" }, id_MotionBackWord);
+    AddKeyMapWithCountRegisters(navigationMaps, { "W" }, id_MotionWORD);
+    AddKeyMapWithCountRegisters(navigationMaps, { "B" }, id_MotionBackWORD);
+    AddKeyMapWithCountRegisters(navigationMaps, { "e" }, id_MotionEndWord);
+    AddKeyMapWithCountRegisters(navigationMaps, { "E" }, id_MotionEndWORD);
+    AddKeyMapWithCountRegisters(navigationMaps, { "ge" }, id_MotionBackEndWord);
+    AddKeyMapWithCountRegisters(navigationMaps, { "gE" }, id_MotionBackEndWORD);
+    AddKeyMapWithCountRegisters(navigationMaps, { "gg" }, id_MotionGotoBeginning);
+
+    // Arrows always navigate in insert mode
+    keymap_add({ &m_insertMap }, { "<Down>" }, id_MotionDown);
+    keymap_add({ &m_insertMap }, { "<Up>" }, id_MotionUp);
+    keymap_add({ &m_insertMap }, { "<Right>" }, id_MotionRight);
+    keymap_add({ &m_insertMap }, { "<Left>" }, id_MotionLeft);
+
+    // Navigate between splits
+    keymap_add({ &m_normalMap }, { "<C-j>" }, id_MotionDownSplit);
+    keymap_add({ &m_normalMap }, { "<C-l>" }, id_MotionRightSplit);
+    keymap_add({ &m_normalMap }, { "<C-k>" }, id_MotionUpSplit);
+    keymap_add({ &m_normalMap }, { "<C-h>" }, id_MotionLeftSplit);
+}
+
+void ZepMode::AddSearchKeyMaps()
+{
+    // Normal mode searching
+    AddKeyMapWithCountRegisters({ &m_normalMap }, { "f<.>" }, id_Find);
+    AddKeyMapWithCountRegisters({ &m_normalMap }, { "F<.>" }, id_FindBackwards);
+    AddKeyMapWithCountRegisters({ &m_normalMap }, { ";" }, id_FindNext);
+    AddKeyMapWithCountRegisters({ &m_normalMap }, { "n" }, id_MotionNextSearch);
+    AddKeyMapWithCountRegisters({ &m_normalMap }, { "N" }, id_MotionPreviousSearch);
+    keymap_add({ &m_normalMap }, { "<F8>" }, id_MotionNextMarker);
+    keymap_add({ &m_normalMap }, { "<S-F8>" }, id_MotionPreviousMarker);
+}
+
+void ZepMode::AddGlobalKeyMaps()
+{
+    // Global bits
+    keymap_add({ &m_normalMap, &m_insertMap }, { "<C-p>", "<C-,>" }, id_QuickSearch);
+    keymap_add({ &m_normalMap }, { ":", "/", "?" }, id_ExMode);
+    keymap_add({ &m_normalMap }, { "H" }, id_PreviousTabWindow);
+    keymap_add({ &m_normalMap }, { "L" }, id_NextTabWindow);
+    keymap_add({ &m_normalMap }, { "<C-i><C-o>" }, id_SwitchToAlternateFile);
+    keymap_add({ &m_normalMap }, { "+" }, id_FontBigger);
+    keymap_add({ &m_normalMap }, { "-" }, id_FontSmaller);
 }
 
 } // namespace Zep

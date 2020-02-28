@@ -1,6 +1,6 @@
 #pragma once
 
-#include "syntax.h"
+#include "zep/syntax.h"
 
 namespace Zep
 {
@@ -14,6 +14,7 @@ public:
         uint32_t flags = 0);
 
     virtual void UpdateSyntax() override;
+    virtual SyntaxData GetSyntaxAt(long index) const override;
 };
 
 } // namespace Zep

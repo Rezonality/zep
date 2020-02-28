@@ -156,7 +156,8 @@ void ZepMode_Search::GetSearchPaths(const ZepPath& path, std::vector<std::string
             "*.lsp",
             "*.scm",
             "*.cs",
-            "*.cfg"
+            "*.cfg",
+            "*.orca"
         };
     }
 }
@@ -335,13 +336,13 @@ void ZepMode_Search::OpenSelection(OpenType type)
                     m_launchWindow.SetBuffer(pBuffer);
                     break;
                 case OpenType::VSplit:
-                    GetEditor().GetActiveTabWindow()->AddWindow(pBuffer, &m_launchWindow, true);
+                    GetEditor().GetActiveTabWindow()->AddWindow(pBuffer, &m_launchWindow, RegionLayoutType::HBox);
                     break;
                 case OpenType::HSplit:
-                    GetEditor().GetActiveTabWindow()->AddWindow(pBuffer, &m_launchWindow, false);
+                    GetEditor().GetActiveTabWindow()->AddWindow(pBuffer, &m_launchWindow, RegionLayoutType::VBox);
                     break;
                 case OpenType::Tab:
-                    GetEditor().AddTabWindow()->AddWindow(pBuffer, nullptr, false);
+                    GetEditor().AddTabWindow()->AddWindow(pBuffer, nullptr, RegionLayoutType::HBox);
                     break;
                 }
             }

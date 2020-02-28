@@ -1,9 +1,7 @@
 #pragma once
 
 #include "mode.h"
-#include <future>
-#include <memory>
-#include <regex>
+#include "zep/mode_vim.h"
 
 namespace Zep
 {
@@ -129,7 +127,7 @@ public:
 
 };
 
-class ZepMode_Tree : public ZepMode
+class ZepMode_Tree : public ZepMode_Vim
 {
 public:
     ZepMode_Tree(ZepEditor& editor, std::shared_ptr<ZepTree> spTree, ZepWindow& launchWindow, ZepWindow& replWindow);
@@ -139,17 +137,14 @@ public:
     {
         return "TREE";
     }
-    virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
     virtual void Begin() override;
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
-    virtual void PreDisplay() override;
     virtual const char* Name() const override { return StaticName(); }
 
 private:
     void BuildTree();
 
 private:
-    std::shared_ptr<ZepMode_Vim> m_spVim;
     std::shared_ptr<ZepTree> m_spTree;
     ByteIndex m_startLocation = ByteIndex{ 0 };
     ZepWindow& m_launchWindow;

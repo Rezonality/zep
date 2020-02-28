@@ -153,10 +153,13 @@ public:
     ZepMode(ZepEditor& editor);
     virtual ~ZepMode();
 
+    virtual void Init() {};
+
     virtual void AddKeyPress(uint32_t key, uint32_t modifierKeys = ModifierKey::None);
     virtual const char* Name() const = 0;
     virtual void Begin() = 0;
     virtual void Notify(std::shared_ptr<ZepMessage> message) override {}
+    virtual uint32_t ModifyWindowFlags(uint32_t windowFlags) { return windowFlags; }
 
     // Do the actual input handling
     virtual void HandleMappedInput(const std::string& input);
@@ -167,8 +170,8 @@ public:
     virtual EditorMode GetEditorMode() const;
     virtual void SetEditorMode(EditorMode currentMode);
 
-    // ZepComponent
-    virtual void PreDisplay(){};
+    // About to display this window, which is associated with this mode
+    virtual void PreDisplay(ZepWindow&){};
 
     // Called when we begin editing in this mode
 
@@ -188,6 +191,12 @@ public:
     virtual void UpdateVisualSelection();
 
     const KeyMap& GetKeyMappings(EditorMode mode) const;
+
+    void AddGlobalKeyMaps();
+    void AddNavigationKeyMaps(bool allowInVisualMode = true);
+    void AddSearchKeyMaps();
+    void AddKeyMapWithCountRegisters(const std::vector<KeyMap*>& maps, const std::vector<std::string>& commands, const StringId& id);
+
 
 protected:
     virtual void SwitchMode(EditorMode currentMode);

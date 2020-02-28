@@ -421,6 +421,11 @@ struct NRect
         bottomRightPx = NRect<T>();
     }
 
+    void SetSize(const NVec2f& size)
+    {
+        bottomRightPx = topLeftPx + size;
+    }
+
     void Adjust(float x, float y, float z, float w)
     {
         topLeftPx.x += x;
@@ -463,11 +468,54 @@ inline NRect<T> operator*(const NRect<T>& lhs, float val)
 {
     return NRect<T>(lhs.topLeftPx * val, lhs.bottomRightPx * val);
 }
+template <class T>
+inline NRect<T> operator-(const NRect<T>& lhs, const NRect<T>& rhs)
+{
+    return NRect<T>(lhs.topLeftPx.x - rhs.topLeftPx.x, lhs.bottomRightPx.y - rhs.topLeftPx.y);
+}
 template<class T>
 inline std::ostream& operator<< (std::ostream& str, const NRect<T>& region)
 {
     str << region.topLeftPx << ", " << region.bottomRightPx << ", size: " << region.Width() << ", " << region.Height();
     return str;
+}
+
+enum FitCriteria
+{
+    X,
+    Y
+};
+
+template<class T>
+inline bool NRectFits(const NRect<T>& area, const NRect<T>& rect, FitCriteria criteria)
+{
+    if (criteria == FitCriteria::X)
+    {
+        auto xDiff = rect.bottomRightPx.x - area.bottomRightPx.x;
+        if (xDiff > 0)
+        {
+            return false;
+        }
+        xDiff = rect.topLeftPx.x - area.topLeftPx.x;
+        if (xDiff < 0)
+        {
+            return false;
+        }
+    }
+    else
+    {
+        auto yDiff = rect.bottomRightPx.y - area.bottomRightPx.y;
+        if (yDiff > 0)
+        {
+            return false;
+        }
+        yDiff = rect.topLeftPx.y - area.topLeftPx.y;
+        if (yDiff < 0)
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 using NRectf = NRect<float>;

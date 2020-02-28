@@ -26,6 +26,9 @@ set(DEMO_SOURCE_QT
     ${ZEP_ROOT}/demo_qt/app.exe.manifest
     ${ZEP_ROOT}/demo_qt/main-qt.cpp
     ${ZEP_ROOT}/demo_qt/app.rc
+    ${ZEP_ROOT}/include/zep/qt/zepdisplay_qt.h
+    ${ZEP_ROOT}/include/zep/qt/zepwidget_qt.h
+    ${ZEP_ROOT}/include/zep/qt/common_qt.h
 )
 
 # Create the Qt version of the app
@@ -35,6 +38,7 @@ target_include_directories(${DEMO_NAME}
     PRIVATE
         ${ZEP_ROOT}/demo_qt
         ${ZEP_ROOT}/src/qt
+        ${ZEP_ROOT}/extensions
         ${Qt5Widgets_INCLUDE_DIRS}
         ${Qt5Gui_INCLUDE_DIRS}
         ${Qt5Core_INCLUDE_DIRS}

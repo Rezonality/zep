@@ -26,6 +26,7 @@ public:
         // TODO : Fix/understand test failures with threading
         spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZEP_ROOT, ZepEditorFlags::DisableThreads);
         spMode = std::make_shared<ZepMode_Vim>(*spEditor);
+        spMode->Init();
         pBuffer = spEditor->InitWithText("Test Buffer", "");
 
         pTabWindow = spEditor->GetActiveTabWindow();
@@ -133,21 +134,21 @@ TEST_F(VimTest, ESCAPE)
 
 TEST_F(VimTest, RETURN)
 {
-    pBuffer->SetText("one\ntwo");
+    pBuffer->SetText(u8"Õne\ntwo");
     spMode->AddKeyPress(ExtKeys::RETURN);
     ASSERT_EQ(pWindow->BufferToDisplay().y, 1);
 
     spMode->AddCommandText("li");
     spMode->AddKeyPress(ExtKeys::RETURN);
-    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "one\nt\nwo");
+    ASSERT_STREQ(pBuffer->GetText().string().c_str(), u8"Õne\nt\nwo");
 }
 
 TEST_F(VimTest, TAB)
 {
-    pBuffer->SetText("Hello");
+    pBuffer->SetText(u8"HellÕ");
     spMode->AddCommandText("lllllllli");
     spMode->AddKeyPress(ExtKeys::TAB);
-    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hell    o");
+    ASSERT_STREQ(pBuffer->GetText().string().c_str(), u8"Hell    Õ");
 }
 
 TEST_F(VimTest, BACKSPACE)
@@ -300,6 +301,8 @@ COMMAND_TEST(join_lines_skip_ws, "one\n   two", "J", "one two");
 
 COMMAND_TEST(join_visual, "one\ntwo", "vlJ", "one two");
 
+COMMAND_TEST(join_to_end, "one", "J", "one");
+
 // Insert
 COMMAND_TEST(insert_a_text, "one three", "lllatwo ", "one two three")
 COMMAND_TEST(insert_i_text, "one three", "lllitwo", "onetwo three")
@@ -356,6 +359,7 @@ COMMAND_TEST(visual_a_word, "one three", "vawd", "three");
 COMMAND_TEST(visual_a_word_undo, "one three", "vawdu", "one three");
 COMMAND_TEST(visual_a_WORD, "one-three four", "vaWd", "four");
 COMMAND_TEST(visual_a_WORD_undo, "one-three four", "vaWdu", "one-three four");
+
 
 #define CURSOR_TEST(name, source, command, xcoord, ycoord) \
     TEST_F(VimTest, name)                                  \
@@ -434,6 +438,12 @@ CURSOR_TEST(find_a_char_repeat, "one one one", "fo;", 8, 0);
 CURSOR_TEST(find_a_char_num, "one2 one2", "2f2", 8, 0);
 CURSOR_TEST(find_a_char_beside, "ooo", "fo;", 2, 0);
 CURSOR_TEST(find_backwards, "foo", "lllllFf", 0, 0);
+
+
+inline std::string MakeCommandRegex(const std::string& command)
+{
+    return std::string(R"((?:(\d)|(<\S>*)|("\w?)*)()") + command + ")";
+}
 
 TEST(Regex, VimRegex)
 {

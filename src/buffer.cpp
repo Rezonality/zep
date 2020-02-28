@@ -56,11 +56,6 @@ inline bool IsSpaceOrTerminal(const char c)
     auto ch = ToASCII(c);
     return ch == ' ' || ch == 0 || ch == '\n';
 }
-inline bool IsNewlineOrEnd(const char c)
-{
-    auto ch = ToASCII(c);
-    return ch == '\n' || ch == 0;
-}
 
 using fnMatch = std::function<bool>(const char);
 
@@ -102,98 +97,6 @@ long ZepBuffer::GetBufferLine(ByteIndex location) const
     long line = long(itrLine - m_lineEnds.begin());
     line = std::min(std::max(0l, line), long(m_lineEnds.size() - 1));
     return line;
-}
-
-ByteIndex ZepBuffer::CPOffset(const ByteIndex& location, long offset, LineLocation clampLimit) const
-{
-    // Walk and find.
-    long dir = offset > 0 ? 1 : -1;
-
-    auto clampLocation = GetLinePos(location, clampLimit);
-
-    // TODO: This can be cleaner(?)
-    long current = location;
-    for (long i = 0; i < std::abs(offset); i++)
-    {
-        // If walking back, move back before looking at char
-        /*
-        if (dir == -1)
-        {
-            current -= 1;
-        }
-        else
-        {
-            current += UTF8_CHAR_LEN(m_gapBuffer[current]);
-        }
-        */
-
-        if (current >= (long)m_gapBuffer.size())
-            break;
-
-        current = std::max(0l, current);
-
-        if (m_gapBuffer[current] == '\n')
-        {
-            if ((current + dir) >= (long)m_gapBuffer.size())
-            {
-                break;
-            }
-        }
-
-        // If walking forward, post append
-        if (dir == 1)
-        {
-            current += UTF8_CHAR_LEN(m_gapBuffer[current]);
-        }
-    }
-
-    if (clampLocation != InvalidByteIndex)
-    {
-        current = std::min(clampLocation, current);
-    }
-    return current;
-}
-
-ByteIndex ZepBuffer::LocationFromOffsetByChars(const ByteIndex& location, long offset, LineLocation clampLimit) const
-{
-    // Walk and find.
-    long dir = offset > 0 ? 1 : -1;
-
-    auto clampLocation = GetLinePos(location, clampLimit);
-
-    // TODO: This can be cleaner(?)
-    long current = location;
-    for (long i = 0; i < std::abs(offset); i++)
-    {
-        // If walking back, move back before looking at char
-        if (dir == -1)
-            current += dir;
-
-        if (current >= (long)m_gapBuffer.size())
-            break;
-
-        current = std::max(0l, current);
-
-        if (m_gapBuffer[current] == '\n')
-        {
-            if ((current + dir) >= (long)m_gapBuffer.size())
-            {
-                break;
-            }
-        }
-
-        // If walking forward, post append
-        if (dir == 1)
-        {
-            current += dir;
-        }
-    }
-
-    if (clampLocation != InvalidByteIndex)
-    {
-        current = std::min(clampLocation, current);
-    }
-    return current;
 }
 
 bool ZepBuffer::Valid(ByteIndex location) const
@@ -867,6 +770,7 @@ ByteIndex ZepBuffer::GetLinePos(ByteIndex bufferLocation, LineLocation lineLocat
 {
     if (lineLocation == LineLocation::None)
     {
+        assert(!"Invalid");
         return InvalidByteIndex;
     }
 
@@ -874,98 +778,108 @@ ByteIndex ZepBuffer::GetLinePos(ByteIndex bufferLocation, LineLocation lineLocat
     if (m_gapBuffer.empty())
         return bufferLocation;
 
+    GlyphIterator itr = GlyphIterator(*this, bufferLocation);
+    GlyphIterator itrBegin = GlyphIterator(*this);
+    GlyphIterator itrEnd = GlyphIterator(*this, ByteIndex(m_gapBuffer.size()));
+
     // If we are on the CR, move back 1, unless the \n is all that is on the line
-    if (m_gapBuffer[bufferLocation] == '\n')
+    if (itr != itrBegin)
     {
-        bufferLocation--;
-    }
+        if (itr.Char() == '\n')
+        {
+            itr.Move(-1);
+        }
 
-    // Find the end of the previous line
-    while (bufferLocation >= 0 && m_gapBuffer[bufferLocation] != '\n')
-    {
-        bufferLocation--;
-    }
+        // Find the end of the previous line
+        while (itr > itrBegin&&
+            itr.Char() != '\n')
+        {
+            itr.Move(-1);
+        }
 
-    // Step back to the start of the line
-    bufferLocation++;
+        if (itr.Char() == '\n')
+            itr.Move(1);
+    }
 
     switch (lineLocation)
     {
     default:
     case LineLocation::LineBegin:
     {
-        return Clamp(bufferLocation);
+        return Clamp(itr.ToByteIndex());
     }
     break;
 
     // The point just after the line end
     case LineLocation::BeyondLineEnd:
     {
-        while (bufferLocation < (long)m_gapBuffer.size() && m_gapBuffer[bufferLocation] != '\n' && m_gapBuffer[bufferLocation] != 0)
+        while (itr < itrEnd && itr.Char()!= '\n' && itr.Char() != 0)
         {
-            bufferLocation++;
+            itr.Move(1);
         }
-        bufferLocation++;
-        return Clamp(bufferLocation);
+        itr.Move(1);
+        return Clamp(itr.ToByteIndex());
     }
     break;
 
     case LineLocation::LineCRBegin:
     {
-        while (bufferLocation < (long)m_gapBuffer.size()
-            && m_gapBuffer[bufferLocation] != '\n'
-            && m_gapBuffer[bufferLocation] != 0)
+        while (itr < itrEnd
+            && itr.Char() != '\n'
+            && itr.Char() != 0)
         {
-            bufferLocation++;
+            itr.Move(1);
         }
-        return bufferLocation;
+        return itr.ToByteIndex();
     }
     break;
 
     case LineLocation::LineFirstGraphChar:
     {
-        while (bufferLocation < (long)m_gapBuffer.size() && !std::isgraph(ToASCII(m_gapBuffer[bufferLocation])) && m_gapBuffer[bufferLocation] != '\n')
+        while (itr < itrEnd && !std::isgraph(ToASCII(itr.Char())) && itr.Char() != '\n')
         {
-            bufferLocation++;
+            itr.Move(1);
         }
-        return Clamp(bufferLocation);
+        return Clamp(itr.ToByteIndex());
     }
     break;
 
     case LineLocation::LineLastNonCR:
     {
-        auto start = bufferLocation;
+        auto itrFirst = itr;
 
-        while (bufferLocation < (long)m_gapBuffer.size()
-            && m_gapBuffer[bufferLocation] != '\n'
-            && m_gapBuffer[bufferLocation] != 0)
+        while (itr < itrEnd
+            && itr.Char() != '\n'
+            && itr.Char() != 0)
         {
-            bufferLocation++;
+            itr.Move(1);
         }
 
-        if (start != bufferLocation)
+        if (itrFirst != itr)
         {
-            bufferLocation--;
+            itr.Move(-1);
         }
 
-        return Clamp(bufferLocation);
+        return Clamp(itr.ToByteIndex());
     }
     break;
 
     case LineLocation::LineLastGraphChar:
     {
-        while (bufferLocation < (long)m_gapBuffer.size()
-            && m_gapBuffer[bufferLocation] != '\n'
-            && m_gapBuffer[bufferLocation] != 0)
+        while (itr < itrEnd
+            && itr.Char() != '\n'
+            && itr.Char() != 0)
         {
-            bufferLocation++;
+            itr.Move(1);
         }
 
-        while (bufferLocation > 0 && bufferLocation < (long)m_gapBuffer.size() && !std::isgraph(ToASCII(m_gapBuffer[bufferLocation])))
+        while (itr > itrBegin &&
+            itr < itrEnd 
+            && !std::isgraph(ToASCII(itr.Char())))
         {
-            bufferLocation--;
+            itr.Move(-1);
         }
-        return Clamp(bufferLocation);
+        return Clamp(itr.ToByteIndex());
     }
     break;
     }

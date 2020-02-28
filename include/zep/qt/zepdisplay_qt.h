@@ -73,7 +73,13 @@ public:
             pEnd = pBegin + strlen((const char*)pBegin);
         }
 
-        auto rc = met.size(Qt::TextSingleLine, QString::fromUtf8((char*)pBegin, pEnd - pBegin));
+        auto rc = met.size(Qt::TextIncludeTrailingSpaces | Qt::TextLongestVariant, QString::fromUtf8((char*)pBegin, pEnd - pBegin));
+        if (rc.width() == 0.0)
+        {
+            // Make invalid characters a default fixed_size
+            const char chDefault = 'A';
+            rc = met.size(Qt::TextIncludeTrailingSpaces | Qt::TextLongestVariant, QString("A"));
+        }
         return NVec2f(rc.width(), rc.height());
     }
 
@@ -85,10 +91,7 @@ public:
         }
         QPoint p0 = toQPoint(pos);
         m_pPainter->setPen(QColor::fromRgbF(col.x, col.y, col.z, col.w));
-
-        p0.setY(p0.y() + m_fontOffset);
-
-        m_pPainter->drawText(p0, QString::fromUtf8((char*)text_begin, text_end - text_begin));
+        m_pPainter->drawText(p0.x(), p0.y(), 1000, 1000, Qt::TextWordWrap | Qt::TextLongestVariant, QString::fromUtf8((char*)text_begin, text_end - text_begin));
     }
 
     void DrawLine(const NVec2f& start, const NVec2f& end, const NVec4f& color, float width) const

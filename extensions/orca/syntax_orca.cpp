@@ -1,9 +1,10 @@
-#include "zep/syntax_orca.h"
 #include "zep/editor.h"
 #include "zep/theme.h"
 
 #include "zep/mcommon/logger.h"
 #include "zep/mcommon/string/stringutils.h"
+
+#include "syntax_orca.h"
 
 #include <string>
 #include <vector>
@@ -19,6 +20,24 @@ ZepSyntax_Orca::ZepSyntax_Orca(ZepBuffer& buffer,
 {
     // Don't need default
     m_adornments.clear();
+}
+
+SyntaxData ZepSyntax_Orca::GetSyntaxAt(long index) const
+{
+    auto& buffer = m_buffer.GetText();
+    auto token = buffer[index];
+
+    SyntaxData data;
+    if (token == ' ' || token == '.')
+    {
+        data.foreground = ThemeColor::Whitespace;
+        data.background = ThemeColor::None;
+    }
+    else
+    {
+        return ZepSyntax::GetSyntaxAt(index);
+    }
+    return data;
 }
 
 void ZepSyntax_Orca::UpdateSyntax()
@@ -80,6 +99,10 @@ void ZepSyntax_Orca::UpdateSyntax()
         else if (token.find_first_not_of("0123456789") == std::string::npos)
         {
             mark(itrCurrent, itrCurrent+1, ThemeColor::Number, ThemeColor::None);
+        }
+        else if (token[0] == '.')
+        {
+            mark(itrCurrent, itrCurrent + 1, ThemeColor::Whitespace, ThemeColor::None);
         }
         else
         {

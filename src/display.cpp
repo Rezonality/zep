@@ -41,7 +41,7 @@ uint32_t ZepDisplay::GetCodePointCount(const uint8_t* pCh, const uint8_t* pEnd) 
     uint32_t count = 0;
     while (pCh < pEnd)
     {
-        pCh += UTF8_CHAR_LEN(*pCh);
+        pCh += utf8_codepoint_length(*pCh);
         count++;
     }
     return count;
@@ -54,7 +54,7 @@ NVec2f ZepDisplay::GetCharSize(const uint8_t* pCh)
         BuildCharCache();
     }
 
-    if (UTF8_CHAR_LEN(*pCh) == 1)
+    if (utf8_codepoint_length(*pCh) == 1)
     {
         return m_charCacheASCII[*pCh];
     }
@@ -67,10 +67,18 @@ NVec2f ZepDisplay::GetCharSize(const uint8_t* pCh)
         return itr->second;
     }
      
-    auto sz = GetTextSize(pCh, pCh + UTF8_CHAR_LEN(*pCh));
+    auto sz = GetTextSize(pCh, pCh + utf8_codepoint_length(*pCh));
     m_charCache[(uint32_t)ch32] = sz;
 
     return sz;
+}
+    
+void ZepDisplay::DrawRect(const NRectf& rc, const NVec4f& col) const
+{
+    DrawLine(rc.topLeftPx, rc.BottomLeft(), col);
+    DrawLine(rc.topLeftPx, rc.TopRight(), col);
+    DrawLine(rc.TopRight(), rc.bottomRightPx, col);
+    DrawLine(rc.BottomLeft(), rc.bottomRightPx, col);
 }
 
 }

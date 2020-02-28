@@ -51,7 +51,8 @@ public:
         if (text_size.x == 0.0)
         {
             // Make invalid characters a default fixed_size
-            return GetTextSize((const uint8_t*)"A");
+            const char chDefault = 'A';
+            text_size = font->CalcTextSizeA(font_size, FLT_MAX, FLT_MAX, &chDefault, (&chDefault + 1), NULL);
         }
 
         return toNVec2f(text_size);

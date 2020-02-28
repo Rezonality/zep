@@ -1,4 +1,3 @@
-#include "zep/mode_repl.h"
 #include "zep/filesystem.h"
 #include "zep/tab_window.h"
 #include "zep/window.h"
@@ -7,6 +6,7 @@
 #include "zep/mcommon/logger.h"
 #include "zep/mcommon/threadutils.h"
 
+#include "mode_repl.h"
 namespace Zep
 {
 
@@ -197,6 +197,35 @@ void ZepMode_Repl::Begin()
 void ZepMode_Repl::Notify(std::shared_ptr<ZepMessage> message)
 {
     ZepMode::Notify(message);
+}
+
+/*
+TODO : Add a global command registration system
+else if (strCommand.find(":repl") == 0)
+{
+    GetEditor().AddRepl();
+}
+*/
+
+ZepWindow* ZepMode_Repl::AddRepl()
+{
+    if (!GetEditor().GetActiveTabWindow())
+    {
+        return nullptr;
+    }
+
+    auto pActiveWindow = GetEditor().GetActiveTabWindow()->GetActiveWindow();
+
+    auto pReplBuffer = GetEditor().GetEmptyBuffer("Repl.lisp", FileFlags::Locked);
+    pReplBuffer->SetBufferType(BufferType::Repl);
+
+    auto pReplWindow = GetEditor().GetActiveTabWindow()->AddWindow(pReplBuffer, nullptr, RegionLayoutType::VBox);
+
+    auto pMode = std::make_shared<ZepMode_Repl>(GetEditor(), *pActiveWindow, *pReplWindow);
+    pMode->Init();
+    pReplBuffer->SetMode(pMode);
+    pMode->Begin();
+    return pReplWindow;
 }
 
 } // namespace Zep

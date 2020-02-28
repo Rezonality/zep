@@ -1,6 +1,5 @@
 #pragma once
 
-#include <deque>
 #include <map>
 #include <memory>
 #include <ostream>
@@ -48,18 +47,29 @@ class ZepSyntax;
 class ZepTabWindow;
 class ZepWindow;
 class ZepTheme;
-
 class ZepDisplay;
 class IZepFileSystem;
 
 struct Region;
 
-// Helpers 
-inline bool ZTestFlags(uint32_t flag, uint32_t value) { return ((flag & value) == flag ? true : false); }
-inline void ZSetFlags(uint32_t& flag, uint32_t value, bool set = true) { if (set) { flag |= value; } }
-inline void ZClearFlags(uint32_t& flag, uint32_t value) { flag &= ~value; }
+#define ZEP_UNUSED(var) (void*)&var;
 
-#define UTF8_CHAR_LEN(byte) ((0xE5000000 >> ((byte >> 3) & 0x1e)) & 3) + 1
+// Helpers 
+inline bool ZTestFlags(uint32_t flags, uint32_t value) { return ((flags & value) ? true : false); }
+inline uint32_t ZSetFlags(uint32_t& flags, uint32_t value, bool set = true) { if (set) { flags |= value; } return flags; }
+inline uint32_t ZClearFlags(uint32_t& flags, uint32_t value) { flags &= ~value; return flags; }
+inline uint32_t ZToggleFlags(uint32_t flags, uint32_t value)
+{
+    if (ZTestFlags(flags, value))
+    {
+        ZClearFlags(flags, value);
+    }
+    else
+    {
+        ZSetFlags(flags, value);
+    }
+    return flags;
+}
 
 namespace ZepEditorFlags
 {
@@ -214,6 +224,18 @@ struct EditorConfig
     float backgroundFadeWait = 60.0f;
 };
 
+class ZepExCommand : public ZepComponent
+{
+public:
+    ZepExCommand(ZepEditor& editor)
+        : ZepComponent(editor)
+    {}
+    virtual ~ZepExCommand() {}
+    virtual void Run(const std::vector<std::string>& args = {}) = 0;
+    virtual const char* Name() const = 0;
+    virtual void Init() {};
+};
+
 class ZepEditor
 {
 public:
@@ -232,8 +254,12 @@ public:
 
     ZepMode* GetGlobalMode();
     void RegisterGlobalMode(std::shared_ptr<ZepMode> spMode);
+    void RegisterExCommand(std::shared_ptr<ZepExCommand> spMode);
+    ZepExCommand* FindExCommand(const std::string& strName);
     void SetGlobalMode(const std::string& currentMode);
     ZepMode* GetSecondaryMode() const;
+
+    void RegisterBufferMode(const std::string& strExtension, std::shared_ptr<ZepMode> spMode);
 
     void Display();
 
@@ -283,8 +309,6 @@ public:
     void RemoveTabWindow(ZepTabWindow* pTabWindow);
     const tTabWindows& GetTabWindows() const;
 
-    ZepWindow* AddRepl();
-    ZepWindow* AddOrca();
     ZepWindow* AddTree();
     ZepWindow* AddSearch();
 
@@ -332,8 +356,9 @@ public:
     float GetPixelScale() const;
 
     void SetBufferSyntax(ZepBuffer& buffer) const;
+    void SetBufferMode(ZepBuffer& buffer) const;
 
-    EditorConfig& GetConfig()
+    EditorConfig& GetConfig() 
     {
         return m_config;
     }
@@ -363,7 +388,9 @@ private:
 
     std::shared_ptr<ZepTheme> m_spTheme;
     std::map<std::string, SyntaxProvider> m_mapSyntax;
-    std::map<std::string, std::shared_ptr<ZepMode>> m_mapModes;
+    std::map<std::string, std::shared_ptr<ZepMode>> m_mapGlobalModes;
+    std::map<std::string, std::shared_ptr<ZepMode>> m_mapBufferModes;
+    std::map<std::string, std::shared_ptr<ZepExCommand>> m_mapExCommands;
 
     // Blinking cursor
     timer m_cursorTimer;

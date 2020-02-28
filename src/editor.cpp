@@ -1,26 +1,13 @@
 #include "zep/editor.h"
-#include "zep/buffer.h"
-#include "zep/display.h"
 #include "zep/filesystem.h"
-#include "zep/mode_repl.h"
 #include "zep/mode_tree.h"
 #include "zep/mode_search.h"
 #include "zep/mode_standard.h"
-#include "zep/mode_vim.h"
-#include "zep/syntax.h"
 #include "zep/syntax_providers.h"
 #include "zep/tab_window.h"
-#include "zep/theme.h"
-#include "zep/window.h"
+#include "zep/regress.h"
 
-#include "zep/mcommon/animation/timer.h"
-#include "zep/mcommon/file/cpptoml.h"
-#include "zep/mcommon/file/path.h"
-#include "zep/mcommon/logger.h"
-#include "zep/mcommon/string/murmur_hash.h"
-#include "zep/mcommon/string/stringutils.h"
-
-#include <stdexcept>
+#include "config_app.h"
 
 namespace Zep
 {
@@ -86,7 +73,7 @@ ZepEditor::ZepEditor(ZepDisplay* pDisplay, const ZepPath& root, uint32_t flags, 
     RegisterSyntaxProviders(*this);
 
     m_editorRegion = std::make_shared<Region>();
-    m_editorRegion->vertical = false;
+    m_editorRegion->layoutType = RegionLayoutType::VBox;
 
     m_tabRegion = std::make_shared<Region>();
     m_tabContentRegion = std::make_shared<Region>();
@@ -319,43 +306,15 @@ ZepBuffer* ZepEditor::GetFileBuffer(const ZepPath& filePath, uint32_t fileFlags,
 
     // Create buffer, try to load even if not present, the buffer represents the save path (it just isn't saved yet)
     auto pBuffer = CreateNewBuffer(filePath);
-
     pBuffer->SetFlags(fileFlags, true);
+
     return pBuffer;
-}
-
-// TODO: Cleaner handling of window/mode/modal stuff.
-ZepWindow* ZepEditor::AddRepl()
-{
-    if (!GetActiveTabWindow())
-    {
-        return nullptr;
-    }
-
-    auto pActiveWindow = GetActiveTabWindow()->GetActiveWindow();
-
-    auto pReplBuffer = GetEmptyBuffer("Repl.lisp", FileFlags::Locked);
-    pReplBuffer->SetBufferType(BufferType::Repl);
-
-    auto pReplWindow = GetActiveTabWindow()->AddWindow(pReplBuffer, nullptr, false);
-
-    auto pMode = std::make_shared<ZepMode_Repl>(*this, *pActiveWindow, *pReplWindow);
-    pReplBuffer->SetMode(pMode);
-    pMode->Begin();
-    return pReplWindow;
-}
-
-ZepWindow* ZepEditor::AddOrca()
-{
-    auto pOrcaBuffer = GetEmptyBuffer("Orca.orca");
-    GetActiveTabWindow()->GetActiveWindow()->SetBuffer(pOrcaBuffer);
-    return GetActiveTabWindow()->GetActiveWindow();
 }
 
 ZepWindow* ZepEditor::AddTree()
 {
     auto pTree = GetEmptyBuffer("Tree.tree", FileFlags::Locked | FileFlags::ReadOnly);
-    auto pTreeWindow = GetActiveTabWindow()->AddWindow(pTree, nullptr, true);
+    auto pTreeWindow = GetActiveTabWindow()->AddWindow(pTree, nullptr, RegionLayoutType::HBox);
 
     auto pActiveWindow = GetActiveTabWindow()->GetActiveWindow();
     pActiveWindow->SetBuffer(pTree);
@@ -370,6 +329,7 @@ ZepWindow* ZepEditor::AddTree()
     pRoot->ExpandAll(true);
 
     auto pMode = std::make_shared<ZepMode_Tree>(*this, pTreeModel, *pActiveWindow, *pTreeWindow);
+    pMode->Init();
     pTree->SetMode(pMode);
     pMode->Begin();
     return pActiveWindow;
@@ -388,11 +348,12 @@ ZepWindow* ZepEditor::AddSearch()
     auto pActiveWindow = GetActiveTabWindow()->GetActiveWindow();
     auto searchPath = GetFileSystem().GetSearchRoot(pActiveWindow->GetBuffer().GetFilePath());
 
-    auto pSearchWindow = GetActiveTabWindow()->AddWindow(pSearchBuffer, nullptr, false);
-    pSearchWindow->SetWindowFlags(pSearchWindow->GetWindowFlags() & WindowFlags::Modal);
+    auto pSearchWindow = GetActiveTabWindow()->AddWindow(pSearchBuffer, nullptr, RegionLayoutType::VBox);
+    pSearchWindow->SetWindowFlags(pSearchWindow->GetWindowFlags() | WindowFlags::Modal);
     pSearchWindow->SetCursorType(CursorType::LineMarker);
 
     auto pMode = std::make_shared<ZepMode_Search>(*this, *pActiveWindow, *pSearchWindow, searchPath);
+    pMode->Init();
     pSearchBuffer->SetMode(pMode);
     pMode->Begin();
     return pSearchWindow;
@@ -438,7 +399,7 @@ ZepBuffer* ZepEditor::InitWithFileOrDir(const std::string& str)
     // Get a buffer for the start file
     auto pFileBuffer = GetFileBuffer(startPath);
     auto pTab = EnsureTab();
-    pTab->AddWindow(pFileBuffer, nullptr, false);
+    pTab->AddWindow(pFileBuffer, nullptr, RegionLayoutType::HBox);
 
     return pFileBuffer;
 }
@@ -450,7 +411,7 @@ ZepBuffer* ZepEditor::InitWithText(const std::string& strName, const std::string
     auto pBuffer = GetEmptyBuffer(strName);
     pBuffer->SetText(strText);
 
-    pTab->AddWindow(pBuffer, nullptr, false);
+    pTab->AddWindow(pBuffer, nullptr, RegionLayoutType::HBox);
 
     return pBuffer;
 }
@@ -498,10 +459,6 @@ void ZepEditor::UpdateWindowState()
         RemoveBuffer(victim);
     }
 
-    if (m_pCurrentMode)
-    {
-        m_pCurrentMode->PreDisplay();
-    }
 }
 
 void ZepEditor::ResetCursorTimer()
@@ -570,7 +527,7 @@ ZepTabWindow* ZepEditor::AddTabWindow()
     m_pActiveTabWindow = pTabWindow;
 
     auto pEmpty = GetEmptyBuffer("[No Name]", FileFlags::DefaultBuffer);
-    pTabWindow->AddWindow(pEmpty, nullptr, false);
+    pTabWindow->AddWindow(pEmpty, nullptr, RegionLayoutType::HBox);
 
     return pTabWindow;
 }
@@ -621,13 +578,36 @@ const ZepEditor::tTabWindows& ZepEditor::GetTabWindows() const
 
 void ZepEditor::RegisterGlobalMode(std::shared_ptr<ZepMode> spMode)
 {
-    m_mapModes[spMode->Name()] = spMode;
+    m_mapGlobalModes[spMode->Name()] = spMode;
+    spMode->Init();
+}
+
+void ZepEditor::RegisterExCommand(std::shared_ptr<ZepExCommand> spCommand)
+{
+    m_mapExCommands[spCommand->Name()] = spCommand;
+    spCommand->Init();
+}
+
+ZepExCommand* ZepEditor::FindExCommand(const std::string& strName)
+{
+    auto itr = m_mapExCommands.find(strName);
+    if (itr != m_mapExCommands.end())
+    {
+        return itr->second.get();
+    }
+    return nullptr;
+}
+
+void ZepEditor::RegisterBufferMode(const std::string& extension, std::shared_ptr<ZepMode> spMode)
+{
+    m_mapBufferModes[extension] = spMode;
+    spMode->Init();
 }
 
 void ZepEditor::SetGlobalMode(const std::string& currentMode)
 {
-    auto itrMode = m_mapModes.find(currentMode);
-    if (itrMode != m_mapModes.end())
+    auto itrMode = m_mapGlobalModes.find(currentMode);
+    if (itrMode != m_mapGlobalModes.end())
     {
         m_pCurrentMode = itrMode->second.get();
         m_pCurrentMode->Begin();
@@ -637,12 +617,41 @@ void ZepEditor::SetGlobalMode(const std::string& currentMode)
 ZepMode* ZepEditor::GetGlobalMode()
 {
     // The 'Mode' is typically vim or normal and determines how editing is done in a panel
-    if (!m_pCurrentMode && !m_mapModes.empty())
+    if (!m_pCurrentMode && !m_mapGlobalModes.empty())
     {
-        m_pCurrentMode = m_mapModes.begin()->second.get();
+        m_pCurrentMode = m_mapGlobalModes.begin()->second.get();
     }
 
     return m_pCurrentMode;
+}
+
+void ZepEditor::SetBufferMode(ZepBuffer& buffer) const
+{
+    // Reset it in case we are changing the text in a buffer
+    buffer.SetMode(nullptr);
+
+    std::string ext;
+    std::string fileName;
+    if (buffer.GetFilePath().has_filename() && buffer.GetFilePath().filename().has_extension())
+    {
+        ext = string_tolower(buffer.GetFilePath().filename().extension().string());
+        fileName = string_tolower(buffer.GetFilePath().filename().string());
+    }
+    else
+    {
+        auto str = buffer.GetName();
+        size_t dot_pos = str.find_last_of(".");
+        if (dot_pos != std::string::npos)
+        {
+            ext = string_tolower(str.substr(dot_pos, str.length() - dot_pos));
+        }
+    }
+
+    auto itr = m_mapBufferModes.find(ext);
+    if (itr != m_mapBufferModes.end())
+    {
+        buffer.SetMode(itr->second);
+    }
 }
 
 void ZepEditor::SetBufferSyntax(ZepBuffer& buffer) const
@@ -740,21 +749,7 @@ void ZepEditor::InitDataGrid(ZepBuffer& buffer, const NVec2i& dimensions)
 // Do any special buffer processing
 void ZepEditor::InitBuffer(ZepBuffer& buffer)
 {
-    auto ext = buffer.GetFileExtension();
-    if (ext == ".orca")
-    {
-        buffer.SetBufferType(BufferType::DataGrid);
-
-        if (buffer.GetFilePath().empty())
-        {
-            const NVec2i DefaultDataGridSize = NVec2i(20, 15);
-            InitDataGrid(buffer, DefaultDataGridSize);
-        }
-
-        // Use vim mode for editing orca buffers
-        auto pMode = std::make_shared<ZepMode_Vim>(*this);
-        buffer.SetMode(pMode);
-    }
+    SetBufferMode(buffer);
 }
 
 ZepBuffer* ZepEditor::CreateNewBuffer(const std::string& str)
@@ -954,7 +949,7 @@ void ZepEditor::UpdateSize()
     }
     else
     {
-        m_tabRegion->fixed_size = NVec2f(0.0f, 0.0f);
+        m_tabRegion->fixed_size = NVec2f(0.0f);
         m_tabRegion->flags = RegionFlags::Fixed;
     }
 
