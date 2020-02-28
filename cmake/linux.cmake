@@ -19,5 +19,9 @@ LIST(APPEND PLATFORM_LINKLIBS
     Threads::Threads
     stdc++fs
     xcb
+    freetype
+    harfbuzz
+    png16
+    z
     ${OPENGL_LIBRARY}
     )
