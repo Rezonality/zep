@@ -86,8 +86,6 @@ void ZepMode_Standard::Begin()
 /*void ZepMode_Standard::AddKeyPress(uint32_t key, uint32_t modifierKeys)
 {
     ZepMode::AddKeyPress(key, modifierKeys);
-
-    /*
     std::string ch(1, (char)key);
 
     bool copyRegion = false;

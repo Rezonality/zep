@@ -52,7 +52,7 @@ class IZepFileSystem;
 
 struct Region;
 
-#define ZEP_UNUSED(var) (void*)&var;
+#define ZEP_UNUSED(var) (void)var;
 
 // Helpers 
 inline bool ZTestFlags(uint32_t flags, uint32_t value) { return ((flags & value) ? true : false); }

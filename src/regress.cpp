@@ -24,23 +24,23 @@ Iter select_randomly(Iter start, Iter end) {
     return select_randomly(start, end, gen);
 }
 
-ZepRegress::ZepRegress(ZepEditor& editor)
+ZepRegressExCommand::ZepRegressExCommand(ZepEditor& editor)
     : ZepExCommand(editor)
 {
     timer_start(m_timer);
 }
 
-void ZepRegress::Register(ZepEditor& editor)
+void ZepRegressExCommand::Register(ZepEditor& editor)
 {
-    editor.RegisterExCommand(std::make_shared<ZepRegress>(editor));
+    editor.RegisterExCommand(std::make_shared<ZepRegressExCommand>(editor));
 }
 
-const char* ZepRegress::Name() const
+const char* ZepRegressExCommand::Name() const
 {
     return "ZRegress";
 }
 
-void ZepRegress::Run(const std::vector<std::string>& tokens)
+void ZepRegressExCommand::Run(const std::vector<std::string>& tokens)
 {
     ZEP_UNUSED(tokens);
     m_enable = !m_enable;
@@ -54,7 +54,7 @@ void ZepRegress::Run(const std::vector<std::string>& tokens)
     }
 }
 
-void ZepRegress::Notify(std::shared_ptr<ZepMessage> message)
+void ZepRegressExCommand::Notify(std::shared_ptr<ZepMessage> message)
 {
     if (message->messageId == Msg::Tick)
     {
@@ -62,7 +62,7 @@ void ZepRegress::Notify(std::shared_ptr<ZepMessage> message)
     }
 }
 
-void ZepRegress::Tick()
+void ZepRegressExCommand::Tick()
 {
     if (!m_enable)
     {

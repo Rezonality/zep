@@ -255,6 +255,7 @@ void ZepTabWindow::CloseActiveWindow()
     }
 }
 
+/*
 void ZepTabWindow::WalkRegions()
 {
     // Not currently used
@@ -277,6 +278,7 @@ void ZepTabWindow::WalkRegions()
         });
     }
 }
+*/
 
 // See AddWindow for comments..
 void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)

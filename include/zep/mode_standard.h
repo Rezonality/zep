@@ -23,7 +23,7 @@ public:
     }
 
 protected:
-    void Init();
+    virtual void Init() override;
 
 private:
     std::string keyCache;

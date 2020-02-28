@@ -12,17 +12,19 @@ NVec2f FloatSlider::GetSize() const
 
 void FloatSlider::MouseDown(const NVec2f& pos, ZepMouseButton button)
 {
-    (void*)&pos, (void*)&button;
+    ZEP_UNUSED(pos);
+    ZEP_UNUSED(button);
 }
 
 void FloatSlider::MouseUp(const NVec2f& pos, ZepMouseButton button)
 {
-    (void*)&pos, (void*)&button;
+    ZEP_UNUSED(pos);
+    ZEP_UNUSED(button);
 }
 
 void FloatSlider::MouseMove(const NVec2f& pos)
 {
-    (void*)&pos;
+    ZEP_UNUSED(pos);
 }
 
 void FloatSlider::Draw(const ZepBuffer& buffer, const NVec2f& loc)

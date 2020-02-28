@@ -151,7 +151,7 @@ EditorMode ZepMode::GetEditorMode() const
 
 void ZepMode::SetEditorMode(EditorMode currentMode)
 {
-    m_currentMode = currentMode;
+    SwitchMode(currentMode);
 }
 
 void ZepMode::AddCommandText(std::string strText)
@@ -2141,7 +2141,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
         }
         return true;
     }
-    else if (!m_currentCommand.empty() && m_currentCommand[0] == '/' || m_currentCommand[0] == '?')
+    else if (!m_currentCommand.empty() && (m_currentCommand[0] == '/' || m_currentCommand[0] == '?'))
     {
         // TODO: Busy editing the search string; do the search
         if (m_currentCommand.length() > 0)

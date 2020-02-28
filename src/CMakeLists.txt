@@ -120,5 +120,6 @@ install(DIRECTORY ${ZEP_ROOT}/extensions/repl
 source_group (Zep\\common REGULAR_EXPRESSION "src/mcommon/.*")
 source_group (Zep\\common REGULAR_EXPRESSION "include/zep/mcommon/.*")
 source_group (Zep REGULAR_EXPRESSION "src/.*")
+source_group (Zep\\extensions REGULAR_EXPRESSION "extensions/.*")
 source_group (Zep\\include REGULAR_EXPRESSION "include/zep/.*")
 

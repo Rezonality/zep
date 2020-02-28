@@ -13,12 +13,39 @@ namespace Zep
 const std::string PromptString = ">> ";
 const std::string ContinuationString = ".. ";
 
-ZepMode_Repl::ZepMode_Repl(ZepEditor& editor, ZepWindow& launchWindow, ZepWindow& replWindow)
+void ZepReplExCommand::Register(ZepEditor& editor, IZepReplProvider* pProvider)
+{
+    editor.RegisterExCommand(std::make_shared<ZepReplExCommand>(editor, pProvider));
+}
+
+void ZepReplExCommand::Run(const std::vector<std::string>& tokens)
+{
+    ZEP_UNUSED(tokens);
+    if (!GetEditor().GetActiveTabWindow())
+    {
+        return;
+    }
+
+    auto pActiveWindow = GetEditor().GetActiveTabWindow()->GetActiveWindow();
+
+    auto pReplBuffer = GetEditor().GetEmptyBuffer("Repl.lisp", FileFlags::Locked);
+    pReplBuffer->SetBufferType(BufferType::Repl);
+
+    auto pReplWindow = GetEditor().GetActiveTabWindow()->AddWindow(pReplBuffer, nullptr, RegionLayoutType::VBox);
+
+    auto pMode = std::make_shared<ZepMode_Repl>(GetEditor(), *pActiveWindow, *pReplWindow, m_pProvider);
+    pReplBuffer->SetMode(pMode);
+    pMode->Init();
+    pMode->Begin();
+    pMode->SetEditorMode(Zep::EditorMode::Insert);
+}
+
+ZepMode_Repl::ZepMode_Repl(ZepEditor& editor, ZepWindow& launchWindow, ZepWindow& replWindow, IZepReplProvider* pProvider)
     : ZepMode(editor),
     m_launchWindow(launchWindow),
-    m_replWindow(replWindow)
+    m_replWindow(replWindow),
+    m_pRepl(pProvider)
 {
-    m_pRepl = m_launchWindow.GetBuffer().GetReplProvider();
 }
 
 ZepMode_Repl::~ZepMode_Repl()
@@ -107,7 +134,7 @@ void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
         if (m_pRepl)
         {
             int indent = 0;
-            bool complete = m_pRepl->fnIsFormComplete ? m_pRepl->fnIsFormComplete(str, indent) : true;
+            bool complete = m_pRepl->ReplIsFormComplete(str, indent);
             if (!complete)
             {
                 // If the indent is < 0, we completed too much of the expression, so don't let the user hit return until they 
@@ -133,7 +160,7 @@ void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
                 m_replWindow.SetBufferCursor(MaxCursorMove);
                 return;
             }
-            ret = m_pRepl->fnParser(str);
+            ret = m_pRepl->ReplParse(str);
         }
         else
         {
@@ -206,26 +233,5 @@ else if (strCommand.find(":repl") == 0)
     GetEditor().AddRepl();
 }
 */
-
-ZepWindow* ZepMode_Repl::AddRepl()
-{
-    if (!GetEditor().GetActiveTabWindow())
-    {
-        return nullptr;
-    }
-
-    auto pActiveWindow = GetEditor().GetActiveTabWindow()->GetActiveWindow();
-
-    auto pReplBuffer = GetEditor().GetEmptyBuffer("Repl.lisp", FileFlags::Locked);
-    pReplBuffer->SetBufferType(BufferType::Repl);
-
-    auto pReplWindow = GetEditor().GetActiveTabWindow()->AddWindow(pReplBuffer, nullptr, RegionLayoutType::VBox);
-
-    auto pMode = std::make_shared<ZepMode_Repl>(GetEditor(), *pActiveWindow, *pReplWindow);
-    pMode->Init();
-    pReplBuffer->SetMode(pMode);
-    pMode->Begin();
-    return pReplWindow;
-}
 
 } // namespace Zep

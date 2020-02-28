@@ -6,10 +6,10 @@ namespace Zep
 {
 
 class ZepEditor;
-class ZepRegress : public ZepExCommand
+class ZepRegressExCommand : public ZepExCommand
 {
 public:
-    ZepRegress(ZepEditor& editor);
+    ZepRegressExCommand(ZepEditor& editor);
     
     static void Register(ZepEditor& editor);
    

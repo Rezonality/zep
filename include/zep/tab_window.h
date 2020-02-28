@@ -31,7 +31,7 @@ public:
     ZepWindow* DoMotion(WindowMotion motion);
     ZepWindow* AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, RegionLayoutType layoutType);
     void RemoveWindow(ZepWindow* pWindow);
-    void WalkRegions();
+    //void WalkRegions();
     void SetActiveWindow(ZepWindow* pBuffer);
     ZepWindow* GetActiveWindow() const
     {

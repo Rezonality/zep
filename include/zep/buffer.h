@@ -164,12 +164,6 @@ struct RangeMarker
     }
 };
 
-struct ZepRepl
-{
-    std::function<std::string(const std::string&)> fnParser;
-    std::function<bool(const std::string&, int&)> fnIsFormComplete;
-};
-
 using tRangeMarkers = std::map<ByteIndex, std::set<std::shared_ptr<RangeMarker>>>;
 
 const ByteIndex InvalidByteIndex = -1;
@@ -308,15 +302,6 @@ public:
     ZepMode* GetMode() const;
     void SetMode(std::shared_ptr<ZepMode> spMode);
 
-    void SetReplProvider(ZepRepl* repl)
-    {
-        m_replProvider = repl;
-    }
-    ZepRepl* GetReplProvider() const
-    {
-        return m_replProvider;
-    }
-
     using tLineWidgets = std::vector<std::shared_ptr<ILineWidget>>;
     void AddLineWidget(long line, std::shared_ptr<ILineWidget> spWidget);
     void ClearLineWidgets(long line);
@@ -370,7 +355,6 @@ private:
 
     // Modes
     std::shared_ptr<ZepMode> m_spMode;
-    ZepRepl* m_replProvider = nullptr; // May not be set
 };
 
 // Notification payload

@@ -43,9 +43,13 @@ target_include_directories(${DEMO_NAME}
         ${Qt5Gui_INCLUDE_DIRS}
         ${Qt5Core_INCLUDE_DIRS}
         ${CMAKE_BINARY_DIR}
+        ${M3RDPARTY_DIR}
         include)
 
-target_link_libraries(${DEMO_NAME} PRIVATE Qt5::Core Qt5::Gui Qt5::Widgets Zep ${PLATFORM_LINKLIBS})
+# For the scheme integration demo
+copy_existing_files(${DEMO_NAME} ${MUTILS_INCLUDE_DIR}/chibi/init-7.scm ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
+
+target_link_libraries(${DEMO_NAME} PRIVATE Qt5::Core Qt5::Gui Qt5::Widgets MUtils::MUtils Zep ${PLATFORM_LINKLIBS})
 target_compile_options(${DEMO_NAME} PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W3>) # Workaround Qt + MSVC 19 compile issue in release build.
 add_dependencies(${DEMO_NAME} Zep)
 

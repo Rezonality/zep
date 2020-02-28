@@ -138,6 +138,8 @@ void ZepWindow::UpdateAirline()
             m_airline.leftBoxes.push_back(AirBox{ "HIDDEN", m_pBuffer->GetTheme().GetColor(ThemeColor::HiddenText) });
             break;
             */
+        default:
+            break;
         case EditorMode::Insert:
             m_airline.leftBoxes.push_back(AirBox{ "INSERT", FilterActiveColor(m_pBuffer->GetTheme().GetColor(ThemeColor::CursorInsert)) });
             break;
@@ -1263,6 +1265,8 @@ void ZepWindow::PlaceToolTip(const NVec2f& pos, ToolTipPos location, uint32_t li
                 break;
             case ToolTipPos::RightLine:
                 location = ToolTipPos::AboveLine;
+                break;
+            default:
                 break;
             }
         }

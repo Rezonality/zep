@@ -1,25 +1,33 @@
-#include <QPainter>
+#define NOMINMAX
+#include <mutils/chibi/chibi.h>
+#define _MATH_DEFINES_DEFINED
+#include "chibi/eval.h"
+
+#include <QCommandLineParser>
 #include <QMenu>
 #include <QMenuBar>
-#include <QCommandLineParser>
+#include <QPainter>
 #include <QWidget>
 
 #include "zep/buffer.h"
 #include "zep/editor.h"
-#include "zep/theme.h"
 #include "zep/mode_standard.h"
 #include "zep/mode_vim.h"
-#include "zep/tab_window.h"
-#include "zep/window.h"
 #include "zep/regress.h"
+#include "zep/tab_window.h"
+#include "zep/theme.h"
+#include "zep/window.h"
 
 #include "orca/mode_orca.h"
 
-#include "zep/qt/zepwidget_qt.h"
+// Repl example
+#include "repl/mode_repl.h"
 #include "config_app.h"
 #include "mainwindow.h"
+#include "zep/qt/zepwidget_qt.h"
 
 using namespace Zep;
+using namespace MUtils;
 
 const std::string shader = R"R(
 #version 330 core
@@ -43,6 +51,11 @@ void main()
 }
 )R";
 
+namespace
+{
+Chibi scheme;
+}
+
 MainWindow::MainWindow()
 {
     QCommandLineParser parser;
@@ -53,10 +66,13 @@ MainWindow::MainWindow()
 
     parser.process(*qApp);
 
+    chibi_init(scheme, qApp->applicationDirPath().toStdString());
+
     auto* pWidget = new ZepWidget_Qt(this, ZEP_ROOT);
 
     ZepMode_Orca::Register(pWidget->GetEditor());
-    ZepRegress::Register(pWidget->GetEditor());
+    ZepRegressExCommand::Register(pWidget->GetEditor());
+    ZepReplExCommand::Register(pWidget->GetEditor(), this);
 
     const QStringList args = parser.positionalArguments();
     if (args.size() > 0)
@@ -128,4 +144,49 @@ MainWindow::MainWindow()
 
     setMenuBar(menu);
     setCentralWidget(pWidget);
+}
+
+std::string MainWindow::ReplParse(const std::string& str)
+{
+    auto ret = chibi_repl(scheme, NULL, str);
+    ret = RTrim(ret);
+    return ret;
+}
+
+bool MainWindow::ReplIsFormComplete(const std::string& str, int& indent)
+{
+    int count = 0;
+    for (auto& ch : str)
+    {
+        if (ch == '(')
+            count++;
+        if (ch == ')')
+            count--;
+    }
+
+    if (count < 0)
+    {
+        indent = -1;
+        return false;
+    }
+    else if (count == 0)
+    {
+        return true;
+    }
+
+    int count2 = 0;
+    indent = 1;
+    for (auto& ch : str)
+    {
+        if (ch == '(')
+            count2++;
+        if (ch == ')')
+            count2--;
+        if (count2 == count)
+        {
+            break;
+        }
+        indent++;
+    }
+    return false;
 }

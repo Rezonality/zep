@@ -49,7 +49,9 @@
 #include "zep/theme.h"
 #include "zep/window.h"
 
+#include "repl/mode_repl.h"
 #include "orca/mode_orca.h"
+
 #include "zep/regress.h"
 
 #include <tfd/tinyfiledialogs.h>
@@ -144,7 +146,7 @@ bool ReadCommandLine(int argc, char** argv, int& exitCode)
 }
 
 // A helper struct to init the editor and handle callbacks
-struct ZepContainer : public IZepComponent, public ZepRepl
+struct ZepContainer : public IZepComponent, public IZepReplProvider
 {
     ZepContainer(const std::string& startupFilePath)
         : spEditor(std::make_unique<ZepEditor_ImGui>(ZEP_ROOT))
@@ -164,21 +166,13 @@ struct ZepContainer : public IZepComponent, public ZepRepl
 
         chibi_init(scheme, SDL_GetBasePath());
 
-        fnParser = [&](const std::string& str) -> std::string {
-            auto ret = chibi_repl(scheme, NULL, str);
-            ret = RTrim(ret);
-            return ret;
-        };
-
-        fnIsFormComplete = [&](const std::string& str, int& indent) {
-            return IsFormComplete(str, indent);
-        };
-
         spEditor->RegisterCallback(this);
         spEditor->SetPixelScale(GetDisplayScale());
 
         ZepMode_Orca::Register(*spEditor);
-        ZepRegress::Register(*spEditor);
+
+        ZepRegressExCommand::Register(*spEditor);
+        ZepReplExCommand::Register(*spEditor, this);
 
         if (!startupFilePath.empty())
         {
@@ -195,7 +189,14 @@ struct ZepContainer : public IZepComponent, public ZepRepl
         spEditor->UnRegisterCallback(this);
     }
 
-    bool IsFormComplete(const std::string& str, int& indent)
+    virtual std::string ReplParse(const std::string& str) override
+    {
+        auto ret = chibi_repl(scheme, NULL, str);
+        ret = RTrim(ret);
+        return ret;
+    }
+
+    virtual bool ReplIsFormComplete(const std::string& str, int& indent) override
     {
         int count = 0;
         for (auto& ch : str)
@@ -251,15 +252,6 @@ struct ZepContainer : public IZepComponent, public ZepRepl
         {
             clip::set_text(message->str);
             message->handled = true;
-        }
-        else if (message->messageId == Msg::HandleCommand)
-        {
-            if (message->str == ":repl")
-            {
-                GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer().SetReplProvider(this);
-                //GetEditor().AddRepl();
-                message->handled = true;
-            }
         }
         else if (message->messageId == Msg::RequestQuit)
         {
