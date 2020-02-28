@@ -10,30 +10,33 @@ Zep is a simple embeddable editor, with a rendering agnostic design and optional
 
 ![ImGui](screenshots/sample.png)
 
-Zep supports the standard editing keystrokes you'll find in most editors, along with a reasonable subset of modal Vim editing as an option.  The demo project lets you switch between the editing modes on the fly.  Zep is not meant to replace Vim.  I don't have a lifetime spare to write that, but it has most of the functionality I use day to day, and anything missing gets added over time.
+Zep supports the standard editing keystrokes you'll find in most editors, along with a reasonable subset of modal Vim editing as an option.  The demo project lets you switch between the editing modes on the fly.  Zep is not meant to replace Vim.  I don't have a lifetime spare to write that, but it has most of the functionality I use day to day, and anything missing gets added over time.  A keymapper enables configuration of Zep outside the standard modes offered.
 
-Zep is ideally suited to embedding in a game engine, as an in-game editor, or anywhere you need a simple editor without a massive dependency on something more substantial like NeoVim.  The core library is dependency free, small, and requires only a modern C++ compiler.  Zep can be included in your project by setting a define and including zep.h, or building a dependency-free modern cmake library, and setting `Zep::Zep` in `target_link_libraries`.  A header-only implementation of the ImGui and Qt backends is provided as an addendum to the core library; this enables Zep to render in an ImGui or Qt environment.
+Zep is ideally suited to embedding in a game engine, as an in-game editor, or anywhere you need a simple editor without a massive dependency on something more substantial like NeoVim.  The core library is dependency free, small, and requires only a modern C++ compiler.  Zep can be included in your project building a dependency-free modern cmake library, and setting `Zep::Zep` in `target_link_libraries`.  A header-only implementation of the ImGui and Qt backends is provided as an addendum to the core library; this enables Zep to render in an ImGui or Qt environment.  Zep can be included in your project by setting a define and including zep.h, though this is not the recommended path, since th modern CMake library is easier to use and update.
 
 The demos for Qt and ImGui require their additional packages, but the core zep code is easily built and cross platform.  The ImGui demo builds and runs on Windows, Linux and Mac OS.  If you're a Vim user, you might often suffer the frustration of not being able to use Vim keystrokes in your tools.  Zep solves that.
 
 Key Features:
-* Modal 'vim' or modeless 'standard' editing styles.
+* Modal 'vim' or modeless 'standard' editing styles; built around a common core of functionality.
+* Keymapper for extending existing modes or adding new commands
 * Qt or ImGui rendering (and extensible) 
-* Terminal-style text wrapping
+* Terminal-style text wrapping and work in progress non-wrapped mode
 * Splits and tabs
 * A simple syntax highlighting engine, with pluggable secondary highlighters
 * Theme support
-* A Repl for integrating a command/scripting language
+* A Repl for integrating a command/scripting language (the demo project integrates a Scheme interpreter)
 * CTRL+P search for quick searching files with fuzzy matching
 * Text Markers for highlighing errors, etc.
 * No dependencies, cross platform, small library
-* Single header compile or installable modern cmake library
+* Single header compile option 
 * Builds on VC 2017, GCC 6, Clang. C++14 is the basic requirement
+* UTF8 (international) character display; working but still experimental
+* A work in progress extension mode to support an Orca-like environment
+* A work in progress tree control for file navigation
 
 Limitations:
-* Zep currently ignores tabs and converts them to spaces, and internally works with \n. It will restore \r\n on save if necessary
-* Utf8 is not supported, and may not be, though the code has some placeholders for it as a future possibility
-* Vim mode is limited to common operations
+* Zep currently ignores tabs and converts them to spaces.  Tabs are a planned feature.
+* Vim mode is limited to common operations, not the extensive set of commmands typical in Neovim/Vim
 
 Though I have limited time to work on Zep, I do try to move it forward at York Developer's regular Code and Coffee sessions. Zep was my 2018 project but has already proved quite popular, and I try to throw more features in when I can.  There are over 200 unit tests for the editing modes.  This project started mainly as an experiment and a learning exercise.  I like the idea of a programmer building programmer tools for their own use, just as carpenters used to build their toolbox.
 

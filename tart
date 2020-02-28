@@ -613,7 +613,8 @@
 [32m+[m
 [32m+[m[32m        if (context.op != CommandOperation::None)[m
          {[m
-[31m-            auto pMark = buffer.FindNextMarker(context.bufferCursor, m_lastSearchDirection == SearchDirection::Forward ? SearchDirection::Backward : SearchDirection::Forward, RangeMarkerType::Search);[m
+Plug 'camspiers/animate.vim'
+Plug 'camspiers/lens.vim'[31m-            auto pMark = buffer.FindNextMarker(context.bufferCursor, m_lastSearchDirection == SearchDirection::Forward ? SearchDirection::Backward : SearchDirection::Forward, RangeMarkerType::Search);[m
 [31m-            if (pMark)[m
 [32m+[m[32m            context.commandResult.modeSwitch = EditorMode::Insert;[m
 [32m+[m[32m        }[m
