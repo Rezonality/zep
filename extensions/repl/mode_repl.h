@@ -37,7 +37,7 @@ public:
 
     static void Register(ZepEditor& editor, IZepReplProvider* pProvider);
     
-    virtual void Notify(std::shared_ptr<ZepMessage> message) {}
+    virtual void Notify(std::shared_ptr<ZepMessage> message) override { ZEP_UNUSED(message); }
     virtual void Run(const std::vector<std::string>& args) override;
     virtual const char* Name() const override { return "ZRepl"; }
 private:
