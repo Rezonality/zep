@@ -137,7 +137,7 @@ public:
     {
         return "TREE";
     }
-    virtual void Begin() override;
+    virtual void Begin(ZepWindow* pWindow) override;
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
     virtual const char* Name() const override { return StaticName(); }
 

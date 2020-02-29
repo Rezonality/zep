@@ -115,7 +115,7 @@ void ZepTabWindow::SetActiveWindow(ZepWindow* pBuffer)
     m_pActiveWindow = pBuffer;
     if (m_pActiveWindow)
     {
-        m_pActiveWindow->GetBuffer().GetMode()->Begin();
+        m_pActiveWindow->GetBuffer().GetMode()->Begin(m_pActiveWindow);
     }
 }
 

@@ -46,9 +46,9 @@ void ZepMode_Orca::SetupKeyMaps()
     AddKeyMapWithCountRegisters({ &m_normalMap }, { "<C-z>", "u" }, id_Undo);
 }
 
-void ZepMode_Orca::Begin()
+void ZepMode_Orca::Begin(ZepWindow* pWindow)
 {
-    ZepMode_Vim::Begin();
+    ZepMode_Vim::Begin(pWindow);
 }
 
 // Modify flags for the window in this mode

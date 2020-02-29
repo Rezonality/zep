@@ -350,16 +350,28 @@ void keymap_find(const KeyMap& map, const std::string& strCommand, KeyMapResult&
         }
         else
         {
-            findResult.searchPath += "(Unknown)";
-        
-            // Didn't find anything, return sanitized text for possible input
-            auto itr = strCommand.begin();
-            auto token = string_slurp_if(itr, strCommand.end(), '<', '>');
-            if (token.empty())
+            // Special case where the user typed a j followed by _not_ a k.
+            // Return it as an insert command
+            if (strCommand.size() == 2 &&
+                strCommand[0] == 'j')
             {
-                token = strCommand;
+                findResult.needMoreChars = false;
+                findResult.commandWithoutGroups = strCommand;
+                findResult.searchPath += "(j.)";
             }
-            findResult.commandWithoutGroups = token;
+            else
+            {
+                findResult.searchPath += "(Unknown)";
+
+                // Didn't find anything, return sanitized text for possible input
+                auto itr = strCommand.begin();
+                auto token = string_slurp_if(itr, strCommand.end(), '<', '>');
+                if (token.empty())
+                {
+                    token = strCommand;
+                }
+                findResult.commandWithoutGroups = token;
+            }
         }
     }
 

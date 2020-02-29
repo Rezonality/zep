@@ -2,10 +2,10 @@
 #include "zep/buffer.h"
 #include "zep/editor.h"
 #include "zep/filesystem.h"
-#include "zep/mode_search.h"
-#include "zep/tab_window.h"
 #include "zep/mcommon/logger.h"
+#include "zep/mode_search.h"
 #include "zep/regress.h"
+#include "zep/tab_window.h"
 
 namespace Zep
 {
@@ -149,11 +149,6 @@ EditorMode ZepMode::GetEditorMode() const
     return m_currentMode;
 }
 
-void ZepMode::SetEditorMode(EditorMode currentMode)
-{
-    SwitchMode(currentMode);
-}
-
 void ZepMode::AddCommandText(std::string strText)
 {
     for (auto& ch : strText)
@@ -219,28 +214,21 @@ void ZepMode::SwitchMode(EditorMode currentMode)
     switch (currentMode)
     {
     case EditorMode::Normal: {
-        pWindow->SetCursorType(CursorType::Normal);
         buffer.ClearSelection();
         ClampCursorForMode();
         ResetCommand();
     }
     break;
     case EditorMode::Insert:
-        pWindow->SetCursorType(CursorType::Insert);
         buffer.ClearSelection();
         ResetCommand();
-        m_pendingEscape = false;
         break;
     case EditorMode::Visual: {
-        pWindow->SetCursorType(m_visualCursorType);
         ResetCommand();
-        m_pendingEscape = false;
     }
     break;
     case EditorMode::Ex: {
         m_exCommandStartLocation = cursor;
-        pWindow->SetCursorType(CursorType::Hidden);
-        m_pendingEscape = false;
         // Ensure we show the command at the bottom
         GetEditor().SetCommandText(m_currentCommand);
     }
@@ -352,6 +340,8 @@ void ZepMode::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     // Get the new command by parsing out the keys
     // We convert CTRL + f to a string: "<C-f>"
     HandleMappedInput(ConvertInputToMapString(key, modifierKeys));
+    
+    timer_restart(m_lastKeyPressTimer);
 }
 
 void ZepMode::HandleMappedInput(const std::string& input)
@@ -1572,7 +1562,10 @@ bool ZepMode::GetCommand(CommandContext& context)
     {
         // If not a single char, then we are trying to input a special, which isn't allowed
         // TOOD: Cleaner detection of this?
-        if (context.keymap.commandWithoutGroups.size() == 1)
+        // Special case for 'j + another character' which is an insert
+        if (context.keymap.commandWithoutGroups.size() == 1 ||
+            ((context.keymap.commandWithoutGroups.size() == 2) &&
+            context.keymap.commandWithoutGroups[0] == 'j'))
         {
             context.beginRange = context.bufferCursor;
             context.tempReg.text = context.keymap.commandWithoutGroups;
@@ -2269,17 +2262,17 @@ void ZepMode::AddNavigationKeyMaps(bool allowInVisualMode)
     AddKeyMapWithCountRegisters(navigationMaps, { "gE" }, id_MotionBackEndWORD);
     AddKeyMapWithCountRegisters(navigationMaps, { "gg" }, id_MotionGotoBeginning);
 
+    // Navigate between splits
+    keymap_add(navigationMaps, { "<C-j>" }, id_MotionDownSplit);
+    keymap_add(navigationMaps, { "<C-l>" }, id_MotionRightSplit);
+    keymap_add(navigationMaps, { "<C-k>" }, id_MotionUpSplit);
+    keymap_add(navigationMaps, { "<C-h>" }, id_MotionLeftSplit);
+
     // Arrows always navigate in insert mode
     keymap_add({ &m_insertMap }, { "<Down>" }, id_MotionDown);
     keymap_add({ &m_insertMap }, { "<Up>" }, id_MotionUp);
     keymap_add({ &m_insertMap }, { "<Right>" }, id_MotionRight);
     keymap_add({ &m_insertMap }, { "<Left>" }, id_MotionLeft);
-
-    // Navigate between splits
-    keymap_add({ &m_normalMap }, { "<C-j>" }, id_MotionDownSplit);
-    keymap_add({ &m_normalMap }, { "<C-l>" }, id_MotionRightSplit);
-    keymap_add({ &m_normalMap }, { "<C-k>" }, id_MotionUpSplit);
-    keymap_add({ &m_normalMap }, { "<C-h>" }, id_MotionLeftSplit);
 }
 
 void ZepMode::AddSearchKeyMaps()
@@ -2304,6 +2297,33 @@ void ZepMode::AddGlobalKeyMaps()
     keymap_add({ &m_normalMap }, { "<C-i><C-o>" }, id_SwitchToAlternateFile);
     keymap_add({ &m_normalMap }, { "+" }, id_FontBigger);
     keymap_add({ &m_normalMap }, { "-" }, id_FontSmaller);
+}
+
+CursorType ZepMode::GetCursorType() const
+{
+    switch (m_currentMode)
+    {
+    default:
+    case EditorMode::None:
+    case EditorMode::Ex:
+        return CursorType::None;
+    case EditorMode::Insert:
+        return CursorType::Insert;
+    case EditorMode::Normal:
+        return CursorType::Normal;
+    case EditorMode::Visual:
+        return m_visualCursorType;
+    }
+}
+
+void ZepMode::Begin(ZepWindow* pWindow)
+{
+    timer_restart(m_lastKeyPressTimer);
+
+    m_pCurrentWindow = pWindow;
+
+    m_visualBegin = m_visualEnd = 0;
+    pWindow->GetBuffer().SetSelection(BufferByteRange{ 0, 0 });
 }
 
 } // namespace Zep

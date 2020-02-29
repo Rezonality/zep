@@ -162,8 +162,10 @@ void ZepMode_Search::GetSearchPaths(const ZepPath& path, std::vector<std::string
     }
 }
 
-void ZepMode_Search::Begin()
+void ZepMode_Search::Begin(ZepWindow* pWindow)
 {
+    ZepMode::Begin(pWindow);
+
     m_searchTerm = "";
     GetEditor().SetCommandText(">>> ");
 
@@ -443,6 +445,11 @@ void ZepMode_Search::UpdateTree()
 
     ShowTreeResult();
     GetEditor().RequestRefresh();
+}
+
+CursorType ZepMode_Search::GetCursorType() const
+{
+    return CursorType::LineMarker;
 }
 
 } // namespace Zep

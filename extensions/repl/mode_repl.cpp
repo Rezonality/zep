@@ -36,8 +36,8 @@ void ZepReplExCommand::Run(const std::vector<std::string>& tokens)
     auto pMode = std::make_shared<ZepMode_Repl>(GetEditor(), *pActiveWindow, *pReplWindow, m_pProvider);
     pReplBuffer->SetMode(pMode);
     pMode->Init();
-    pMode->Begin();
-    pMode->SetEditorMode(Zep::EditorMode::Insert);
+    pMode->Begin(pReplWindow);
+    pMode->SwitchMode(Zep::EditorMode::Insert);
 }
 
 ZepMode_Repl::ZepMode_Repl(ZepEditor& editor, ZepWindow& launchWindow, ZepWindow& replWindow, IZepReplProvider* pProvider)
@@ -59,7 +59,7 @@ void ZepMode_Repl::Close()
 
 void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
 {
-    auto pGlobalMode = GetEditor().GetGlobalMode();
+    auto pMode = m_pCurrentWindow->GetBuffer().GetMode();
 
     GetEditor().ResetLastEditTimer();
 
@@ -70,30 +70,35 @@ void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
     }
 
     // If not in insert mode, then let the normal mode do its thing
-    if (pGlobalMode->GetEditorMode() != Zep::EditorMode::Insert)
+    if (pMode->GetEditorMode() != Zep::EditorMode::Insert)
     {
-        pGlobalMode->AddKeyPress(key, modifiers);
+        // Defer to the global mode for everything that isn't insert
+        GetEditor().GetGlobalMode()->AddKeyPress(key, modifiers);
 
-        m_currentMode = pGlobalMode->GetEditorMode();
-        if (pGlobalMode->GetEditorMode() == Zep::EditorMode::Insert)
+        // Switched out of the global mode, so back into insert in this mode
+        if (GetEditor().GetGlobalMode()->GetEditorMode() == Zep::EditorMode::Insert)
+        {
+            m_pCurrentWindow->SetBufferCursor(MaxCursorMove);
+            pMode->SwitchMode(EditorMode::Insert);
+        }
+
+        m_currentMode = pMode->GetEditorMode();
+        if (pMode->GetEditorMode() == Zep::EditorMode::Insert)
         {
             // Set the cursor to the end of the buffer while inserting text
             m_replWindow.SetBufferCursor(MaxCursorMove);
-            m_replWindow.SetCursorType(CursorType::Insert);
         }
         return;
     }
   
     // Set the cursor to the end of the buffer while inserting text
     m_replWindow.SetBufferCursor(MaxCursorMove);
-    m_replWindow.SetCursorType(CursorType::Insert);
 
     (void)modifiers;
     if (key == ExtKeys::ESCAPE)
     {
         // Escape back to the default normal mode
-        GetEditor().GetGlobalMode()->Begin();
-        GetEditor().GetGlobalMode()->SetEditorMode(EditorMode::Normal);
+        SwitchMode(EditorMode::Normal);
         m_currentMode = Zep::EditorMode::Normal;
         return;
     } 
@@ -204,17 +209,17 @@ void ZepMode_Repl::BeginInput()
     auto& buffer = m_replWindow.GetBuffer();
     buffer.Insert(buffer.EndLocation(), PromptString);
 
-    m_replWindow.SetBufferCursor(MaxCursorMove);
+    m_replWindow.SetBufferCursor(buffer.GetLinePos(buffer.EndLocation(), LineLocation::LineLastGraphChar) + 1);
+
     m_startLocation = m_replWindow.GetBufferCursor();
 }
 
-void ZepMode_Repl::Begin()
+void ZepMode_Repl::Begin(ZepWindow* pWindow)
 {
+    ZepMode::Begin(pWindow);
+
     // Default insert mode
-    GetEditor().GetGlobalMode()->Begin();
-    GetEditor().GetGlobalMode()->SetEditorMode(EditorMode::Insert);
-    m_currentMode = EditorMode::Insert;
-    m_replWindow.SetCursorType(CursorType::Insert);
+    SwitchMode(EditorMode::Insert);
 
     GetEditor().SetCommandText("");
     
@@ -225,13 +230,5 @@ void ZepMode_Repl::Notify(std::shared_ptr<ZepMessage> message)
 {
     ZepMode::Notify(message);
 }
-
-/*
-TODO : Add a global command registration system
-else if (strCommand.find(":repl") == 0)
-{
-    GetEditor().AddRepl();
-}
-*/
 
 } // namespace Zep

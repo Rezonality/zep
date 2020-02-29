@@ -331,7 +331,7 @@ ZepWindow* ZepEditor::AddTree()
     auto pMode = std::make_shared<ZepMode_Tree>(*this, pTreeModel, *pActiveWindow, *pTreeWindow);
     pMode->Init();
     pTree->SetMode(pMode);
-    pMode->Begin();
+    pMode->Begin(pActiveWindow);
     return pActiveWindow;
 }
 
@@ -350,12 +350,11 @@ ZepWindow* ZepEditor::AddSearch()
 
     auto pSearchWindow = GetActiveTabWindow()->AddWindow(pSearchBuffer, nullptr, RegionLayoutType::VBox);
     pSearchWindow->SetWindowFlags(pSearchWindow->GetWindowFlags() | WindowFlags::Modal);
-    pSearchWindow->SetCursorType(CursorType::LineMarker);
 
     auto pMode = std::make_shared<ZepMode_Search>(*this, *pActiveWindow, *pSearchWindow, searchPath);
-    pMode->Init();
     pSearchBuffer->SetMode(pMode);
-    pMode->Begin();
+    pMode->Init();
+    pMode->Begin(pSearchWindow);
     return pSearchWindow;
 }
 
@@ -609,8 +608,18 @@ void ZepEditor::SetGlobalMode(const std::string& currentMode)
     auto itrMode = m_mapGlobalModes.find(currentMode);
     if (itrMode != m_mapGlobalModes.end())
     {
+        ZepWindow* pWindow = nullptr;
+        if (m_pCurrentMode)
+        {
+            pWindow = m_pCurrentMode->GetCurrentWindow();
+        }
+
         m_pCurrentMode = itrMode->second.get();
-        m_pCurrentMode->Begin();
+
+        if (pWindow)
+        {
+            m_pCurrentMode->Begin(pWindow);
+        }
     }
 }
 

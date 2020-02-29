@@ -16,7 +16,7 @@ public:
     ~ZepMode_Search();
 
     virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
-    virtual void Begin() override;
+    virtual void Begin(ZepWindow* pWindow) override;
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
     
     static const char* StaticName()
@@ -27,6 +27,8 @@ public:
     {
         return StaticName();
     }
+
+    virtual CursorType GetCursorType() const override;
 
 private:
     void GetSearchPaths(const ZepPath& path, std::vector<std::string>& ignore, std::vector<std::string>& include) const;

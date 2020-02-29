@@ -156,12 +156,6 @@ void ZepWindow::UpdateAirline()
     m_airline.rightBoxes.push_back(AirBox{ std::to_string(m_pBuffer->GetLineEnds().size()) + " Lines", m_pBuffer->GetTheme().GetColor(ThemeColor::LineNumberBackground) });
 }
 
-void ZepWindow::SetCursorType(CursorType currentMode)
-{
-    m_cursorType = currentMode;
-    GetEditor().ResetCursorTimer();
-}
-
 void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
 {
     if (payload->messageId == Msg::Buffer)
@@ -644,9 +638,15 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
     static const auto blankSpace = ' ';
 
     auto cursorCL = BufferToDisplay();
-
     auto& display = GetEditor().GetDisplay();
     display.SetClipRect(m_bufferRegion->rect);
+
+    auto& buffer = GetBuffer();
+    auto pMode = buffer.GetMode();
+    if (!pMode)
+    {
+        return false;
+    }
 
     // Draw line numbers
     auto displayLineNumber = [&]() {
@@ -657,7 +657,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
         std::string strNum;
 
         // In Vim mode show relative lines, unless in Ex mode (with hidden cursor)
-        if (m_displayMode == DisplayMode::Vim && m_cursorType != CursorType::Hidden)
+        if (m_displayMode == DisplayMode::Vim && pMode->GetCursorType() != CursorType::None)
         {
             strNum = std::to_string(std::abs(lineInfo.bufferLineNumber - cursorBufferLine));
         }
@@ -962,13 +962,14 @@ void ZepWindow::DisplayCursor()
 
     // Draw the Cursor symbol
     auto cursorBlink = GetEditor().GetCursorBlinkState();
+    auto cursorType = GetBuffer().GetMode()->GetCursorType();
 
-    if (!cursorBlink || (m_cursorType == CursorType::LineMarker))
+    if (!cursorBlink || (cursorType == CursorType::LineMarker))
     {
-        switch (m_cursorType)
+        switch (cursorType)
         {
         default:
-        case CursorType::Hidden:
+        case CursorType::None:
             break;
 
         case CursorType::LineMarker: {

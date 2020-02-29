@@ -11,7 +11,7 @@ public:
     ZepMode_Standard(ZepEditor& editor);
     ~ZepMode_Standard();
 
-    virtual void Begin() override;
+    virtual void Begin(ZepWindow* pWindow) override;
 
     static const char* StaticName()
     {

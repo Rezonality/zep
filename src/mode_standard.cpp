@@ -77,8 +77,10 @@ void ZepMode_Standard::Init()
     keymap_add({ &m_normalMap, &m_visualMap, &m_insertMap }, { "<Escape>" }, id_InsertMode);
 }
 
-void ZepMode_Standard::Begin()
+void ZepMode_Standard::Begin(ZepWindow* pWindow)
 {
+    ZepMode::Begin(pWindow);
+
     // This will also set the cursor type
     SwitchMode(EditorMode::Insert);
 }

@@ -51,7 +51,7 @@ public:
     ~ZepMode_Repl();
 
     virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
-    virtual void Begin() override;
+    virtual void Begin(ZepWindow* pWindow) override;
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
     
     static const char* StaticName()

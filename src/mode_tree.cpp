@@ -78,9 +78,9 @@ void ZepMode_Tree::BuildTree()
     buffer.Insert(0, strBuffer.str());
 }
 
-void ZepMode_Tree::Begin()
+void ZepMode_Tree::Begin(ZepWindow* pWindow)
 {
-    ZepMode_Vim::Begin();
+    ZepMode_Vim::Begin(pWindow);
 
     BuildTree();
 }

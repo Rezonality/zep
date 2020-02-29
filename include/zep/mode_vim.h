@@ -30,7 +30,7 @@ public:
     }
 
     // Zep Mode
-    virtual void Begin() override;
+    virtual void Begin(ZepWindow* pWindow) override;
     virtual const char* Name() const override { return StaticName(); }
     virtual void PreDisplay(ZepWindow& win) override;
     virtual void SetupKeyMaps();
@@ -41,8 +41,6 @@ public:
 
 private:
     void HandleInsert(uint32_t key);
-
-    timer m_insertEscapeTimer;
 };
 
 } // namespace Zep

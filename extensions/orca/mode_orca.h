@@ -20,7 +20,7 @@ public:
     static void Register(ZepEditor& editor);
 
     // Zep Mode
-    virtual void Begin() override;
+    virtual void Begin(ZepWindow* pWindow) override;
     virtual const char* Name() const override { return StaticName(); }
     virtual void PreDisplay(ZepWindow& win) override;
 

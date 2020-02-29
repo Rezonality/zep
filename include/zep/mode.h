@@ -157,7 +157,7 @@ public:
 
     virtual void AddKeyPress(uint32_t key, uint32_t modifierKeys = ModifierKey::None);
     virtual const char* Name() const = 0;
-    virtual void Begin() = 0;
+    virtual void Begin(ZepWindow* pWindow);
     virtual void Notify(std::shared_ptr<ZepMessage> message) override {}
     virtual uint32_t ModifyWindowFlags(uint32_t windowFlags) { return windowFlags; }
 
@@ -168,7 +168,6 @@ public:
     virtual void AddCommandText(std::string strText);
     virtual void AddCommand(std::shared_ptr<ZepCommand> spCmd);
     virtual EditorMode GetEditorMode() const;
-    virtual void SetEditorMode(EditorMode currentMode);
 
     // About to display this window, which is associated with this mode
     virtual void PreDisplay(ZepWindow&){};
@@ -197,9 +196,11 @@ public:
     void AddSearchKeyMaps();
     void AddKeyMapWithCountRegisters(const std::vector<KeyMap*>& maps, const std::vector<std::string>& commands, const StringId& id);
 
+    virtual CursorType GetCursorType() const;
+
+    virtual void SwitchMode(EditorMode currentMode);
 
 protected:
-    virtual void SwitchMode(EditorMode currentMode);
     virtual void ClampCursorForMode();
     virtual bool HandleExCommand(std::string strCommand);
     virtual std::string ConvertInputToMapString(uint32_t key, uint32_t modifierKeys);
@@ -226,11 +227,13 @@ protected:
     std::string m_lastFind;
 
     ByteIndex m_exCommandStartLocation = 0;
-    bool m_pendingEscape = false;
-
     CursorType m_visualCursorType = CursorType::Visual;
     uint32_t m_modeFlags = ModeFlags::None;
     uint32_t m_lastKey = 0;
+
+    ZepWindow* m_pCurrentWindow;
+
+    timer m_lastKeyPressTimer;
 };
 
 } // namespace Zep

@@ -102,7 +102,6 @@ void ZepMode_Vim::AddPasteMaps()
 
 void ZepMode_Vim::Init()
 {
-    timer_restart(m_insertEscapeTimer);
     for (int i = 0; i <= 9; i++)
     {
         GetEditor().SetRegister('0' + (const char)i, "");
@@ -183,63 +182,35 @@ void ZepMode_Vim::SetupKeyMaps()
     keymap_add({ &m_insertMap }, { "<Tab>" }, id_InsertTab);
 }
 
-void ZepMode_Vim::Begin()
+void ZepMode_Vim::Begin(ZepWindow* pWindow)
 {
-    if (GetCurrentWindow())
-    {
-        GetCurrentWindow()->SetCursorType(CursorType::Normal);
-        GetEditor().SetCommandText(m_currentCommand);
-    }
+    ZepMode::Begin(pWindow);
+
+    GetEditor().SetCommandText(m_currentCommand);
     m_currentMode = EditorMode::Normal;
     m_currentCommand.clear();
     m_dotCommand.clear();
-    m_pendingEscape = false;
 }
 
-void ZepMode_Vim::PreDisplay(ZepWindow&)
+void ZepMode_Vim::PreDisplay(ZepWindow& window)
 {
-
-    // If we thought it was an escape but it wasn't, put the 'j' back in!
-    // TODO: Move to a more sensible place where we can check the time
-    if (m_pendingEscape && timer_get_elapsed_seconds(m_insertEscapeTimer) > .25f)
+    // After .25 seconds of not pressing the 'k' escape code after j, 
+    // put the j in.
+    // We can do better than this and fix the keymapper to handle timed key events.
+    // This is an easier fix for now
+    if (timer_get_elapsed_seconds(m_lastKeyPressTimer) > .25f &&
+        m_currentMode == EditorMode::Insert &&
+        m_currentCommand == "j")
     {
-        m_pendingEscape = false;
-        GetCurrentWindow()->GetBuffer().Insert(GetCurrentWindow()->GetBufferCursor(), "j");
-        GetCurrentWindow()->SetBufferCursor(GetCurrentWindow()->GetBufferCursor() + 1);
+        auto cmd = std::make_shared<ZepCommand_Insert>(
+            window.GetBuffer(),
+            window.GetBufferCursor(),
+            m_currentCommand);
+        AddCommand(cmd);
+
+        m_currentCommand = "";
     }
 }
+
 } // namespace Zep
 
-/*
-    if (m_pendingEscape)
-    {
-        // My custom 'jk' escape option
-        auto canEscape = timer_get_elapsed_seconds(m_insertEscapeTimer) < .25f;
-        if (canEscape && key == 'k')
-        {
-            packCommand = true;
-            key = ExtKeys::ESCAPE;
-        }
-        m_pendingEscape = false;
-    }
-    
-   ... later if (key == 'j' && !m_pendingEscape)
-    {
-        timer_restart(m_insertEscapeTimer);
-        m_pendingEscape = true;
-    }
-    else
-    {
-        // If we thought it was an escape but it wasn't, put the 'j' back in!
-        if (m_pendingEscape)
-        {
-            ch = "j" + ch;
-        }
-        m_pendingEscape = false;
-
-        buffer.Insert(bufferCursor, ch);
-
-        // Insert back to normal mode should put the m_bufferCursor on top of the last character typed.
-        GetCurrentWindow()->SetBufferCursor(bufferCursor + long(ch.size()));
-    }
-    */

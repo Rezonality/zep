@@ -63,7 +63,7 @@ inline bool operator < (const SpanInfo& lhs, const SpanInfo& rhs)
 
 enum class CursorType
 {
-    Hidden,
+    None,
     Normal,
     Insert,
     Visual,
@@ -140,7 +140,6 @@ public:
     // Cursor
     virtual ByteIndex GetBufferCursor();
     virtual void SetBufferCursor(ByteIndex location);
-    virtual void SetCursorType(CursorType currentMode);
     virtual void MoveCursorY(int yDistance, LineLocation clampLocation = LineLocation::LineLastNonCR);
     virtual NVec2i BufferToDisplay();
 
@@ -231,7 +230,6 @@ private:
     uint32_t m_windowFlags = WindowFlags::ShowWhiteSpace | WindowFlags::ShowIndicators | WindowFlags::ShowLineNumbers | WindowFlags::WrapText;
 
     // Cursor
-    CursorType m_cursorType = CursorType::Normal;   // Type of cursor
     ByteIndex m_bufferCursor = 0;                   // Location in buffer coordinates.  Each window has a different buffer cursor
     long m_lastCursorColumn = 0;                    // The last cursor column (could be removed and recalculated)
 
