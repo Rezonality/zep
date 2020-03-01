@@ -1490,13 +1490,16 @@ bool ZepMode::GetCommand(CommandContext& context)
     else if (mappedCommand == id_Append)
     {
         // Cursor append
-        GetCurrentWindow()->SetBufferCursor(context.bufferCursor + 1);
+        cursorItr.MoveClamped(1, LineLocation::LineCRBegin);
+        GetCurrentWindow()->SetBufferCursor(cursorItr);
         context.commandResult.modeSwitch = EditorMode::Insert;
         return true;
     }
     else if (mappedCommand == id_AppendToLine)
     {
-        GetCurrentWindow()->SetBufferCursor(context.buffer.GetLinePos(bufferCursor, LineLocation::LineLastGraphChar) + 1);
+        GlyphIterator appendItr(buffer, context.buffer.GetLinePos(bufferCursor, LineLocation::LineLastGraphChar));
+        appendItr.MoveClamped(1, LineLocation::LineCRBegin);
+        GetCurrentWindow()->SetBufferCursor(appendItr.ToByteIndex());
         context.commandResult.modeSwitch = EditorMode::Insert;
         return true;
     }

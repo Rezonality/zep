@@ -398,6 +398,13 @@ public:
         assert(Valid());
     }
 
+    GlyphIterator(const GlyphIterator& itr)
+        : m_buffer(itr.m_buffer),
+        m_itr(itr.m_itr)
+    {
+        assert(Valid());
+    }
+
     itrGlyph Itr() const { return m_itr; }
 
     bool Valid() const
@@ -450,6 +457,12 @@ public:
     bool operator!=(const GlyphIterator& rhs) const
     {
         return m_itr != rhs.Itr();
+    }
+
+    GlyphIterator& operator=(const GlyphIterator& rhs)
+    {
+        m_itr = rhs.Itr();
+        return *this;
     }
 
     ByteIndex ToByteIndex() const

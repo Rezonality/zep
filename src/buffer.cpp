@@ -782,28 +782,34 @@ ByteIndex ZepBuffer::GetLinePos(ByteIndex bufferLocation, LineLocation lineLocat
     GlyphIterator itrBegin = GlyphIterator(*this);
     GlyphIterator itrEnd = GlyphIterator(*this, ByteIndex(m_gapBuffer.size()));
 
+
+    GlyphIterator itrLineStart(itr);
+
     // If we are on the CR, move back 1, unless the \n is all that is on the line
-    if (itr != itrBegin)
+    if (itrLineStart != itrBegin)
     {
-        if (itr.Char() == '\n')
+        if (itrLineStart.Char() == '\n')
         {
-            itr.Move(-1);
+            itrLineStart.Move(-1);
         }
 
         // Find the end of the previous line
-        while (itr > itrBegin&&
-            itr.Char() != '\n')
+        while (itrLineStart > itrBegin&&
+            itrLineStart.Char() != '\n')
         {
-            itr.Move(-1);
+            itrLineStart.Move(-1);
         }
 
-        if (itr.Char() == '\n')
-            itr.Move(1);
+        if (itrLineStart.Char() == '\n')
+            itrLineStart.Move(1);
+
+        itr = itrLineStart;
     }
 
     switch (lineLocation)
     {
     default:
+    // We are on the first bit of the line anyway
     case LineLocation::LineBegin:
     {
         return Clamp(itr.ToByteIndex());
@@ -879,6 +885,12 @@ ByteIndex ZepBuffer::GetLinePos(ByteIndex bufferLocation, LineLocation lineLocat
         {
             itr.Move(-1);
         }
+
+        if (itr < itrLineStart)
+        {
+            itr = itrLineStart;
+        }
+
         return Clamp(itr.ToByteIndex());
     }
     break;
