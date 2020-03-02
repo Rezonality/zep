@@ -25,25 +25,21 @@ void ZepReplExCommand::Run(const std::vector<std::string>& tokens)
     {
         return;
     }
-
-    auto pActiveWindow = GetEditor().GetActiveTabWindow()->GetActiveWindow();
-
+    
     auto pReplBuffer = GetEditor().GetEmptyBuffer("Repl.lisp", FileFlags::Locked);
     pReplBuffer->SetBufferType(BufferType::Repl);
-
-    auto pReplWindow = GetEditor().GetActiveTabWindow()->AddWindow(pReplBuffer, nullptr, RegionLayoutType::VBox);
-
-    auto pMode = std::make_shared<ZepMode_Repl>(GetEditor(), *pActiveWindow, *pReplWindow, m_pProvider);
+   
+    // Note: Need to set the mode _before_ adding the window
+    auto pMode = std::make_shared<ZepMode_Repl>(GetEditor(), m_pProvider);
     pReplBuffer->SetMode(pMode);
-    pMode->Init();
-    pMode->Begin(pReplWindow);
-    pMode->SwitchMode(Zep::EditorMode::Insert);
+
+    // Adding the window will make it active and begin the mode
+    GetEditor().GetActiveTabWindow()->AddWindow(pReplBuffer, nullptr, RegionLayoutType::VBox);
+    pMode->Prompt();
 }
 
-ZepMode_Repl::ZepMode_Repl(ZepEditor& editor, ZepWindow& launchWindow, ZepWindow& replWindow, IZepReplProvider* pProvider)
+ZepMode_Repl::ZepMode_Repl(ZepEditor& editor, IZepReplProvider* pProvider)
     : ZepMode(editor),
-    m_launchWindow(launchWindow),
-    m_replWindow(replWindow),
     m_pRepl(pProvider)
 {
 }
@@ -54,11 +50,19 @@ ZepMode_Repl::~ZepMode_Repl()
 
 void ZepMode_Repl::Close()
 {
-    GetEditor().RemoveBuffer(&m_replWindow.GetBuffer());
+    if (m_pCurrentWindow == nullptr)
+    {
+        return;
+    }
+    GetEditor().RemoveBuffer(&GetCurrentWindow()->GetBuffer());
 }
 
 void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
 {
+    if (m_pCurrentWindow == nullptr)
+    {
+        return;
+    }
     auto pMode = m_pCurrentWindow->GetBuffer().GetMode();
 
     GetEditor().ResetLastEditTimer();
@@ -86,13 +90,13 @@ void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
         if (pMode->GetEditorMode() == Zep::EditorMode::Insert)
         {
             // Set the cursor to the end of the buffer while inserting text
-            m_replWindow.SetBufferCursor(MaxCursorMove);
+            GetCurrentWindow()->SetBufferCursor(MaxCursorMove);
         }
         return;
     }
   
     // Set the cursor to the end of the buffer while inserting text
-    m_replWindow.SetBufferCursor(MaxCursorMove);
+    GetCurrentWindow()->SetBufferCursor(MaxCursorMove);
 
     (void)modifiers;
     if (key == ExtKeys::ESCAPE)
@@ -104,7 +108,7 @@ void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
     } 
     else if (key == ExtKeys::RETURN)
     {
-        auto& buffer = m_replWindow.GetBuffer();
+        auto& buffer = GetCurrentWindow()->GetBuffer();
         std::string str = std::string(buffer.GetText().begin() + m_startLocation, buffer.GetText().end());
         buffer.Insert(buffer.EndLocation(), "\n");
 
@@ -147,7 +151,7 @@ void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
                 if (indent < 0)
                 {
                     buffer.Delete(buffer.EndLocation() - 1, buffer.EndLocation());
-                    m_replWindow.SetBufferCursor(MaxCursorMove);
+                    GetCurrentWindow()->SetBufferCursor(MaxCursorMove);
                     return;
                 }
                    
@@ -162,7 +166,7 @@ void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
                         buffer.Insert(buffer.EndLocation(), " ");
                     }
                 }
-                m_replWindow.SetBufferCursor(MaxCursorMove);
+                GetCurrentWindow()->SetBufferCursor(MaxCursorMove);
                 return;
             }
             ret = m_pRepl->ReplParse(str);
@@ -178,15 +182,15 @@ void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
             buffer.Insert(buffer.EndLocation(), ret);
         }
 
-        BeginInput();
+        Prompt();
         return;
     }
     else if (key == ExtKeys::BACKSPACE)
     {
-        auto cursor = m_replWindow.GetBufferCursor() - 1;
+        auto cursor = GetCurrentWindow()->GetBufferCursor() - 1;
         if (cursor >= m_startLocation)
         {
-            m_replWindow.GetBuffer().Delete(m_replWindow.GetBufferCursor() - 1, m_replWindow.GetBufferCursor());
+            GetCurrentWindow()->GetBuffer().Delete(GetCurrentWindow()->GetBufferCursor() - 1, GetCurrentWindow()->GetBufferCursor());
         }
     }
     else
@@ -194,24 +198,40 @@ void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
         char c[2];
         c[0] = (char)key;
         c[1] = 0;
-        m_replWindow.GetBuffer().Insert(m_replWindow.GetBufferCursor(), std::string(c));
+        GetCurrentWindow()->GetBuffer().Insert(GetCurrentWindow()->GetBufferCursor(), std::string(c));
     }
 
     // Ensure cursor is at buffer end
-    m_replWindow.SetBufferCursor(MaxCursorMove);
+    GetCurrentWindow()->SetBufferCursor(MaxCursorMove);
     
     return;
 }
 
-void ZepMode_Repl::BeginInput()
+void ZepMode_Repl::Prompt()
 {
+    if (m_pCurrentWindow == nullptr)
+    {
+        return;
+    }
+
     // Input arrows
-    auto& buffer = m_replWindow.GetBuffer();
+    auto& buffer = m_pCurrentWindow->GetBuffer();
     buffer.Insert(buffer.EndLocation(), PromptString);
 
-    m_replWindow.SetBufferCursor(buffer.GetLinePos(buffer.EndLocation(), LineLocation::LineLastGraphChar) + 1);
+    MoveToEnd();
+}
 
-    m_startLocation = m_replWindow.GetBufferCursor();
+void ZepMode_Repl::MoveToEnd()
+{
+    if (m_pCurrentWindow == nullptr)
+    {
+        return;
+    }
+
+    // Input arrows
+    auto& buffer = m_pCurrentWindow->GetBuffer();
+    m_pCurrentWindow->SetBufferCursor(buffer.GetLinePos(buffer.EndLocation(), LineLocation::LineCRBegin));
+    m_startLocation = m_pCurrentWindow->GetBufferCursor();
 }
 
 void ZepMode_Repl::Begin(ZepWindow* pWindow)
@@ -222,8 +242,8 @@ void ZepMode_Repl::Begin(ZepWindow* pWindow)
     SwitchMode(EditorMode::Insert);
 
     GetEditor().SetCommandText("");
-    
-    BeginInput();
+
+    MoveToEnd();
 }
 
 void ZepMode_Repl::Notify(std::shared_ptr<ZepMessage> message)

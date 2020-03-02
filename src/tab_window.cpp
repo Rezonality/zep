@@ -250,6 +250,11 @@ void ZepTabWindow::CloseActiveWindow()
 {
     if (m_pActiveWindow)
     {
+        if (m_pActiveWindow->GetBuffer().GetMode())
+        {
+            m_pActiveWindow->GetBuffer().GetMode()->Begin(nullptr);
+        }
+
         // Note: cannot do anything after this call if this is the last window to close!
         RemoveWindow(m_pActiveWindow);
     }
@@ -330,16 +335,18 @@ void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
             {
                 auto pDeleteRegion = pParent;
                 auto pOwnerRegion = pParent->pParent;
-
-                auto itrFoundChild = std::find_if(pOwnerRegion->children.begin(), pOwnerRegion->children.end(),
-                    [pDeleteRegion](std::shared_ptr<Region> pChild) { return pChild == pDeleteRegion; });
-                if (itrFoundChild != pOwnerRegion->children.end())
+                if (pOwnerRegion)
                 {
-                    pOwnerRegion->children.erase(itrFoundChild);
+                    auto itrFoundChild = std::find_if(pOwnerRegion->children.begin(), pOwnerRegion->children.end(),
+                        [pDeleteRegion](std::shared_ptr<Region> pChild) { return pChild == pDeleteRegion; });
+                    if (itrFoundChild != pOwnerRegion->children.end())
+                    {
+                        pOwnerRegion->children.erase(itrFoundChild);
+                    }
+
+                    // Walk up
+                    fnRemoveEmptyParent(pOwnerRegion);
                 }
-            
-                // Walk up
-                fnRemoveEmptyParent(pOwnerRegion);
             }
         }
     };

@@ -329,7 +329,6 @@ ZepWindow* ZepEditor::AddTree()
     pRoot->ExpandAll(true);
 
     auto pMode = std::make_shared<ZepMode_Tree>(*this, pTreeModel, *pActiveWindow, *pTreeWindow);
-    pMode->Init();
     pTree->SetMode(pMode);
     pMode->Begin(pActiveWindow);
     return pActiveWindow;
@@ -353,7 +352,6 @@ ZepWindow* ZepEditor::AddSearch()
 
     auto pMode = std::make_shared<ZepMode_Search>(*this, *pActiveWindow, *pSearchWindow, searchPath);
     pSearchBuffer->SetMode(pMode);
-    pMode->Init();
     pMode->Begin(pSearchWindow);
     return pSearchWindow;
 }
@@ -423,7 +421,7 @@ void ZepEditor::UpdateWindowState()
     {
         if (!m_tabWindows.empty())
         {
-            m_pActiveTabWindow = m_tabWindows.back();
+            SetCurrentTabWindow(m_tabWindows.back());
         }
     }
 
@@ -485,7 +483,7 @@ void ZepEditor::NextTabWindow()
     {
         itr = m_tabWindows.end() - 1;
     }
-    m_pActiveTabWindow = *itr;
+    SetCurrentTabWindow(*itr);
 }
 
 void ZepEditor::PreviousTabWindow()
@@ -501,7 +499,7 @@ void ZepEditor::PreviousTabWindow()
         itr--;
     }
 
-    m_pActiveTabWindow = *itr;
+    SetCurrentTabWindow(*itr);
 }
 
 void ZepEditor::SetCurrentTabWindow(ZepTabWindow* pTabWindow)
@@ -511,6 +509,9 @@ void ZepEditor::SetCurrentTabWindow(ZepTabWindow* pTabWindow)
     if (itr != m_tabWindows.end())
     {
         m_pActiveTabWindow = pTabWindow;
+
+        // Force a reactivation of the active window to ensure buffer setup is correct
+        m_pActiveTabWindow->SetActiveWindow(m_pActiveTabWindow->GetActiveWindow());
     }
 }
 
@@ -566,6 +567,9 @@ void ZepEditor::RemoveTabWindow(ZepTabWindow* pTabWindow)
         if (m_pActiveTabWindow == pTabWindow)
         {
             m_pActiveTabWindow = m_tabWindows[m_tabWindows.size() - 1];
+
+            // Force a reset of active to initialize the mode
+            m_pActiveTabWindow->SetActiveWindow(m_pActiveTabWindow->GetActiveWindow());
         }
     }
 }
@@ -578,13 +582,11 @@ const ZepEditor::tTabWindows& ZepEditor::GetTabWindows() const
 void ZepEditor::RegisterGlobalMode(std::shared_ptr<ZepMode> spMode)
 {
     m_mapGlobalModes[spMode->Name()] = spMode;
-    spMode->Init();
 }
 
 void ZepEditor::RegisterExCommand(std::shared_ptr<ZepExCommand> spCommand)
 {
     m_mapExCommands[spCommand->Name()] = spCommand;
-    spCommand->Init();
 }
 
 ZepExCommand* ZepEditor::FindExCommand(const std::string& strName)
@@ -600,7 +602,6 @@ ZepExCommand* ZepEditor::FindExCommand(const std::string& strName)
 void ZepEditor::RegisterBufferMode(const std::string& extension, std::shared_ptr<ZepMode> spMode)
 {
     m_mapBufferModes[extension] = spMode;
-    spMode->Init();
 }
 
 void ZepEditor::SetGlobalMode(const std::string& currentMode)

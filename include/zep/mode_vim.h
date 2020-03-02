@@ -37,10 +37,10 @@ public:
     virtual void AddOverStrikeMaps();
     virtual void AddCopyMaps();
     virtual void AddPasteMaps();
-    virtual void Init() override;
 
 private:
     void HandleInsert(uint32_t key);
+    void Init();
 };
 
 } // namespace Zep

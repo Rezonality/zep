@@ -70,6 +70,7 @@ MainWindow::MainWindow()
 
     auto* pWidget = new ZepWidget_Qt(this, ZEP_ROOT);
 
+    // Register our extensions
     ZepMode_Orca::Register(pWidget->GetEditor());
     ZepRegressExCommand::Register(pWidget->GetEditor());
     ZepReplExCommand::Register(pWidget->GetEditor(), this);

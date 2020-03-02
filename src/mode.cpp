@@ -137,11 +137,9 @@ ZepMode::~ZepMode()
 
 ZepWindow* ZepMode::GetCurrentWindow() const
 {
-    if (GetEditor().GetActiveTabWindow())
-    {
-        return GetEditor().GetActiveTabWindow()->GetActiveWindow();
-    }
-    return nullptr;
+    // Mode begin should always set this and we should always have a valid window associated with the mode
+    assert(m_pCurrentWindow != nullptr);
+    return m_pCurrentWindow;
 }
 
 EditorMode ZepMode::GetEditorMode() const
@@ -151,6 +149,11 @@ EditorMode ZepMode::GetEditorMode() const
 
 void ZepMode::AddCommandText(std::string strText)
 {
+    if (m_pCurrentWindow == nullptr)
+    {
+        return;
+    }
+
     for (auto& ch : strText)
     {
         AddKeyPress(ch);
@@ -159,17 +162,28 @@ void ZepMode::AddCommandText(std::string strText)
 
 void ZepMode::ClampCursorForMode()
 {
+    if (m_pCurrentWindow == nullptr)
+    {
+        return;
+    }
+
     // Normal mode cursor is never on a CR/0
     if (m_currentMode == EditorMode::Normal)
     {
         GetCurrentWindow()->SetBufferCursor(GetCurrentWindow()->GetBuffer().ClampToVisibleLine(GetCurrentWindow()->GetBufferCursor()));
     }
+    LOG(DEBUG) << GetCurrentWindow()->GetBuffer().GetName() << " : " << GetCurrentWindow()->GetBufferCursor();
 }
 
 // TODO: This happens every time and doesn't guard against repeats. And some logic requires that.
 // Should really just switch if not the same.  The new command setup should make this easier to fix
 void ZepMode::SwitchMode(EditorMode currentMode)
 {
+    if (m_pCurrentWindow == nullptr)
+    {
+        return;
+    }
+
     // Don't switch to invalid mode
     if (currentMode == EditorMode::None)
         return;
@@ -204,8 +218,9 @@ void ZepMode::SwitchMode(EditorMode currentMode)
         if (currentMode == EditorMode::Normal)
         {
             // Move back, but not to the previous line
-            auto lineStart = buffer.GetLinePos(cursor, LineLocation::LineBegin);
-            GetCurrentWindow()->SetBufferCursor(std::max(cursor - 1, lineStart));
+            GlyphIterator itr(buffer, cursor);
+            itr.MoveClamped(-1);
+            GetCurrentWindow()->SetBufferCursor(itr);
         }
     }
 
@@ -327,7 +342,7 @@ std::string ZepMode::ConvertInputToMapString(uint32_t key, uint32_t modifierKeys
 // Handle a key press, convert it to an input command and context, and return it.
 void ZepMode::AddKeyPress(uint32_t key, uint32_t modifierKeys)
 {
-    if (!GetCurrentWindow())
+    if (m_pCurrentWindow == nullptr)
     {
         return;
     }
@@ -494,7 +509,12 @@ void ZepMode::HandleMappedInput(const std::string& input)
 
 void ZepMode::AddCommand(std::shared_ptr<ZepCommand> spCmd)
 {
-    if (GetCurrentWindow() && GetCurrentWindow()->GetBuffer().TestFlags(FileFlags::Locked))
+    if (m_pCurrentWindow == nullptr)
+    {
+        return;
+    }
+
+    if (GetCurrentWindow()->GetBuffer().TestFlags(FileFlags::Locked))
     {
         // Ignore commands on buffers because we are view only,
         // and all commands currently modify the buffer!
@@ -516,6 +536,11 @@ void ZepMode::AddCommand(std::shared_ptr<ZepCommand> spCmd)
 
 void ZepMode::Redo()
 {
+    if (m_pCurrentWindow == nullptr)
+    {
+        return;
+    }
+
     if (m_redoStack.empty())
         return;
 
@@ -547,6 +572,11 @@ void ZepMode::Redo()
 
 void ZepMode::Undo()
 {
+    if (m_pCurrentWindow == nullptr)
+    {
+        return;
+    }
+
     if (m_undoStack.empty())
         return;
 
@@ -605,6 +635,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         // too specialized?
         if (HandleExCommand(context.fullCommand))
         {
+            //buffer.GetMode()->Begin(GetCurrentWindow());
             SwitchMode(EditorMode::Normal);
             ResetCommand();
             return true;
@@ -1774,7 +1805,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
 
         if (strCommand.empty())
         {
-            GetEditor().GetActiveTabWindow()->GetActiveWindow()->SetBufferCursor(m_exCommandStartLocation);
+            GetCurrentWindow()->SetBufferCursor(m_exCommandStartLocation);
             return true;
         }
 
@@ -1784,15 +1815,16 @@ bool ZepMode::HandleExCommand(std::string strCommand)
 
     if (m_lastKey == ExtKeys::ESCAPE)
     {
-        GetEditor().GetActiveTabWindow()->GetActiveWindow()->SetBufferCursor(m_exCommandStartLocation);
+        GetCurrentWindow()->SetBufferCursor(m_exCommandStartLocation);
         return true;
     }
 
     if (m_lastKey == ExtKeys::RETURN)
     {
-        auto pWindow = GetEditor().GetActiveTabWindow()->GetActiveWindow();
-        auto& buffer = pWindow->GetBuffer();
-        auto bufferCursor = pWindow->GetBufferCursor();
+        assert(GetCurrentWindow());
+
+        auto& buffer = GetCurrentWindow()->GetBuffer();
+        auto bufferCursor = GetCurrentWindow()->GetBufferCursor();
 
         if (strCommand[0] == '/' || strCommand[0] == '?')
         {
@@ -1882,18 +1914,18 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             {
                 if (strTok[1] == "%")
                 {
-                    pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pWindow, RegionLayoutType::HBox);
+                    pTab->AddWindow(&GetCurrentWindow()->GetBuffer(), GetCurrentWindow(), RegionLayoutType::HBox);
                 }
                 else
                 {
                     auto fname = strTok[1];
                     auto pBuffer = GetEditor().GetFileBuffer(fname);
-                    pTab->AddWindow(pBuffer, pWindow, RegionLayoutType::HBox);
+                    pTab->AddWindow(pBuffer, GetCurrentWindow(), RegionLayoutType::HBox);
                 }
             }
             else
             {
-                pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pWindow, RegionLayoutType::HBox);
+                pTab->AddWindow(&GetCurrentWindow()->GetBuffer(), GetCurrentWindow(), RegionLayoutType::HBox);
             }
         }
         else if (strCommand.find(":hsplit") == 0 || strCommand.find(":split") == 0)
@@ -1904,18 +1936,18 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             {
                 if (strTok[1] == "%")
                 {
-                    pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pWindow, RegionLayoutType::VBox);
+                    pTab->AddWindow(&GetCurrentWindow()->GetBuffer(), GetCurrentWindow(), RegionLayoutType::VBox);
                 }
                 else
                 {
                     auto fname = strTok[1];
                     auto pBuffer = GetEditor().GetFileBuffer(fname);
-                    pTab->AddWindow(pBuffer, pWindow, RegionLayoutType::VBox);
+                    pTab->AddWindow(pBuffer, GetCurrentWindow(), RegionLayoutType::VBox);
                 }
             }
             else
             {
-                pTab->AddWindow(&GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer(), pWindow, RegionLayoutType::VBox);
+                pTab->AddWindow(&GetCurrentWindow()->GetBuffer(), GetCurrentWindow(), RegionLayoutType::VBox);
             }
         }
         else if (strCommand.find(":e") == 0)
@@ -1925,7 +1957,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             {
                 auto fname = strTok[1];
                 auto pBuffer = GetEditor().GetFileBuffer(fname);
-                pWindow->SetBuffer(pBuffer);
+                GetCurrentWindow()->SetBuffer(pBuffer);
             }
         }
         else if (strCommand.find(":w") == 0)
@@ -1936,7 +1968,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
                 auto fname = strTok[1];
                 GetCurrentWindow()->GetBuffer().SetFilePath(fname);
             }
-            GetEditor().SaveBuffer(pWindow->GetBuffer());
+            GetEditor().SaveBuffer(GetCurrentWindow()->GetBuffer());
         }
         else if (strCommand == ":close" || strCommand == ":clo")
         {
@@ -2028,21 +2060,21 @@ bool ZepMode::HandleExCommand(std::string strCommand)
         }
         else if (strCommand == ":ZShowCR")
         {
-            pWindow->ToggleFlag(WindowFlags::ShowCR);
+            GetCurrentWindow()->ToggleFlag(WindowFlags::ShowCR);
         }
         else if (strCommand == ":ZShowLineNumbers")
         {
-            pWindow->ToggleFlag(WindowFlags::ShowLineNumbers);
+            GetCurrentWindow()->ToggleFlag(WindowFlags::ShowLineNumbers);
         }
         else if (strCommand == ":ZWrapText")
         {
             // Wrapping is not fully supported yet, but useful for the Orca optional mode.
             // To enable wrapping fully, the editor needs to scroll in X as well as Y...
-            pWindow->ToggleFlag(WindowFlags::WrapText);
+            GetCurrentWindow()->ToggleFlag(WindowFlags::WrapText);
         }
         else if (strCommand == ":ZShowIndicators")
         {
-            pWindow->ToggleFlag(WindowFlags::ShowIndicators);
+            GetCurrentWindow()->ToggleFlag(WindowFlags::ShowIndicators);
         }
         else if (strCommand == ":ZShowInput")
         {
@@ -2053,7 +2085,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             // An easy test command to check per-buffer themeing
             // Just gets the current theme on the buffer and makes a new
             // one that is opposite
-            auto theme = pWindow->GetBuffer().GetTheme();
+            auto theme = GetCurrentWindow()->GetBuffer().GetTheme();
             auto spNewTheme = std::make_shared<ZepTheme>();
             if (theme.GetThemeType() == ThemeType::Dark)
             {
@@ -2063,7 +2095,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             {
                 spNewTheme->SetThemeType(ThemeType::Dark);
             }
-            pWindow->GetBuffer().SetTheme(spNewTheme);
+            GetCurrentWindow()->GetBuffer().SetTheme(spNewTheme);
         }
         else if (strCommand == ":ls")
         {
@@ -2142,7 +2174,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
         // TODO: Busy editing the search string; do the search
         if (m_currentCommand.length() > 0)
         {
-            auto pWindow = GetEditor().GetActiveTabWindow()->GetActiveWindow();
+            auto pWindow = GetCurrentWindow();
             auto& buffer = pWindow->GetBuffer();
             auto searchString = m_currentCommand.substr(1);
 
@@ -2324,9 +2356,12 @@ void ZepMode::Begin(ZepWindow* pWindow)
     timer_restart(m_lastKeyPressTimer);
 
     m_pCurrentWindow = pWindow;
-
     m_visualBegin = m_visualEnd = 0;
-    pWindow->GetBuffer().SetSelection(BufferByteRange{ 0, 0 });
+
+    if (pWindow)
+    {
+        pWindow->GetBuffer().SetSelection(BufferByteRange{ 0, 0 });
+    }
 }
 
 } // namespace Zep

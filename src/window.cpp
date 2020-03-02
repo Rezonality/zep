@@ -1073,6 +1073,10 @@ void ZepWindow::SetBuffer(ZepBuffer* pBuffer)
     m_bufferCursor = pBuffer->Clamp(pBuffer->GetLastEditLocation());
     m_lastCursorColumn = 0;
     m_cursorMoved = false;
+    if (pBuffer->GetMode())
+    {
+        pBuffer->GetMode()->Begin(this);
+    }
 }
 
 ByteIndex ZepWindow::GetBufferCursor()

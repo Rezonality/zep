@@ -153,33 +153,38 @@ public:
     ZepMode(ZepEditor& editor);
     virtual ~ZepMode();
 
-    virtual void Init() {};
-
     virtual void AddKeyPress(uint32_t key, uint32_t modifierKeys = ModifierKey::None);
     virtual const char* Name() const = 0;
     virtual void Begin(ZepWindow* pWindow);
     virtual void Notify(std::shared_ptr<ZepMessage> message) override {}
     virtual uint32_t ModifyWindowFlags(uint32_t windowFlags) { return windowFlags; }
-
-    // Do the actual input handling
-    virtual void HandleMappedInput(const std::string& input);
-
-    // Keys handled by modes
-    virtual void AddCommandText(std::string strText);
-    virtual void AddCommand(std::shared_ptr<ZepCommand> spCmd);
     virtual EditorMode GetEditorMode() const;
-
+    
     // About to display this window, which is associated with this mode
     virtual void PreDisplay(ZepWindow&){};
 
     // Called when we begin editing in this mode
-
     virtual void Undo();
     virtual void Redo();
 
+    virtual CursorType GetCursorType() const;
+
+    virtual void SwitchMode(EditorMode currentMode);
+
     virtual ZepWindow* GetCurrentWindow() const;
 
+    const KeyMap& GetKeyMappings(EditorMode mode) const;
+
+    // Keys handled by modes
+    virtual void AddCommandText(std::string strText);
+
     virtual NVec2i GetNormalizedVisualRange() const;
+
+protected:
+    // Do the actual input handling
+    virtual void HandleMappedInput(const std::string& input);
+
+    virtual void AddCommand(std::shared_ptr<ZepCommand> spCmd);
 
     virtual const std::string& GetLastCommand() const;
     virtual bool GetCommand(CommandContext& context);
@@ -189,18 +194,11 @@ public:
 
     virtual void UpdateVisualSelection();
 
-    const KeyMap& GetKeyMappings(EditorMode mode) const;
-
     void AddGlobalKeyMaps();
     void AddNavigationKeyMaps(bool allowInVisualMode = true);
     void AddSearchKeyMaps();
     void AddKeyMapWithCountRegisters(const std::vector<KeyMap*>& maps, const std::vector<std::string>& commands, const StringId& id);
 
-    virtual CursorType GetCursorType() const;
-
-    virtual void SwitchMode(EditorMode currentMode);
-
-protected:
     virtual void ClampCursorForMode();
     virtual bool HandleExCommand(std::string strCommand);
     virtual std::string ConvertInputToMapString(uint32_t key, uint32_t modifierKeys);
@@ -231,7 +229,7 @@ protected:
     uint32_t m_modeFlags = ModeFlags::None;
     uint32_t m_lastKey = 0;
 
-    ZepWindow* m_pCurrentWindow;
+    ZepWindow* m_pCurrentWindow = nullptr;
 
     timer m_lastKeyPressTimer;
 };

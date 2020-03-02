@@ -21,6 +21,7 @@ public:
 private:
     timer m_timer;
     bool m_enable = false;
+    uint32_t m_windowOperationCount = 0;
 };
 
 }

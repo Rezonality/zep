@@ -22,8 +22,8 @@ public:
         return StaticName();
     }
 
-protected:
-    virtual void Init() override;
+private:
+    void Init();
 
 private:
     std::string keyCache;

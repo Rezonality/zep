@@ -26,11 +26,11 @@ public:
         // TODO : Fix/understand test failures with threading
         spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZEP_ROOT, ZepEditorFlags::DisableThreads);
         spMode = std::make_shared<ZepMode_Vim>(*spEditor);
-        spMode->Init();
         pBuffer = spEditor->InitWithText("Test Buffer", "");
 
         pTabWindow = spEditor->GetActiveTabWindow();
         pWindow = spEditor->GetActiveTabWindow()->GetActiveWindow();
+        spMode->Begin(pWindow);
 
         // Setup editor with a default fixed_size so that text doesn't wrap and confuse the tests!
         spEditor->SetDisplayRegion(NVec2f(0.0f, 0.0f), NVec2f(1024.0f, 1024.0f));

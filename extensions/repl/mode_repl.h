@@ -8,9 +8,9 @@
 namespace Zep
 {
 
-struct ZepRepl;
-
 // A provider that can handle repl commands
+// This is just a default repl that does nothing; if you want to provide a repl 
+// you need to register this interface and handle the messages to run the repl.
 struct IZepReplProvider
 {
     virtual std::string ReplParse(const std::string& input) 
@@ -47,7 +47,7 @@ private:
 class ZepMode_Repl : public ZepMode
 {
 public:
-    ZepMode_Repl(ZepEditor& editor, ZepWindow& launchWindow, ZepWindow& replWindow, IZepReplProvider* provider);
+    ZepMode_Repl(ZepEditor& editor, IZepReplProvider* provider);
     ~ZepMode_Repl();
 
     virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
@@ -63,14 +63,13 @@ public:
         return StaticName();
     }
 
+    void Prompt();
+    void MoveToEnd();
 private:
     void Close();
 
 private:
-    void BeginInput();
     ByteIndex m_startLocation = ByteIndex{ 0 };
-    ZepWindow& m_launchWindow;
-    ZepWindow& m_replWindow;
     IZepReplProvider* m_pRepl;
 };
 

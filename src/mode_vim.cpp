@@ -69,6 +69,7 @@ namespace Zep
 ZepMode_Vim::ZepMode_Vim(ZepEditor& editor)
     : ZepMode(editor)
 {
+    Init();
 }
 
 ZepMode_Vim::~ZepMode_Vim()
