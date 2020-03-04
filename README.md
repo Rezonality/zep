@@ -16,6 +16,7 @@ Zep is ideally suited to embedding in a game engine, as an in-game editor, or an
 
 The demos for Qt and ImGui require their additional packages, but the core zep code is easily built and cross platform.  The ImGui demo builds and runs on Windows, Linux and Mac OS.  If you're a Vim user, you might often suffer the frustration of not being able to use Vim keystrokes in your tools.  Zep solves that.
 
+
 Key Features:
 * Modal 'vim' or modeless 'standard' editing styles; built around a common core of functionality.
 * Keymapper for extending existing modes or adding new commands
@@ -30,13 +31,17 @@ Key Features:
 * No dependencies, cross platform, small library
 * Single header compile option 
 * Builds on VC 2017, GCC 6, Clang. C++14 is the basic requirement
-* UTF8 (international) character display; working but still experimental
 * A work in progress extension mode to support an Orca-like environment
 * A work in progress tree control for file navigation
 
-Limitations:
-* Zep currently ignores tabs and converts them to spaces.  Tabs are a planned feature.
-* Vim mode is limited to common operations, not the extensive set of commmands typical in Neovim/Vim
+New Features, recently added:
+* Support for tabs instead of spaces; display of tabs as whitespace arrows.
+* UTF8 (Work in progress - not completely done yet).
+* More generic keymapping for extensible modes
+* /search support
+
+Current Limitations:
+* Vim mode is limited to common operations, not the extensive set of commmands typical in Neovim/Vim.  There are now a considerable number of commands, but notably ex commands are missing, such as %s///g for find/replace.
 
 Though I have limited time to work on Zep, I do try to move it forward at York Developer's regular Code and Coffee sessions. Zep was my 2018 project but has already proved quite popular, and I try to throw more features in when I can.  There are over 200 unit tests for the editing modes.  This project started mainly as an experiment and a learning exercise.  I like the idea of a programmer building programmer tools for their own use, just as carpenters used to build their toolbox.
 
@@ -44,7 +49,7 @@ One of my targets for Zep is to get it to the point where I can use it as a stan
 
 Pull requests are appreciated and encouraged ;) 
 
-There also is a trivial example of integrating zep into imgui here:
+There also is a trivial example of integrating zep into imgui here (Needs an update/sync to the latest -I do recommend using the library over the single header approach)
 [Zep Inside ImGui Demo](https://github.com/cmaughan/imgui)
 
 Screenshots
