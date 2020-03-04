@@ -135,7 +135,8 @@ ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, Regio
     if (m_windows.size() == 1 && pParent == nullptr)
     {
         auto& buffer = m_windows[0]->GetBuffer();
-        if (buffer.TestFlags(FileFlags::DefaultBuffer) && !buffer.TestFlags(FileFlags::Dirty))
+        if (ZTestFlags(buffer.GetFileFlags(), FileFlags::DefaultBuffer) && 
+            !ZTestFlags(buffer.GetFileFlags(), FileFlags::Dirty))
         {
             m_windows[0]->SetBuffer(pBuffer);
             return m_windows[0];

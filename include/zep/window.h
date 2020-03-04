@@ -171,7 +171,14 @@ private:
     void ScrollToCursor();
     bool IsInsideTextRegion(NVec2i pos) const;
 
-    void GetCharPointer(ByteIndex loc, const uint8_t*& pBegin, const uint8_t*& pEnd, bool& invalidChar);
+    enum class SpecialChar
+    {
+        None,
+        Hidden,
+        Tab,
+        Space
+    };
+    void GetCharPointer(ByteIndex loc, const uint8_t*& pBegin, const uint8_t*& pEnd, SpecialChar& specialChar);
     const SpanInfo& GetCursorLineInfo(long y);
 
     float ToWindowY(float pos) const;

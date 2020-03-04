@@ -55,20 +55,16 @@ struct Region;
 #define ZEP_UNUSED(var) (void)var;
 
 // Helpers 
-inline bool ZTestFlags(uint32_t flags, uint32_t value) { return ((flags & value) ? true : false); }
-inline uint32_t ZSetFlags(uint32_t& flags, uint32_t value, bool set = true) { if (set) { flags |= value; } return flags; }
-inline uint32_t ZClearFlags(uint32_t& flags, uint32_t value) { flags &= ~value; return flags; }
-inline uint32_t ZToggleFlags(uint32_t flags, uint32_t value)
+inline bool ZTestFlags(const uint32_t& flags, uint32_t value) { return ((flags & value) ? true : false); }
+inline uint32_t ZSetFlags(const uint32_t& flags, uint32_t value, bool set = true) { if (set) { return flags | value; } else return flags; }
+inline uint32_t ZClearFlags(const uint32_t& flags, uint32_t value) { return flags & ~value; }
+inline uint32_t ZToggleFlags(const uint32_t& flags, uint32_t value)
 {
     if (ZTestFlags(flags, value))
     {
-        ZClearFlags(flags, value);
+        return ZClearFlags(flags, value);
     }
-    else
-    {
-        ZSetFlags(flags, value);
-    }
-    return flags;
+    return ZSetFlags(flags, value);
 }
 
 namespace ZepEditorFlags

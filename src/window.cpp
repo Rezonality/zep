@@ -286,7 +286,7 @@ void ZepWindow::ScrollToCursor()
     m_cursorMoved = false;
 }
 
-void ZepWindow::GetCharPointer(ByteIndex loc, const uint8_t*& pBegin, const uint8_t*& pEnd, bool& hiddenChar)
+void ZepWindow::GetCharPointer(ByteIndex loc, const uint8_t*& pBegin, const uint8_t*& pEnd, SpecialChar& special)
 {
     static char invalidChar;
     static const char blankSpace = ' ';
@@ -294,7 +294,7 @@ void ZepWindow::GetCharPointer(ByteIndex loc, const uint8_t*& pBegin, const uint
     pBegin = &m_pBuffer->GetText()[loc];
 
     // Shown only one char for end of line
-    hiddenChar = false;
+    special = SpecialChar::None;
     if (*pBegin == '\n' || *pBegin == 0)
     {
         invalidChar = '@' + *pBegin;
@@ -306,7 +306,15 @@ void ZepWindow::GetCharPointer(ByteIndex loc, const uint8_t*& pBegin, const uint
         {
             pBegin = (const uint8_t*)&blankSpace;
         }
-        hiddenChar = true;
+        special = SpecialChar::Hidden;
+    }
+    else if (*pBegin == '\t')
+    {
+        special = SpecialChar::Tab;
+    }
+    else if (*pBegin == ' ')
+    {
+        special = SpecialChar::Space;
     }
 
     pEnd = pBegin + utf8_codepoint_length(*pBegin);
@@ -648,6 +656,9 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
         return false;
     }
 
+    auto defaultCharSize = GetEditor().GetDisplay().GetDefaultCharSize();
+    auto whiteSpaceCol = m_pBuffer->GetTheme().GetColor(ThemeColor::Whitespace);
+
     // Draw line numbers
     auto displayLineNumber = [&]() {
         if (!IsInsideTextRegion(NVec2i(0, lineInfo.spanLineIndex)))
@@ -791,8 +802,8 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
     {
         const uint8_t* pCh;
         const uint8_t* pEnd;
-        bool hiddenChar;
-        GetCharPointer(cp.byteIndex, pCh, pEnd, hiddenChar);
+        SpecialChar special;
+        GetCharPointer(cp.byteIndex, pCh, pEnd, special);
 
         // TODO : Cache this for speed - a little sluggish on debug builds.
         if (displayPass == WindowPass::Background)
@@ -883,42 +894,57 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
         {
             DrawLineWidgets(lineInfo);
 
-            if (!hiddenChar || GetWindowFlags() & WindowFlags::ShowCR)
+            if ((special != SpecialChar::Hidden) || GetWindowFlags() & WindowFlags::ShowCR)
             {
-                auto centerChar = NVec2f(screenPosX + cp.size.x / 2, ToWindowY(lineInfo.yOffsetPx) + cp.size.y / 2);
-                if ((GetWindowFlags() & WindowFlags::ShowWhiteSpace) && pSyntax && pSyntax->GetSyntaxAt(cp.byteIndex).foreground == ThemeColor::Whitespace)
+                auto centerY = ToWindowY(lineInfo.yOffsetPx) + cp.size.y / 2;
+                auto centerChar = NVec2f(screenPosX + cp.size.x / 2, centerY);
+                NVec4f col;
+                if (special == SpecialChar::Hidden)
                 {
-                    // Show a dot
-                    display.DrawRectFilled(NRectf(centerChar - DPI_VEC2(NVec2f(1.0f, 1.0f)), centerChar + DPI_VEC2(NVec2f(1.0f, 1.0f))), m_pBuffer->GetTheme().GetColor(ThemeColor::Whitespace));
+                    col = m_pBuffer->GetTheme().GetColor(ThemeColor::HiddenText);
                 }
                 else
                 {
-                    NVec4f col;
-                    if (hiddenChar)
+                    if (pSyntax)
                     {
-                        col = m_pBuffer->GetTheme().GetColor(ThemeColor::HiddenText);
+                        col = m_pBuffer->GetTheme().GetColor(pSyntax->GetSyntaxAt(cp.byteIndex).foreground);
                     }
                     else
                     {
-                        if (pSyntax)
-                        {
-                            col = m_pBuffer->GetTheme().GetColor(pSyntax->GetSyntaxAt(cp.byteIndex).foreground);
-                        }
-                        else
-                        {
-                            col = m_pBuffer->GetTheme().GetColor(ThemeColor::Text);
-                        }
+                        col = m_pBuffer->GetTheme().GetColor(ThemeColor::Text);
                     }
+                }
 
-                    if (pSyntax)
+                if (pSyntax)
+                {
+                    auto backgroundColor = pSyntax->GetSyntaxAt(cp.byteIndex).background;
+                    if (backgroundColor != ThemeColor::None)
                     {
-                        auto backgroundColor = pSyntax->GetSyntaxAt(cp.byteIndex).background;
-                        if (backgroundColor != ThemeColor::None)
-                        {
-                            display.DrawRectFilled(NRectf(centerChar - NVec2f(1.0f, 1.0f), centerChar + NVec2f(1.0f, 1.0f)), m_pBuffer->GetTheme().GetColor(backgroundColor));
-                        }
+                        display.DrawRectFilled(NRectf(centerChar - NVec2f(1.0f, 1.0f), centerChar + NVec2f(1.0f, 1.0f)), m_pBuffer->GetTheme().GetColor(backgroundColor));
                     }
+                }
+
+                if (special == SpecialChar::None)
+                {
                     display.DrawChars(NVec2f(screenPosX, ToWindowY(lineInfo.yOffsetPx + lineInfo.padding.x)), col, pCh, pEnd);
+                }
+                else if (special == SpecialChar::Tab)
+                {
+                    if (GetWindowFlags() & WindowFlags::ShowWhiteSpace)
+                    {
+                        // A line and an arrow
+                        display.DrawLine(NVec2f(screenPosX + defaultCharSize.x / 2, centerY), NVec2f(screenPosX + cp.size.x - defaultCharSize.x / 4, centerY), whiteSpaceCol, 2);
+                        display.DrawLine(NVec2f(screenPosX, ToWindowY(lineInfo.yOffsetPx)), NVec2f(screenPosX + defaultCharSize.x / 2, centerY), whiteSpaceCol, 2);
+                        display.DrawLine(NVec2f(screenPosX, ToWindowY(lineInfo.yOffsetPx + cp.size.y)), NVec2f(screenPosX + defaultCharSize.x / 2, centerY), whiteSpaceCol, 2);
+                    }
+                }
+                else if (special == SpecialChar::Space)
+                {
+                    if (GetWindowFlags() & WindowFlags::ShowWhiteSpace)
+                    {
+                        // A dot
+                        display.DrawRectFilled(NRectf(centerChar - DPI_VEC2(NVec2f(1.0f, 1.0f)), centerChar + DPI_VEC2(NVec2f(1.0f, 1.0f))), m_pBuffer->GetTheme().GetColor(ThemeColor::Whitespace));
+                    }
                 }
             }
         }
@@ -1207,7 +1233,12 @@ void ZepWindow::GetCursorInfo(NVec2f& pos, NVec2f& size)
         xPos += ch.size.x + m_xPad;
     }
 
-    if (!found)
+    // If it's a tab, we show a cursor of standard width at the beginning of it
+    if (GetBuffer().GetText()[GetBufferCursor()] == '\t')
+    {
+        cursorSize = GetEditor().GetDisplay().GetDefaultCharSize();
+    }
+    else if (!found)
     {
         cursorSize = GetEditor().GetDisplay().GetDefaultCharSize();
         xPos += cursorSize.x;

@@ -206,6 +206,10 @@ void ZepSyntax::UpdateSyntax()
             {
                 mark(itr, itr + 1, ThemeColor::Whitespace, ThemeColor::None);
             }
+            else if (*itr == '\t')
+            {
+                mark(itr, itr + 1, ThemeColor::Whitespace, ThemeColor::None);
+            }
         }
 
         // Do I need to make a string here?

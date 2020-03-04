@@ -195,7 +195,8 @@ void ZepMode::SwitchMode(EditorMode currentMode)
     auto& buffer = pWindow->GetBuffer();
     auto cursor = pWindow->GetBufferCursor();
 
-    if (currentMode == EditorMode::Insert && buffer.TestFlags(FileFlags::ReadOnly))
+    // Force normal mode if the file is read only
+    if (currentMode == EditorMode::Insert && ZTestFlags(buffer.GetFileFlags(), FileFlags::ReadOnly))
     {
         currentMode = EditorMode::Normal;
     }
@@ -355,7 +356,7 @@ void ZepMode::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     // Get the new command by parsing out the keys
     // We convert CTRL + f to a string: "<C-f>"
     HandleMappedInput(ConvertInputToMapString(key, modifierKeys));
-    
+
     timer_restart(m_lastKeyPressTimer);
 }
 
@@ -514,7 +515,7 @@ void ZepMode::AddCommand(std::shared_ptr<ZepCommand> spCmd)
         return;
     }
 
-    if (GetCurrentWindow()->GetBuffer().TestFlags(FileFlags::Locked))
+    if (ZTestFlags(GetCurrentWindow()->GetBuffer().GetFileFlags(), FileFlags::Locked))
     {
         // Ignore commands on buffers because we are view only,
         // and all commands currently modify the buffer!
@@ -1106,7 +1107,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         context.replaceRangeMode = ReplaceRangeMode::Replace;
 
         context.op = CommandOperation::Replace;
-        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
+        context.commandResult.flags = ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
     }
     else if (mappedCommand == id_VisualMode || mappedCommand == id_VisualLineMode)
     {
@@ -1157,7 +1158,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         context.pRegister = &context.tempReg;
         context.op = CommandOperation::Insert;
         context.commandResult.modeSwitch = EditorMode::Insert;
-        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
+        context.commandResult.flags = ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
     }
     else if (mappedCommand == id_InsertCarriageReturn)
     {
@@ -1166,16 +1167,23 @@ bool ZepMode::GetCommand(CommandContext& context)
         context.pRegister = &context.tempReg;
         context.op = CommandOperation::Insert;
         context.commandResult.modeSwitch = EditorMode::Insert;
-        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
+        context.commandResult.flags = ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
     }
     else if (mappedCommand == id_InsertTab)
     {
         context.beginRange = context.bufferCursor;
-        context.tempReg.text = "    ";
+        if (ZTestFlags(buffer.GetFileFlags(), FileFlags::InsertTabs))
+        {
+            context.tempReg.text = "\t";
+        }
+        else
+        {
+            context.tempReg.text = "    ";
+        }
         context.pRegister = &context.tempReg;
         context.op = CommandOperation::Insert;
         context.commandResult.modeSwitch = EditorMode::Insert;
-        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
+        context.commandResult.flags = ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
     }
     else if (mappedCommand == id_OpenLineAbove)
     {
@@ -1185,7 +1193,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         context.op = CommandOperation::Insert;
         context.commandResult.modeSwitch = EditorMode::Insert;
         context.cursorAfterOverride = context.bufferCursor;
-        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
+        context.commandResult.flags = ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
     }
     else if (mappedCommand == id_YankLine)
     {
@@ -1243,7 +1251,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             context.beginRange = context.bufferCursor;
             context.op = CommandOperation::Insert;
         }
-        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
+        context.commandResult.flags = ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
     }
     else if (mappedCommand == id_PasteAfter)
     {
@@ -1260,7 +1268,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             }
             context.op = CommandOperation::Insert;
         }
-        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
+        context.commandResult.flags = ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
     }
     else if (mappedCommand == id_PasteBefore)
     {
@@ -1276,7 +1284,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             }
             context.op = CommandOperation::Insert;
         }
-        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
+        context.commandResult.flags = ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
     }
     else if (mappedCommand == id_InsertMode)
     {
@@ -1528,7 +1536,7 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_AppendToLine)
     {
-        GlyphIterator appendItr(buffer, context.buffer.GetLinePos(bufferCursor, LineLocation::LineLastGraphChar));
+        GlyphIterator appendItr(buffer, context.buffer.GetLinePos(bufferCursor, LineLocation::LineLastNonCR));
         appendItr.MoveClamped(1, LineLocation::LineCRBegin);
         GetCurrentWindow()->SetBufferCursor(appendItr.ToByteIndex());
         context.commandResult.modeSwitch = EditorMode::Insert;
@@ -1597,9 +1605,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         // If not a single char, then we are trying to input a special, which isn't allowed
         // TOOD: Cleaner detection of this?
         // Special case for 'j + another character' which is an insert
-        if (context.keymap.commandWithoutGroups.size() == 1 ||
-            ((context.keymap.commandWithoutGroups.size() == 2) &&
-            context.keymap.commandWithoutGroups[0] == 'j'))
+        if (context.keymap.commandWithoutGroups.size() == 1 || ((context.keymap.commandWithoutGroups.size() == 2) && context.keymap.commandWithoutGroups[0] == 'j'))
         {
             context.beginRange = context.bufferCursor;
             context.tempReg.text = context.keymap.commandWithoutGroups;
@@ -1611,7 +1617,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             // Insert grouping command if necessary
             if (context.fullCommand == " ")
             {
-                ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
+                context.commandResult.flags = ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
             }
         }
         else
@@ -1632,7 +1638,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             context.endRange,
             context.bufferCursor);
         context.commandResult.spCommand = std::static_pointer_cast<ZepCommand>(cmd);
-        ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
+        context.commandResult.flags = ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
         return true;
     }
     else if (context.op == CommandOperation::Insert && !context.pRegister->text.empty())
@@ -1879,7 +1885,8 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             keymap_dump(m_visualMap, str);
 
             auto pMapBuffer = GetEditor().GetEmptyBuffer("Mappings");
-            pMapBuffer->SetFlags(FileFlags::Locked | FileFlags::ReadOnly);
+
+            pMapBuffer->SetFileFlags(ZSetFlags(pMapBuffer->GetFileFlags(), FileFlags::Locked | FileFlags::ReadOnly));
             pMapBuffer->SetText(str.str());
             GetEditor().GetActiveTabWindow()->AddWindow(pMapBuffer, nullptr, RegionLayoutType::VBox);
         }
@@ -2058,6 +2065,10 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             buffer.AddRangeMarker(spMarker);
             SwitchMode(EditorMode::Normal);
         }
+        else if (strCommand == ":ZTabs")
+        {
+            buffer.SetFileFlags(ZToggleFlags(buffer.GetFileFlags(), FileFlags::InsertTabs));
+        }
         else if (strCommand == ":ZShowCR")
         {
             GetCurrentWindow()->ToggleFlag(WindowFlags::ShowCR);
@@ -2126,7 +2137,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
                         str << " ";
                     }
 
-                    if (editor_buffer->TestFlags(FileFlags::Dirty))
+                    if (ZTestFlags(editor_buffer->GetFileFlags(), FileFlags::Dirty))
                     {
                         str << "+";
                     }

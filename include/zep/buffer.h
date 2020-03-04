@@ -51,7 +51,10 @@ enum : uint32_t
     Dirty = (1 << 4), // Has the file been changed?
     HasWarnings = (1 << 6),
     HasErrors = (1 << 7),
-    DefaultBuffer = (1 << 8) // Default startup buffer
+    DefaultBuffer = (1 << 8), // Default startup buffer
+    HasTabs = (1 << 9),
+    HasSpaceTabs = (1 << 10),
+    InsertTabs = (1 << 11)
 };
 }
 
@@ -232,27 +235,6 @@ public:
         return m_lineEnds;
     }
 
-    bool TestFlags(uint32_t flags)
-    {
-        return ((m_fileFlags & flags) == flags) ? true : false;
-    }
-
-    void ClearFlags(uint32_t flag)
-    {
-        SetFlags(flag, false);
-    }
-
-    void SetFlags(uint32_t flag, bool set = true)
-    {
-        if (set)
-        {
-            m_fileFlags |= flag;
-        }
-        else
-        {
-            m_fileFlags &= ~flag;
-        }
-    }
     void SetSyntaxProvider(SyntaxProvider provider)
     {
         if (provider.syntaxID != m_syntaxProvider.syntaxID)
@@ -318,6 +300,9 @@ public:
     }
 
     bool IsHidden() const;
+
+    uint32_t GetFileFlags() const { return m_fileFlags; }
+    void SetFileFlags(uint32_t flags) { m_fileFlags = flags; }
 
 private:
     void ClearRangeMarker(std::shared_ptr<RangeMarker> spMarker);

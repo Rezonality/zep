@@ -586,12 +586,12 @@ void ZepBuffer::Load(const ZepPath& path)
 
 bool ZepBuffer::Save(int64_t& size)
 {
-    if (TestFlags(FileFlags::Locked))
+    if (ZTestFlags(m_fileFlags, FileFlags::Locked))
     {
         return false;
     }
 
-    if (TestFlags(FileFlags::ReadOnly))
+    if (ZTestFlags(m_fileFlags, FileFlags::ReadOnly))
     {
         return false;
     }
@@ -623,7 +623,7 @@ bool ZepBuffer::Save(int64_t& size)
 
     if (GetEditor().GetFileSystem().Write(m_filePath, &str[0], (size_t)size))
     {
-        ClearFlags(FileFlags::Dirty);
+        m_fileFlags = ZClearFlags(m_fileFlags, FileFlags::Dirty);
         return true;
     }
     return false;
@@ -665,7 +665,7 @@ void ZepBuffer::MarkUpdate()
     m_updateCount++;
     m_lastUpdateTime = timer_get_time_now();
 
-    SetFlags(FileFlags::Dirty);
+    m_fileFlags = ZSetFlags(m_fileFlags, FileFlags::Dirty);
 }
 
 // Clear this buffer.  If it was previously not clear, it has been updated.
@@ -683,7 +683,7 @@ void ZepBuffer::Clear()
     m_gapBuffer.clear();
     m_gapBuffer.push_back(0);
     m_lineEnds.clear();
-    SetFlags(FileFlags::TerminatedWithZero);
+    m_fileFlags = ZSetFlags(m_fileFlags, FileFlags::TerminatedWithZero);
 
     m_lineEnds.push_back(long(m_gapBuffer.size()));
 
@@ -700,12 +700,11 @@ void ZepBuffer::SetText(const std::string& text, bool initFromFile)
     // First, clear it
     Clear();
 
+    bool lastWasSpace = false;
     if (!text.empty())
     {
         // Since incremental insertion of a big file into a gap buffer gives us worst case performance,
         // We build the buffer in a seperate array and assign it.  Much faster.
-        // This is because we remove \r and convert tabs. Tabs are considered 'always evil' and should be
-        // 4 spaces.  Take it up with your local code police if you feel aggrieved.
         std::vector<uint8_t> input;
 
         m_lineEnds.clear();
@@ -718,23 +717,41 @@ void ZepBuffer::SetText(const std::string& text, bool initFromFile)
             {
                 m_fileFlags |= FileFlags::StrippedCR;
             }
-            else if (ch == '\t')
-            {
-                input.push_back(' ');
-                input.push_back(' ');
-                input.push_back(' ');
-                input.push_back(' ');
-            }
             else
             {
                 input.push_back(ch);
                 if (ch == '\n')
                 {
                     m_lineEnds.push_back(long(input.size()));
+                    lastWasSpace = false;
+                }
+                else if (ch == '\t')
+                {
+                    m_fileFlags |= FileFlags::HasTabs;
+                    lastWasSpace = false;
+                }
+                else if (ch == ' ')
+                {
+                    if (lastWasSpace)
+                    {
+                        m_fileFlags |= FileFlags::HasSpaceTabs;
+                    }
+                    lastWasSpace = true;
+                }
+                else
+                {
+                    lastWasSpace = false;
                 }
             }
         }
         m_gapBuffer.assign(input.begin(), input.end());
+    }
+
+    // If file is only tabs, then force tab mode
+    if (ZTestFlags(m_fileFlags, FileFlags::HasTabs) &&
+        !ZTestFlags(m_fileFlags, FileFlags::HasSpaceTabs))
+    {
+        m_fileFlags = ZSetFlags(m_fileFlags, FileFlags::InsertTabs);
     }
 
     if (m_gapBuffer[m_gapBuffer.size() - 1] != 0)
@@ -754,7 +771,7 @@ void ZepBuffer::SetText(const std::string& text, bool initFromFile)
         GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::Loaded, ByteIndex{ 0 }, ByteIndex{ long(m_gapBuffer.size()) }));
 
         // Doc is not dirty
-        ClearFlags(FileFlags::Dirty);
+        m_fileFlags = ZClearFlags(m_fileFlags, FileFlags::Dirty);
     }
     else
     {

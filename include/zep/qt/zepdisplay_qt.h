@@ -74,11 +74,18 @@ public:
         }
 
         auto rc = met.size(Qt::TextIncludeTrailingSpaces | Qt::TextLongestVariant, QString::fromUtf8((char*)pBegin, pEnd - pBegin));
+        if (*pBegin == '\t' && (pEnd == (pBegin + 1)))
+        {
+            // Default tab width
+            rc.setWidth(rc.width() * 4);
+        }
+
         if (rc.width() == 0.0)
         {
             // Make invalid characters a default fixed_size
             const char chDefault = 'A';
             rc = met.size(Qt::TextIncludeTrailingSpaces | Qt::TextLongestVariant, QString("A"));
+
         }
         return NVec2f(rc.width(), rc.height());
     }

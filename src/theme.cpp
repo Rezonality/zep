@@ -65,7 +65,7 @@ void ZepTheme::SetDarkTheme()
     m_colors[ThemeColor::Identifier] = NVec4f(1.0f, .75f, 0.5f, 1.0f);
     m_colors[ThemeColor::Number] = NVec4f(1.0f, 1.0f, 0.1f, 1.0f);
     m_colors[ThemeColor::String] = NVec4f(1.0f, 0.5f, 1.0f, 1.0f);
-    m_colors[ThemeColor::Whitespace] = NVec4f(0.2f, .2f, .2f, 1.0f);
+    m_colors[ThemeColor::Whitespace] = NVec4f(0.3f, .3f, .3f, 1.0f);
     
     m_colors[ThemeColor::Error] = NVec4f(0.65f, .2f, .15f, 1.0f);
     m_colors[ThemeColor::Warning] = NVec4f(0.15f, .2f, .65f, 1.0f);

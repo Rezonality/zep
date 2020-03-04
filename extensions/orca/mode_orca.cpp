@@ -54,12 +54,12 @@ void ZepMode_Orca::Begin(ZepWindow* pWindow)
 // Modify flags for the window in this mode
 uint32_t ZepMode_Orca::ModifyWindowFlags(uint32_t flags)
 {
-    ZClearFlags(flags, WindowFlags::WrapText);
-    ZClearFlags(flags, WindowFlags::ShowLineNumbers);
-    ZClearFlags(flags, WindowFlags::ShowIndicators);
-    ZSetFlags(flags, WindowFlags::GridStyle);
-    ZSetFlags(flags, WindowFlags::HideScrollBar);
-    //ZSetFlags(flags, WindowFlags::HideSplitMark);
+    flags = ZClearFlags(flags, WindowFlags::WrapText);
+    flags = ZClearFlags(flags, WindowFlags::ShowLineNumbers);
+    flags = ZClearFlags(flags, WindowFlags::ShowIndicators);
+    flags = ZSetFlags(flags, WindowFlags::GridStyle);
+    flags = ZSetFlags(flags, WindowFlags::HideScrollBar);
+    //flags = ZSetFlags(flags, WindowFlags::HideSplitMark);
     return flags;
 }
 
