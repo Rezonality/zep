@@ -45,7 +45,7 @@ void ZepTheme::SetDarkTheme()
     m_colors[ThemeColor::HiddenText] = NVec4f(.9f, .1f, .1f, 1.0f);
     m_colors[ThemeColor::TabBorder] = NVec4f(.55f, .55f, .55f, 1.0f);
     m_colors[ThemeColor::TabInactive] = NVec4f(.4f, .4f, .4f, .55f);
-    m_colors[ThemeColor::TabActive] = NVec4f(.55f, .55f, .55f, 1.0f);
+    m_colors[ThemeColor::TabActive] = NVec4f(.65f, .65f, .65f, 1.0f);
     m_colors[ThemeColor::LineNumberBackground] = m_colors[ThemeColor::Background] + NVec4f(.02f, .02f, .02f, 0.0f);
     m_colors[ThemeColor::LineNumber] = NVec4f(.13f, 1.0f, .13f, 1.0f);
     m_colors[ThemeColor::LineNumberActive] = NVec4f(.13f, 1.0f, .13f, 1.0f);

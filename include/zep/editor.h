@@ -189,8 +189,9 @@ struct SyntaxProvider
     tSyntaxFactory factory = nullptr;
 };
 
-const float bottomBorder = 4.0f;
-const float textBorder = 4.0f;
+const float bottomBorder = 2.0f;
+const float textBorder = 2.0f;
+const float tabSpacing = 1.0f;
 const float leftBorderChars = 3;
 
 #define DPI_VEC2(value) (value * GetEditor().GetPixelScale())
@@ -230,6 +231,13 @@ public:
     virtual void Run(const std::vector<std::string>& args = {}) = 0;
     virtual const char* Name() const = 0;
     virtual void Init() {};
+};
+
+struct TabRegionTab : public Region
+{
+    NVec4f color;
+    std::string name;
+    ZepTabWindow* pTabWindow = nullptr;
 };
 
 class ZepEditor
@@ -305,6 +313,8 @@ public:
     void RemoveTabWindow(ZepTabWindow* pTabWindow);
     const tTabWindows& GetTabWindows() const;
 
+    void UpdateTabs();
+
     ZepWindow* AddTree();
     ZepWindow* AddSearch();
 
@@ -358,6 +368,9 @@ public:
     {
         return m_config;
     }
+
+    // Helper for macros
+    ZepEditor& GetEditor() { return *this; }
 
     ThreadPool& GetThreadPool() const;
 
@@ -415,8 +428,9 @@ private:
     std::shared_ptr<Region> m_tabContentRegion;
     std::shared_ptr<Region> m_commandRegion;
     std::shared_ptr<Region> m_tabRegion;
-    std::map<ZepTabWindow*, NRectf> m_tabRects;
     bool m_bRegionsChanged = false;
+
+    float m_tabOffsetX = 0.0f;
 
     NVec2f m_mousePos;
     float m_pixelScale = 1.0f;

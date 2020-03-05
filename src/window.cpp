@@ -1103,6 +1103,7 @@ void ZepWindow::SetBuffer(ZepBuffer* pBuffer)
     {
         pBuffer->GetMode()->Begin(this);
     }
+    GetEditor().UpdateTabs();
 }
 
 ByteIndex ZepWindow::GetBufferCursor()

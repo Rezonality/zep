@@ -85,8 +85,6 @@ MainWindow::MainWindow()
         pWidget->GetEditor().InitWithText("Shader.vert", shader);
     }
 
-    //setStyleSheet("background-color: darkBlue");
-
     setContentsMargins(2, 2, 2, 2);
 
     auto menu = new QMenuBar();

@@ -7,6 +7,7 @@
 #include <QKeyEvent>
 #include <QDesktopWidget>
 #include <QDebug>
+#include <QClipboard>
 
 #include "zep/editor.h"
 #include "zep/mode.h"
@@ -51,6 +52,18 @@ public:
         if (message->messageId == Msg::RequestQuit)
         {
             qApp->quit();
+        }
+        else if (message->messageId == Msg::GetClipBoard)
+        {
+            QClipboard* pClip = QApplication::clipboard();
+            message->str = pClip->text().toUtf8().data();
+            message->handled = true;
+        }
+        else if (message->messageId == Msg::SetClipBoard)
+        {
+            QClipboard* pClip = QApplication::clipboard();
+            pClip->setText(QString::fromUtf8(message->str.c_str()));
+            message->handled = true;
         }
     }
 

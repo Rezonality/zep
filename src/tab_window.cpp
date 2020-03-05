@@ -117,6 +117,7 @@ void ZepTabWindow::SetActiveWindow(ZepWindow* pBuffer)
     {
         m_pActiveWindow->GetBuffer().GetMode()->Begin(m_pActiveWindow);
     }
+    GetEditor().UpdateTabs();
 }
 
 // The region management is in theory dirt-simple.

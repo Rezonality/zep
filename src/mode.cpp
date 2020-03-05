@@ -94,6 +94,8 @@ void CommandContext::GetCommandRegisters()
     if (keymap.RegisterName() == 0)
     {
         keymap.captureRegisters.push_back('"');
+        keymap.captureRegisters.push_back('*');
+        keymap.captureRegisters.push_back('+');
     }
 
     if (keymap.RegisterName() == '_')
@@ -1199,6 +1201,8 @@ bool ZepMode::GetCommand(CommandContext& context)
     {
         // Copy the whole line, including the CR
         context.registers.push('0');
+        context.registers.push('*');
+        context.registers.push('+');
         context.beginRange = context.buffer.GetLinePos(context.bufferCursor, LineLocation::LineBegin);
         context.endRange = context.buffer.GetLinePos(context.bufferCursor, LineLocation::BeyondLineEnd);
         context.op = CommandOperation::CopyLines;
@@ -1208,6 +1212,8 @@ bool ZepMode::GetCommand(CommandContext& context)
     else if (mappedCommand == id_Yank)
     {
         context.registers.push('0');
+        context.registers.push('*');
+        context.registers.push('+');
         auto range = GetNormalizedVisualRange();
         context.beginRange = range.x;
         context.endRange = range.y;
@@ -1219,6 +1225,8 @@ bool ZepMode::GetCommand(CommandContext& context)
     else if (mappedCommand == id_StandardCopy)
     {
         context.registers.push('0');
+        context.registers.push('*');
+        context.registers.push('+');
         auto range = GetNormalizedVisualRange();
         context.beginRange = range.x;
         context.endRange = range.y;

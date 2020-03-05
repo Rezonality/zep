@@ -1,11 +1,11 @@
 #include "zep/editor.h"
 #include "zep/filesystem.h"
-#include "zep/mode_tree.h"
 #include "zep/mode_search.h"
 #include "zep/mode_standard.h"
+#include "zep/mode_tree.h"
+#include "zep/regress.h"
 #include "zep/syntax_providers.h"
 #include "zep/tab_window.h"
-#include "zep/regress.h"
 
 #include "config_app.h"
 
@@ -76,6 +76,9 @@ ZepEditor::ZepEditor(ZepDisplay* pDisplay, const ZepPath& root, uint32_t flags, 
     m_editorRegion->layoutType = RegionLayoutType::VBox;
 
     m_tabRegion = std::make_shared<Region>();
+    m_tabRegion->layoutType = RegionLayoutType::HBox;
+    m_tabRegion->margin = NVec4f(0, textBorder, 0, textBorder);
+
     m_tabContentRegion = std::make_shared<Region>();
     m_commandRegion = std::make_shared<Region>();
 
@@ -321,7 +324,7 @@ ZepWindow* ZepEditor::AddTree()
 
     auto pActiveWindow = GetActiveTabWindow()->GetActiveWindow();
     pActiveWindow->SetBuffer(pTree);
-   
+
     auto pTreeModel = std::make_shared<ZepFileTree>();
     auto pRoot = pTreeModel->GetRoot();
 
@@ -459,7 +462,6 @@ void ZepEditor::UpdateWindowState()
     {
         RemoveBuffer(victim);
     }
-
 }
 
 void ZepEditor::ResetCursorTimer()
@@ -524,6 +526,64 @@ ZepTabWindow* ZepEditor::GetActiveTabWindow() const
     return m_pActiveTabWindow;
 }
 
+void ZepEditor::UpdateTabs()
+{
+    m_tabRegion->children.clear();
+    if (GetTabWindows().size() > 1)
+    {
+        // Tab region
+        for (auto& window : GetTabWindows())
+        {
+            if (window->GetActiveWindow() == nullptr)
+                continue;
+
+            // Show active buffer in tab as tab name
+            auto& buffer = window->GetActiveWindow()->GetBuffer();
+            std::string name = buffer.GetName();
+            if (m_config.shortTabNames)
+            {
+                auto pos = name.find_last_of('.');
+                if (pos != std::string::npos)
+                {
+                    name = name.substr(0, pos);
+                }
+            }
+
+            auto tabColor = GetTheme().GetColor(ThemeColor::TabActive);
+            if (ZTestFlags(buffer.GetFileFlags(), FileFlags::HasWarnings))
+            {
+                tabColor = GetTheme().GetColor(ThemeColor::Warning);
+            }
+
+            // Errors win for coloring
+            if (ZTestFlags(buffer.GetFileFlags(), FileFlags::HasErrors))
+            {
+                tabColor = GetTheme().GetColor(ThemeColor::Error);
+            }
+
+            if (window != GetActiveTabWindow())
+            {
+                // Desaturate unselected ones
+                tabColor = tabColor * .55f;
+                tabColor.w = 1.0f;
+            }
+            auto tabLength = m_pDisplay->GetTextSize((const uint8_t*)name.c_str()).x + DPI_X(textBorder) * 2;
+
+            auto spTabRegionTab = std::make_shared<TabRegionTab>();
+            spTabRegionTab->color = tabColor;
+            spTabRegionTab->name = name;
+            spTabRegionTab->pTabWindow = window;
+            spTabRegionTab->fixed_size = NVec2f(tabLength, 0.0f);
+            spTabRegionTab->layoutType = RegionLayoutType::HBox;
+            spTabRegionTab->padding = DPI_VEC2(NVec2f(textBorder, textBorder));
+            spTabRegionTab->flags = RegionFlags::Fixed;
+            m_tabRegion->children.push_back(spTabRegionTab);
+            spTabRegionTab->pParent = m_tabRegion;
+        }
+    }
+    LayoutRegion(*m_tabRegion);
+}
+
 ZepTabWindow* ZepEditor::AddTabWindow()
 {
     auto pTabWindow = new ZepTabWindow(*this);
@@ -556,7 +616,6 @@ void ZepEditor::RemoveTabWindow(ZepTabWindow* pTabWindow)
 
     delete pTabWindow;
     m_tabWindows.erase(itrFound);
-    m_tabRects.clear();
 
     if (m_tabWindows.empty())
     {
@@ -879,11 +938,12 @@ void ZepEditor::Notify(std::shared_ptr<ZepMessage> pMsg)
 {
     if (pMsg->messageId == Msg::MouseDown)
     {
-        for (auto& windowRect : m_tabRects)
+        for (auto& tab : m_tabRegion->children)
         {
-            if (windowRect.second.Contains(pMsg->pos))
+            if (tab->rect.Contains(pMsg->pos))
             {
-                SetCurrentTabWindow(windowRect.first);
+                auto pTabRegionTab = std::static_pointer_cast<TabRegionTab>(tab);
+                SetCurrentTabWindow(pTabRegionTab->pTabWindow);
             }
         }
     }
@@ -948,7 +1008,7 @@ void ZepEditor::SetDisplayRegion(const NVec2f& topLeft, const NVec2f& bottomRigh
 void ZepEditor::UpdateSize()
 {
     auto commandCount = GetCommandLines().size();
-    const float commandSize = m_pDisplay->GetFontHeightPixels() * commandCount + textBorder * 2.0f;
+    const float commandSize = m_pDisplay->GetFontHeightPixels() * commandCount + DPI_X(textBorder) * 2.0f;
     auto displaySize = m_editorRegion->rect.Size();
 
     // Regions
@@ -958,7 +1018,7 @@ void ZepEditor::UpdateSize()
     // Add tabs for extra windows
     if (GetTabWindows().size() > 1)
     {
-        m_tabRegion->fixed_size = NVec2f(0.0f, m_pDisplay->GetFontHeightPixels() + textBorder * 2);
+        m_tabRegion->fixed_size = NVec2f(0.0f, m_pDisplay->GetFontHeightPixels() + DPI_X(textBorder) * 2);
         m_tabRegion->flags = RegionFlags::Fixed;
     }
     else
@@ -991,7 +1051,7 @@ void ZepEditor::Display()
     auto& commandLines = GetCommandLines();
 
     long commandCount = long(commandLines.size());
-    const float commandSize = m_pDisplay->GetFontHeightPixels() * commandCount + textBorder * 2.0f;
+    const float commandSize = m_pDisplay->GetFontHeightPixels() * commandCount + DPI_X(textBorder) * 2.0f;
 
     auto displaySize = m_editorRegion->rect.Size();
 
@@ -1011,7 +1071,7 @@ void ZepEditor::Display()
     }
 
     // Draw command text
-    auto screenPosYPx = m_commandRegion->rect.topLeftPx + NVec2f(0.0f, textBorder);
+    auto screenPosYPx = m_commandRegion->rect.topLeftPx + NVec2f(0.0f, DPI_X(textBorder));
     for (int i = 0; i < commandSpace; i++)
     {
         if (!commandLines[i].empty())
@@ -1028,57 +1088,68 @@ void ZepEditor::Display()
     {
         // A line along the bottom of the tab region
         m_pDisplay->DrawRectFilled(
-            NRectf(NVec2f(m_tabRegion->rect.Left(), m_tabRegion->rect.Bottom() - 1), NVec2f(m_tabRegion->rect.Right(), m_tabRegion->rect.Bottom())), GetTheme().GetColor(ThemeColor::TabInactive));
+            NRectf(NVec2f(m_tabRegion->rect.Left(), m_tabRegion->rect.Bottom() - DPI_Y(1)), NVec2f(m_tabRegion->rect.Right(), m_tabRegion->rect.Bottom())), GetTheme().GetColor(ThemeColor::TabInactive));
     }
 
-    m_tabRects.clear();
-    if (GetTabWindows().size() > 1)
+    // Figure out the active region
+    auto pActiveTabWindow = GetActiveTabWindow();
+    NRectf tabRect;
+    for (auto& tab : m_tabRegion->children)
     {
-        // Tab region
-        // TODO Handle it when tabs are bigger than the available width!
-        NVec2f currentTab = m_tabRegion->rect.topLeftPx;
-        for (auto& window : GetTabWindows())
+        if (std::static_pointer_cast<TabRegionTab>(tab)->pTabWindow == pActiveTabWindow)
         {
-            // Show active buffer in tab as tab name
-            auto& buffer = window->GetActiveWindow()->GetBuffer();
-            std::string name = buffer.GetName();
-            if (m_config.shortTabNames)
-            {
-                auto pos = name.find_last_of('.');
-                if (pos != std::string::npos)
-                {
-                    name = name.substr(0, pos);
-                }
-            }
-
-            auto tabColor = GetTheme().GetColor(ThemeColor::TabActive);
-            if (ZTestFlags(buffer.GetFileFlags(), FileFlags::HasWarnings))
-            {
-                tabColor = GetTheme().GetColor(ThemeColor::Warning);
-            }
-            // Errors win for coloring
-            if (ZTestFlags(buffer.GetFileFlags(), FileFlags::HasErrors))
-            {
-                tabColor = GetTheme().GetColor(ThemeColor::Error);
-            }
-            if (window != GetActiveTabWindow())
-            {
-                // Desaturate unselected ones
-                tabColor = tabColor * .55f;
-                tabColor.w = 1.0f;
-            }
-            auto tabLength = m_pDisplay->GetTextSize((const uint8_t*)name.c_str()).x + textBorder * 2;
-
-            // Tab background rect
-            NRectf tabRect(currentTab, currentTab + NVec2f(tabLength, m_tabRegion->rect.Height()));
-            m_pDisplay->DrawRectFilled(tabRect, tabColor);
-
-            // Tab text
-            m_pDisplay->DrawChars(currentTab + NVec2f(textBorder, textBorder), NVec4f(1.0f), (const uint8_t*)name.c_str());
-
-            currentTab.x += tabLength + textBorder;
-            m_tabRects[window] = tabRect;
+            tabRect = tab->rect;
+            break;
         }
+    }
+
+    // Figure out the virtual vs real page size of the tabs
+    float virtualSize = 0.0f;
+    float tabRegionSize = m_tabRegion->rect.Width();
+    if (!m_tabRegion->children.empty())
+    {
+        virtualSize = m_tabRegion->children.back()->rect.Right();
+    }
+   
+    // Move the tab bar origin if approriate
+    if (tabRect.Width() != 0.0f)
+    {
+        if ((tabRect.Left() - tabRect.Width() + m_tabOffsetX) < m_tabRegion->rect.Left())
+        {
+            m_tabOffsetX += m_tabRegion->rect.Left() - (tabRect.Left() + m_tabOffsetX - tabRect.Width());
+        }
+        else if ((tabRect.Right() + m_tabOffsetX + tabRect.Width()) > m_tabRegion->rect.Right())
+        {
+            m_tabOffsetX -= (tabRect.Right() + m_tabOffsetX - m_tabRegion->rect.Right() + tabRect.Width());
+        }
+    }
+
+    // Clamp it
+    m_tabOffsetX = std::min(m_tabOffsetX, 0.0f); 
+    m_tabOffsetX = std::max(std::min(tabRegionSize - virtualSize, 0.0f), m_tabOffsetX); 
+
+    // Now display the tabs
+    for (auto& tab : m_tabRegion->children)
+    {
+        auto spTabRegionTab = std::static_pointer_cast<TabRegionTab>(tab);
+
+        auto rc = spTabRegionTab->rect;
+        rc.Adjust(m_tabOffsetX, 0.0f);
+
+        // Tab background rect
+        m_pDisplay->DrawRectFilled(rc, spTabRegionTab->color);
+
+        auto lum = Luminosity(spTabRegionTab->color);
+        auto textCol = NVec4f(1.0f);
+        if (lum > .5f)
+        {
+            textCol.x = 0.0f;
+            textCol.y = 0.0f;
+            textCol.z = 0.0f;
+        }
+
+        // Tab text
+        m_pDisplay->DrawChars(rc.topLeftPx + DPI_VEC2(NVec2f(textBorder, 0.0f)), textCol, (const uint8_t*)spTabRegionTab->name.c_str());
     }
 
     // Display the tab
@@ -1086,7 +1157,7 @@ void ZepEditor::Display()
     {
         GetActiveTabWindow()->Display();
     }
-}
+} // namespace Zep
 
 ZepTheme& ZepEditor::GetTheme() const
 {
