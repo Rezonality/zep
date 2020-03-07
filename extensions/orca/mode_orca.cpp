@@ -69,8 +69,8 @@ void ZepMode_Orca::PreDisplay(ZepWindow& window)
 
 }
 
-static std::set<std::string> orca_keywords = {};
-static std::set<std::string> orca_identifiers = {};
+static std::unordered_set<std::string> orca_keywords = {};
+static std::unordered_set<std::string> orca_identifiers = {};
 
 void ZepMode_Orca::Register(ZepEditor& editor)
 {

@@ -9,7 +9,7 @@ namespace Zep
 // Most of these keyword values taken from : https://github.com/BalazsJako/ImGuiColorTextEdit
 // another great ImGui based text editor.
 // I'll fill these out when I get time.  At the moment the syntax code matches on these, comments and numbers.
-static std::set<std::string> cpp_keywords = {
+static std::unordered_set<std::string> cpp_keywords = {
     "alignas", "alignof", "and", "and_eq", "asm", "atomic_cancel", "atomic_commit", "atomic_noexcept", "auto", "bitand", "bitor", "bool", "break", "case", "catch", "char", "char16_t", "char32_t", "class",
     "compl", "concept", "const", "constexpr", "const_cast", "continue", "decltype", "default", "delete", "do", "double", "dynamic_cast", "else", "enum", "explicit", "export", "extern", "false", "float",
     "for", "friend", "goto", "if", "import", "inline", "int", "long", "module", "mutable", "namespace", "new", "noexcept", "not", "not_eq", "nullptr", "operator", "or", "or_eq", "private", "protected", "public",
@@ -18,16 +18,16 @@ static std::set<std::string> cpp_keywords = {
     "uint32_t", "int32_t", "uint64_t", "int64_t", "size_t", "uint8_t", "int8_t", "int16_t", "uint16_t"
 };
 
-static std::set<std::string> cpp_identifiers = {
+static std::unordered_set<std::string> cpp_identifiers = {
     "abort", "abs", "acos", "asin", "atan", "atexit", "atof", "atoi", "atol", "ceil", "clock", "cosh", "ctime", "div", "exit", "fabs", "floor", "fmod", "getchar", "getenv", "isalnum", "isalpha", "isdigit", "isgraph",
     "ispunct", "isspace", "isupper", "kbhit", "log10", "log2", "log", "memcmp", "modf", "pow", "printf", "sprintf", "snprintf", "putchar", "putenv", "puts", "rand", "remove", "rename", "sinh", "sqrt", "srand", "strcat", "strcmp", "strerror", "time", "tolower", "toupper",
     "std", "string", "vector", "map", "unordered_map", "set", "unordered_set", "min", "max"
 };
 
-static std::set<std::string> toml_keywords = {};
-static std::set<std::string> toml_identifiers = {};
+static std::unordered_set<std::string> toml_keywords = {};
+static std::unordered_set<std::string> toml_identifiers = {};
 
-static std::set<std::string> hlsl_keywords = {
+static std::unordered_set<std::string> hlsl_keywords = {
     "CompileShader", "const", "continue", "ComputeShader", "ConsumeStructuredBuffer", "default", "DepthStencilState", "DepthStencilView", "discard", "do", "double", "DomainShader", "dword", "else", "export", "extern",
     "false", "float", "for", "fxgroup", "GeometryShader", "groupshared", "half", "Hullshader", "if", "in", "inline", "inout", "InputPatch", "int", "interface", "line", "lineadj", "linear", "LineStream", "matrix", "min16float",
     "min10float", "min16int", "min12int", "min16uint", "namespace", "nointerpolation", "noperspective", "NULL", "out", "OutputPatch", "packoffset", "pass", "pixelfragment", "PixelShader", "point", "PointStream", "precise",
@@ -40,7 +40,7 @@ static std::set<std::string> hlsl_keywords = {
     "half2x2", "half3x2", "half4x2", "half1x3", "half2x3", "half3x3", "half4x3", "half1x4", "half2x4", "half3x4", "half4x4"
 };
 
-static std::set<std::string> hlsl_identifiers = {
+static std::unordered_set<std::string> hlsl_identifiers = {
     "abort", "abs", "acos", "all", "AllMemoryBarrier", "AllMemoryBarrierWithGroupSync", "any", "asdouble", "asfloat", "asin", "asint", "asint", "asuint", "asuint", "atan", "atan2", "ceil", "CheckAccessFullyMapped", "clamp",
     "clip", "cos", "cosh", "countbits", "cross", "D3DCOLORtoUBYTE4", "ddx", "ddx_coarse", "ddx_fine", "ddy", "ddy_coarse", "ddy_fine", "degrees", "determinant", "DeviceMemoryBarrier", "DeviceMemoryBarrierWithGroupSync",
     "distance", "dot", "dst", "errorf", "EvaluateAttributeAtCentroid", "EvaluateAttributeAtSample", "EvaluateAttributeSnapped", "exp", "exp2", "f16tof32", "f32tof16", "faceforward", "firstbithigh", "firstbitlow", "floor",
@@ -53,7 +53,7 @@ static std::set<std::string> hlsl_identifiers = {
 };
 
 // From here: https://stackoverflow.com/a/6232367/18942
-static std::set<std::string> glsl_keywords{
+static std::unordered_set<std::string> glsl_keywords{
     "void", "#version", "attribute", "uniform", "varying", "layout", "centroid", "flat", "smooth", "noperspective", "patch", "sample", "subroutine", "in", "out", "inout", "invariant", "discard", "mat2", "mat3", "mat4", "dmat2", "dmat3", "dmat4",
     "mat2x2", "mat2x3", "mat2x4", "dmat2x2", "dmat2x3", "dmat2x4", "mat3x2", "mat3x3", "mat3x4", "dmat3x2", "dmat3x3", "dmat3x4", "mat4x2", "mat4x3", "mat4x4", "dmat4x2", "dmat4x3", "dmat4x4", "vec2", "vec3",
     "vec4", "ivec2", "ivec3", "ivec4", "bvec2", "bvec3", "bvec4", "dvec2", "dvec3", "dvec4", "uvec2", "uvec3", "uvec4", "lowp", "mediump", "highp", "precision", "sampler1D", "sampler2D", "sampler3D",
@@ -63,23 +63,23 @@ static std::set<std::string> glsl_keywords{
     "usampler2DMS", "sampler2DMSArray", "isampler2DMSArray", "usampler2DMSArray", "samplerCubeArray", "samplerCubeArrayShadow", "isamplerCubeArray", "usamplerCubeArray"
 };
 
-static std::set<std::string> glsl_identifiers = {
+static std::unordered_set<std::string> glsl_identifiers = {
     "abort", "abs", "acos", "asin", "atan", "atexit", "atof", "atoi", "atol", "ceil", "clock", "cosh", "ctime", "div", "exit", "fabs", "floor", "fmod", "getchar", "getenv", "isalnum", "isalpha", "isdigit", "isgraph",
     "ispunct", "isspace", "isupper", "kbhit", "log10", "log2", "log", "memcmp", "modf", "pow", "putchar", "putenv", "puts", "rand", "remove", "rename", "sinh", "sqrt", "srand", "strcat", "strcmp", "strerror", "time", "tolower", "toupper",
     "gl_Position"
 };
 
-static std::set<std::string> c_keywords = {
+static std::unordered_set<std::string> c_keywords = {
     "auto", "break", "case", "char", "const", "continue", "default", "do", "double", "else", "enum", "extern", "float", "for", "goto", "if", "inline", "int", "long", "register", "restrict", "return", "short",
     "signed", "sizeof", "static", "struct", "switch", "typedef", "union", "unsigned", "void", "volatile", "while", "_Alignas", "_Alignof", "_Atomic", "_Bool", "_Complex", "_Generic", "_Imaginary",
     "_Noreturn", "_Static_assert", "_Thread_local"
 };
 
-static std::set<std::string> c_identifiers = {
+static std::unordered_set<std::string> c_identifiers = {
     "abort", "abs", "acos", "asin", "atan", "atexit", "atof", "atoi", "atol", "ceil", "clock", "cosh", "ctime", "div", "exit", "fabs", "floor", "fmod", "getchar", "getenv", "isalnum", "isalpha", "isdigit", "isgraph",
     "ispunct", "isspace", "isupper", "kbhit", "log10", "log2", "log", "memcmp", "modf", "pow", "putchar", "putenv", "puts", "rand", "remove", "rename", "sinh", "sqrt", "srand", "strcat", "strcmp", "strerror", "time", "tolower", "toupper"
 };
-static std::set<std::string> sql_keywords = {
+static std::unordered_set<std::string> sql_keywords = {
     "ADD", "EXCEPT", "PERCENT", "ALL", "EXEC", "PLAN", "ALTER", "EXECUTE", "PRECISION", "AND", "EXISTS", "PRIMARY", "ANY", "EXIT", "PRINT", "AS", "FETCH", "PROC", "ASC", "FILE", "PROCEDURE",
     "AUTHORIZATION", "FILLFACTOR", "PUBLIC", "BACKUP", "FOR", "RAISERROR", "BEGIN", "FOREIGN", "READ", "BETWEEN", "FREETEXT", "READTEXT", "BREAK", "FREETEXTTABLE", "RECONFIGURE",
     "BROWSE", "FROM", "REFERENCES", "BULK", "FULL", "REPLICATION", "BY", "FUNCTION", "RESTORE", "CASCADE", "GOTO", "RESTRICT", "CASE", "GRANT", "RETURN", "CHECK", "GROUP", "REVOKE",
@@ -92,17 +92,17 @@ static std::set<std::string> sql_keywords = {
     "DUMMY", "OPENXML", "WAITFOR", "DUMP", "OPTION", "WHEN", "ELSE", "OR", "WHERE", "END", "ORDER", "WHILE", "ERRLVL", "OUTER", "WITH", "ESCAPE", "OVER", "WRITETEXT"
 };
 
-static std::set<std::string> cmake_keywords = {
+static std::unordered_set<std::string> cmake_keywords = {
     "option", "add_compile_options", "cmake_minimum_required", "project", "message", "add_dependencies", "add_test", "find_package", "include_directories", "configure_file", "target_link_libraries", "source_group", "set", "set_property", "include", "add_executable", "add_library", "if", "elseif", "endif", "find", "glob"
 };
 
-static std::set<std::string> cmake_identifiers = {};
+static std::unordered_set<std::string> cmake_identifiers = {};
 
-static std::set<std::string> lua_keywords = {
+static std::unordered_set<std::string> lua_keywords = {
     "and", "break", "do", "", "else", "elseif", "end", "false", "for", "function", "if", "in", "", "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while"
 };
 
-static std::set<std::string> lua_identifiers = {
+static std::unordered_set<std::string> lua_identifiers = {
     "assert", "collectgarbage", "dofile", "error", "getmetatable", "ipairs", "loadfile", "load", "loadstring", "next", "pairs", "pcall", "print", "rawequal", "rawlen", "rawget", "rawset",
     "select", "setmetatable", "tonumber", "tostring", "type", "xpcall", "_G", "_VERSION", "arshift", "band", "bnot", "bor", "bxor", "btest", "extract", "lrotate", "lshift", "replace",
     "rrotate", "rshift", "create", "resume", "running", "status", "wrap", "yield", "isyieldable", "debug", "getuservalue", "gethook", "getinfo", "getlocal", "getregistry", "getmetatable",
@@ -115,16 +115,16 @@ static std::set<std::string> lua_identifiers = {
     "coroutine", "table", "io", "os", "string", "uint8_t", "bit32", "math", "debug", "package"
 };
 
-static std::set<std::string> lisp_keywords = {
+static std::unordered_set<std::string> lisp_keywords = {
     "+", "-", "eval"
 };
 
-static std::set<std::string> lisp_identifiers = {
+static std::unordered_set<std::string> lisp_identifiers = {
     "cdr", "car"
 };
 
-static std::set<std::string> tree_keywords = {};
-static std::set<std::string> tree_identifiers = {};
+static std::unordered_set<std::string> tree_keywords = {};
+static std::unordered_set<std::string> tree_identifiers = {};
 
 void RegisterSyntaxProviders(ZepEditor& editor)
 {

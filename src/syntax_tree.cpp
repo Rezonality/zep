@@ -12,8 +12,8 @@ namespace Zep
 {
 
 ZepSyntax_Tree::ZepSyntax_Tree(ZepBuffer& buffer,
-    const std::set<std::string>& keywords,
-    const std::set<std::string>& identifiers,
+    const std::unordered_set<std::string>& keywords,
+    const std::unordered_set<std::string>& identifiers,
     uint32_t flags)
     : ZepSyntax(buffer, keywords, identifiers, flags)
 {

@@ -5,7 +5,7 @@
 #include <atomic>
 #include <future>
 #include <memory>
-#include <set>
+#include <unordered_set>
 #include <vector>
 
 namespace Zep
@@ -41,8 +41,8 @@ class ZepSyntax : public ZepComponent
 {
 public:
     ZepSyntax(ZepBuffer& buffer,
-        const std::set<std::string>& keywords = std::set<std::string>{},
-        const std::set<std::string>& identifiers = std::set<std::string>{},
+        const std::unordered_set<std::string>& keywords = std::unordered_set<std::string>{},
+        const std::unordered_set<std::string>& identifiers = std::unordered_set<std::string>{},
         uint32_t flags = 0);
     virtual ~ZepSyntax();
 
@@ -73,8 +73,8 @@ protected:
     std::atomic<long> m_targetChar = { 0 };
     std::vector<uint32_t> m_multiCommentStarts;
     std::vector<uint32_t> m_multiCommentEnds;
-    std::set<std::string> m_keywords;
-    std::set<std::string> m_identifiers;
+    std::unordered_set<std::string> m_keywords;
+    std::unordered_set<std::string> m_identifiers;
     std::atomic<bool> m_stop;
     std::vector<std::shared_ptr<ZepSyntaxAdorn>> m_adornments;
     uint32_t m_flags;
