@@ -5,8 +5,8 @@
 #include "zep/mcommon/logger.h"
 #include "zep/mode_search.h"
 #include "zep/regress.h"
-#include "zep/tab_window.h"
 #include "zep/syntax.h"
+#include "zep/tab_window.h"
 
 namespace Zep
 {
@@ -2007,7 +2007,26 @@ bool ZepMode::HandleExCommand(std::string strCommand)
         {
             if (buffer.GetSyntax())
             {
-                buffer.GetSyntax()->BeginFlash(0.33f);
+                SyntaxFlashType flashType = SyntaxFlashType::Cylon;
+                float time = 1.0f;
+                auto strTok = string_split(strCommand, " ");
+                if (strTok.size() > 1)
+                {
+                    if (std::stoi(strTok[1]) > 0)
+                    {
+                        flashType = SyntaxFlashType::Flash;
+                    }
+                }
+                if (strTok.size() > 2)
+                {
+                    try
+                    {
+                        time = std::stof(strTok[2]);
+                    }
+                    catch(std::exception&)
+                    { }
+                }
+                buffer.GetSyntax()->BeginFlash(time, flashType);
             }
         }
         else if (strCommand.find(":ZTestMarkers") == 0)

@@ -75,8 +75,7 @@ void ZepTheme::SetDarkTheme()
     m_colors[ThemeColor::WidgetActive] = m_colors[ThemeColor::TabActive];
     m_colors[ThemeColor::WidgetInactive] = m_colors[ThemeColor::TabInactive];
     m_colors[ThemeColor::WidgetBackground] = NVec4f(.2f, .2f, .2f, 1.0f);
-    
-    m_colors[ThemeColor::FlashColor] = NVec4f(.8f, .4f, .05f, 1.0f);
+    m_colors[ThemeColor::FlashColor] = NVec4f(.80f, .40f, .05f, 1.0f);
 }
 
 void ZepTheme::SetLightTheme()
@@ -120,7 +119,7 @@ void ZepTheme::SetLightTheme()
     m_colors[ThemeColor::WidgetInactive] = m_colors[ThemeColor::TabInactive];
     m_colors[ThemeColor::WidgetBackground] = NVec4f(.8f, .8f, .8f, 1.0f);
     
-    m_colors[ThemeColor::FlashColor] = NVec4f(.8f, .4f, .05f, 1.0f);
+    m_colors[ThemeColor::FlashColor] = NVec4f(0.8f, .4f, .05f, 1.0f);
 }
 
 ThemeColor ZepTheme::GetUniqueColor(uint32_t index) const

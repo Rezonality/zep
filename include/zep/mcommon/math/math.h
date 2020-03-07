@@ -1,7 +1,8 @@
 #pragma once
 
-#include <ostream>
 #include <cmath>
+#include <ostream>
+#include <algorithm>
 
 // 2D and 4D vectors, used for area and color calculations.
 // Some helpers for color conversion too.
@@ -11,6 +12,7 @@
 namespace Zep
 {
 
+const inline float ZPI = 3.14159862f;
 template <class T>
 struct NVec2
 {
@@ -113,8 +115,8 @@ inline T ManhattanDistance(const NVec2<T>& l, const NVec2<T>& r)
     return std::abs(l.x - r.x) + std::abs(r.y - l.y);
 }
 
-template<class T>
-std::ostream& operator << (std::ostream& str, const NVec2<T>& v)
+template <class T>
+std::ostream& operator<<(std::ostream& str, const NVec2<T>& v)
 {
     str << "(" << v.x << ", " << v.y << ")";
     return str;
@@ -260,6 +262,13 @@ inline float Luminosity(const NVec4<float>& intensity)
     return (0.2126f * intensity.x + 0.7152f * intensity.y + 0.0722f * intensity.z);
 }
 
+inline NVec4<float> Mix(const NVec4<float>& c1, const NVec4<float>& c2, float factor)
+{
+    NVec4<float> ret = c1 * (1.0f - factor);
+    ret = ret + (c2 * factor);
+    return ret;
+}
+
 inline NVec4<float> HSVToRGB(float h, float s, float v)
 {
     auto r = 0.0f, g = 0.0f, b = 0.0f;
@@ -325,14 +334,13 @@ inline NVec4<float> HSVToRGB(float h, float s, float v)
             b = q;
             break;
         }
-
     }
 
     return NVec4<float>(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f);
 }
 
-template<class T>
-inline std::ostream& operator<< (std::ostream& str, const NVec4<T>& region)
+template <class T>
+inline std::ostream& operator<<(std::ostream& str, const NVec4<T>& region)
 {
     str << "(" << region.x << ", " << region.y << ", " << region.z << ", " << region.w << ")";
     return str;
@@ -341,20 +349,19 @@ inline std::ostream& operator<< (std::ostream& str, const NVec4<T>& region)
 using NVec4f = NVec4<float>;
 using NVec4i = NVec4<long>;
 
-template<class T>
+template <class T>
 struct NRect
 {
     NRect(const NVec2<T>& topLeft, const NVec2<T>& bottomRight)
-        : topLeftPx(topLeft),
-        bottomRightPx(bottomRight)
+        : topLeftPx(topLeft)
+        , bottomRightPx(bottomRight)
     {
     }
 
     NRect(T left, T top, T width, T height)
-        : topLeftPx(NVec2<T>(left, top)),
-        bottomRightPx(NVec2<T>(left, top) + NVec2<T>(width, height)) 
+        : topLeftPx(NVec2<T>(left, top))
+        , bottomRightPx(NVec2<T>(left, top) + NVec2<T>(width, height))
     {
-
     }
 
     NRect()
@@ -366,8 +373,7 @@ struct NRect
 
     bool Contains(const NVec2<T>& pt) const
     {
-        return topLeftPx.x <= pt.x && topLeftPx.y <= pt.y &&
-            bottomRightPx.x > pt.x && bottomRightPx.y > pt.y;
+        return topLeftPx.x <= pt.x && topLeftPx.y <= pt.y && bottomRightPx.x > pt.x && bottomRightPx.y > pt.y;
     }
 
     NVec2f BottomLeft() const
@@ -441,7 +447,7 @@ struct NRect
         bottomRightPx.x += x;
         bottomRightPx.y += y;
     }
-    
+
     void Move(float x, float y)
     {
         auto width = Width();
@@ -451,7 +457,6 @@ struct NRect
         bottomRightPx.x = x + width;
         bottomRightPx.y = y + height;
     }
-
 
     bool operator==(const NRect<T>& region) const
     {
@@ -473,8 +478,8 @@ inline NRect<T> operator-(const NRect<T>& lhs, const NRect<T>& rhs)
 {
     return NRect<T>(lhs.topLeftPx.x - rhs.topLeftPx.x, lhs.bottomRightPx.y - rhs.topLeftPx.y);
 }
-template<class T>
-inline std::ostream& operator<< (std::ostream& str, const NRect<T>& region)
+template <class T>
+inline std::ostream& operator<<(std::ostream& str, const NRect<T>& region)
 {
     str << region.topLeftPx << ", " << region.bottomRightPx << ", size: " << region.Width() << ", " << region.Height();
     return str;
@@ -486,7 +491,7 @@ enum FitCriteria
     Y
 };
 
-template<class T>
+template <class T>
 inline bool NRectFits(const NRect<T>& area, const NRect<T>& rect, FitCriteria criteria)
 {
     if (criteria == FitCriteria::X)
@@ -520,5 +525,19 @@ inline bool NRectFits(const NRect<T>& area, const NRect<T>& rect, FitCriteria cr
 
 using NRectf = NRect<float>;
 
+inline float ZClamp(float x, float lowerlimit, float upperlimit)
+{
+    x = std::max(lowerlimit, x);
+    x = std::min(upperlimit, x);
+    return x;
+}
 
-} // mcommon namespace
+inline float ZSmoothStep(float edge0, float edge1, float x)
+{
+    // Scale, bias and saturate x to 0..1 range
+    x = ZClamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+    // Evaluate polynomial
+    return x * x * (3 - 2 * x);
+}
+
+} // namespace Zep

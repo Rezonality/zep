@@ -59,23 +59,65 @@ SyntaxResult ZepSyntax::GetSyntaxAt(long offset) const
         }
     }
 
-    if (m_flashRange.x != m_flashRange.y &&
-        m_flashRange.x <= offset && m_flashRange.y >= offset)
+    if (m_flashRange.x != m_flashRange.y && m_flashRange.x <= offset && m_flashRange.y >= offset)
     {
         auto elapsed = timer_get_elapsed_seconds(m_flashTimer);
         if (elapsed < m_flashDuration)
         {
+            // first get the preferred back color
+            NVec4f backColor;
+            if (result.background != ThemeColor::None)
+            {
+                backColor = GetEditor().GetTheme().GetColor(result.background);
+            }
+            else
+            {
+                backColor = GetEditor().GetTheme().GetColor(ThemeColor::Background);
+            }
+
+            // Swap it out for our custom flash color
             float time = float(elapsed) / m_flashDuration;
+
             result.background = ThemeColor::Custom;
             result.customBackgroundColor = NVec4f(GetEditor().GetTheme().GetColor(ThemeColor::FlashColor));
-            result.customBackgroundColor.w = std::min(1.0f,  float(sin(time * 1.0f * 3.14159))* exp2(time));
+
+            if (m_flashType == SyntaxFlashType::Flash)
+            {
+                result.customBackgroundColor = Mix(backColor, result.customBackgroundColor, sin(time * ZPI));
+            }
+            else
+            {
+                float t = std::abs(sin(time * ZPI * .5f)) * 2.0f + .5f;
+                if (t > 1.0f)
+                {
+                    t = 1.0f - (t - 1.0f);
+                }
+
+                // https://codegolf.stackexchange.com/a/22629
+                // Light up the characters with a bright spot in the center, and a
+                // ten character fall off; walk through the text and return
+                auto bellCurve = [](float x) {
+                    float b = 0.0f;
+                    float c = 6.0f;
+                    return std::exp((-((x - b) * (x - b)) / 2) * (c * c));
+                };
+
+                auto range = m_flashRange.y - m_flashRange.x;
+                auto center = range * t;
+
+                // Sample a bell curve about the current point, but don't draw the head
+                auto distance = bellCurve(((offset - center) / range));
+
+                distance = std::min(1.0f, distance);
+                distance = std::max(0.0f, distance);
+                result.customBackgroundColor = Mix(backColor, result.customBackgroundColor, float(distance));
+            }
         }
         else
         {
             EndFlash();
         }
     }
-
     return result;
 }
 
@@ -143,8 +185,7 @@ void ZepSyntax::Notify(std::shared_ptr<ZepMessage> spMsg)
             m_syntax.erase(m_syntax.begin() + spBufferMsg->startLocation, m_syntax.begin() + spBufferMsg->endLocation);
             QueueUpdateSyntax(spBufferMsg->startLocation, spBufferMsg->endLocation);
         }
-        else if (spBufferMsg->type == BufferMessageType::TextAdded ||
-            spBufferMsg->type == BufferMessageType::Loaded)
+        else if (spBufferMsg->type == BufferMessageType::TextAdded || spBufferMsg->type == BufferMessageType::Loaded)
         {
             Interrupt();
             m_syntax.insert(m_syntax.begin() + spBufferMsg->startLocation, spBufferMsg->endLocation - spBufferMsg->startLocation, SyntaxData{});
@@ -167,7 +208,6 @@ void ZepSyntax::UpdateSyntax()
 
     assert(std::distance(itrCurrent, itrEnd) < int(m_syntax.size()));
     assert(m_syntax.size() == buffer.size());
-
 
     std::string delim(" \t.\n;(){}=:");
     std::string lineEnd("\n");
@@ -332,10 +372,11 @@ void ZepSyntax::EndFlash() const
     GetEditor().SetFlags(ZClearFlags(GetEditor().GetFlags(), ZepEditorFlags::FastUpdate));
 }
 
-void ZepSyntax::BeginFlash(float seconds, const NVec2i& range)
+void ZepSyntax::BeginFlash(float seconds, SyntaxFlashType flashType, const NVec2i& range)
 {
     m_flashRange = range;
     m_flashDuration = seconds;
+    m_flashType = flashType;
     timer_restart(m_flashTimer);
 
     if (range == NVec2i(0))
