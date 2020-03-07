@@ -33,24 +33,50 @@ ZepSyntax::~ZepSyntax()
     Interrupt();
 }
 
-SyntaxData ZepSyntax::GetSyntaxAt(long offset) const
+SyntaxResult ZepSyntax::GetSyntaxAt(long offset) const
 {
+    Zep::SyntaxResult result;
+
     Wait();
+
     if (m_processedChar < offset || (long)m_syntax.size() <= offset)
     {
-        return SyntaxData{};
+        return result;
     }
 
+    result.background = m_syntax[offset].background;
+    result.foreground = m_syntax[offset].foreground;
+    result.underline = m_syntax[offset].underline;
+
+    bool found = false;
     for (auto& adorn : m_adornments)
     {
-        bool found = false;
-        auto data = adorn->GetSyntaxAt(offset, found);
+        auto adornResult = adorn->GetSyntaxAt(offset, found);
         if (found)
         {
-            return data;
+            result = adornResult;
+            break;
         }
     }
-    return m_syntax[offset];
+
+    if (m_flashRange.x != m_flashRange.y &&
+        m_flashRange.x <= offset && m_flashRange.y >= offset)
+    {
+        auto elapsed = timer_get_elapsed_seconds(m_flashTimer);
+        if (elapsed < m_flashDuration)
+        {
+            float time = float(elapsed) / m_flashDuration;
+            result.background = ThemeColor::Custom;
+            result.customBackgroundColor = NVec4f(GetEditor().GetTheme().GetColor(ThemeColor::FlashColor));
+            result.customBackgroundColor.w = std::min(1.0f,  float(sin(time * 1.0f * 3.14159))* exp2(time));
+        }
+        else
+        {
+            EndFlash();
+        }
+    }
+
+    return result;
 }
 
 void ZepSyntax::Wait() const
@@ -297,6 +323,50 @@ void ZepSyntax::UpdateSyntax()
     // Reset the target to the beginning
     m_targetChar = long(0);
     m_processedChar = long(buffer.size() - 1);
+}
+
+void ZepSyntax::EndFlash() const
+{
+    m_flashRange = NVec2<ByteIndex>(0, 0);
+
+    GetEditor().SetFlags(ZClearFlags(GetEditor().GetFlags(), ZepEditorFlags::FastUpdate));
+}
+
+void ZepSyntax::BeginFlash(float seconds, const NVec2i& range)
+{
+    m_flashRange = range;
+    m_flashDuration = seconds;
+    timer_restart(m_flashTimer);
+
+    if (range == NVec2i(0))
+    {
+        m_flashRange = NVec2i(long(0), long(m_syntax.size() - 1));
+    }
+    GetEditor().SetFlags(ZSetFlags(GetEditor().GetFlags(), ZepEditorFlags::FastUpdate));
+}
+
+const NVec4f& ZepSyntax::ToBackgroundColor(const SyntaxResult& res) const
+{
+    if (res.background == ThemeColor::Custom)
+    {
+        return res.customBackgroundColor;
+    }
+    else
+    {
+        return m_buffer.GetTheme().GetColor(res.background);
+    }
+}
+
+const NVec4f& ZepSyntax::ToForegroundColor(const SyntaxResult& res) const
+{
+    if (res.foreground == ThemeColor::Custom)
+    {
+        return res.customForegroundColor;
+    }
+    else
+    {
+        return m_buffer.GetTheme().GetColor(res.foreground);
+    }
 }
 
 } // namespace Zep

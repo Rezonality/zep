@@ -47,9 +47,9 @@ void ZepSyntaxAdorn_RainbowBrackets::Notify(std::shared_ptr<ZepMessage> spMsg)
     }
 }
 
-SyntaxData ZepSyntaxAdorn_RainbowBrackets::GetSyntaxAt(long offset, bool& found) const
+SyntaxResult ZepSyntaxAdorn_RainbowBrackets::GetSyntaxAt(long offset, bool& found) const
 {
-    SyntaxData data;
+    SyntaxResult data;
     auto itr = m_brackets.find(offset);
     if (itr == m_brackets.end())
     {

@@ -14,7 +14,7 @@ public:
         uint32_t flags = 0);
 
     virtual void UpdateSyntax() override;
-    virtual SyntaxData GetSyntaxAt(long index) const override;
+    virtual SyntaxResult GetSyntaxAt(long index) const override;
 };
 
 } // namespace Zep

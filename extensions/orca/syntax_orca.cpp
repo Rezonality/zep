@@ -22,12 +22,12 @@ ZepSyntax_Orca::ZepSyntax_Orca(ZepBuffer& buffer,
     m_adornments.clear();
 }
 
-SyntaxData ZepSyntax_Orca::GetSyntaxAt(long index) const
+SyntaxResult ZepSyntax_Orca::GetSyntaxAt(long index) const
 {
     auto& buffer = m_buffer.GetText();
     auto token = buffer[index];
 
-    SyntaxData data;
+    SyntaxResult data;
     if (token == ' ' || token == '.')
     {
         data.foreground = ThemeColor::Whitespace;

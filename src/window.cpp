@@ -816,9 +816,14 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
             }
 
             // If the syntax overrides the background, show it first
-            if (pSyntax && pSyntax->GetSyntaxAt(cp.byteIndex).background != ThemeColor::None)
+            if (pSyntax)
             {
-                display.DrawRectFilled(charRect, m_pBuffer->GetTheme().GetColor(pSyntax->GetSyntaxAt(cp.byteIndex).background));
+                auto syntaxResult = pSyntax->GetSyntaxAt(cp.byteIndex);
+                if (syntaxResult.background != ThemeColor::None)
+                {
+                    auto themeCol = pSyntax->ToBackgroundColor(syntaxResult);
+                    display.DrawRectFilled(charRect, themeCol);
+                }
             }
 
             // Show any markers
@@ -907,7 +912,15 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                 {
                     if (pSyntax)
                     {
-                        col = m_pBuffer->GetTheme().GetColor(pSyntax->GetSyntaxAt(cp.byteIndex).foreground);
+                        auto syntaxResult = pSyntax->GetSyntaxAt(cp.byteIndex);
+                        if (syntaxResult.foreground != ThemeColor::None)
+                        {
+                            col = pSyntax->ToForegroundColor(syntaxResult);
+                        }
+                        else
+                        {
+                            col = m_pBuffer->GetTheme().GetColor(ThemeColor::Text);
+                        }
                     }
                     else
                     {
@@ -915,12 +928,14 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                     }
                 }
 
+                // If the syntax overrides the background, show it first
                 if (pSyntax)
                 {
-                    auto backgroundColor = pSyntax->GetSyntaxAt(cp.byteIndex).background;
-                    if (backgroundColor != ThemeColor::None)
+                    auto syntaxResult = pSyntax->GetSyntaxAt(cp.byteIndex);
+                    if (syntaxResult.background != ThemeColor::None)
                     {
-                        display.DrawRectFilled(NRectf(centerChar - NVec2f(1.0f, 1.0f), centerChar + NVec2f(1.0f, 1.0f)), m_pBuffer->GetTheme().GetColor(backgroundColor));
+                        auto backCol = pSyntax->ToBackgroundColor(syntaxResult);
+                        display.DrawRectFilled(NRectf(centerChar - NVec2f(1.0f, 1.0f), centerChar + NVec2f(1.0f, 1.0f)), backCol);
                     }
                 }
 

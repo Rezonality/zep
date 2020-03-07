@@ -41,6 +41,8 @@ enum class ThemeColor
     WidgetBackground,
     WidgetActive,
     WidgetInactive,
+    FlashColor,
+    Custom,
 
     // Last in the list!
     // A set of pregenerated, easy to differentiate unique colors
@@ -75,7 +77,7 @@ public:
     ZepTheme();
     virtual ~ZepTheme() {}
 
-    virtual NVec4f GetColor(ThemeColor themeColor) const;
+    virtual const NVec4f& GetColor(ThemeColor themeColor) const;
     virtual NVec4f GetComplement(const NVec4f& col, const NVec4f& adjust = NVec4f(0.0f)) const;
     virtual ThemeColor GetUniqueColor(uint32_t id) const;
 

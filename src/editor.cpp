@@ -985,7 +985,10 @@ bool ZepEditor::RefreshRequired()
 
     if (m_bPendingRefresh || m_lastCursorBlink != GetCursorBlinkState())
     {
-        m_bPendingRefresh = false;
+        if (!ZTestFlags(m_flags, ZepEditorFlags::FastUpdate))
+        {
+            m_bPendingRefresh = false;
+        }
         return true;
     }
 
@@ -1110,7 +1113,7 @@ void ZepEditor::Display()
     {
         virtualSize = m_tabRegion->children.back()->rect.Right();
     }
-   
+
     // Move the tab bar origin if approriate
     if (tabRect.Width() != 0.0f)
     {
@@ -1125,8 +1128,8 @@ void ZepEditor::Display()
     }
 
     // Clamp it
-    m_tabOffsetX = std::min(m_tabOffsetX, 0.0f); 
-    m_tabOffsetX = std::max(std::min(tabRegionSize - virtualSize, 0.0f), m_tabOffsetX); 
+    m_tabOffsetX = std::min(m_tabOffsetX, 0.0f);
+    m_tabOffsetX = std::max(std::min(tabRegionSize - virtualSize, 0.0f), m_tabOffsetX);
 
     // Now display the tabs
     for (auto& tab : m_tabRegion->children)
@@ -1201,6 +1204,20 @@ void ZepEditor::SetPixelScale(float scale)
 float ZepEditor::GetPixelScale() const
 {
     return m_pixelScale;
+}
+
+uint32_t ZepEditor::GetFlags() const
+{
+    return m_flags;
+}
+
+void ZepEditor::SetFlags(uint32_t flags)
+{
+    m_flags = flags;
+    if (ZTestFlags(m_flags, ZepEditorFlags::FastUpdate))
+    {
+        RequestRefresh();
+    }
 }
 
 } // namespace Zep

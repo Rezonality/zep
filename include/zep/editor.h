@@ -73,6 +73,7 @@ enum
 {
     None = (0),
     DisableThreads = (1 << 0),
+    FastUpdate = (1 << 1)
 };
 };
 
@@ -298,10 +299,8 @@ public:
     void WriteClipboard();
 
     void Notify(std::shared_ptr<ZepMessage> message);
-    uint32_t GetFlags() const
-    {
-        return m_flags;
-    }
+    uint32_t GetFlags() const;
+    void SetFlags(uint32_t flags);
 
     // Tab windows
     using tTabWindows = std::vector<ZepTabWindow*>;

@@ -8,6 +8,9 @@
 #include <unordered_set>
 #include <vector>
 
+#include "zep/mcommon/animation/timer.h"
+#include "zep/mcommon/math/math.h"
+
 namespace Zep
 {
 
@@ -36,6 +39,12 @@ struct SyntaxData
     bool underline = false;
 };
 
+struct SyntaxResult : SyntaxData
+{
+    NVec4f customBackgroundColor;
+    NVec4f customForegroundColor;
+};
+
 class ZepSyntaxAdorn;
 class ZepSyntax : public ZepComponent
 {
@@ -46,7 +55,7 @@ public:
         uint32_t flags = 0);
     virtual ~ZepSyntax();
 
-    virtual SyntaxData GetSyntaxAt(long index) const;
+    virtual SyntaxResult GetSyntaxAt(long index) const;
     virtual void UpdateSyntax();
     virtual void Interrupt();
     virtual void Wait() const;
@@ -55,11 +64,13 @@ public:
     {
         return m_processedChar;
     }
-    virtual const std::vector<SyntaxData>& GetText() const
-    {
-        return m_syntax;
-    }
     virtual void Notify(std::shared_ptr<ZepMessage> payload) override;
+
+    virtual void BeginFlash(float seconds, const NVec2i& range = NVec2i(0));
+    virtual void EndFlash() const;
+
+    const NVec4f& ToBackgroundColor(const SyntaxResult& res) const;
+    const NVec4f& ToForegroundColor(const SyntaxResult& res) const;
 
 private:
     virtual void QueueUpdateSyntax(ByteIndex startLocation, ByteIndex endLocation);
@@ -78,6 +89,10 @@ protected:
     std::atomic<bool> m_stop;
     std::vector<std::shared_ptr<ZepSyntaxAdorn>> m_adornments;
     uint32_t m_flags;
+
+    mutable NVec2<ByteIndex> m_flashRange;
+    float m_flashDuration = 1.0f;
+    timer m_flashTimer;
 };
 
 class ZepSyntaxAdorn : public ZepComponent
@@ -90,7 +105,7 @@ public:
     {
     }
 
-    virtual SyntaxData GetSyntaxAt(long offset, bool& found) const = 0;
+    virtual SyntaxResult GetSyntaxAt(long offset, bool& found) const = 0;
 
 protected:
     ZepBuffer& m_buffer;

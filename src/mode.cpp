@@ -6,6 +6,7 @@
 #include "zep/mode_search.h"
 #include "zep/regress.h"
 #include "zep/tab_window.h"
+#include "zep/syntax.h"
 
 namespace Zep
 {
@@ -2001,6 +2002,13 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             auto line = buffer.GetBufferLine(bufferCursor);
             auto pSlider = std::make_shared<FloatSlider>(GetEditor(), 4);
             buffer.AddLineWidget(line, pSlider);
+        }
+        else if (strCommand.find(":ZTestFlash") == 0)
+        {
+            if (buffer.GetSyntax())
+            {
+                buffer.GetSyntax()->BeginFlash(0.33f);
+            }
         }
         else if (strCommand.find(":ZTestMarkers") == 0)
         {
