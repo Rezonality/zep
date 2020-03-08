@@ -5,6 +5,7 @@
 #include <limits>
 #include <memory>
 #include <vector>
+#include <string>
 #include <ostream>
 
 namespace Zep
