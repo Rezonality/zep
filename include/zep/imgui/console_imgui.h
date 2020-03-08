@@ -33,7 +33,7 @@ struct ZepConsole : Zep::IZepComponent
     {
         zepEditor.RegisterCallback(this);
         auto pBuffer = zepEditor.GetEmptyBuffer("Log");
-        pBuffer->SetFlags(Zep::FileFlags::ReadOnly);
+        pBuffer->SetFileFlags(Zep::FileFlags::ReadOnly);
     }
 
     void AddLog(const char* fmt, ...) IM_FMTARGS(2)
@@ -86,7 +86,8 @@ struct ZepConsole : Zep::IZepComponent
         {
             // TODO: This looks like a hack: investigate why it is needed for the drop down console.
             // I think the intention here is to ensure the mode is reset while it is dropping down. I don't recall.
-            zepEditor.GetActiveTabWindow()->GetActiveWindow()->GetBuffer().GetMode()->Begin();
+            auto *pWindow = zepEditor.GetActiveTabWindow()->GetActiveWindow();
+            pWindow->GetBuffer().GetMode()->Begin(pWindow);
         }
 
         ImGui::End();
