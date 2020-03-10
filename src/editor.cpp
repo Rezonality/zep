@@ -983,7 +983,8 @@ bool ZepEditor::RefreshRequired()
     // Allow any components to update themselves
     Broadcast(std::make_shared<ZepMessage>(Msg::Tick));
 
-    if (m_bPendingRefresh || m_lastCursorBlink != GetCursorBlinkState())
+    auto lastBlink = m_lastCursorBlink;
+    if (m_bPendingRefresh || lastBlink != GetCursorBlinkState())
     {
         if (!ZTestFlags(m_flags, ZepEditorFlags::FastUpdate))
         {
