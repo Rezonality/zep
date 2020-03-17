@@ -20,6 +20,19 @@ before_script:
 
 matrix:
   include:
+    # Mac
+    - os: osx
+      osx_image: xcode11.3
+      addons:
+        apt:
+          packages:
+      env:
+      script:
+        - cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
+        - make
+        - make test
+
+  include:
     - os: linux
       addons:
         apt:
