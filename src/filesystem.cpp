@@ -9,28 +9,14 @@
 
 #if defined(ZEP_FEATURE_CPP_FILE_SYSTEM)
 
-#if !defined(__APPLE__)
 #include <experimental/filesystem>
 namespace cpp_fs = std::experimental::filesystem::v1;
-#else
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#endif
 
 namespace Zep
 {
 ZepFileSystemCPP::ZepFileSystemCPP()
 {
-#if defined(__APPLE__)
-    char cwd[1024];
-    if (getcwd(cwd, sizeof(cwd)) != NULL)
-    {
-        m_workingDirectory = ZepPath(std::string(cwd));
-    }
-#else
     m_workingDirectory = ZepPath(cpp_fs::current_path().string());
-#endif
 }
 
 ZepFileSystemCPP::~ZepFileSystemCPP()
@@ -49,45 +35,17 @@ const ZepPath& ZepFileSystemCPP::GetWorkingDirectory() const
 
 bool ZepFileSystemCPP::IsDirectory(const ZepPath& path) const
 {
-#if defined(__APPLE__)
-    struct stat s;
-    auto strPath = path.string();
-    if (stat(strPath.c_str(), &s) == 0)
-    {
-        if (s.st_mode & S_IFDIR)
-        {
-            //it's a directory
-            return true;
-        }
-    }
-    return false;
-#else
     return cpp_fs::is_directory(path.string());
-#endif
 }
 
 bool ZepFileSystemCPP::IsReadOnly(const ZepPath& path) const
 {
-#if defined(__APPLE__)
-    struct stat s;
-    auto strPath = path.string();
-    if (stat(strPath.c_str(), &s) == 0)
-    {
-        if (s.st_mode & S_IWRITE)
-        {
-            // Can write, so not read only!
-            return false;
-        }
-    }
-    return true;
-#else
     auto perms = cpp_fs::status(path.string()).permissions();
     if ((perms & cpp_fs::perms::owner_write) == cpp_fs::perms::owner_write)
     {
         return false;
     }
     return true;
-#endif
 }
 
 std::string ZepFileSystemCPP::Read(const ZepPath& fileName)
@@ -125,8 +83,6 @@ bool ZepFileSystemCPP::Write(const ZepPath& fileName, const void* pData, size_t 
 
 void ZepFileSystemCPP::ScanDirectory(const ZepPath& path, std::function<bool(const ZepPath& path, bool& dont_recurse)> fnScan) const
 {
-    // Not on apple yet!
-#ifndef __APPLE__
     for (auto itr = cpp_fs::recursive_directory_iterator(path.string());
          itr != cpp_fs::recursive_directory_iterator();
          itr++)
@@ -142,25 +98,10 @@ void ZepFileSystemCPP::ScanDirectory(const ZepPath& path, std::function<bool(con
             itr.disable_recursion_pending();
         }
     }
-#else
-    (void)path;
-    (void)fnScan;
-#endif
 }
 
 bool ZepFileSystemCPP::Exists(const ZepPath& path) const
 {
-#if defined(__APPLE__)
-    try
-    {
-        std::ifstream ifile(path.string());
-        return (bool)ifile;
-    }
-    catch (std::exception&)
-    {
-    }
-    return false;
-#else
     try
     {
         return cpp_fs::exists(path.string());
@@ -169,14 +110,10 @@ bool ZepFileSystemCPP::Exists(const ZepPath& path) const
     {
         throw std::runtime_error(err.what());
     }
-#endif
 }
 
 bool ZepFileSystemCPP::Equivalent(const ZepPath& path1, const ZepPath& path2) const
 {
-#if defined(__APPLE__)
-    return Canonical(path1).string() == Canonical(path2).string();
-#else
     try
     {
         // The below API expects existing files!  Best we can do is direct compare of paths
@@ -190,14 +127,10 @@ bool ZepFileSystemCPP::Equivalent(const ZepPath& path1, const ZepPath& path2) co
     {
         throw std::runtime_error(err.what());
     }
-#endif
 }
 
 ZepPath ZepFileSystemCPP::Canonical(const ZepPath& path) const
 {
-#if defined(__APPLE__)
-    return ZepPath(string_replace(path.string(), "\\", "/"));
-#else
     try
     {
         return ZepPath(cpp_fs::canonical(path.string()).string());
@@ -206,7 +139,6 @@ ZepPath ZepFileSystemCPP::Canonical(const ZepPath& path) const
     {
         throw std::runtime_error(err.what());
     }
-#endif
 }
 
 ZepPath ZepFileSystemCPP::GetSearchRoot(const ZepPath& start) const

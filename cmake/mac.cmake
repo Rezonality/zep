@@ -15,5 +15,8 @@ LIST(APPEND PLATFORM_LINKLIBS
     ${OPENGL_LIBRARY}
 	dl
     "-framework CoreFoundation"
+    z
+    libbz2.dylib
+    libiconv.dylib
 	)
 
