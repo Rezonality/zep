@@ -153,6 +153,7 @@ public:
     ZepMode(ZepEditor& editor);
     virtual ~ZepMode();
 
+    virtual void Init() {};
     virtual void AddKeyPress(uint32_t key, uint32_t modifierKeys = ModifierKey::None);
     virtual const char* Name() const = 0;
     virtual void Begin(ZepWindow* pWindow);
@@ -180,6 +181,8 @@ public:
 
     virtual NVec2i GetNormalizedVisualRange() const;
 
+    virtual std::vector<Airline> GetAirlines(ZepWindow&) const { return std::vector<Airline>{}; }
+
 protected:
     // Do the actual input handling
     virtual void HandleMappedInput(const std::string& input);
@@ -189,6 +192,8 @@ protected:
     virtual const std::string& GetLastCommand() const;
     virtual bool GetCommand(CommandContext& context);
     virtual void ResetCommand();
+
+    virtual bool HandleSpecialCommand(CommandContext&) { return false; };
 
     virtual bool GetOperationRange(const std::string& op, EditorMode currentMode, ByteIndex& beginRange, ByteIndex& endRange) const;
 
@@ -202,6 +207,8 @@ protected:
     virtual void ClampCursorForMode();
     virtual bool HandleExCommand(std::string strCommand);
     virtual std::string ConvertInputToMapString(uint32_t key, uint32_t modifierKeys);
+
+    virtual bool HandleIgnoredInput(CommandContext&) { return false; };
 
 protected:
     std::stack<std::shared_ptr<ZepCommand>> m_undoStack;

@@ -4,6 +4,7 @@
 #include "zep/mcommon/logger.h"
 #include "zep/mcommon/string/stringutils.h"
 
+#include "mode_orca.h"
 #include "syntax_orca.h"
 
 #include <string>
@@ -24,98 +25,40 @@ ZepSyntax_Orca::ZepSyntax_Orca(ZepBuffer& buffer,
 
 SyntaxResult ZepSyntax_Orca::GetSyntaxAt(long index) const
 {
-    auto& buffer = m_buffer.GetText();
-    auto token = buffer[index];
+    auto def = ZepSyntax::GetSyntaxAt(index);
+    if (m_syntax.size() <= index)
+    {
+        SyntaxResult res;
+        res.foreground = ThemeColor::Text;
+        res.foreground = ThemeColor::None;
+        return res;
+    }
 
-    SyntaxResult data;
-    if (token == ' ' || token == '.')
+    // Accomodate potential background effects from the base class (such as flash)
+    // Looks cool (:ZTestFlash) but is it useful??
+    auto ret = m_syntax[index];
+    if (ret.background == ThemeColor::None && def.background != ThemeColor::None &&
+        def.background != ThemeColor::Background)
     {
-        data.foreground = ThemeColor::Whitespace;
-        data.background = ThemeColor::None;
+        ret.background = def.background;
+        ret.customBackgroundColor = def.customBackgroundColor;
     }
-    else
-    {
-        return ZepSyntax::GetSyntaxAt(index);
-    }
-    return data;
+
+    return ret;
 }
 
 void ZepSyntax_Orca::UpdateSyntax()
 {
     auto& buffer = m_buffer.GetText();
-    auto itrCurrent = buffer.begin();
-    auto itrEnd = buffer.end();
 
-    assert(std::distance(itrCurrent, itrEnd) <= int(m_syntax.size()));
-    assert(m_syntax.size() == buffer.size());
-
-    // Mark a region of the syntax buffer with the correct marker
-    auto mark = [&](GapBuffer<uint8_t>::const_iterator itrA, GapBuffer<uint8_t>::const_iterator itrB, ThemeColor type, ThemeColor background) {
-        std::fill(m_syntax.begin() + (itrA - buffer.begin()), m_syntax.begin() + (itrB - buffer.begin()), SyntaxData{ type, background });
-    };
-
-    auto markSingle = [&](GapBuffer<uint8_t>::const_iterator itrA, ThemeColor type, ThemeColor background) {
-        (m_syntax.begin() + (itrA - buffer.begin()))->foreground = type;
-        (m_syntax.begin() + (itrA - buffer.begin()))->background = background;
-    };
-
-    // Walk backwards to previous delimiter
-    while (itrCurrent != itrEnd)
-    {
-        if (m_stop == true)
-        {
-            return;
-        }
-
-        // Update start location
-        m_processedChar = long(itrCurrent - buffer.begin());
-
-        if (*itrCurrent == '.' || *itrCurrent == ' ')
-        {
-            mark(itrCurrent, itrCurrent + 1, ThemeColor::Whitespace, ThemeColor::None);
-        }
-
-        auto token = std::string(itrCurrent, itrCurrent + 1);
-        if (m_flags & ZepSyntaxFlags::CaseInsensitive)
-        {
-            token = string_tolower(token);
-        }
-        
-        if (token[0] >= 'a' && token[0] <= 'z')
-        {
-            mark(itrCurrent, itrCurrent + 1, ThemeColor::Keyword, ThemeColor::None);
-        }
-        else if (token[0] == '#')
-        {
-            auto itrNext = itrCurrent + 1;
-            while (itrNext != itrEnd &&
-                *itrNext != '#' && *itrNext != '\n')
-            {
-                itrNext++;
-            }
-            mark(itrCurrent, itrNext + 1, ThemeColor::Comment, ThemeColor::None);
-            itrCurrent = itrNext;
-        }
-        else if (token.find_first_not_of("0123456789") == std::string::npos)
-        {
-            mark(itrCurrent, itrCurrent+1, ThemeColor::Number, ThemeColor::None);
-        }
-        else if (token[0] == '.')
-        {
-            mark(itrCurrent, itrCurrent + 1, ThemeColor::Whitespace, ThemeColor::None);
-        }
-        else
-        {
-            mark(itrCurrent, itrCurrent+1, ThemeColor::Normal, ThemeColor::None);
-        }
-
-        itrCurrent++;
-    }
-
-    // If we got here, we sucessfully completed
-    // Reset the target to the beginning
+    // We don't do anything in orca mode, we get dynamically because Orca tells us the colors
     m_targetChar = long(0);
     m_processedChar = long(buffer.size() - 1);
+}
+
+void ZepSyntax_Orca::UpdateSyntax(std::vector<SyntaxResult>& syntax)
+{
+    m_syntax = syntax;
 }
 
 } // namespace Zep

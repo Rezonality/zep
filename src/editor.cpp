@@ -645,6 +645,7 @@ const ZepEditor::tTabWindows& ZepEditor::GetTabWindows() const
 void ZepEditor::RegisterGlobalMode(std::shared_ptr<ZepMode> spMode)
 {
     m_mapGlobalModes[spMode->Name()] = spMode;
+    spMode->Init();
 }
 
 void ZepEditor::RegisterExCommand(std::shared_ptr<ZepExCommand> spCommand)
@@ -665,6 +666,7 @@ ZepExCommand* ZepEditor::FindExCommand(const std::string& strName)
 void ZepEditor::RegisterBufferMode(const std::string& extension, std::shared_ptr<ZepMode> spMode)
 {
     m_mapBufferModes[extension] = spMode;
+    spMode->Init();
 }
 
 void ZepEditor::SetGlobalMode(const std::string& currentMode)
@@ -1197,12 +1199,12 @@ const NVec2f ZepEditor::GetMousePos() const
     return m_mousePos;
 }
 
-void ZepEditor::SetPixelScale(float scale)
+void ZepEditor::SetPixelScale(const NVec2f& scale)
 {
     m_pixelScale = scale;
 }
 
-float ZepEditor::GetPixelScale() const
+NVec2f ZepEditor::GetPixelScale() const
 {
     return m_pixelScale;
 }

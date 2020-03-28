@@ -102,21 +102,21 @@ static bool starts_with(const std::string& str, const std::string& prefix)
 */
 
 // Add a collection of commands to a collection of mappings
-bool keymap_add(const std::vector<KeyMap*>& maps, const std::vector<std::string>& commands, const StringId& commandId)
+bool keymap_add(const std::vector<KeyMap*>& maps, const std::vector<std::string>& commands, const StringId& commandId, KeyMapAdd option)
 {
     bool ret = true;
     for (auto& map : maps)
     {
         for (auto& cmd : commands)
         {
-            if (!keymap_add(*map, cmd, commandId))
+            if (!keymap_add(*map, cmd, commandId, option))
                 ret = false;
         }
     }
     return ret;
 }
 
-bool keymap_add(KeyMap& map, const std::string& strCommand, const StringId& commandId)
+bool keymap_add(KeyMap& map, const std::string& strCommand, const StringId& commandId, KeyMapAdd option)
 {
     auto spCurrent = map.spRoot;
 
@@ -140,7 +140,7 @@ bool keymap_add(KeyMap& map, const std::string& strCommand, const StringId& comm
         }
     }
 
-    if (spCurrent->commandId != 0)
+    if (spCurrent->commandId != 0 && option == KeyMapAdd::New)
     {
         assert(!"Adding twice?");
         return false;

@@ -28,7 +28,12 @@ inline int GetPixelSize(PixelSize sz)
 
 inline int ScalePixels(int pixels)
 {
-    return pixels * float(qApp->desktop()->logicalDpiX() / 96.0f);
+// Qt/MacOS handle scaling and we shouldn't interfere with that, and we don't want to do it ourselves
+#ifdef __APPLE__
+    return pixels;
+#else
+    return pixels * qRound(float(qApp->primaryScreen()->logicalDotsPerInch() / 96.0));
+#endif
 }
 
 inline QSize ScalePixels(const QSize& size)
@@ -47,11 +52,6 @@ inline float GetFontPointSize()
 {
     const QFont font = qApp->font();
     return font.pointSizeF();
-}
-
-inline float GetPointSizeFromFontPixelSize(int pixelSize)
-{
-    return (pixelSize * 72) / float(qApp->desktop()->logicalDpiX());
 }
 
 } // namespace DPI

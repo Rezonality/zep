@@ -41,6 +41,7 @@ ThemeType ZepTheme::GetThemeType() const
 void ZepTheme::SetDarkTheme()
 {
     m_colors[ThemeColor::Text] = NVec4f(1.0f);
+    m_colors[ThemeColor::TextDim] = NVec4f(.45f, .45f, .45f, 1.0f);
     m_colors[ThemeColor::Background] = NVec4f(0.13f, 0.13f, 0.13f, 1.0f);
     m_colors[ThemeColor::HiddenText] = NVec4f(.9f, .1f, .1f, 1.0f);
     m_colors[ThemeColor::TabBorder] = NVec4f(.55f, .55f, .55f, 1.0f);
@@ -52,7 +53,7 @@ void ZepTheme::SetDarkTheme()
     m_colors[ThemeColor::CursorNormal] = NVec4f(130.0f / 255.0f, 140.0f / 255.0f, 230.0f / 255.0f, 1.0f);
     m_colors[ThemeColor::CursorInsert] = NVec4f(1.0f, 1.0f, 1.0f, .9f);
     m_colors[ThemeColor::CursorLineBackground] = NVec4f(.25f, .25f, .25f, 1.0f);
-    m_colors[ThemeColor::AirlineBackground] = NVec4f(.15f, .15f, .15f, 1.0f);
+    m_colors[ThemeColor::AirlineBackground] = NVec4f(.20f, .20f, .20f, 1.0f);
     m_colors[ThemeColor::Light] = NVec4f(1.0f);
     m_colors[ThemeColor::Dark] = NVec4f(0.0f, 0.0f, 0.0f, 1.0f);
     m_colors[ThemeColor::VisualSelectBackground] = NVec4f(.47f, 0.30f, 0.25f, 1.0f);
@@ -81,6 +82,7 @@ void ZepTheme::SetDarkTheme()
 void ZepTheme::SetLightTheme()
 {
     m_colors[ThemeColor::Text] = NVec4f(0.0f, 0.0f, 0.0f, 1.0f);
+    m_colors[ThemeColor::TextDim] = NVec4f(0.55f, 0.55f, 0.55f, 1.0f);
     m_colors[ThemeColor::Background] = NVec4f(1.0f, 1.0f, 1.0f, 1.0f);
     m_colors[ThemeColor::HiddenText] = NVec4f(.9f, .1f, .1f, 1.0f);
     m_colors[ThemeColor::TabBorder] = NVec4f(.55f, .55f, .55f, 1.0f);
@@ -92,7 +94,7 @@ void ZepTheme::SetLightTheme()
     m_colors[ThemeColor::CursorNormal] = NVec4f(130.0f / 255.0f, 140.0f / 255.0f, 230.0f / 255.0f, 1.0f);
     m_colors[ThemeColor::CursorInsert] = NVec4f(1.0f, 1.0f, 1.0f, .9f);
     m_colors[ThemeColor::CursorLineBackground] = NVec4f(.85f, .85f, .85f, 1.0f);
-    m_colors[ThemeColor::AirlineBackground] = NVec4f(.85f, .85f, .85f, 1.0f);
+    m_colors[ThemeColor::AirlineBackground] = NVec4f(.80f, .80f, .80f, 1.0f);
     m_colors[ThemeColor::Light] = NVec4f(1.0f);
     m_colors[ThemeColor::Dark] = NVec4f(0.0f, 0.0f, 0.0f, 1.0f);
     m_colors[ThemeColor::VisualSelectBackground] = NVec4f(.49f, 0.60f, 0.45f, 1.0f);

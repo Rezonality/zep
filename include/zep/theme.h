@@ -11,6 +11,7 @@ enum class ThemeColor
     TabBorder,
     HiddenText,
     Text,
+    TextDim,
     Background,
     TabInactive,
     TabActive,

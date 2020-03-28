@@ -500,9 +500,9 @@ void ZepMode::HandleMappedInput(const std::string& input)
     else
     {
         // If not found, and there was no request for more characters, and we aren't in Ex mode
-        if (!spContext->keymap.needMoreChars)
+        if (m_currentMode != EditorMode::Ex)
         {
-            if (m_currentMode != EditorMode::Ex)
+            if (HandleIgnoredInput(*spContext) || !spContext->keymap.needMoreChars)
             {
                 ResetCommand();
             }
@@ -662,6 +662,13 @@ bool ZepMode::GetCommand(CommandContext& context)
     GlyphIterator cursorItr(buffer, bufferCursor);
 
     auto mappedCommand = context.keymap.foundMapping;
+   
+    // Inherited modes can handle extra commands this way
+    if (HandleSpecialCommand(context))
+    {
+        return true;
+    }
+
     if (mappedCommand == id_NormalMode)
     {
         // TODO: I think this should be a 'command' which would get replayed with dot;
@@ -789,7 +796,7 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_FontBigger)
     {
-        GetEditor().GetDisplay().SetFontPointSize(std::min(GetEditor().GetDisplay().GetFontPointSize() + 1.0f, 20.0f));
+        GetEditor().GetDisplay().SetFontPointSize(std::min(GetEditor().GetDisplay().GetFontPointSize() + 1.0f, 50.0f));
         return true;
     }
     else if (mappedCommand == id_FontSmaller)

@@ -11,6 +11,7 @@ public:
     ZepMode_Standard(ZepEditor& editor);
     ~ZepMode_Standard();
 
+    virtual void Init() override;
     virtual void Begin(ZepWindow* pWindow) override;
 
     static const char* StaticName()
@@ -21,9 +22,6 @@ public:
     {
         return StaticName();
     }
-
-private:
-    void Init();
 
 private:
     std::string keyCache;

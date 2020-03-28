@@ -230,6 +230,10 @@ public:
     {
         return m_gapBuffer;
     }
+    GapBuffer<uint8_t>& GetMutableText()
+    {
+        return m_gapBuffer;
+    }
     const std::vector<long> GetLineEnds() const
     {
         return m_lineEnds;

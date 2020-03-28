@@ -4,10 +4,10 @@
 #include <QWidget>
 #include <memory>
 
-#include <QKeyEvent>
-#include <QDesktopWidget>
-#include <QDebug>
 #include <QClipboard>
+#include <QDebug>
+#include <QDesktopWidget>
+#include <QKeyEvent>
 
 #include "zep/editor.h"
 #include "zep/mode.h"
@@ -24,12 +24,22 @@ namespace Zep
 class ZepWidget_Qt : public QWidget, public IZepComponent
 {
 public:
-    ZepWidget_Qt(QWidget* pParent, const ZepPath& root)
+    ZepWidget_Qt(QWidget* pParent, const ZepPath& root, float fontSize)
         : QWidget(pParent)
     {
+        setFocusPolicy ( Qt::StrongFocus );
+
         m_spEditor = std::make_unique<ZepEditor>(new ZepDisplay_Qt(), root);
         m_spEditor->RegisterCallback(this);
-        m_spEditor->SetPixelScale(float(qApp->desktop()->logicalDpiX() / 96.0f));
+
+        // On Apple/Qt, we scale 1.0 because the OS and Qt take care of the details
+#ifdef __APPLE__
+        m_spEditor->SetPixelScale(NVec2f(1.0f));
+#else
+        m_spEditor->SetPixelScale(NVec2f(qRound(qApp->primaryScreen()->logicalDotsPerInchX() / 96.0f), qRound(qApp->primaryScreen()->logicalDotsPerInchY() / 96.0f)));
+#endif
+        // 14pt is about 5mm on the display
+        m_spEditor->GetDisplay().SetFontPointSize(fontSize);
 
         setFocusPolicy(Qt::FocusPolicy::StrongFocus);
         setMouseTracking(true);
@@ -38,6 +48,7 @@ public:
         m_refreshTimer.setSingleShot(false);
         m_refreshTimer.start();
         connect(&m_refreshTimer, &QTimer::timeout, this, &ZepWidget_Qt::OnTimer);
+
     }
 
     ~ZepWidget_Qt()
@@ -92,11 +103,28 @@ public:
         uint32_t mod = 0;
         auto pMode = m_spEditor->GetActiveTabWindow()->GetActiveWindow()->GetBuffer().GetMode();
 
+        auto isCtrl = [&]()
+        {
+            // Meta an control swapped on Apple!
+            #ifdef __APPLE__
+            if (ev->modifiers() & Qt::MetaModifier)
+            {
+                return true;
+            }
+            #else
+            if (ev->modifiers() & Qt::ControlModifier)
+            {
+                return true;
+            }
+            #endif
+            return false;
+        };
+
         if (ev->modifiers() & Qt::ShiftModifier)
         {
             mod |= ModifierKey::Shift;
         }
-        if (ev->modifiers() & Qt::ControlModifier)
+        if (isCtrl())
         {
             mod |= ModifierKey::Ctrl;
             if (ev->key() == Qt::Key_1)
@@ -247,7 +275,6 @@ private slots:
             update();
         }
     }
-
 
 private:
     std::unique_ptr<ZepEditor> m_spEditor;

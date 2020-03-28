@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.2)
 
-message(STATUS " CMakeLists: Zep")
+message(STATUS "CMakeLists: Zep")
+message(STATUS "Build Type: " ${CMAKE_BUILD_TYPE})
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
 # Global Options
 option(BUILD_QT "Make Qt Library" OFF)
@@ -32,7 +35,6 @@ include(CMakePackageConfigHelpers)
 if (ZEP_FEATURE_CPP_FILE_SYSTEM)
 add_definitions(-DZEP_FEATURE_CPP_FILE_SYSTEM)
 endif()
-add_definitions(-DZEP_USE_SDL)
 
 # config_app.h checks
 # This makes a config_shared.h file which can be included for system settings
@@ -49,17 +51,10 @@ include(cmake/all.cmake)
 include(m3rdparty/cmake/copy_files.cmake)
 
 # The main library
-include(${ZEP_ROOT}/extensions/CMakeLists.txt)
-include(src/CMakeLists.txt)
-
-include (tests/CMakeLists.txt)
-
-# Demos require example interpreter and other 3rdparty
-IF (BUILD_DEMOS)
-include(${M3RDPARTY_DIR}/list.cmake)
-include(demo_imgui/CMakeLists.txt)
-include(demo_qt/CMakeLists.txt)
-ENDIF()
+add_subdirectory(extensions)
+add_subdirectory(src)
+add_subdirectory(tests)
+add_subdirectory(demos)
 
 # Make the CMake bits that ensure find_package does the right thing
 install(EXPORT zep-targets
@@ -86,4 +81,6 @@ install(
         ${CMAKE_BINARY_DIR}/cmake/zep-config-version.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/zep
 )
+
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/cpack_installer.cmake)
 

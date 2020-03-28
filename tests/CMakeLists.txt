@@ -1,5 +1,7 @@
 # Tests cannot be build without the ImGui parts
 
+SET(TEST_ROOT ${CMAKE_CURRENT_LIST_DIR})
+
 if (BUILD_TESTS AND BUILD_IMGUI)
 
 # Evil glob
@@ -7,7 +9,7 @@ file(GLOB_RECURSE FOUND_TEST_SOURCES "${ZEP_ROOT}/src/*.test.cpp")
 
 list(APPEND TEST_SOURCES
     ${FOUND_TEST_SOURCES}
-    tests/main.cpp
+    ${TEST_ROOT}/main.cpp
 )
 
 set(CMAKE_AUTOMOC OFF)
@@ -34,7 +36,7 @@ target_include_directories(unittests PRIVATE
     ${M3RDPARTY_DIR}/googletest/googlemock/include
     ${M3RDPARTY_DIR}/googletest/googlemock
     ${CMAKE_BINARY_DIR}
-    include
+    ${ZEP_ROOT}/include
 )
 
 install(TARGETS unittests

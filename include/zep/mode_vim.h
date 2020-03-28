@@ -22,7 +22,7 @@ class ZepMode_Vim : public ZepMode
 {
 public:
     ZepMode_Vim(ZepEditor& editor);
-    ~ZepMode_Vim();
+    virtual ~ZepMode_Vim();
 
     static const char* StaticName()
     {
@@ -30,6 +30,7 @@ public:
     }
 
     // Zep Mode
+    virtual void Init() override;
     virtual void Begin(ZepWindow* pWindow) override;
     virtual const char* Name() const override { return StaticName(); }
     virtual void PreDisplay(ZepWindow& win) override;
@@ -37,10 +38,6 @@ public:
     virtual void AddOverStrikeMaps();
     virtual void AddCopyMaps();
     virtual void AddPasteMaps();
-
-private:
-    void HandleInsert(uint32_t key);
-    void Init();
 };
 
 } // namespace Zep

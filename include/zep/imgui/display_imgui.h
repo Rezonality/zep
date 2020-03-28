@@ -37,8 +37,10 @@ public:
 
     float GetFontHeightPixels() const
     {
-        // TODO: Check low DPI monitor for correct behavior
         return ImGui::GetFontSize();
+        // So Qt claims to return the below; but I've been unable to get similar fonts to match.
+        // There is much more padding in Qt than in ImGui, even though the actual font sizes are the same!
+        //return (ImGui::GetFont()->Descent + ImGui::GetFont()->Ascent + 1) * 2.0f;
     }
 
     NVec2f GetTextSize(const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const

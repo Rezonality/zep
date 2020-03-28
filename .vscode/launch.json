@@ -8,10 +8,11 @@
             "name": "(lldb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/ZepDemo",
+            //"program": "${workspaceFolder}/build/demos/demo_qt/ZepDemo-qt",
+            "program": "${workspaceFolder}/build/demos/demo_imgui/ZepDemo",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/build",
             "environment": [],
             "externalConsole": false,
             "MIMode": "lldb"

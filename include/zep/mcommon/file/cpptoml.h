@@ -831,9 +831,9 @@ class array : public base
         return values_;
     }
 
-    std::shared_ptr<base> at(size_t idx) const
+    std::shared_ptr<base> at(size_t idx_source) const
     {
-        return values_.at(idx);
+        return values_.at(idx_source);
     }
 
     /**

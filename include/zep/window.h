@@ -156,8 +156,8 @@ public:
 
     ZepTabWindow& GetTabWindow() const;
 
-private:
     NVec4f FilterActiveColor(const NVec4f& col, float atten = 1.0f);
+private:
 
     void UpdateLayout(bool force = false);
     void UpdateAirline();
@@ -185,7 +185,6 @@ private:
     float TipBoxShadowWidth() const;
 
     // Display
-    void DisplayCursor();
     void DisplayToolTip(const NVec2f& pos, const RangeMarker& marker) const;
     bool DisplayLine(SpanInfo& lineInfo, int displayPass);
     void DisplayScrollers();

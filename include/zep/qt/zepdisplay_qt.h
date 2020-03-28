@@ -9,6 +9,7 @@
 #include "zep/qt/common_qt.h"
 #include "zep/display.h"
 #include "zep/syntax.h"
+#include "zep/editor.h"
 #include <string>
 
 namespace Zep
@@ -39,7 +40,6 @@ public:
 
     ZepDisplay_Qt()
     {
-        SetFontPointSize(10.0f);
     }
 
     ~ZepDisplay_Qt()
@@ -48,7 +48,23 @@ public:
 
     void SetFontPointSize(float fVal)
     {
-        qApp->setFont(QFont("Consolas", fVal));
+        #ifdef __APPLE__
+        QFont font("Menlo");
+        // On mac passing point size ends up with a too small font.
+        // So we calculate the font size based on the pixel height, and using a
+        // scale of 1, since Qt is internally scaling anyway!
+        fVal = FontHeightPixelsFromPointSize(1.0f, fVal);
+        font.setStyleHint(QFont::Monospace);
+        font.setPixelSize(fVal);
+        #else
+        QFont font("Consolas");
+        font.setStyleHint(QFont::Monospace);
+        font.setPointSizeF(fVal);
+        #endif
+        qApp->setFont(font);
+        
+        //qDebug() << QApplication::font();
+
         QFontMetrics met(qApp->font());
         m_fontOffset = met.ascent();
         m_fontHeight = (float)met.height();

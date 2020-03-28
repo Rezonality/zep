@@ -16,7 +16,7 @@ LIST(APPEND PLATFORM_LINKLIBS
 	dl
     "-framework CoreFoundation"
     z
-    libbz2.dylib
-    libiconv.dylib
+    libbz2.a
+    libiconv.a
 	)
 
