@@ -22,7 +22,6 @@ set(DEMO_SOURCE_IMGUI
     ${DEMO_ROOT}/demo_imgui/CMakeLists.txt
     ${ZEP_ROOT}/include/zep/imgui/display_imgui.h
     ${ZEP_ROOT}/include/zep/imgui/editor_imgui.h
-    ${ZEP_EXTENSION_SRC}
     ${META_FILES_TO_INCLUDE}
     )
  
@@ -33,7 +32,6 @@ add_executable (${DEMO_NAME}
 target_include_directories(${DEMO_NAME}
     PRIVATE
     ${ZEP_ROOT}/include
-    ${ZEP_ROOT}/extensions
     ${ZEP_ROOT}/demos
     ${FREETYPE_INCLUDE_DIRS}
     ${SDL2_ROOT_DIR}
@@ -49,6 +47,7 @@ endif()
 target_link_libraries (${DEMO_NAME} 
     PRIVATE
     Zep
+    ZepExtensions
     MUtils::MUtils
     SDL2::SDL2-static
     SDL2::SDL2main

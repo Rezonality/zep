@@ -97,14 +97,6 @@ install(DIRECTORY ${ZEP_ROOT}/include/zep
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-# Install the extension files
-install(DIRECTORY ${ZEP_ROOT}/extensions/orca
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/zep/extensions
-)
-install(DIRECTORY ${ZEP_ROOT}/extensions/repl
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/zep/extensions
-)
-
 
 # For IDE
 source_group (Zep\\common REGULAR_EXPRESSION "src/mcommon/.*")

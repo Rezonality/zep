@@ -40,7 +40,6 @@ set(DEMO_SOURCE_QT
     ${ZEP_ROOT}/include/zep/qt/zepdisplay_qt.h
     ${ZEP_ROOT}/include/zep/qt/zepwidget_qt.h
     ${ZEP_ROOT}/include/zep/qt/common_qt.h
-    ${ZEP_EXTENSION_SRC}
     ${META_FILES_TO_INCLUDE}
 )
 
@@ -53,16 +52,14 @@ target_include_directories(${DEMO_NAME}
         ${DEMO_ROOT}/demo_qt
         ${ZEP_ROOT}/src/qt
         ${ZEP_ROOT}/demos
-        ${ZEP_ROOT}/extensions
         ${Qt5Widgets_INCLUDE_DIRS}
         ${Qt5Gui_INCLUDE_DIRS}
         ${Qt5Core_INCLUDE_DIRS}
         ${CMAKE_BINARY_DIR}
         ${M3RDPARTY_DIR}
-        ${ZEP_ROOT}/extensions
         ${ZEP_ROOT}/include)
 
-target_link_libraries(${DEMO_NAME} PRIVATE Qt5::Core Qt5::Gui Qt5::Widgets MUtils::MUtils Zep ${PLATFORM_LINKLIBS})
+target_link_libraries(${DEMO_NAME} PRIVATE Qt5::Core Qt5::Gui Qt5::Widgets MUtils::MUtils Zep ZepExtensions ${PLATFORM_LINKLIBS})
 target_compile_options(${DEMO_NAME} PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W3>) # Workaround Qt + MSVC 19 compile issue in release build.
 add_dependencies(${DEMO_NAME} Zep)
 
