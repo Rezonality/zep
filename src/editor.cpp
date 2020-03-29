@@ -215,11 +215,11 @@ void ZepEditor::SaveBuffer(ZepBuffer& buffer)
     // - We don't check for outside modification yet either, meaning this could overwrite
     std::ostringstream strText;
 
-    if (ZTestFlags(buffer.GetFileFlags(), FileFlags::ReadOnly))
+    if (buffer.HasFileFlags(FileFlags::ReadOnly))
     {
         strText << "Failed to save, Read Only: " << buffer.GetDisplayName();
     }
-    else if (ZTestFlags(buffer.GetFileFlags(), FileFlags::Locked))
+    else if (buffer.HasFileFlags(FileFlags::Locked))
     {
         strText << "Failed to save, Locked: " << buffer.GetDisplayName();
     }
@@ -280,7 +280,7 @@ void ZepEditor::RemoveBuffer(ZepBuffer* pBuffer)
 ZepBuffer* ZepEditor::GetEmptyBuffer(const std::string& name, uint32_t fileFlags)
 {
     auto pBuffer = CreateNewBuffer(name);
-    pBuffer->SetFileFlags(ZSetFlags(pBuffer->GetFileFlags(), fileFlags));
+    pBuffer->SetFileFlags(fileFlags);
     return pBuffer;
 }
 
@@ -309,10 +309,7 @@ ZepBuffer* ZepEditor::GetFileBuffer(const ZepPath& filePath, uint32_t fileFlags,
 
     // Create buffer, try to load even if not present, the buffer represents the save path (it just isn't saved yet)
     auto pBuffer = CreateNewBuffer(filePath);
-
-    auto flags = pBuffer->GetFileFlags();
-    flags = ZSetFlags(flags, fileFlags);
-    pBuffer->SetFileFlags(flags);
+    pBuffer->SetFileFlags(fileFlags);
 
     return pBuffer;
 }
@@ -445,8 +442,7 @@ void ZepEditor::UpdateWindowState()
     std::vector<ZepBuffer*> victims;
     for (auto& buffer : m_buffers)
     {
-        auto bufferFlags = buffer->GetFileFlags();
-        if (!ZTestFlags(bufferFlags, FileFlags::DefaultBuffer) || ZTestFlags(bufferFlags, FileFlags::Dirty))
+        if (!buffer->HasFileFlags(FileFlags::DefaultBuffer) || buffer->HasFileFlags(FileFlags::Dirty))
         {
             continue;
         }
@@ -550,13 +546,13 @@ void ZepEditor::UpdateTabs()
             }
 
             auto tabColor = GetTheme().GetColor(ThemeColor::TabActive);
-            if (ZTestFlags(buffer.GetFileFlags(), FileFlags::HasWarnings))
+            if (buffer.HasFileFlags(FileFlags::HasWarnings))
             {
                 tabColor = GetTheme().GetColor(ThemeColor::Warning);
             }
 
             // Errors win for coloring
-            if (ZTestFlags(buffer.GetFileFlags(), FileFlags::HasErrors))
+            if (buffer.HasFileFlags(FileFlags::HasErrors))
             {
                 tabColor = GetTheme().GetColor(ThemeColor::Error);
             }

@@ -58,14 +58,6 @@ struct Region;
 inline bool ZTestFlags(const uint32_t& flags, uint32_t value) { return ((flags & value) ? true : false); }
 inline uint32_t ZSetFlags(const uint32_t& flags, uint32_t value, bool set = true) { if (set) { return flags | value; } else return flags; }
 inline uint32_t ZClearFlags(const uint32_t& flags, uint32_t value) { return flags & ~value; }
-inline uint32_t ZToggleFlags(const uint32_t& flags, uint32_t value)
-{
-    if (ZTestFlags(flags, value))
-    {
-        return ZClearFlags(flags, value);
-    }
-    return ZSetFlags(flags, value);
-}
 
 namespace ZepEditorFlags
 {

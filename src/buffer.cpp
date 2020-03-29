@@ -528,7 +528,6 @@ bool ZepBuffer::GetLineOffsets(const long line, ByteIndex& lineStart, ByteIndex&
     return true;
 }
 
-
 std::string ZepBuffer::GetFileExtension() const
 {
     std::string ext;
@@ -748,8 +747,7 @@ void ZepBuffer::SetText(const std::string& text, bool initFromFile)
     }
 
     // If file is only tabs, then force tab mode
-    if (ZTestFlags(m_fileFlags, FileFlags::HasTabs) &&
-        !ZTestFlags(m_fileFlags, FileFlags::HasSpaceTabs))
+    if (HasFileFlags(FileFlags::HasTabs) && !HasFileFlags(FileFlags::HasSpaceTabs))
     {
         m_fileFlags = ZSetFlags(m_fileFlags, FileFlags::InsertTabs);
     }
@@ -799,7 +797,6 @@ ByteIndex ZepBuffer::GetLinePos(ByteIndex bufferLocation, LineLocation lineLocat
     GlyphIterator itrBegin = GlyphIterator(*this);
     GlyphIterator itrEnd = GlyphIterator(*this, ByteIndex(m_gapBuffer.size()));
 
-
     GlyphIterator itrLineStart(itr);
 
     // If we are on the CR, move back 1, unless the \n is all that is on the line
@@ -811,8 +808,7 @@ ByteIndex ZepBuffer::GetLinePos(ByteIndex bufferLocation, LineLocation lineLocat
         }
 
         // Find the end of the previous line
-        while (itrLineStart > itrBegin&&
-            itrLineStart.Char() != '\n')
+        while (itrLineStart > itrBegin && itrLineStart.Char() != '\n')
         {
             itrLineStart.Move(-1);
         }
@@ -836,7 +832,7 @@ ByteIndex ZepBuffer::GetLinePos(ByteIndex bufferLocation, LineLocation lineLocat
     // The point just after the line end
     case LineLocation::BeyondLineEnd:
     {
-        while (itr < itrEnd && itr.Char()!= '\n' && itr.Char() != 0)
+        while (itr < itrEnd && itr.Char() != '\n' && itr.Char() != 0)
         {
             itr.Move(1);
         }
@@ -896,8 +892,7 @@ ByteIndex ZepBuffer::GetLinePos(ByteIndex bufferLocation, LineLocation lineLocat
             itr.Move(1);
         }
 
-        while (itr > itrBegin &&
-            itr < itrEnd 
+        while (itr > itrBegin && itr < itrEnd
             && !std::isgraph(ToASCII(itr.Char())))
         {
             itr.Move(-1);
@@ -1301,7 +1296,7 @@ void ZepBuffer::ForEachMarker(uint32_t markerType, SearchDirection dir, ByteInde
     {
         auto itrREnd = std::make_reverse_iterator(itrStart);
         auto itrRStart = std::make_reverse_iterator(itrEnd);
-         
+
         for (auto itr = itrRStart; itr != itrREnd; itr++)
         {
             for (auto& markerItem : itr->second)
@@ -1467,6 +1462,26 @@ bool ZepBuffer::IsHidden() const
 {
     auto windows = GetEditor().FindBufferWindows(this);
     return windows.empty();
+}
+
+void ZepBuffer::SetFileFlags(uint32_t flags, bool set)
+{
+    m_fileFlags = ZSetFlags(m_fileFlags, flags, set);
+}
+
+void ZepBuffer::ClearFileFlags(uint32_t flags)
+{
+    m_fileFlags = ZSetFlags(m_fileFlags, flags, false);
+}
+
+bool ZepBuffer::HasFileFlags(uint32_t flags) const
+{
+    return ZTestFlags(m_fileFlags, flags);
+}
+
+void ZepBuffer::ToggleFileFlag(uint32_t flags)
+{
+    m_fileFlags = ZSetFlags(m_fileFlags, flags, !ZTestFlags(m_fileFlags, flags));
 }
 
 } // namespace Zep

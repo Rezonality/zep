@@ -199,7 +199,7 @@ void ZepMode::SwitchMode(EditorMode currentMode)
     auto cursor = pWindow->GetBufferCursor();
 
     // Force normal mode if the file is read only
-    if (currentMode == EditorMode::Insert && ZTestFlags(buffer.GetFileFlags(), FileFlags::ReadOnly))
+    if (currentMode == EditorMode::Insert && buffer.HasFileFlags(FileFlags::ReadOnly))
     {
         currentMode = EditorMode::Normal;
     }
@@ -518,7 +518,7 @@ void ZepMode::AddCommand(std::shared_ptr<ZepCommand> spCmd)
         return;
     }
 
-    if (ZTestFlags(GetCurrentWindow()->GetBuffer().GetFileFlags(), FileFlags::Locked))
+    if (GetCurrentWindow()->GetBuffer().HasFileFlags(FileFlags::Locked))
     {
         // Ignore commands on buffers because we are view only,
         // and all commands currently modify the buffer!
@@ -1182,7 +1182,7 @@ bool ZepMode::GetCommand(CommandContext& context)
     else if (mappedCommand == id_InsertTab)
     {
         context.beginRange = context.bufferCursor;
-        if (ZTestFlags(buffer.GetFileFlags(), FileFlags::InsertTabs))
+        if (buffer.HasFileFlags(FileFlags::InsertTabs))
         {
             context.tempReg.text = "\t";
         }
@@ -1902,7 +1902,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
 
             auto pMapBuffer = GetEditor().GetEmptyBuffer("Mappings");
 
-            pMapBuffer->SetFileFlags(ZSetFlags(pMapBuffer->GetFileFlags(), FileFlags::Locked | FileFlags::ReadOnly));
+            pMapBuffer->SetFileFlags(FileFlags::Locked | FileFlags::ReadOnly);
             pMapBuffer->SetText(str.str());
             GetEditor().GetActiveTabWindow()->AddWindow(pMapBuffer, nullptr, RegionLayoutType::VBox);
         }
@@ -2109,7 +2109,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
         }
         else if (strCommand == ":ZTabs")
         {
-            buffer.SetFileFlags(ZToggleFlags(buffer.GetFileFlags(), FileFlags::InsertTabs));
+            buffer.ToggleFileFlag(FileFlags::InsertTabs);
         }
         else if (strCommand == ":ZShowCR")
         {
@@ -2179,7 +2179,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
                         str << " ";
                     }
 
-                    if (ZTestFlags(editor_buffer->GetFileFlags(), FileFlags::Dirty))
+                    if (editor_buffer->HasFileFlags(FileFlags::Dirty))
                     {
                         str << "+";
                     }
