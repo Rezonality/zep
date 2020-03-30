@@ -59,7 +59,7 @@ target_include_directories(${DEMO_NAME}
         ${M3RDPARTY_DIR}
         ${ZEP_ROOT}/include)
 
-target_link_libraries(${DEMO_NAME} PRIVATE Qt5::Core Qt5::Gui Qt5::Widgets MUtils::MUtils Zep ZepExtensions ${PLATFORM_LINKLIBS})
+target_link_libraries(${DEMO_NAME} PRIVATE Qt5::Core Qt5::Gui Qt5::Widgets Zep ZepExtensions MUtils::MUtils ${PLATFORM_LINKLIBS} )
 target_compile_options(${DEMO_NAME} PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W3>) # Workaround Qt + MSVC 19 compile issue in release build.
 add_dependencies(${DEMO_NAME} Zep)
 

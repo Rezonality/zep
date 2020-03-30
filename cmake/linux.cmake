@@ -20,7 +20,7 @@ LIST(APPEND PLATFORM_LINKLIBS
     stdc++fs
     xcb
     freetype
-    harfbuzz
+    X11
     png16
     z
     ${OPENGL_LIBRARY}
