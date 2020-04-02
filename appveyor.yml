@@ -64,6 +64,6 @@ after_build:
   - if "%generator%"=="Visual Studio 16" (set COMPILER="VC16")
   # switch to project build folder and zip "tutorials" folder
   - cd C:\projects\zep\build\demos
-  - 7z a -tzip -mx9 "zep-imgui-%configuration%-%APPVEYOR_BUILD_VERSION.zip" demo_imgui\%configuration%
-  - appveyor PushArtifact "zep-imgui-%configuration%-%APPVEYOR_BUILD_VERSION%-%COMPILER%.zip"
+  - 7z a -tzip -mx9 "zep-imgui-%configuration%-%APPVEYOR_BUILD_VERSION%.zip" demo_imgui\%configuration%
+  - appveyor PushArtifact "zep-imgui-%configuration%-%APPVEYOR_BUILD_VERSION%.zip"
 
