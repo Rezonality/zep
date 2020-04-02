@@ -51,7 +51,8 @@ target_link_libraries (${DEMO_NAME}
     MUtils::MUtils
     SDL2::SDL2-static
     SDL2::SDL2main
-    ${PLATFORM_LINKLIBS})
+    ${PLATFORM_LINKLIBS}
+    )
 
 if (WIN32)
     target_link_libraries (${DEMO_NAME} 
