@@ -54,7 +54,7 @@ build_script:
 
 test_script:
     - ps: |
-        cd tests\%configuration%
+        cd tests\$env:CONFIGURATION
         .\unittests.exe --gtest_output=xml:unit_tests_report.xml
         $wc = New-Object 'System.Net.WebClient'
         $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path unit_tests_report.xml))
