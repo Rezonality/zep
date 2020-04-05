@@ -9,6 +9,7 @@ tags
 *.userosscache
 *.sln.docstates
 **/build/*
+indexdb
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 **/*.DS_Store

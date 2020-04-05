@@ -6,6 +6,7 @@
 #include "zep/regress.h"
 #include "zep/syntax_providers.h"
 #include "zep/tab_window.h"
+#include "zep/indexer.h"
 
 #include "config_app.h"
 
@@ -85,6 +86,11 @@ ZepEditor::ZepEditor(ZepDisplay* pDisplay, const ZepPath& root, uint32_t flags, 
     m_editorRegion->children.push_back(m_tabRegion);
     m_editorRegion->children.push_back(m_tabContentRegion);
     m_editorRegion->children.push_back(m_commandRegion);
+
+#ifdef IMPLEMENTED_INDEXER
+    m_indexer = std::make_shared<Indexer>(*this);
+    m_indexer->StartIndexing();
+#endif
 
     Reset();
 }
@@ -348,7 +354,9 @@ ZepWindow* ZepEditor::AddSearch()
     pSearchBuffer->SetBufferType(BufferType::Search);
 
     auto pActiveWindow = GetActiveTabWindow()->GetActiveWindow();
-    auto searchPath = GetFileSystem().GetSearchRoot(pActiveWindow->GetBuffer().GetFilePath());
+
+    bool hasGit = false;
+    auto searchPath = GetFileSystem().GetSearchRoot(pActiveWindow->GetBuffer().GetFilePath(), hasGit);
 
     auto pSearchWindow = GetActiveTabWindow()->AddWindow(pSearchBuffer, nullptr, RegionLayoutType::VBox);
     pSearchWindow->SetWindowFlags(pSearchWindow->GetWindowFlags() | WindowFlags::Modal);

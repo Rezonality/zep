@@ -120,60 +120,6 @@ void ZepMode_Search::AddKeyPress(uint32_t key, uint32_t modifiers)
     GetEditor().SetCommandText(str.str());
 }
 
-// TODO: Later we will have a project manager for tags, search, etc.
-void ZepMode_Search::GetSearchPaths(const ZepPath& path, std::vector<std::string>& ignore_patterns, std::vector<std::string>& include_patterns) const
-{
-    ZepPath config = path / ".zep" / "project.cfg";
-
-    if (GetEditor().GetFileSystem().Exists(config))
-    {
-        try
-        {
-            auto spConfig = cpptoml::parse_file(config.string());
-            if (spConfig != nullptr)
-            {
-                ignore_patterns = spConfig->get_qualified_array_of<std::string>("search.ignore").value_or(std::vector<std::string>{});
-                include_patterns = spConfig->get_qualified_array_of<std::string>("search.include").value_or(std::vector<std::string>{});
-            }
-        }
-        catch (cpptoml::parse_exception& ex)
-        {
-            std::ostringstream str;
-            str << config.filename().string() << " : Failed to parse. " << ex.what();
-            GetEditor().SetCommandText(str.str());
-        }
-        catch (...)
-        {
-            std::ostringstream str;
-            str << config.filename().string() << " : Failed to parse. ";
-            GetEditor().SetCommandText(str.str());
-        }
-    }
-
-    if (ignore_patterns.empty())
-    {
-        ignore_patterns = {
-            "[Bb]uild/*",
-            "**/[Oo]bj/**",
-            "**/[Bb]in/**",
-            "[Bb]uilt*"
-        };
-    }
-    if (include_patterns.empty())
-    {
-        include_patterns = {
-            "*.cpp",
-            "*.c",
-            "*.hpp",
-            "*.h",
-            "*.lsp",
-            "*.scm",
-            "*.cs",
-            "*.cfg",
-            "*.orca"
-        };
-    }
-}
 
 void ZepMode_Search::Begin(ZepWindow* pWindow)
 {
@@ -182,83 +128,10 @@ void ZepMode_Search::Begin(ZepWindow* pWindow)
     m_searchTerm = "";
     GetEditor().SetCommandText(">>> ");
 
-    std::vector<std::string> ignorePaths;
-    std::vector<std::string> includePaths;
-    GetSearchPaths(m_startPath, ignorePaths, includePaths);
-
+    m_indexResult = Indexer::IndexPaths(GetEditor(), m_startPath);
     m_window.GetBuffer().SetText(std::string("Indexing: ") + m_startPath.string());
 
     fileSearchActive = true;
-    m_indexResult = GetEditor().GetThreadPool().enqueue([&, ignorePaths, includePaths](const ZepPath& root) {
-        auto spResult = std::make_shared<FileSearchResult>();
-        spResult->root = ZepPath(root.string());
-
-        try
-        {
-            // Index the whole subtree, ignoring any patterns supplied to us
-            GetEditor().GetFileSystem().ScanDirectory(root, [&](const ZepPath& p, bool& recurse) -> bool {
-                recurse = true;
-
-                auto bDir = GetEditor().GetFileSystem().IsDirectory(p);
-
-                // Add this one to our list
-                auto targetZep = GetEditor().GetFileSystem().Canonical(p);
-                auto rel = path_get_relative(root, targetZep);
-
-                bool matched = true;
-                for (auto& proj : ignorePaths)
-                {
-                    auto res = fnmatch(proj.c_str(), rel.string().c_str(), 0);
-                    if (res == 0)
-                    {
-                        matched = false;
-                        break;
-                    }
-                }
-
-                if (!matched)
-                {
-                    if (bDir)
-                    {
-                        recurse = false;
-                    }
-                    return true;
-                }
-
-                matched = false;
-                for (auto& proj : includePaths)
-                {
-                    auto res = fnmatch(proj.c_str(), rel.string().c_str(), 0);
-                    if (res == 0)
-                    {
-                        matched = true;
-                        break;
-                    }
-                }
-
-                if (!matched)
-                {
-                    return true;
-                }
-
-                // Not adding directories to the search list
-                if (bDir)
-                {
-                    return true;
-                }
-
-                spResult->paths.push_back(rel);
-                spResult->lowerPaths.push_back(string_tolower(rel.string()));
-
-                return true;
-            });
-        }
-        catch (std::exception&)
-        {
-        }
-        return spResult;
-    },
-        m_startPath);
 }
 
 void ZepMode_Search::Notify(std::shared_ptr<ZepMessage> message)
@@ -272,9 +145,15 @@ void ZepMode_Search::Notify(std::shared_ptr<ZepMessage> message)
             {
                 return;
             }
+    
             fileSearchActive = false;
 
             m_spFilePaths = m_indexResult.get();
+            if (!m_spFilePaths->errors.empty())
+            {
+                GetEditor().SetCommandText(m_spFilePaths->errors);
+                return;
+            }
 
             InitSearchTree();
             ShowTreeResult();

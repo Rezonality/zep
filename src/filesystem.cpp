@@ -32,6 +32,11 @@ const ZepPath& ZepFileSystemCPP::GetWorkingDirectory() const
 {
     return m_workingDirectory;
 }
+    
+bool ZepFileSystemCPP::MakeDirectories(const ZepPath& path)
+{
+    return cpp_fs::create_directories(path.c_str());
+}
 
 bool ZepFileSystemCPP::IsDirectory(const ZepPath& path) const
 {
@@ -141,8 +146,9 @@ ZepPath ZepFileSystemCPP::Canonical(const ZepPath& path) const
     }
 }
 
-ZepPath ZepFileSystemCPP::GetSearchRoot(const ZepPath& start) const
+ZepPath ZepFileSystemCPP::GetSearchRoot(const ZepPath& start, bool& foundGit) const
 {
+    foundGit = false;
     auto findStartPath = [&](const ZepPath& startPath) {
         if (!startPath.empty())
         {
@@ -154,7 +160,7 @@ ZepPath ZepFileSystemCPP::GetSearchRoot(const ZepPath& start) const
 
             while (!testPath.empty() && IsDirectory(testPath))
             {
-                bool foundDir = false;
+                foundGit = false;
 
                 // Look in this dir
                 ScanDirectory(testPath, [&](const ZepPath& p, bool& recurse) -> bool {
@@ -164,7 +170,7 @@ ZepPath ZepFileSystemCPP::GetSearchRoot(const ZepPath& start) const
                     // Found the .git repo
                     if (p.extension() == ".git" && IsDirectory(p))
                     {
-                        foundDir = true;
+                        foundGit = true;
 
                         // Quit search
                         return false;
@@ -173,7 +179,7 @@ ZepPath ZepFileSystemCPP::GetSearchRoot(const ZepPath& start) const
                 });
 
                 // If found,  return it as the path we need
-                if (foundDir)
+                if (foundGit)
                 {
                     return testPath;
                 }

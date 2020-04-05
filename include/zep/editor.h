@@ -49,6 +49,7 @@ class ZepWindow;
 class ZepTheme;
 class ZepDisplay;
 class IZepFileSystem;
+class Indexer;
 
 struct Region;
 
@@ -438,6 +439,8 @@ private:
     EditorConfig m_config;
 
     std::unique_ptr<ThreadPool> m_threadPool;
+
+    std::shared_ptr<Indexer> m_indexer;
 };
 
 } // namespace Zep

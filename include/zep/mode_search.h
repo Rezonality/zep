@@ -5,6 +5,8 @@
 #include <memory>
 #include <regex>
 
+#include <zep/indexer.h>
+
 namespace Zep
 {
 
@@ -47,14 +49,6 @@ private:
 
 private:
 
-    // List of files found in the directory search
-    struct FileSearchResult
-    {
-        ZepPath root;
-        std::vector<ZepPath> paths;
-        std::vector<std::string> lowerPaths;
-    };
-
     // List of lines in the file result, with last found char
     struct SearchResult
     {
@@ -72,11 +66,11 @@ private:
     bool treeSearchActive = false;
 
     // Results of the file search and the indexing threads
-    std::future<std::shared_ptr<FileSearchResult>> m_indexResult;
+    std::future<std::shared_ptr<FileIndexResult>> m_indexResult;
     std::future<std::shared_ptr<IndexSet>> m_searchResult;
 
     // All files that can potentially match
-    std::shared_ptr<FileSearchResult> m_spFilePaths;
+    std::shared_ptr<FileIndexResult> m_spFilePaths;
 
     // A hierarchy of index results.
     // The 'top' of the tree is the most narrow finding from a set of 'n' characters

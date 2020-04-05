@@ -175,7 +175,7 @@ void ZepMode::ClampCursorForMode()
     {
         GetCurrentWindow()->SetBufferCursor(GetCurrentWindow()->GetBuffer().ClampToVisibleLine(GetCurrentWindow()->GetBufferCursor()));
     }
-    LOG(DEBUG) << GetCurrentWindow()->GetBuffer().GetName() << " : " << GetCurrentWindow()->GetBufferCursor();
+    //LOG(DEBUG) << GetCurrentWindow()->GetBuffer().GetName() << " : " << GetCurrentWindow()->GetBufferCursor();
 }
 
 // TODO: This happens every time and doesn't guard against repeats. And some logic requires that.

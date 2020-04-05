@@ -6,6 +6,7 @@ ${ZEP_ROOT}/include/zep/commands.h
 ${ZEP_ROOT}/include/zep/display.h
 ${ZEP_ROOT}/include/zep/editor.h
 ${ZEP_ROOT}/include/zep/filesystem.h
+${ZEP_ROOT}/include/zep/indexer.h
 ${ZEP_ROOT}/include/zep/keymap.h
 ${ZEP_ROOT}/include/zep/line_widgets.h
 ${ZEP_ROOT}/include/zep/mcommon/animation/timer.h
@@ -35,6 +36,7 @@ ${ZEP_ROOT}/src/commands.cpp
 ${ZEP_ROOT}/src/display.cpp
 ${ZEP_ROOT}/src/editor.cpp
 ${ZEP_ROOT}/src/filesystem.cpp
+${ZEP_ROOT}/src/indexer.cpp
 ${ZEP_ROOT}/src/keymap.cpp
 ${ZEP_ROOT}/src/line_widgets.cpp
 ${ZEP_ROOT}/src/mcommon/animation/timer.cpp
