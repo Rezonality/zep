@@ -16,7 +16,9 @@
 #include <imgui/misc/freetype/imgui_freetype.h>
 
 #include <clip/clip.h>
-#include <mutils/animation/time_provider.h>
+#include <mutils/time/time_provider.h>
+
+#include <zep/mcommon/animation/timer.h>
 #include <mutils/chibi/chibi.h>
 #include <mutils/file/file.h>
 #include <mutils/logger/logger.h>
@@ -24,7 +26,6 @@
 
 #include "config_app.h"
 
-#include <zep/mcommon/animation/timer.h>
 
 // About OpenGL function loaders: modern OpenGL doesn't have a standard header file and requires individual function pointers to be loaded manually.
 // Helper libraries are often used for this purpose! Here we are supporting a few common ones: gl3w, glew, glad.
@@ -407,27 +408,7 @@ int main(int argc, char** argv)
     // ** Zep specific code
     ZepContainer zep(startupFile);
 
-    // The ZepDemo has an orca mode.  This is a timer to tick that; it isn't realy of concern unless you care
-    // about orca support
-    std::atomic_bool quitTimer = false;
-    auto timerThread = std::thread([&quitTimer, &zep]() {
-        for (;;)
-        {
-            // Tick at regular intervals, no matter how long our operation takes
-            auto startTime = TimeProvider::Instance().Now();
-            auto nextTime = startTime + std::chrono::milliseconds(int(1000.0f / 5));
-
-            // Tell our global time provider to provide a synchronised tick to all clients
-            TimeProvider::Instance().Tick(TimeEvent{ TimeProvider::Instance().Now() });
-
-            if (quitTimer.load())
-            {
-                break;
-            }
-
-            std::this_thread::sleep_until(nextTime);
-        }
-    });
+    MUtils::TimeProvider::Instance().StartThread();
 
     // Main loop
     bool done = false;
@@ -613,8 +594,7 @@ int main(int argc, char** argv)
     }
 
     // Quit the ticker
-    quitTimer.store(true);
-    timerThread.join();
+    MUtils::TimeProvider::Instance().EndThread();
 
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();

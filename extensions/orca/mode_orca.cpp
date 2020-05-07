@@ -17,6 +17,8 @@
 
 #include "orca.h"
 
+#include <fmt/format.h>
+
 using namespace MUtils;
 namespace Zep
 {
@@ -70,9 +72,8 @@ void ZepMode_Orca::SetupKeyMaps()
     AddKeyMapWithCountRegisters(navigationMaps, { "<C-u>" }, id_MotionHalfPageBackward);
 
     // Line Motions
-    AddKeyMapWithCountRegisters(navigationMaps, { "$" }, id_MotionLineEnd);
-    AddKeyMapWithCountRegisters(navigationMaps, { "^" }, id_MotionLineFirstChar);
-    keymap_add(navigationMaps, { "0" }, id_MotionLineBegin);
+    //AddKeyMapWithCountRegisters(navigationMaps, { "$" }, id_MotionLineEnd);
+    //AddKeyMapWithCountRegisters(navigationMaps, { "^" }, id_MotionLineFirstChar);
 
     // Navigate between splits
     keymap_add(navigationMaps, { "<C-j>" }, id_MotionDownSplit);
@@ -84,7 +85,7 @@ void ZepMode_Orca::SetupKeyMaps()
     keymap_add({ &m_normalMap }, { "<S-F8>" }, id_MotionPreviousMarker);
 
     keymap_add({ &m_normalMap }, { "<C-p>", "<C-,>" }, id_QuickSearch);
-    keymap_add({ &m_normalMap }, { ":", "/", "?" }, id_ExMode);
+    keymap_add({ &m_normalMap }, { "~", "/", "?" }, id_ExMode);
     
     //keymap_add({ &m_normalMap }, { "H" }, id_PreviousTabWindow);
     //keymap_add({ &m_normalMap }, { "L" }, id_NextTabWindow);
@@ -95,7 +96,7 @@ void ZepMode_Orca::SetupKeyMaps()
 
     // Mode switching
     AddKeyMapWithCountRegisters({ &m_normalMap, &m_visualMap }, { "<Escape>" }, id_NormalMode);
-    AddKeyMapWithCountRegisters({ &m_visualMap }, { ":", "/", "?" }, id_ExMode);
+    AddKeyMapWithCountRegisters({ &m_visualMap }, { "~", "/", "?" }, id_ExMode);
 
     AddKeyMapWithCountRegisters({ &m_normalMap }, { "<Return>" }, id_MotionNextFirstChar);
 
@@ -211,13 +212,11 @@ std::vector<Airline> ZepMode_Orca::GetAirlines(ZepWindow& win) const
 
     Airline line;
 
-    std::ostringstream strGrid;
-    std::ostringstream strFrame;
-    strGrid << "Grid " << orca->GetSize().x << "x" << orca->GetSize().y;
-    strFrame << "Frame " << orca->GetTickCount();
 
-    line.leftBoxes.push_back(AirBox{ strGrid.str(), win.FilterActiveColor(win.GetBuffer().GetTheme().GetColor(ThemeColor::UniqueColor0)) });
-    line.leftBoxes.push_back(AirBox{ strFrame.str(), win.FilterActiveColor(win.GetBuffer().GetTheme().GetColor(ThemeColor::UniqueColor2)) });
+    auto& tp = TimeProvider::Instance();
+    auto beat = tp.GetBeat();
+    line.leftBoxes.push_back(AirBox{ fmt::format("Grid {}x{}", orca->GetSize().x, orca->GetSize().y), win.FilterActiveColor(win.GetBuffer().GetTheme().GetColor(ThemeColor::UniqueColor0)) });
+    line.leftBoxes.push_back(AirBox{ fmt::format("{}f {}{}", tp.GetTickCount(), tp.GetBeatsPerMinute(), beat == 0 ? "*" : " "), win.FilterActiveColor(win.GetBuffer().GetTheme().GetColor(ThemeColor::UniqueColor2)) });
     airlines.push_back(line);
 
     return airlines;
@@ -264,7 +263,7 @@ void ZepMode_Orca::PreDisplay(ZepWindow& window)
 static std::unordered_set<std::string> orca_keywords = {};
 static std::unordered_set<std::string> orca_identifiers = {};
 
-void ZepMode_Orca::Register(ZepEditor& editor)
+std::shared_ptr<ZepMode_Orca> ZepMode_Orca::Register(ZepEditor& editor)
 {
     editor.RegisterSyntaxFactory(
         { ".orca" },
@@ -272,7 +271,9 @@ void ZepMode_Orca::Register(ZepEditor& editor)
                            return std::make_shared<ZepSyntax_Orca>(*pBuffer, orca_keywords, orca_identifiers, ZepSyntaxFlags::CaseInsensitive);
                        }) });
 
-    editor.RegisterBufferMode(".orca", std::make_shared<ZepMode_Orca>(editor));
+    auto spOrca = std::make_shared<ZepMode_Orca>(editor);
+    editor.RegisterBufferMode(".orca", spOrca);
+    return spOrca;
 }
 
 void ZepMode_Orca::Notify(std::shared_ptr<ZepMessage> spMsg)
@@ -301,7 +302,7 @@ bool ZepMode_Orca::HandleIgnoredInput(CommandContext& context)
     if (context.fullCommand.size() == 1)
     {
         const std::string& ch = context.fullCommand;
-        if ((ch[0] >= 'A' && ch[0] <= 'Z') || (ch[0] >= 'a' && ch[0] <= 'z') || (ch[0] >= '0' && ch[0] <= '9'))
+        if (std::isgraph(ch[0]))
         {
             auto cmd = std::make_shared<ZepCommand_ReplaceRange>(
                 context.buffer,

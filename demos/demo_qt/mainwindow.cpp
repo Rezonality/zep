@@ -1,6 +1,6 @@
 #define NOMINMAX
 #include <mutils/chibi/chibi.h>
-#include <mutils/animation/time_provider.h>
+#include <mutils/time/time_provider.h>
 #define _MATH_DEFINES_DEFINED
 #include "chibi/eval.h"
 
@@ -58,9 +58,6 @@ namespace
 {
 Chibi scheme;
 }
-
-std::atomic_bool quitTimer = false;
-std::thread timerThread;
 
 MainWindow::MainWindow()
 {
@@ -150,32 +147,12 @@ MainWindow::MainWindow()
     setMenuBar(menu);
     setCentralWidget(pWidget);
 
-    // The Demo has an orca mode; it isn't realy of concern unless you care
-    // about orca support.
-    timerThread = std::thread([]() {
-        for (;;)
-        {
-            // Tick at regular intervals, no matter how long our operation takes
-            auto startTime = TimeProvider::Instance().Now();
-            auto nextTime = startTime + std::chrono::milliseconds(int(1000.0f / 5));
-
-            // Tell our global time provider to provide a synchronised tick to all clients
-            TimeProvider::Instance().Tick(TimeEvent{ TimeProvider::Instance().Now() });
-
-            if (quitTimer.load())
-            {
-                break;
-            }
-
-            std::this_thread::sleep_until(nextTime);
-        }
-    });
+    TimeProvider::Instance().StartThread();
 }
 
 MainWindow::~MainWindow()
 {
-    quitTimer.store(true);
-    timerThread.join();
+    TimeProvider::Instance().EndThread();
 }
 
 std::string MainWindow::ReplParse(const std::string& str)

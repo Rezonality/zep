@@ -21,7 +21,7 @@ public:
         return "Orca";
     }
 
-    static void Register(ZepEditor& editor);
+    static std::shared_ptr<ZepMode_Orca> Register(ZepEditor& editor);
 
     virtual void Init() override;
 
@@ -43,6 +43,8 @@ public:
     virtual void Notify(std::shared_ptr<ZepMessage> spMsg) override;
 
     virtual bool HandleIgnoredInput(CommandContext& context) override;
+
+    const std::map<ZepBuffer*, std::shared_ptr<Orca>>& GetOrcaBuffers() const { return m_mapOrca; }
 
 private:
     ZepWindow* m_pCurrentWindow;

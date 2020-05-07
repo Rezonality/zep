@@ -178,8 +178,6 @@ void ZepMode::ClampCursorForMode()
     //LOG(DEBUG) << GetCurrentWindow()->GetBuffer().GetName() << " : " << GetCurrentWindow()->GetBufferCursor();
 }
 
-// TODO: This happens every time and doesn't guard against repeats. And some logic requires that.
-// Should really just switch if not the same.  The new command setup should make this easier to fix
 void ZepMode::SwitchMode(EditorMode currentMode)
 {
     if (m_pCurrentWindow == nullptr)
@@ -191,6 +189,7 @@ void ZepMode::SwitchMode(EditorMode currentMode)
     if (currentMode == EditorMode::None)
         return;
 
+    // Don't switch to the same thing again
     if (currentMode == m_currentMode)
         return;
 

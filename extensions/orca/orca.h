@@ -6,11 +6,12 @@
 #pragma warning(disable : 4127)
 #endif
 #include <concurrentqueue/blockingconcurrentqueue.h>
+#include <concurrentqueue/concurrentqueue.h>
 #ifdef _WIN32
 #pragma warning(default : 4127)
 #endif
 
-#include <mutils/animation/time_provider.h>
+#include <mutils/time/time_provider.h>
 
 #ifdef _WIN32
 #pragma warning(disable : 4505)
@@ -125,7 +126,8 @@ public:
     bool IsEnabled() const { return m_enable.load(); }
 
     void RunThread(ZepEditor& editor);
-    void UpdateStateFlags();
+
+    moodycamel::ConcurrentQueue<Oevent>& GetMessageQueue() { return m_messageQueue; }
 
 private:
     long FieldIndex(long x, long y);
@@ -140,23 +142,27 @@ private:
     void WriteField(long x, long y, Glyph val);
 
     void BuildSyntax(int x, int y, uint32_t state, Glyph glyph);
+    void BuildSyntax();
+
 private:
     NVec2i m_size;
     std::mutex m_mutex;
     std::atomic_bool m_quit = false;
     std::atomic_bool m_enable = false;
-    std::atomic_bool m_updated = false;
+    std::atomic_bool m_updated = true;
     std::atomic_bool m_step = false;
     std::thread m_thread;
     
     Field m_field;
     std::vector<uint8_t> m_lastField;
     std::vector<SyntaxResult> m_syntax;
+    NVec2i m_lastCursorPos = NVec2i{ 0, 0 };
 
     Mbuf_reusable m_mbuf_r;
     Oevent_list m_oevent_list;
     std::atomic<int> m_tickCount = 0;
     moodycamel::BlockingConcurrentQueue<MUtils::TimeEvent> m_tickQueue;
+    moodycamel::ConcurrentQueue<Oevent> m_messageQueue;
 };
 
 } // namespace Zep

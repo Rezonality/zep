@@ -122,57 +122,37 @@ void Orca::ReadFromBuffer(ZepBuffer* pBuffer)
 
 void Orca::WriteToBuffer(ZepBuffer* pBuffer, ZepWindow& window)
 {
-    if (!m_updated.load())
+    if (!m_updated.load() && window.BufferToDisplay() == m_lastCursorPos)
     {
         return;
     }
 
     std::unique_lock<std::mutex> lock(m_mutex);
 
+    m_lastCursorPos = window.BufferToDisplay();
+
+    // Copy the calculated buffer data from the orca buffer
     auto& text = pBuffer->GetMutableText();
-    auto size = text.size();
     for (int y = 0; y < m_field.height; y++)
     {
         for (int x = 0; x < m_field.width; x++)
         {
-            auto ch = ReadField(x, y);
-
-            // Calculate which dots to show
-            auto cursor = window.BufferToDisplay();
-            auto cursorGrid = cursor / NVec2i(GridModulo, GridModulo);
-            auto valGrid = NVec2i(x, y) / NVec2i(GridModulo, GridModulo);
-
-            bool near = false;
-            if (x > (((cursor.x / GridModulo) * GridModulo) - 1) && x <= ((1 + (cursor.x / GridModulo)) * GridModulo) && y > (((cursor.y / GridModulo) * GridModulo) - 1) && y <= ((1 + (cursor.y / GridModulo)) * GridModulo))
-            {
-                near = true;
-            }
-
             auto targetIndex = y * (m_field.width + 1) + x;
-            if (targetIndex < size)
+            auto ch = ReadField(x, y);
+            // Special case + marker for grid bounds
+            if (y % GridModulo == 0 && x % GridModulo == 0 && ch == '.')
             {
-                if (y % GridModulo == 0 && x % GridModulo == 0 && ch == '.')
-                {
-                    ch = '+';
-                    text[targetIndex] = '+';
-                }
-                else if (near && ch == '.')
-                {
-                    text[targetIndex] = ' ';
-                }
-                else
-                {
-                    text[targetIndex] = ch;
-                }
-
+                ch = '+';
             }
+            text[targetIndex] = ch;
         }
     }
 
-    // Special syntax trigger, since we do things differently with orca
+    // Copy the precalculated syntax data to the buffer's syntax view
     auto pSyntax = dynamic_cast<ZepSyntax_Orca*>(pBuffer->GetSyntax());
     if (pSyntax)
     {
+        BuildSyntax();
         pSyntax->UpdateSyntax(m_syntax);
     }
 
@@ -204,6 +184,7 @@ void Orca::RunThread(ZepEditor& editor)
 
         if (!m_enable.load() && !m_step.load())
         {
+            std::this_thread::sleep_for(std::chrono::microseconds(500));
             continue;
         }
         m_step.store(false);
@@ -212,11 +193,18 @@ void Orca::RunThread(ZepEditor& editor)
         {
             std::unique_lock<std::mutex> lock(m_mutex);
             TIME_SCOPE(OrcaUpdate)
-                mbuffer_clear(m_mbuf_r.buffer, m_field.height, m_field.width);
+            mbuffer_clear(m_mbuf_r.buffer, m_field.height, m_field.width);
             oevent_list_clear(&m_oevent_list);
             orca_run(m_field.buffer, m_mbuf_r.buffer, m_field.height, m_field.width, m_tickCount++, &m_oevent_list, 0);
 
-            UpdateStateFlags();
+            const uint32_t maxQueueSize = 500;
+            if (m_messageQueue.size_approx() < maxQueueSize)
+            {
+                for (uint32_t i = 0; i < m_oevent_list.count; i++)
+                {
+                    m_messageQueue.enqueue(m_oevent_list.buffer[i]);
+                }
+            }
 
             m_lastField.assign(m_field.buffer, m_field.buffer + size_t(m_field.width * m_field.height));
             m_updated.store(true);
@@ -229,8 +217,8 @@ void Orca::RunThread(ZepEditor& editor)
     TimeProvider::Instance().UnRegisterConsumer(this);
 }
 
-// Store the state flags for the syntax update later.
-void Orca::UpdateStateFlags()
+// Generate the syntax information for the whole buffer
+void Orca::BuildSyntax()
 {
     m_syntax.resize((m_field.width + 1) * m_field.height);
 
@@ -239,18 +227,41 @@ void Orca::UpdateStateFlags()
         bool inComment = false;
         for (long x = 0; x < m_field.width; x++)
         {
+            auto cursorGrid = m_lastCursorPos / NVec2i(GridModulo, GridModulo);
+            auto valGrid = NVec2i(x, y) / NVec2i(GridModulo, GridModulo);
+
+            // For highlighting the cursor area
+            bool near = false;
+            if (x > (((m_lastCursorPos.x / GridModulo) * GridModulo) - 1) && x <= ((1 + (m_lastCursorPos.x / GridModulo)) * GridModulo) && y > (((m_lastCursorPos.y / GridModulo) * GridModulo) - 1) && y <= ((1 + (m_lastCursorPos.y / GridModulo)) * GridModulo))
+            {
+                // This cell is near the cursor and needs the highlight
+                if (x % 2 == 0 && y % 2 == 0)
+                near = true;
+            }
+
             // Copy the mark into the bottom of the state
             auto index = FieldIndex(x, y);
             auto mark = (uint32_t)m_mbuf_r.buffer[index];
 
             auto glyph = m_field.buffer[index];
             auto glyphOld = m_lastField[index];
+
+            // TODO: Do I still want/need this?
             if (glyph != glyphOld)
             {
                 mark |= OrcaFlags::Changed;
             }
 
-            if (glyph == '#')
+            if (y % GridModulo == 0 && x % GridModulo == 0 && glyph == '.')
+            {
+                glyph = Glyph_class_grid_marker;
+
+            }
+            else if (near && glyph == '.')
+            {
+                glyph = Glyph_class_grid_marker;
+            } 
+            else if (glyph == '#')
             {
                 glyph = Glyph_class_comment;
                 inComment = !inComment;
@@ -277,13 +288,6 @@ void Orca::BuildSyntax(int x, int y, uint32_t m, Glyph glyph)
     if (glyph == Glyph_class_comment)
     {
         res.foreground = ThemeColor::Comment;
-        return;
-    }
-
-    // Show the grid + marker every GridModulo across, by displaying the whitespace
-    if (x % GridModulo == 0 && y % GridModulo == 0 && glyph == '.')
-    {
-        res.foreground = ThemeColor::Whitespace;
         return;
     }
 
@@ -314,6 +318,17 @@ void Orca::BuildSyntax(int x, int y, uint32_t m, Glyph glyph)
         return;
     }
 
+    if (m & Mark_flag_lock)
+    {
+        return;
+    }
+
+    if (glyph == Glyph_class_grid ||
+        glyph == Glyph_class_grid_marker)
+    {
+        res.foreground = ThemeColor::Whitespace;
+        return;
+    }
 
     switch (glyph_class_of(glyph))
     {
@@ -393,4 +408,4 @@ void Orca::AddTimeEvent(const MUtils::TimeEvent& ev)
     m_tickQueue.enqueue(ev);
 }
 
-} // Zep
+} // namespace Zep
