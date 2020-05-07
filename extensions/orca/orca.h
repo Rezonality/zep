@@ -145,13 +145,13 @@ private:
     void BuildSyntax();
 
 private:
+    ZepEditor* m_pEditor = nullptr;
     NVec2i m_size;
+    
     std::mutex m_mutex;
-    std::atomic_bool m_quit = false;
     std::atomic_bool m_enable = false;
     std::atomic_bool m_updated = true;
     std::atomic_bool m_step = false;
-    std::thread m_thread;
     
     Field m_field;
     std::vector<uint8_t> m_lastField;
@@ -161,7 +161,6 @@ private:
     Mbuf_reusable m_mbuf_r;
     Oevent_list m_oevent_list;
     std::atomic<int> m_tickCount = 0;
-    moodycamel::BlockingConcurrentQueue<MUtils::TimeEvent> m_tickQueue;
     moodycamel::ConcurrentQueue<Oevent> m_messageQueue;
 };
 

@@ -22,17 +22,18 @@ Orca::~Orca()
     mbuf_reusable_deinit(&m_mbuf_r);
     oevent_list_deinit(&m_oevent_list);
     field_deinit(&m_field);
+
+    TimeProvider::Instance().UnRegisterConsumer(this);
 }
 
 void Orca::Init(ZepEditor& editor)
 {
+    m_pEditor = &editor;
     field_init(&m_field);
     oevent_list_init(&m_oevent_list);
     mbuf_reusable_init(&m_mbuf_r);
 
-    m_thread = std::thread([&]() {
-        RunThread(editor);
-    });
+    TimeProvider::Instance().RegisterConsumer(this);
 }
 
 long Orca::FieldIndex(long x, long y)
@@ -159,64 +160,6 @@ void Orca::WriteToBuffer(ZepBuffer* pBuffer, ZepWindow& window)
     m_updated.store(false);
 }
 
-void Orca::RunThread(ZepEditor& editor)
-{
-    TimeProvider::Instance().RegisterConsumer(this);
-
-    for (;;)
-    {
-        // Wait for a tick or timeout and check quit
-        TimeEvent tick;
-        if (!m_tickQueue.wait_dequeue_timed(tick, std::chrono::milliseconds(250)))
-        {
-            if (m_quit.load())
-            {
-                break;
-            }
-
-            continue;
-        }
-
-        if (m_quit.load())
-        {
-            break;
-        }
-
-        if (!m_enable.load() && !m_step.load())
-        {
-            std::this_thread::sleep_for(std::chrono::microseconds(500));
-            continue;
-        }
-        m_step.store(false);
-
-        // Lock zone
-        {
-            std::unique_lock<std::mutex> lock(m_mutex);
-            TIME_SCOPE(OrcaUpdate)
-            mbuffer_clear(m_mbuf_r.buffer, m_field.height, m_field.width);
-            oevent_list_clear(&m_oevent_list);
-            orca_run(m_field.buffer, m_mbuf_r.buffer, m_field.height, m_field.width, m_tickCount++, &m_oevent_list, 0);
-
-            const uint32_t maxQueueSize = 500;
-            if (m_messageQueue.size_approx() < maxQueueSize)
-            {
-                for (uint32_t i = 0; i < m_oevent_list.count; i++)
-                {
-                    m_messageQueue.enqueue(m_oevent_list.buffer[i]);
-                }
-            }
-
-            m_lastField.assign(m_field.buffer, m_field.buffer + size_t(m_field.width * m_field.height));
-            m_updated.store(true);
-
-            // This call is thread safe
-            editor.RequestRefresh();
-        }
-    }
-
-    TimeProvider::Instance().UnRegisterConsumer(this);
-}
-
 // Generate the syntax information for the whole buffer
 void Orca::BuildSyntax()
 {
@@ -236,7 +179,7 @@ void Orca::BuildSyntax()
             {
                 // This cell is near the cursor and needs the highlight
                 if (x % 2 == 0 && y % 2 == 0)
-                near = true;
+                    near = true;
             }
 
             // Copy the mark into the bottom of the state
@@ -255,12 +198,11 @@ void Orca::BuildSyntax()
             if (y % GridModulo == 0 && x % GridModulo == 0 && glyph == '.')
             {
                 glyph = Glyph_class_grid_marker;
-
             }
             else if (near && glyph == '.')
             {
                 glyph = Glyph_class_grid_marker;
-            } 
+            }
             else if (glyph == '#')
             {
                 glyph = Glyph_class_comment;
@@ -323,8 +265,7 @@ void Orca::BuildSyntax(int x, int y, uint32_t m, Glyph glyph)
         return;
     }
 
-    if (glyph == Glyph_class_grid ||
-        glyph == Glyph_class_grid_marker)
+    if (glyph == Glyph_class_grid || glyph == Glyph_class_grid_marker)
     {
         res.foreground = ThemeColor::Whitespace;
         return;
@@ -371,7 +312,7 @@ void Orca::BuildSyntax(int x, int y, uint32_t m, Glyph glyph)
 
 void Orca::SetTickCount(int count)
 {
-    m_tickCount.store(count);
+    TimeProvider::Instance().SetTickCount(count);
 }
 
 void Orca::SetTestField(const NVec2i& fieldSize)
@@ -392,20 +333,40 @@ void Orca::Step()
 
 void Orca::Quit()
 {
-    // Check if already quit
-    if (m_quit.load())
+    TimeProvider::Instance().UnRegisterConsumer(this);
+}
+
+void Orca::AddTimeEvent(const MUtils::TimeEvent&)
+{
+    if (!m_enable.load() && !m_step.load())
     {
         return;
     }
+    m_step.store(false);
 
-    // Quit and wait
-    m_quit.store(true);
-    m_thread.join();
-}
+    // Lock zone
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        TIME_SCOPE(OrcaUpdate)
+        mbuffer_clear(m_mbuf_r.buffer, m_field.height, m_field.width);
+        oevent_list_clear(&m_oevent_list);
+        orca_run(m_field.buffer, m_mbuf_r.buffer, m_field.height, m_field.width, m_tickCount++, &m_oevent_list, 0);
 
-void Orca::AddTimeEvent(const MUtils::TimeEvent& ev)
-{
-    m_tickQueue.enqueue(ev);
+        const uint32_t maxQueueSize = 500;
+        if (m_messageQueue.size_approx() < maxQueueSize)
+        {
+            for (uint32_t i = 0; i < m_oevent_list.count; i++)
+            {
+                m_messageQueue.enqueue(m_oevent_list.buffer[i]);
+            }
+        }
+
+        m_lastField.assign(m_field.buffer, m_field.buffer + size_t(m_field.width * m_field.height));
+        m_updated.store(true);
+
+        // This call is thread safe
+        m_pEditor->RequestRefresh();
+    }
 }
 
 } // namespace Zep
