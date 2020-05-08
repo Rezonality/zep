@@ -55,10 +55,11 @@ target_link_libraries (${DEMO_NAME}
     )
 
 if (WIN32)
-    target_link_libraries (${DEMO_NAME} 
-        PRIVATE
-        ${MUTILS_LIB_DIR}/freetype2/lib/freetype$<$<CONFIG:DEBUG>:d>.lib
-        )
+    # No longer needed?
+    #target_link_libraries (${DEMO_NAME} 
+    #    PRIVATE
+    # ${MUTILS_LIB_DIR}/freetype2/lib/freetype$<$<CONFIG:DEBUG>:d>.lib
+    #    )
     copy_existing_files(${PROJECT_NAME} "${RESOURCE_DEPLOY_FILES}" ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
 else()
     target_link_libraries (${DEMO_NAME} 
