@@ -41,7 +41,7 @@ build_script:
   - git clone https://github.com/cmaughan/MUtils
   - cd MUtils
   - ./prebuild.bat
-  - config.bat
+  - config_all.bat
   - build_all.bat
   - cd.. 
   - mkdir build
