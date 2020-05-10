@@ -6,6 +6,8 @@
 #include "orca.h"
 #include "syntax_orca.h"
 
+#include <mutils/profile/profile.h>
+
 using namespace MUtils;
 
 namespace Zep
@@ -128,6 +130,8 @@ void Orca::WriteToBuffer(ZepBuffer* pBuffer, ZepWindow& window)
         return;
     }
 
+    MUtilsZoneScoped;
+
     std::unique_lock<std::mutex> lock(m_mutex);
 
     m_lastCursorPos = window.BufferToDisplay();
@@ -163,6 +167,8 @@ void Orca::WriteToBuffer(ZepBuffer* pBuffer, ZepWindow& window)
 // Generate the syntax information for the whole buffer
 void Orca::BuildSyntax()
 {
+    MUtilsZoneScoped;
+
     m_syntax.resize((m_field.width + 1) * m_field.height);
 
     for (long y = 0; y < m_field.height; y++)
@@ -342,6 +348,9 @@ void Orca::AddTimeEvent(const MUtils::TimeEvent&)
     {
         return;
     }
+    
+    MUtilsZoneScopedN("Orca Engine");
+
     m_step.store(false);
 
     // Lock zone

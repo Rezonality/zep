@@ -22,6 +22,7 @@
 #include <mutils/chibi/chibi.h>
 #include <mutils/file/file.h>
 #include <mutils/logger/logger.h>
+#include <mutils/profile/profile.h>
 #include <tclap/CmdLine.h>
 
 #include "config_app.h"
@@ -591,6 +592,8 @@ int main(int argc, char** argv)
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(window);
+
+        MUtilsFrameMark;
     }
 
     // Quit the ticker
