@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-
+#include <imgui/imgui.h>
 #include "../display.h"
 #include "../syntax.h"
 
