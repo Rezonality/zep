@@ -97,6 +97,8 @@ ZepEditor::ZepEditor(ZepDisplay* pDisplay, const ZepPath& root, uint32_t flags, 
 
 ZepEditor::~ZepEditor()
 {
+    std::for_each(m_tabWindows.begin(), m_tabWindows.end(), [](ZepTabWindow* w) { delete w; });
+    m_tabWindows.clear();
     delete m_pDisplay;
     delete m_pFileSystem;
 }
@@ -582,7 +584,7 @@ void ZepEditor::UpdateTabs()
             spTabRegionTab->padding = DPI_VEC2(NVec2f(textBorder, textBorder));
             spTabRegionTab->flags = RegionFlags::Fixed;
             m_tabRegion->children.push_back(spTabRegionTab);
-            spTabRegionTab->pParent = m_tabRegion;
+            spTabRegionTab->pParent = m_tabRegion.get();
         }
     }
     LayoutRegion(*m_tabRegion);

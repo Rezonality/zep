@@ -143,16 +143,17 @@ bool ZepMode_Orca::HandleSpecialCommand(CommandContext& context)
     }
     else if (id == id_Orca_FrameStep)
     {
-        // Step at current rate!
+        // Step at current rate; this just queues a step to occur
         pOrca->Step();
 
         // We don't want to interfere with the regular tick of the time provider, so manually tick orca
-        pOrca->AddTimeEvent(TimeEvent{ TimeProvider::Instance().Now() });
+        TimeProvider::Instance().Beat();
+
         return true;
     }
     else if (id == id_Orca_ResetFrameCount)
     {
-        pOrca->SetTickCount(0);
+        pOrca->SetFrame(0);
         return true;
     }
     else if (id == id_Orca_Delete)
@@ -214,9 +215,10 @@ std::vector<Airline> ZepMode_Orca::GetAirlines(ZepWindow& win) const
 
 
     auto& tp = TimeProvider::Instance();
-    auto beat = tp.GetBeat();
+
+
     line.leftBoxes.push_back(AirBox{ fmt::format("Grid {}x{}", orca->GetSize().x, orca->GetSize().y), win.FilterActiveColor(win.GetBuffer().GetTheme().GetColor(ThemeColor::UniqueColor0)) });
-    line.leftBoxes.push_back(AirBox{ fmt::format("{}f {}{}", tp.GetTickCount(), tp.GetBeatsPerMinute(), beat == 0 ? "*" : " "), win.FilterActiveColor(win.GetBuffer().GetTheme().GetColor(ThemeColor::UniqueColor2)) });
+    line.leftBoxes.push_back(AirBox{ fmt::format("{}f {:0.2f}{}", orca->GetFrame(), tp.GetTempo(), orca->IsZeroQuantum() ? "*" : " "), win.FilterActiveColor(win.GetBuffer().GetTheme().GetColor(ThemeColor::UniqueColor2)) });
     airlines.push_back(line);
 
     return airlines;

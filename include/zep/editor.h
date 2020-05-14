@@ -127,7 +127,7 @@ public:
 
 struct IZepComponent
 {
-    virtual void Notify(std::shared_ptr<ZepMessage> message) = 0;
+    virtual void Notify(std::shared_ptr<ZepMessage> message) { ZEP_UNUSED(message); };
     virtual ZepEditor& GetEditor() const = 0;
 };
 

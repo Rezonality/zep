@@ -22,6 +22,8 @@ ZepTabWindow::ZepTabWindow(ZepEditor& editor)
 ZepTabWindow::~ZepTabWindow()
 {
     std::for_each(m_windows.begin(), m_windows.end(), [](ZepWindow* w) { delete w; });
+    m_spRootRegion.reset();
+    m_windowRegions.clear();
 }
 
 ZepWindow* ZepTabWindow::DoMotion(WindowMotion motion)
@@ -168,7 +170,7 @@ ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, Regio
             r1->layoutType = layoutType;
             r1->children.push_back(m_spRootRegion);
             r1->name = "Parented Root";
-            m_spRootRegion->pParent = r1;
+            m_spRootRegion->pParent = r1.get();
             m_spRootRegion = r1;
             r1->children.push_back(r);
         }
@@ -180,13 +182,13 @@ ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, Regio
         }
 
         // New region has root as the parent.
-        r->pParent = m_spRootRegion;
+        r->pParent = m_spRootRegion.get();
         m_windowRegions[pWin] = r;
     }
     else
     {
         // Get the parent region that holds the parent window!
-        std::shared_ptr<Region> pParentRegion = m_windowRegions[pParent]->pParent;
+        auto pParentRegion = m_windowRegions[pParent]->pParent;
 
         // Fix to ensure that a parent region isn't unnecessarily split if it doesn't have a split layout,
         // and has only one child
@@ -231,12 +233,12 @@ ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, Regio
             r1->name = "New Sub Region";
             r1->flags = RegionFlags::Expanding;
             pSplitRegion->children.push_back(r1);
-            r1->pParent = pSplitRegion;
+            r1->pParent = pSplitRegion.get();
             m_windowRegions[pParent] = r1;
 
             // Put our new window on the end
             pSplitRegion->children.push_back(r);
-            r->pParent = pSplitRegion;
+            r->pParent = pSplitRegion.get();
             m_windowRegions[pWin] = r;
         }
     }
@@ -323,13 +325,13 @@ void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
     // when adding a window to a split that is in the other direction.
     // When later removing the window, there is the problem that an owner split might now be empty because it
     // isn't associated with any remaining windows.  This function walks up the parents and cleans out empty ones
-    std::function<void(std::shared_ptr<Region>)> fnRemoveEmptyParent = [&](std::shared_ptr<Region> pParent) {
+    std::function<void(Region*)> fnRemoveEmptyParent = [&](Region* pParent) {
         // If the parent of the region we are deleting has no more children...
         if (pParent->children.empty())
         {
             // ... and it is not associated with a window (i.e. it was created as a container)
             auto itrFoundWin = std::find_if(m_windowRegions.begin(), m_windowRegions.end(), [pParent](auto currentPair) {
-                return currentPair.second == pParent;
+                return currentPair.second.get() == pParent;
             });
 
             // ... then we remove it.
@@ -340,7 +342,7 @@ void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
                 if (pOwnerRegion)
                 {
                     auto itrFoundChild = std::find_if(pOwnerRegion->children.begin(), pOwnerRegion->children.end(),
-                        [pDeleteRegion](std::shared_ptr<Region> pChild) { return pChild == pDeleteRegion; });
+                        [pDeleteRegion](std::shared_ptr<Region> pChild) { return pChild.get() == pDeleteRegion; });
                     if (itrFoundChild != pOwnerRegion->children.end())
                     {
                         pOwnerRegion->children.erase(itrFoundChild);

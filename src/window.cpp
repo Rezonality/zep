@@ -83,6 +83,7 @@ ZepWindow::ZepWindow(ZepTabWindow& window, ZepBuffer* buffer)
 
 ZepWindow::~ZepWindow()
 {
+    std::for_each(m_windowLines.begin(), m_windowLines.end(), [](SpanInfo* pInfo) { delete pInfo; });
 }
 
 void ZepWindow::UpdateScrollers()

@@ -109,19 +109,20 @@ public:
     Orca();
     virtual ~Orca();
 
-    virtual void AddTimeEvent(const MUtils::TimeEvent& ev) override;
+    virtual void AddTickEvent(MUtils::TimeLineEvent* ev) override;
 
     void Init(ZepEditor& editor);
     void WriteToBuffer(ZepBuffer* pBuffer, ZepWindow& window);
     void ReadFromBuffer(ZepBuffer* pBuffer);
-    void SetTickCount(int count);
     void SetTestField(const NVec2i& fieldSize);
     void Enable(bool enable);
     void Step();
     void Quit();
 
     NVec2i GetSize() const { return m_size; }
-    uint32_t GetTickCount() const { return m_tickCount.load(); }
+    uint32_t GetFrame() const { return m_frame.load(); }
+    void SetFrame(uint32_t frame) { return m_frame.store(frame); }
+    bool IsZeroQuantum() const { return m_zeroQuantum; }
 
     bool IsEnabled() const { return m_enable.load(); }
 
@@ -160,8 +161,11 @@ private:
 
     Mbuf_reusable m_mbuf_r;
     Oevent_list m_oevent_list;
-    std::atomic<int> m_tickCount = 0;
+    std::atomic<uint32_t> m_frame = 0;
     moodycamel::ConcurrentQueue<Oevent> m_messageQueue;
+
+    double m_lastBeat = 0.0;
+    bool m_zeroQuantum = true;
 };
 
 } // namespace Zep

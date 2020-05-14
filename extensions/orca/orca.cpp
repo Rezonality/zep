@@ -316,11 +316,6 @@ void Orca::BuildSyntax(int x, int y, uint32_t m, Glyph glyph)
     }
 }
 
-void Orca::SetTickCount(int count)
-{
-    TimeProvider::Instance().SetTickCount(count);
-}
-
 void Orca::SetTestField(const NVec2i& fieldSize)
 {
     ZEP_UNUSED(fieldSize);
@@ -342,7 +337,7 @@ void Orca::Quit()
     TimeProvider::Instance().UnRegisterConsumer(this);
 }
 
-void Orca::AddTimeEvent(const MUtils::TimeEvent&)
+void Orca::AddTickEvent(MUtils::TimeLineEvent*)
 {
     if (!m_enable.load() && !m_step.load())
     {
@@ -350,6 +345,16 @@ void Orca::AddTimeEvent(const MUtils::TimeEvent&)
     }
     
     MUtilsZoneScopedN("Orca Engine");
+
+    auto& tp = TimeProvider::Instance();
+    
+    m_zeroQuantum = false;
+    auto beat = tp.GetBeat();
+    if ((beat - m_lastBeat) > tp.GetQuantum())
+    {
+        m_lastBeat = beat;
+        m_zeroQuantum = true;
+    }
 
     m_step.store(false);
 
@@ -359,7 +364,7 @@ void Orca::AddTimeEvent(const MUtils::TimeEvent&)
         TIME_SCOPE(OrcaUpdate)
         mbuffer_clear(m_mbuf_r.buffer, m_field.height, m_field.width);
         oevent_list_clear(&m_oevent_list);
-        orca_run(m_field.buffer, m_mbuf_r.buffer, m_field.height, m_field.width, m_tickCount++, &m_oevent_list, 0);
+        orca_run(m_field.buffer, m_mbuf_r.buffer, m_field.height, m_field.width, m_frame++, &m_oevent_list, 0);
 
         const uint32_t maxQueueSize = 500;
         if (m_messageQueue.size_approx() < maxQueueSize)

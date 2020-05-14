@@ -195,6 +195,11 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         spEditor->UnRegisterCallback(this);
     }
 
+    void Destroy()
+    {
+        spEditor.reset();
+    }
+
     virtual std::string ReplParse(const std::string& str) override
     {
         auto ret = chibi_repl(scheme, NULL, str);
@@ -597,8 +602,11 @@ int main(int argc, char** argv)
     }
 
     // Quit the ticker
-    MUtils::TimeProvider::Instance().EndThread();
+    MUtils::TimeProvider::Instance().Free();
 
+    zep.Destroy();
+    chibi_destroy(scheme);
+    
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();

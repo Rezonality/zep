@@ -38,7 +38,7 @@ struct Region
     NVec4f margin = NVec4f(0.0f, 0.0f, 0.0f, 0.0f);
     std::string name;
 
-    std::shared_ptr<Region> pParent;
+    Region* pParent = nullptr;
     std::vector<std::shared_ptr<Region>> children;
 };
 
