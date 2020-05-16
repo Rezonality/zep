@@ -9,11 +9,13 @@
 #include <mutils/profile/profile.h>
 
 using namespace MUtils;
+using namespace std::chrono;
 
 namespace Zep
 {
 
 Orca::Orca()
+    : m_eventPool(TimeEventKinds::Orca)
 {
 }
 
@@ -337,17 +339,17 @@ void Orca::Quit()
     TimeProvider::Instance().UnRegisterConsumer(this);
 }
 
-void Orca::AddTickEvent(MUtils::TimeLineEvent*)
+void Orca::AddTickEvent(MUtils::TimeLineEvent* pEv)
 {
     if (!m_enable.load() && !m_step.load())
     {
         return;
     }
-    
+
     MUtilsZoneScopedN("Orca Engine");
 
     auto& tp = TimeProvider::Instance();
-    
+
     m_zeroQuantum = false;
     auto beat = tp.GetBeat();
     if ((beat - m_lastBeat) > tp.GetQuantum())
@@ -366,13 +368,26 @@ void Orca::AddTickEvent(MUtils::TimeLineEvent*)
         oevent_list_clear(&m_oevent_list);
         orca_run(m_field.buffer, m_mbuf_r.buffer, m_field.height, m_field.width, m_frame++, &m_oevent_list, 0);
 
-        const uint32_t maxQueueSize = 500;
-        if (m_messageQueue.size_approx() < maxQueueSize)
+        for (uint32_t i = 0; i < m_oevent_list.count; i++)
         {
-            for (uint32_t i = 0; i < m_oevent_list.count; i++)
-            {
-                m_messageQueue.enqueue(m_oevent_list.buffer[i]);
-            }
+            auto& ev = m_oevent_list.buffer[i];
+
+            // Note information
+            auto note = ev.midi_note.note + ((ev.midi_note.octave + 1) * 12);
+            auto velocity = (ev.midi_note.velocity > 0) ? ((float)ev.midi_note.velocity / 127.0f) : 1.0;
+            auto duration = std::max(ev.midi_note.duration, (uint8_t)1) * tp.GetTimePerBeat();
+
+            // TODO: For now, play at next beat
+            // We know that m_time is 'on' the engine's beat
+            auto time = pEv->m_time + tp.GetTimePerBeat() * 4;
+
+            // Submit event
+            auto pEvent = m_eventPool.Alloc();
+            pEvent->SetTime(time, duration_cast<milliseconds>(duration));
+            pEvent->velocity = float(velocity);
+            pEvent->midiNote = note;
+
+            tp.StoreTimeEvent(pEvent);
         }
 
         m_lastField.assign(m_field.buffer, m_field.buffer + size_t(m_field.width * m_field.height));

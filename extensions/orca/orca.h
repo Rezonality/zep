@@ -128,8 +128,6 @@ public:
 
     void RunThread(ZepEditor& editor);
 
-    moodycamel::ConcurrentQueue<Oevent>& GetMessageQueue() { return m_messageQueue; }
-
 private:
     long FieldIndex(long x, long y);
     long StateIndex(long x, long y, long xOff, long yOff);
@@ -162,10 +160,10 @@ private:
     Mbuf_reusable m_mbuf_r;
     Oevent_list m_oevent_list;
     std::atomic<uint32_t> m_frame = 0;
-    moodycamel::ConcurrentQueue<Oevent> m_messageQueue;
 
     double m_lastBeat = 0.0;
     bool m_zeroQuantum = true;
+    MUtils::EventPool<MUtils::NoteEvent> m_eventPool;
 };
 
 } // namespace Zep
