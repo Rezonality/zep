@@ -12,10 +12,10 @@
 // Unix/Clang is behind
 #ifdef __unix__
 #include <experimental/filesystem>
-namespace fs = std::experimental::filesystem::v1;
+namespace cpp_fs = std::experimental::filesystem::v1;
 #else
 #include <filesystem>
-namespace fs = std::filesystem;
+namespace cpp_fs = std::filesystem;
 #endif
 
 namespace Zep
