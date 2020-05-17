@@ -18,10 +18,9 @@ before_script:
   - cd build
 
 matrix:
-  exclude:
-    # Mac excluded, waiting for Mac OS Catalina 10.15
+  include:
     - os: osx
-      osx_image: xcode11.3
+      osx_image: xcode11.4
       addons:
         apt:
           packages:
@@ -30,7 +29,6 @@ matrix:
         - cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
         - make
         - make tests
-  include:
     - os: linux
       dist: bionic
       addons:

@@ -341,6 +341,8 @@ void Orca::Quit()
 
 void Orca::AddTickEvent(MUtils::TimeLineEvent* pEv)
 {
+    ZEP_UNUSED(pEv);
+
     if (!m_enable.load() && !m_step.load())
     {
         return;
@@ -379,7 +381,8 @@ void Orca::AddTickEvent(MUtils::TimeLineEvent* pEv)
 
             // TODO: For now, play at next beat
             // We know that m_time is 'on' the engine's beat
-            auto time = pEv->m_time + tp.GetTimePerBeat() * 4;
+            // Note: need time to be unique??!
+            auto time = tp.Now() /*pEv->m_time*/ + tp.GetTimePerBeat() * 4;
 
             // Submit event
             auto pEvent = m_eventPool.Alloc();
