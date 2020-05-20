@@ -66,8 +66,7 @@ target_link_libraries(${DEMO_NAME} PRIVATE
     Zep
     ZepExtensions
     MUtils::MUtils 
-    ${PLATFORM_LINKLIBS} 
-    ${MUTILS_LIB_DIR}/freetype2/lib/freetype$<$<CONFIG:DEBUG>:d>.lib)
+    ${PLATFORM_LINKLIBS})
 
 target_compile_options(${DEMO_NAME} PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W3>) # Workaround Qt + MSVC 19 compile issue in release build.
 add_dependencies(${DEMO_NAME} Zep ZepExtensions)
