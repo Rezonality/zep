@@ -1,7 +1,7 @@
 project(ZepExtensions
     VERSION 0.1.0.0)
 
-add_compile_options("$<$<CONFIG:DEBUG>:-DTRACY_ENABLE=1>")
+#add_compile_options("$<$<CONFIG:DEBUG>:-DTRACY_ENABLE=1>")
 add_compile_options("$<$<CONFIG:RELWITHDEBINFO>:-DTRACY_ENABLE=1>")
 
 find_package(SDL2 REQUIRED)

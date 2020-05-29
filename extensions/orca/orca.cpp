@@ -15,7 +15,7 @@ namespace Zep
 {
 
 Orca::Orca()
-    : m_eventPool(TimeEventKinds::Orca)
+    : m_eventPool(1000)
 {
 }
 
@@ -374,23 +374,31 @@ void Orca::AddTickEvent(MUtils::TimeLineEvent* pEv)
         {
             auto& ev = m_oevent_list.buffer[i];
 
-            // Note information
-            auto note = ev.midi_note.note + ((ev.midi_note.octave + 1) * 12);
-            auto velocity = (ev.midi_note.velocity > 0) ? ((float)ev.midi_note.velocity / 127.0f) : 1.0;
-            auto duration = std::max(ev.midi_note.duration, (uint8_t)1) * tp.GetTimePerBeat();
+            if (ev.any.oevent_type == Oevent_type_midi_note)
+            {
+                // Note information
+                    auto note = ev.midi_note.note + ((ev.midi_note.octave + 1) * 12);
+                auto velocity = (ev.midi_note.velocity > 0) ? ((float)ev.midi_note.velocity / 127.0f) : 1.0;
+                auto duration = std::max(ev.midi_note.duration, (uint8_t)1) * tp.GetTimePerBeat();
 
-            // TODO: For now, play at next beat
-            // We know that m_time is 'on' the engine's beat
-            // Note: need time to be unique??!
-            auto time = tp.Now() /*pEv->m_time*/ + tp.GetTimePerBeat() * 4;
+                // Max MIDI note allowed
+                note = std::min<int>(127, note);
 
-            // Submit event
-            auto pEvent = m_eventPool.Alloc();
-            pEvent->SetTime(time, duration_cast<milliseconds>(duration));
-            pEvent->velocity = float(velocity);
-            pEvent->midiNote = note;
+                // TODO: For now, play at next beat
+                // We know that m_time is 'on' the engine's beat
+                // Note: need time to be unique??!
+                auto time = pEv->m_time + nanoseconds(i) + tp.GetTimePerBeat() * 4;
 
-            tp.StoreTimeEvent(pEvent);
+                // Submit event
+                auto pEvent = m_eventPool.Alloc();
+                pEvent->SetTime(time, duration_cast<milliseconds>(duration));
+                pEvent->velocity = float(velocity);
+                pEvent->midiNote = note;
+                pEvent->pressed = true;
+                pEvent->channelId = note;
+
+                tp.StoreTimeEvent(pEvent);
+            }
         }
 
         m_lastField.assign(m_field.buffer, m_field.buffer + size_t(m_field.width * m_field.height));

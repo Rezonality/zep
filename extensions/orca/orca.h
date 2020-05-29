@@ -163,7 +163,7 @@ private:
 
     double m_lastBeat = 0.0;
     bool m_zeroQuantum = true;
-    MUtils::EventPool<MUtils::NoteEvent> m_eventPool;
+    MUtils::MemoryPool<MUtils::NoteEvent> m_eventPool;
 };
 
 } // namespace Zep
