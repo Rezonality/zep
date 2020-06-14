@@ -15,6 +15,8 @@
 #include "zep/mcommon/file/path.h"
 #include "zep/mcommon/file/cpptoml.h"
 
+#include "zep/keymap.h"
+
 #include "splits.h"
 
 // Basic Architecture
@@ -230,8 +232,10 @@ public:
     {}
     virtual ~ZepExCommand() {}
     virtual void Run(const std::vector<std::string>& args = {}) = 0;
-    virtual const char* Name() const = 0;
+    virtual const char* ExCommandName() const = 0;
+    virtual StringId ExCommandId() const { return StringId(ExCommandName()); }
     virtual void Init() {};
+    virtual const KeyMap* GetKeyMappings(ZepMode&) const { return nullptr; };
 };
 
 struct TabRegionTab : public Region
@@ -261,8 +265,11 @@ public:
     void RegisterGlobalMode(std::shared_ptr<ZepMode> spMode);
     void RegisterExCommand(std::shared_ptr<ZepExCommand> spMode);
     ZepExCommand* FindExCommand(const std::string& strName);
+    ZepExCommand* FindExCommand(const StringId& strName);
     void SetGlobalMode(const std::string& currentMode);
     ZepMode* GetSecondaryMode() const;
+
+    std::vector<const KeyMap*> GetGlobalKeyMaps(ZepMode& mode);
 
     void RegisterBufferMode(const std::string& strExtension, std::shared_ptr<ZepMode> spMode);
 

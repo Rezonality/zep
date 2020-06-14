@@ -16,7 +16,7 @@ public:
     virtual void Tick();
     virtual void Run(const std::vector<std::string>& tokens) override;
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
-    virtual const char* Name() const override;
+    virtual const char* ExCommandName() const override;
 
 private:
     timer m_timer;

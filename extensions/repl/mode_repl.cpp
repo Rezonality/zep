@@ -13,6 +13,13 @@ namespace Zep
 const std::string PromptString = ">> ";
 const std::string ContinuationString = ".. ";
 
+ZepReplExCommand::ZepReplExCommand(ZepEditor& editor, IZepReplProvider* pProvider)
+    : ZepExCommand(editor),
+    m_pProvider(pProvider)
+{
+    keymap_add(m_keymap, { "<c-e>" }, ExCommandId());
+}
+
 void ZepReplExCommand::Register(ZepEditor& editor, IZepReplProvider* pProvider)
 {
     editor.RegisterExCommand(std::make_shared<ZepReplExCommand>(editor, pProvider));

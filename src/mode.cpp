@@ -21,7 +21,25 @@ CommandContext::CommandContext(const std::string& commandIn, ZepMode& md, Editor
     registers.push('"');
     pRegister = &tempReg;
 
-    keymap_find(owner.GetKeyMappings(currentMode), fullCommand, keymap);
+    bool needMore = false;
+    auto extraMaps = md.GetEditor().GetGlobalKeyMaps(md);
+    for (auto& extra : extraMaps)
+    {
+        keymap_find(*extra, fullCommand, keymap);
+        if (keymap.foundMapping.id != 0)
+        {
+            break;
+        }
+    }
+
+    if (keymap.foundMapping.id == 0)
+    {
+        keymap_find(owner.GetKeyMappings(currentMode), fullCommand, keymap);
+        if (keymap.foundMapping.id == 0 && needMore)
+        {
+            keymap.needMoreChars = true;
+        }
+    }
 
     GetCommandRegisters();
 }
@@ -661,7 +679,14 @@ bool ZepMode::GetCommand(CommandContext& context)
     GlyphIterator cursorItr(buffer, bufferCursor);
 
     auto mappedCommand = context.keymap.foundMapping;
-   
+
+    auto pEx = GetEditor().FindExCommand(mappedCommand);
+    if (pEx)
+    {
+        pEx->Run();
+        return true;
+    }
+
     // Inherited modes can handle extra commands this way
     if (HandleSpecialCommand(context))
     {

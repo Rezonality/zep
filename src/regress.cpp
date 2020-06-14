@@ -37,7 +37,7 @@ void ZepRegressExCommand::Register(ZepEditor& editor)
     editor.RegisterExCommand(std::make_shared<ZepRegressExCommand>(editor));
 }
 
-const char* ZepRegressExCommand::Name() const
+const char* ZepRegressExCommand::ExCommandName() const
 {
     return "ZRegress";
 }

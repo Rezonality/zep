@@ -30,18 +30,17 @@ struct IZepReplProvider
 class ZepReplExCommand : public ZepExCommand
 {
 public:
-    ZepReplExCommand(ZepEditor& editor, IZepReplProvider* pProvider)
-        : ZepExCommand(editor),
-        m_pProvider(pProvider)
-    {}
+    ZepReplExCommand(ZepEditor& editor, IZepReplProvider* pProvider);
 
     static void Register(ZepEditor& editor, IZepReplProvider* pProvider);
     
     virtual void Notify(std::shared_ptr<ZepMessage> message) override { ZEP_UNUSED(message); }
     virtual void Run(const std::vector<std::string>& args) override;
-    virtual const char* Name() const override { return "ZRepl"; }
+    virtual const char* ExCommandName() const override { return "ZRepl"; }
+    virtual const KeyMap* GetKeyMappings(ZepMode&) const override { return &m_keymap; }
 private:
     IZepReplProvider* m_pProvider = nullptr;
+    KeyMap m_keymap;
 };
 
 class ZepMode_Repl : public ZepMode

@@ -596,7 +596,7 @@ ZepTabWindow* ZepEditor::AddTabWindow()
     m_tabWindows.push_back(pTabWindow);
     m_pActiveTabWindow = pTabWindow;
 
-    auto pEmpty = GetEmptyBuffer("[No Name]", FileFlags::DefaultBuffer);
+    auto pEmpty = GetEmptyBuffer("[No ExCommandName]", FileFlags::DefaultBuffer);
     pTabWindow->AddWindow(pEmpty, nullptr, RegionLayoutType::HBox);
 
     return pTabWindow;
@@ -656,7 +656,7 @@ void ZepEditor::RegisterGlobalMode(std::shared_ptr<ZepMode> spMode)
 
 void ZepEditor::RegisterExCommand(std::shared_ptr<ZepExCommand> spCommand)
 {
-    m_mapExCommands[spCommand->Name()] = spCommand;
+    m_mapExCommands[spCommand->ExCommandName()] = spCommand;
 }
 
 ZepExCommand* ZepEditor::FindExCommand(const std::string& strName)
@@ -665,6 +665,23 @@ ZepExCommand* ZepEditor::FindExCommand(const std::string& strName)
     if (itr != m_mapExCommands.end())
     {
         return itr->second.get();
+    }
+    return nullptr;
+}
+
+ZepExCommand* ZepEditor::FindExCommand(const StringId& Id)
+{
+    if (Id.id == 0)
+    {
+        return nullptr;
+    }
+
+    for (auto& [name, pEx] : m_mapExCommands)
+    {
+        if (pEx->ExCommandId() == Id)
+        {
+            return pEx.get();
+        }
     }
     return nullptr;
 }
@@ -1227,6 +1244,20 @@ void ZepEditor::SetFlags(uint32_t flags)
     {
         RequestRefresh();
     }
+}
+    
+std::vector<const KeyMap*> ZepEditor::GetGlobalKeyMaps(ZepMode& mode)
+{
+    std::vector<const KeyMap*> maps;
+    for (auto& [id, spMap] : m_mapExCommands)
+    {
+        auto pMap = spMap->GetKeyMappings(mode);
+        if (pMap)
+        {
+            maps.push_back(pMap);
+        }
+    }
+    return maps;
 }
 
 } // namespace Zep
