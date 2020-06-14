@@ -119,7 +119,8 @@ bool ZepFileSystemCPP::Exists(const ZepPath& path) const
     }
     catch (cpp_fs::filesystem_error& err)
     {
-        throw std::runtime_error(err.what());
+        LOG(typelog::ERROR) << "Exception: " << err.what();
+        return false;
     }
 }
 
@@ -136,7 +137,8 @@ bool ZepFileSystemCPP::Equivalent(const ZepPath& path1, const ZepPath& path2) co
     }
     catch (cpp_fs::filesystem_error& err)
     {
-        throw std::runtime_error(err.what());
+        LOG(typelog::ERROR) << "Exception: " << err.what();
+        return path1 == path2;
     }
 }
 
@@ -144,11 +146,12 @@ ZepPath ZepFileSystemCPP::Canonical(const ZepPath& path) const
 {
     try
     {
-        return ZepPath(cpp_fs::canonical(path.string()).string());
+        return ZepPath(cpp_fs::weakly_canonical(path.string()).string());
     }
     catch (cpp_fs::filesystem_error& err)
     {
-        throw std::runtime_error(err.what());
+        LOG(typelog::ERROR) << "Exception: " << err.what();
+        return path;
     }
 }
 

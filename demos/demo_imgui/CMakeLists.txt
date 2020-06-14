@@ -8,7 +8,7 @@ set(DEMO_NAME ZepDemo)
 project(ZepDemo
     VERSION 0.1.0.0)
 
-#add_compile_options("$<$<CONFIG:DEBUG>:-DTRACY_ENABLE=1>")
+add_compile_options("$<$<CONFIG:DEBUG>:-DTRACY_ENABLE=1>")
 add_compile_options("$<$<CONFIG:RELWITHDEBINFO>:-DTRACY_ENABLE=1>")
 
 add_project_meta(META_FILES_TO_INCLUDE IS_IMGUI)

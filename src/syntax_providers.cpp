@@ -143,6 +143,10 @@ void RegisterSyntaxProviders(ZepEditor& editor)
     editor.RegisterSyntaxFactory({ ".lisp", ".lsp" }, SyntaxProvider{ "lisp", tSyntaxFactory([](ZepBuffer* pBuffer) {
                                                                          return std::make_shared<ZepSyntax>(*pBuffer, lisp_keywords, lisp_identifiers);
                                                                      }) });
+    
+    editor.RegisterSyntaxFactory({ ".scm", ".scheme", ".sps", ".sls", ".sld", ".ss", ".sch" }, SyntaxProvider{ "lisp", tSyntaxFactory([](ZepBuffer* pBuffer) {
+                                                                         return std::make_shared<ZepSyntax>(*pBuffer, lisp_keywords, lisp_identifiers);
+                                                                     }) });
 
     editor.RegisterSyntaxFactory({ ".cmake", "CMakeLists.txt" }, SyntaxProvider{ "cmake", tSyntaxFactory([](ZepBuffer* pBuffer) {
                                                                                     return std::make_shared<ZepSyntax>(*pBuffer, cmake_keywords, cmake_identifiers, ZepSyntaxFlags::CaseInsensitive);
