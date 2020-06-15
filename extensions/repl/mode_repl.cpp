@@ -1,7 +1,8 @@
+#include "zep/editor.h"
 #include "zep/filesystem.h"
+#include "zep/syntax.h"
 #include "zep/tab_window.h"
 #include "zep/window.h"
-#include "zep/editor.h"
 
 #include "zep/mcommon/logger.h"
 #include "zep/mcommon/threadutils.h"
@@ -14,8 +15,8 @@ const std::string PromptString = ">> ";
 const std::string ContinuationString = ".. ";
 
 ZepReplExCommand::ZepReplExCommand(ZepEditor& editor, IZepReplProvider* pProvider)
-    : ZepExCommand(editor),
-    m_pProvider(pProvider)
+    : ZepExCommand(editor)
+    , m_pProvider(pProvider)
 {
     keymap_add(m_keymap, { "<c-e>" }, ExCommandId());
 }
@@ -32,10 +33,11 @@ void ZepReplExCommand::Run(const std::vector<std::string>& tokens)
     {
         return;
     }
-    
+
     auto pReplBuffer = GetEditor().GetEmptyBuffer("Repl.lisp", FileFlags::Locked);
     pReplBuffer->SetBufferType(BufferType::Repl);
-   
+    pReplBuffer->GetSyntax()->IgnoreLineHighlight();
+
     // Note: Need to set the mode _before_ adding the window
     auto pMode = std::make_shared<ZepMode_Repl>(GetEditor(), m_pProvider);
     pReplBuffer->SetMode(pMode);
@@ -45,9 +47,35 @@ void ZepReplExCommand::Run(const std::vector<std::string>& tokens)
     pMode->Prompt();
 }
 
+ZepReplEvaluateCommand::ZepReplEvaluateCommand(ZepEditor& editor, IZepReplProvider* pProvider)
+    : ZepExCommand(editor)
+    , m_pProvider(pProvider)
+{
+    keymap_add(m_keymap, { "<C-Return>" }, ExCommandId());
+}
+
+void ZepReplEvaluateCommand::Register(ZepEditor& editor, IZepReplProvider* pProvider)
+{
+    editor.RegisterExCommand(std::make_shared<ZepReplEvaluateCommand>(editor, pProvider));
+}
+
+void ZepReplEvaluateCommand::Run(const std::vector<std::string>& tokens)
+{
+    ZEP_UNUSED(tokens);
+    if (!GetEditor().GetActiveTabWindow())
+    {
+        return;
+    }
+
+    auto& buffer = GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer();
+    auto cursor = GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBufferCursor();
+
+    m_pProvider->ReplParse(buffer, cursor, ReplParseType::OuterExpression);
+}
+
 ZepMode_Repl::ZepMode_Repl(ZepEditor& editor, IZepReplProvider* pProvider)
-    : ZepMode(editor),
-    m_pRepl(pProvider)
+    : ZepMode(editor)
+    , m_pRepl(pProvider)
 {
 }
 
@@ -101,7 +129,7 @@ void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
         }
         return;
     }
-  
+
     // Set the cursor to the end of the buffer while inserting text
     GetCurrentWindow()->SetBufferCursor(MaxCursorMove);
 
@@ -112,15 +140,14 @@ void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
         SwitchMode(EditorMode::Normal);
         m_currentMode = Zep::EditorMode::Normal;
         return;
-    } 
+    }
     else if (key == ExtKeys::RETURN)
     {
         auto& buffer = GetCurrentWindow()->GetBuffer();
         std::string str = std::string(buffer.GetText().begin() + m_startLocation, buffer.GetText().end());
         buffer.Insert(buffer.EndLocation(), "\n");
 
-        auto stripLineStarts = [](std::string& str)
-        {
+        auto stripLineStarts = [](std::string& str) {
             bool newline = true;
             int pos = 0;
             while (pos < str.size())
@@ -153,7 +180,7 @@ void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
             bool complete = m_pRepl->ReplIsFormComplete(str, indent);
             if (!complete)
             {
-                // If the indent is < 0, we completed too much of the expression, so don't let the user hit return until they 
+                // If the indent is < 0, we completed too much of the expression, so don't let the user hit return until they
                 // fix it.  Example in lisp: (+ 2 2))  This expression has 'too many' close brackets.
                 if (indent < 0)
                 {
@@ -161,7 +188,7 @@ void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
                     GetCurrentWindow()->SetBufferCursor(MaxCursorMove);
                     return;
                 }
-                   
+
                 // New line continuation symbol
                 buffer.Insert(buffer.EndLocation(), ContinuationString);
 
@@ -210,7 +237,7 @@ void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
 
     // Ensure cursor is at buffer end
     GetCurrentWindow()->SetBufferCursor(MaxCursorMove);
-    
+
     return;
 }
 

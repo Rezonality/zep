@@ -20,6 +20,7 @@ namespace Zep
 class ZepSyntax;
 class ZepTheme;
 class ZepMode;
+class GlyphIterator;
 enum class ThemeColor;
 
 enum class SearchDirection
@@ -239,6 +240,11 @@ public:
         return m_lineEnds;
     }
 
+    void SetSyntax(std::shared_ptr<ZepSyntax> syntax)
+    {
+        m_spSyntax = syntax;
+    }
+
     void SetSyntaxProvider(SyntaxProvider provider)
     {
         if (provider.syntaxID != m_syntaxProvider.syntaxID)
@@ -309,6 +315,12 @@ public:
     void SetFileFlags(uint32_t flags, bool set = true);
     void ClearFileFlags(uint32_t flags);
     void ToggleFileFlag(uint32_t flags);
+
+    // For use like a container that can skip UTF8 bytecodes
+    GlyphIterator end() const;
+    GlyphIterator begin() const;
+
+    NVec2i GetOuterExpression(const ByteIndex location, const std::vector<char>& beginExpression, const std::vector<char>& endExpression) const;
 
 private:
     void ClearRangeMarker(std::shared_ptr<RangeMarker> spMarker);

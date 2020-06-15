@@ -672,6 +672,8 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
         return false;
     }
 
+    auto pSyntax = m_pBuffer->GetSyntax();
+
     auto cursorBlink = GetEditor().GetCursorBlinkState();
     auto cursorType = GetBuffer().GetMode()->GetCursorType();
 
@@ -723,53 +725,28 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                 NVec2f(linePx.y, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx()))),
             GetBlendedColor(ThemeColor::Background));
 
-        if (lineInfo.BufferCursorInside(m_bufferCursor))
+        // Here we allow the syntax highlighting to handle the background coloring of the active line
+        if (pSyntax)
         {
-            if (IsActiveWindow())
+            pSyntax->SetActiveLine(BufferByteRange(0, 0));
+            if (lineInfo.BufferCursorInside(m_bufferCursor))
             {
-                // Don't draw over the visual region
-                if (GetBuffer().GetMode()->GetEditorMode() != EditorMode::Visual)
+                if (IsActiveWindow())
                 {
-                    auto& cursorLine = GetCursorLineInfo(cursorCL.y);
-
-                    if (IsInsideTextRegion(cursorCL))
+                    // Don't draw over the visual region
+                    if (GetBuffer().GetMode()->GetEditorMode() != EditorMode::Visual)
                     {
-                        float lineSize = 1.0f * GetEditor().GetPixelScale().y;
 
-                        // Normal mode spans the whole buffer, otherwise we just cover the visible text range
-                        // This is all about making minimal mode as non-invasive as possible.
-                        auto right = GetEditor().GetConfig().style == EditorStyle::Normal ? m_textRegion->rect.bottomRightPx.x : m_textSizePx.y;
-
-                        if (GetEditor().GetConfig().cursorLineSolid)
+                        if (IsInsideTextRegion(cursorCL))
                         {
-                            // Cursor line
-                            display.DrawRectFilled(NRectf(NVec2f(m_textRegion->rect.topLeftPx.x, cursorLine.yOffsetPx - m_textOffsetPx + m_textRegion->rect.topLeftPx.y), NVec2f(right, cursorLine.yOffsetPx - m_textOffsetPx + m_textRegion->rect.topLeftPx.y + cursorLine.FullLineHeightPx())), GetBlendedColor(ThemeColor::CursorLineBackground));
-                        }
-                        else
-                        {
-                            // Cursor line
-                            display.DrawRectFilled(
-                                NRectf(
-                                    NVec2f(m_textRegion->rect.Left(), ToWindowY(cursorLine.yOffsetPx)),
-                                    NVec2f(right, ToWindowY(cursorLine.yOffsetPx + lineSize))),
-                                GetBlendedColor(ThemeColor::TabInactive));
-
-                            display.DrawRectFilled(
-                                NRectf(
-                                    NVec2f(m_textRegion->rect.Left(), ToWindowY(cursorLine.yOffsetPx + cursorLine.FullLineHeightPx() - lineSize)),
-                                    NVec2f(right, ToWindowY(cursorLine.yOffsetPx + cursorLine.FullLineHeightPx()))),
-                                GetBlendedColor(ThemeColor::TabInactive));
-
-                            display.DrawRectFilled(
-                                NRectf(
-                                    NVec2f(right, ToWindowY(cursorLine.yOffsetPx)),
-                                    NVec2f(right + lineSize, ToWindowY(cursorLine.yOffsetPx + cursorLine.FullLineHeightPx()))),
-                                GetBlendedColor(ThemeColor::TabInactive));
+                            auto& cursorLine = GetCursorLineInfo(cursorCL.y);
+                            pSyntax->SetActiveLine(cursorLine.lineByteRange);
                         }
                     }
                 }
             }
         }
+
         display.SetClipRect(m_bufferRegion->rect);
 
         if (m_indicatorRegion->rect.Width() > 0)
@@ -809,13 +786,6 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
     }
 
     auto screenPosX = m_textRegion->rect.Left() + m_xPad;
-    auto pSyntax = m_pBuffer->GetSyntax();
-
-    if (pSyntax)
-    {
-        pSyntax->SetCurrentCursor(GetBufferCursor());
-    }
-
     auto tipTimeSeconds = timer_get_elapsed_seconds(m_toolTipTimer);
 
     display.SetClipRect(m_textRegion->rect);

@@ -59,7 +59,15 @@ SyntaxResult ZepSyntax::GetSyntaxAt(long offset) const
         }
     }
 
-    if (m_flashRange.x != m_flashRange.y && m_flashRange.x <= offset && m_flashRange.y >= offset)
+    if (!(m_flags & ZepSyntaxFlags::IgnoreLineHighlight))
+    {
+        if (offset >= m_activeLineRange.first && offset < (m_activeLineRange.second - 1))
+        {
+            result.background = ThemeColor::CursorLineBackground;
+        }
+    }
+
+    if (m_flashRange.x != m_flashRange.y && m_flashRange.x <= offset && m_flashRange.y > offset)
     {
         auto elapsed = timer_get_elapsed_seconds(m_flashTimer);
         if (elapsed < m_flashDuration)
@@ -160,9 +168,9 @@ void ZepSyntax::QueueUpdateSyntax(ByteIndex startLocation, ByteIndex endLocation
 
     // Have the thread update the syntax in the new region
     // If the pool has no threads, this will end up serial
-    m_syntaxResult = GetEditor().GetThreadPool().enqueue([=]() {
+    //m_syntaxResult = GetEditor().GetThreadPool().enqueue([=]() {
         UpdateSyntax();
-    });
+    //});
 }
 
 void ZepSyntax::Notify(std::shared_ptr<ZepMessage> spMsg)
@@ -368,7 +376,6 @@ void ZepSyntax::UpdateSyntax()
 void ZepSyntax::EndFlash() const
 {
     m_flashRange = NVec2<ByteIndex>(0, 0);
-
     GetEditor().SetFlags(ZClearFlags(GetEditor().GetFlags(), ZepEditorFlags::FastUpdate));
 }
 
@@ -381,7 +388,7 @@ void ZepSyntax::BeginFlash(float seconds, SyntaxFlashType flashType, const NVec2
 
     if (range == NVec2i(0))
     {
-        m_flashRange = NVec2i(long(0), long(m_syntax.size() - 1));
+        m_flashRange = NVec2i(long(0), long(m_syntax.size()));
     }
     GetEditor().SetFlags(ZSetFlags(GetEditor().GetFlags(), ZepEditorFlags::FastUpdate));
 }

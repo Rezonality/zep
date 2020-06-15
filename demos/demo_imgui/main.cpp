@@ -178,7 +178,10 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         ZepMode_Orca::Register(*spEditor);
 
         ZepRegressExCommand::Register(*spEditor);
+
+        // Repl
         ZepReplExCommand::Register(*spEditor, this);
+        ZepReplEvaluateCommand::Register(*spEditor, this);
 
         if (!startupFilePath.empty())
         {
@@ -198,6 +201,26 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
     void Destroy()
     {
         spEditor.reset();
+    }
+
+    virtual std::string ReplParse(const ZepBuffer& buffer, ByteIndex cursorOffset, ReplParseType type) override
+    {
+        ZEP_UNUSED(cursorOffset);
+        ZEP_UNUSED(type);
+
+        NVec2i range = buffer.GetOuterExpression(cursorOffset, { '(' }, { ')' });
+
+        const auto& text = buffer.GetText();
+        auto eval = std::string(&text[range.x], &text[range.y - 1]);
+
+        // Flash the evaluated expression
+        SyntaxFlashType flashType = SyntaxFlashType::Flash;
+        float time = 1.0f;
+        buffer.GetSyntax()->BeginFlash(time, flashType, range);
+
+        auto ret = chibi_repl(scheme, NULL, buffer.GetText().string());
+        ret = RTrim(ret);
+        return ret;
     }
 
     virtual std::string ReplParse(const std::string& str) override

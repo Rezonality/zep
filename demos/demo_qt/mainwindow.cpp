@@ -162,6 +162,16 @@ std::string MainWindow::ReplParse(const std::string& str)
     return ret;
 }
 
+std::string MainWindow::ReplParse(const ZepBuffer& buffer, ByteIndex cursorOffset, ReplParseType type)
+{
+    ZEP_UNUSED(cursorOffset);
+    ZEP_UNUSED(type);
+
+    auto ret = chibi_repl(scheme, NULL, buffer.GetText().string());
+    ret = RTrim(ret);
+    return ret;
+}
+
 bool MainWindow::ReplIsFormComplete(const std::string& str, int& indent)
 {
     int count = 0;
