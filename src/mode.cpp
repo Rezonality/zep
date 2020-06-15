@@ -2432,12 +2432,19 @@ void ZepMode::Begin(ZepWindow* pWindow)
 {
     timer_restart(m_lastKeyPressTimer);
 
+    assert(pWindow != nullptr);
     m_pCurrentWindow = pWindow;
     m_visualBegin = m_visualEnd = 0;
 
     if (pWindow)
     {
         pWindow->GetBuffer().SetSelection(BufferByteRange{ 0, 0 });
+    }
+  
+    // If we are an overlay mode, make sure that the global mode is also begun on the new window
+    if (GetEditor().GetGlobalMode() != this)
+    {
+        GetEditor().GetGlobalMode()->Begin(pWindow);
     }
 }
 
