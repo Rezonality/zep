@@ -3,9 +3,8 @@
 #include <QMainWindow>
 #include <memory>
 
-#include <repl/mode_repl.h>
 #include <orca/mode_orca.h>
-
+#include <repl/mode_repl.h>
 
 QT_FORWARD_DECLARE_CLASS(QDockWidget)
 QT_FORWARD_DECLARE_CLASS(QMenu)
@@ -20,7 +19,9 @@ public:
     MainWindow();
     ~MainWindow();
 
-    virtual std::string ReplParse(const std::string& str) override;
+    virtual std::string ReplParse(const Zep::ZepBuffer& buffer, Zep::ByteIndex cursorOffset, Zep::ReplParseType type) override;
+    virtual std::string ReplParse(const std::string& text) override;
     virtual bool ReplIsFormComplete(const std::string& str, int& indent) override;
+
 private:
 };

@@ -671,25 +671,25 @@ void ZepBuffer::MarkUpdate()
 // Otherwise it is just reset to default state.  A new buffer is always initially cleared.
 void ZepBuffer::Clear()
 {
-    bool changed = false;
-    if (m_gapBuffer.size() > 1)
+    auto deleteSize = m_gapBuffer.size();
+
+    // Account for trailing 0
+    if (deleteSize > 1)
     {
         // Inform clients we are about to change the buffer
-        GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, 0, ByteIndex(m_gapBuffer.size() - 1)));
-        changed = true;
+        GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, 0, ByteIndex(deleteSize - 1)));
     }
 
     m_gapBuffer.clear();
     m_gapBuffer.push_back(0);
     m_lineEnds.clear();
     m_fileFlags = ZSetFlags(m_fileFlags, FileFlags::TerminatedWithZero);
-
     m_lineEnds.push_back(long(m_gapBuffer.size()));
 
-    if (changed)
+    if (deleteSize > 1)
     {
         MarkUpdate();
-        GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextDeleted, 0, ByteIndex(m_gapBuffer.size() - 1)));
+        GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextDeleted, 0, ByteIndex(deleteSize - 1)));
     }
 }
 
@@ -1482,6 +1482,84 @@ bool ZepBuffer::HasFileFlags(uint32_t flags) const
 void ZepBuffer::ToggleFileFlag(uint32_t flags)
 {
     m_fileFlags = ZSetFlags(m_fileFlags, flags, !ZTestFlags(m_fileFlags, flags));
+}
+
+GlyphIterator ZepBuffer::begin() const
+{
+    return GlyphIterator(*this, 0);
+}
+
+GlyphIterator ZepBuffer::end() const
+{
+    return GlyphIterator(*this, ByteIndex(m_gapBuffer.size()));
+}
+
+NVec2i ZepBuffer::GetOuterExpression(const ByteIndex location, const std::vector<char>& beginExpression, const std::vector<char>& endExpression) const
+{
+    GlyphIterator itr = begin();
+    GlyphIterator itrEnd = end();
+
+    auto cursorLine = GetBufferLine(location);
+
+    NVec2i outerRange(0);
+    NVec2i lineRange(0);
+    int32_t entryCount = 0;
+    while (itr != itrEnd)
+    {
+        auto ch = itr.Char();
+
+        bool found = false;
+        for (auto& exp : beginExpression)
+        {
+            if (exp == ch)
+            {
+                found = true;
+                break;
+            }
+        }
+
+        if (found)
+        {
+            if (entryCount == 0)
+            {
+                outerRange.x = itr.ToByteIndex();
+                lineRange.x = GetBufferLine(itr.ToByteIndex());
+            }
+            entryCount++;
+        }
+        else
+        {
+            found = false;
+            for (auto& exp : endExpression)
+            {
+                if (exp == ch)
+                {
+                    found = true;
+                }
+            }
+
+            if (found)
+            {
+                entryCount--;
+                if (entryCount == 0)
+                {
+                    lineRange.y = GetBufferLine(itr.ToByteIndex());
+                    outerRange.y = itr.ToByteIndex();
+
+                    if (cursorLine <= lineRange.x && cursorLine <= lineRange.y)
+                    {
+                        break;
+                    }
+
+                }
+            }
+        }
+        itr.Move(1);
+    }
+
+    if (outerRange.y < itrEnd.ToByteIndex())
+        outerRange.y++;
+    return outerRange;
 }
 
 } // namespace Zep

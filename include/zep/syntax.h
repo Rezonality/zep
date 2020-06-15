@@ -28,7 +28,8 @@ namespace ZepSyntaxFlags
 {
 enum
 {
-    CaseInsensitive = (1 << 0)
+    CaseInsensitive = (1 << 0),
+    IgnoreLineHighlight = (1 << 1)
 };
 };
 
@@ -78,7 +79,9 @@ public:
     const NVec4f& ToBackgroundColor(const SyntaxResult& res) const;
     const NVec4f& ToForegroundColor(const SyntaxResult& res) const;
 
-    virtual void SetCurrentCursor(ByteIndex index) { m_currentCursor = index; };
+    virtual void SetActiveLine(const BufferByteRange& range) { m_activeLineRange = range; }
+    virtual void IgnoreLineHighlight() { m_flags |= ZepSyntaxFlags::IgnoreLineHighlight; }
+
 private:
     virtual void QueueUpdateSyntax(ByteIndex startLocation, ByteIndex endLocation);
 
@@ -101,7 +104,7 @@ protected:
     float m_flashDuration = 1.0f;
     timer m_flashTimer;
     SyntaxFlashType m_flashType = SyntaxFlashType::Cylon;
-    ByteIndex m_currentCursor = 0;
+    BufferByteRange m_activeLineRange = { 0, 0 };
 };
 
 class ZepSyntaxAdorn : public ZepComponent
@@ -115,12 +118,10 @@ public:
     }
 
     virtual SyntaxResult GetSyntaxAt(long offset, bool& found) const = 0;
-    virtual void SetCurrentCursor(ByteIndex index) { m_currentCursor = index; };
 
 protected:
     ZepBuffer& m_buffer;
     ZepSyntax& m_syntax;
-    ByteIndex m_currentCursor = 0;
 };
 
 } // namespace Zep

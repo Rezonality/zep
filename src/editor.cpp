@@ -5,10 +5,13 @@
 #include "zep/mode_tree.h"
 #include "zep/regress.h"
 #include "zep/syntax_providers.h"
+#include "zep/syntax.h"
 #include "zep/tab_window.h"
 #include "zep/indexer.h"
 
 #include "config_app.h"
+
+#include <unordered_set>
 
 namespace Zep
 {
@@ -352,8 +355,12 @@ ZepWindow* ZepEditor::AddSearch()
         return nullptr;
     }
 
+    static std::unordered_set<std::string> search_keywords = {};
+    static std::unordered_set<std::string> search_identifiers = {};
+
     auto pSearchBuffer = GetEmptyBuffer("Search", FileFlags::Locked | FileFlags::ReadOnly);
     pSearchBuffer->SetBufferType(BufferType::Search);
+    pSearchBuffer->SetSyntax(std::make_shared<ZepSyntax>(*pSearchBuffer, search_keywords, search_identifiers, ZepSyntaxFlags::CaseInsensitive));
 
     auto pActiveWindow = GetActiveTabWindow()->GetActiveWindow();
 
