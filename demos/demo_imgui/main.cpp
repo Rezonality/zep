@@ -209,17 +209,21 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         ZEP_UNUSED(type);
 
         NVec2i range = buffer.GetOuterExpression(cursorOffset, { '(' }, { ')' });
+        if (range.x >= range.y)
+            return "<No Expression>";
 
         const auto& text = buffer.GetText();
-        auto eval = std::string(&text[range.x], &text[range.y - 1]);
+        auto eval = std::string(text.begin() + range.x, text.begin() + range.y);
 
         // Flash the evaluated expression
         SyntaxFlashType flashType = SyntaxFlashType::Flash;
         float time = 1.0f;
         buffer.GetSyntax()->BeginFlash(time, flashType, range);
 
-        auto ret = chibi_repl(scheme, NULL, buffer.GetText().string());
+        auto ret = chibi_repl(scheme, NULL, eval);
         ret = RTrim(ret);
+
+        GetEditor().SetCommandText(ret);
         return ret;
     }
 
