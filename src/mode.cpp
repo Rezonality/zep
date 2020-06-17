@@ -2432,7 +2432,6 @@ void ZepMode::Begin(ZepWindow* pWindow)
 {
     timer_restart(m_lastKeyPressTimer);
 
-    assert(pWindow != nullptr);
     m_pCurrentWindow = pWindow;
     m_visualBegin = m_visualEnd = 0;
 
