@@ -50,12 +50,19 @@ public:
 
     static void Register(ZepEditor& editor, IZepReplProvider* pProvider);
     
-    virtual void Notify(std::shared_ptr<ZepMessage> message) override { ZEP_UNUSED(message); }
+    virtual void Notify(std::shared_ptr<ZepMessage> message) override;
     virtual void Run(const std::vector<std::string>& args) override;
     virtual const char* ExCommandName() const override { return "ZRepl"; }
     virtual const KeyMap* GetKeyMappings(ZepMode&) const override { return &m_keymap; }
+
+private:
+    void Prompt();
+    void MoveToEnd();
+
 private:
     IZepReplProvider* m_pProvider = nullptr;
+    ZepBuffer* m_pReplBuffer = nullptr;
+    ZepWindow* m_pReplWindow = nullptr;
     KeyMap m_keymap;
 };
 
@@ -75,33 +82,5 @@ private:
     KeyMap m_keymap;
 };
 
-class ZepMode_Repl : public ZepMode
-{
-public:
-    ZepMode_Repl(ZepEditor& editor, IZepReplProvider* provider);
-    ~ZepMode_Repl();
-
-    virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
-    virtual void Begin(ZepWindow* pWindow) override;
-    virtual void Notify(std::shared_ptr<ZepMessage> message) override;
-    
-    static const char* StaticName()
-    {
-        return "REPL";
-    }
-    virtual const char* Name() const override
-    {
-        return StaticName();
-    }
-
-    void Prompt();
-    void MoveToEnd();
-private:
-    void Close();
-
-private:
-    ByteIndex m_startLocation = ByteIndex{ 0 };
-    IZepReplProvider* m_pRepl;
-};
 
 } // namespace Zep
