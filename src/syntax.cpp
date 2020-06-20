@@ -217,8 +217,17 @@ void ZepSyntax::UpdateSyntax()
     assert(std::distance(itrCurrent, itrEnd) < int(m_syntax.size()));
     assert(m_syntax.size() == buffer.size());
 
-    std::string delim(" \t.\n;(){}=:");
+    std::string delim;
     std::string lineEnd("\n");
+
+    if (m_flags & ZepSyntaxFlags::LispLike)
+    { 
+        delim = std::string(" \t.\n(){}[]");
+    }
+    else
+    {
+        delim = std::string(" \t.\n;(){}[]=:");
+    }
 
     // Walk backwards to previous delimiter
     while (itrCurrent > buffer.begin())
@@ -308,6 +317,10 @@ void ZepSyntax::UpdateSyntax()
         else if (token.find_first_not_of("{}()[]") == std::string::npos)
         {
             mark(itrFirst, itrLast, ThemeColor::Parenthesis, ThemeColor::None);
+        }
+        else if ((m_flags & ZepSyntaxFlags::LispLike) && token[0] == ':')
+        {
+            mark(itrFirst, itrLast, ThemeColor::Identifier, ThemeColor::None);
         }
         else
         {
