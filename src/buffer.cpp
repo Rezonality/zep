@@ -1494,72 +1494,115 @@ GlyphIterator ZepBuffer::end() const
     return GlyphIterator(*this, ByteIndex(m_gapBuffer.size()));
 }
 
-NVec2i ZepBuffer::GetOuterExpression(const ByteIndex location, const std::vector<char>& beginExpression, const std::vector<char>& endExpression) const
+NVec2i ZepBuffer::GetExpression(ExpressionType type, const ByteIndex location, const std::vector<char>& beginExpression, const std::vector<char>& endExpression) const
 {
     GlyphIterator itr = begin();
     GlyphIterator itrEnd = end();
 
-    auto cursorLine = GetBufferLine(location);
+    int maxDepth = -1;
+    struct Expression
+    {
+        int depth = 0;
+        NVec2i range = NVec2i(0);
+        std::vector<std::shared_ptr<Expression>> children;
+        Expression* pParent = nullptr;
+    };
 
-    NVec2i outerRange(0);
-    NVec2i lineRange(0);
-    int32_t entryCount = 0;
+    std::vector<std::shared_ptr<Expression>> topLevel;
+
+    Expression* pCurrent = nullptr;
+    Expression* pInner = nullptr;
+
     while (itr != itrEnd)
     {
         auto ch = itr.Char();
 
-        bool found = false;
         for (auto& exp : beginExpression)
         {
             if (exp == ch)
             {
-                found = true;
-                break;
-            }
-        }
-
-        if (found)
-        {
-            if (entryCount == 0)
-            {
-                outerRange.x = itr.ToByteIndex();
-                lineRange.x = GetBufferLine(itr.ToByteIndex());
-            }
-            entryCount++;
-        }
-        else
-        {
-            found = false;
-            for (auto& exp : endExpression)
-            {
-                if (exp == ch)
+                auto spChild = std::make_shared<Expression>();
+                if (pCurrent)
                 {
-                    found = true;
+                    pCurrent->children.push_back(spChild);
+                    spChild->pParent = pCurrent;
+                    spChild->depth = pCurrent->depth + 1;
                 }
-            }
-
-            if (found)
-            {
-                entryCount--;
-                if (entryCount == 0)
+                else
                 {
-                    lineRange.y = GetBufferLine(itr.ToByteIndex());
-                    outerRange.y = itr.ToByteIndex();
+                    topLevel.push_back(spChild);
+                }
+                pCurrent = spChild.get();
+                pCurrent->range.x = itr.ToByteIndex();
+            }
+        }
 
-                    if (cursorLine <= lineRange.x && cursorLine <= lineRange.y)
+        for (auto& exp : endExpression)
+        {
+            if (exp == ch)
+            {
+                if (pCurrent)
+                {
+                    pCurrent->range.y = itr.ToByteIndex() + 1;
+
+                    // Check the sub exp
+                    if ((pCurrent->range.x <= location) && (pCurrent->range.y > location))
                     {
-                        break;
+                        if (pCurrent->depth > maxDepth)
+                        {
+                            maxDepth = pCurrent->depth;
+                            pInner = pCurrent;
+                        }
                     }
-
+                    pCurrent = pCurrent->pParent;
                 }
             }
         }
+
         itr.Move(1);
     }
 
-    if (outerRange.y < itrEnd.ToByteIndex())
-        outerRange.y++;
-    return outerRange;
+    if (type == ExpressionType::Inner)
+    {
+        if (pInner)
+        {
+            return pInner->range;
+        }
+        return NVec2i(0, 0);
+    }
+
+    Expression* pBest = nullptr;
+    int dist = std::numeric_limits<int>::max();
+
+    for (auto& outer : topLevel)
+    {
+        if (location >= outer->range.x && location < outer->range.y)
+        {
+            return outer->range;
+        }
+        else
+        {
+            auto leftDist = std::abs(outer->range.x - location);
+            auto rightDist = std::abs(location - outer->range.y);
+            if (leftDist < dist)
+            {
+                pBest = outer.get();
+                dist = leftDist;
+            }
+            if (rightDist < dist)
+            {
+                pBest = outer.get();
+                dist = rightDist;
+            }
+        }
+    }
+
+    if (pBest)
+    {
+        return pBest->range;
+    }
+
+    return NVec2i(0, 0);
 }
 
 } // namespace Zep

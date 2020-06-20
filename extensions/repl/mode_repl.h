@@ -66,10 +66,10 @@ private:
     KeyMap m_keymap;
 };
 
-class ZepReplEvaluateCommand : public ZepExCommand
+class ZepReplEvaluateOuterCommand : public ZepExCommand
 {
 public:
-    ZepReplEvaluateCommand(ZepEditor& editor, IZepReplProvider* pProvider);
+    ZepReplEvaluateOuterCommand(ZepEditor& editor, IZepReplProvider* pProvider);
 
     static void Register(ZepEditor& editor, IZepReplProvider* pProvider);
     
@@ -81,6 +81,23 @@ private:
     IZepReplProvider* m_pProvider = nullptr;
     KeyMap m_keymap;
 };
+
+class ZepReplEvaluateInnerCommand : public ZepExCommand
+{
+public:
+    ZepReplEvaluateInnerCommand(ZepEditor& editor, IZepReplProvider* pProvider);
+
+    static void Register(ZepEditor& editor, IZepReplProvider* pProvider);
+    
+    virtual void Notify(std::shared_ptr<ZepMessage> message) override { ZEP_UNUSED(message); }
+    virtual void Run(const std::vector<std::string>& args) override;
+    virtual const char* ExCommandName() const override { return "ZReplEvalInner"; }
+    virtual const KeyMap* GetKeyMappings(ZepMode&) const override { return &m_keymap; }
+private:
+    IZepReplProvider* m_pProvider = nullptr;
+    KeyMap m_keymap;
+};
+
 
 
 } // namespace Zep

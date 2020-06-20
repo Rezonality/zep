@@ -11,19 +11,19 @@
 namespace Zep
 {
 
-ZepReplEvaluateCommand::ZepReplEvaluateCommand(ZepEditor& editor, IZepReplProvider* pProvider)
+ZepReplEvaluateOuterCommand::ZepReplEvaluateOuterCommand(ZepEditor& editor, IZepReplProvider* pProvider)
     : ZepExCommand(editor)
     , m_pProvider(pProvider)
 {
     keymap_add(m_keymap, { "<C-Return>" }, ExCommandId());
 }
 
-void ZepReplEvaluateCommand::Register(ZepEditor& editor, IZepReplProvider* pProvider)
+void ZepReplEvaluateOuterCommand::Register(ZepEditor& editor, IZepReplProvider* pProvider)
 {
-    editor.RegisterExCommand(std::make_shared<ZepReplEvaluateCommand>(editor, pProvider));
+    editor.RegisterExCommand(std::make_shared<ZepReplEvaluateOuterCommand>(editor, pProvider));
 }
 
-void ZepReplEvaluateCommand::Run(const std::vector<std::string>& tokens)
+void ZepReplEvaluateOuterCommand::Run(const std::vector<std::string>& tokens)
 {
     ZEP_UNUSED(tokens);
     if (!GetEditor().GetActiveTabWindow())
@@ -37,6 +37,32 @@ void ZepReplEvaluateCommand::Run(const std::vector<std::string>& tokens)
     m_pProvider->ReplParse(buffer, cursor, ReplParseType::OuterExpression);
 }
 
+
+ZepReplEvaluateInnerCommand::ZepReplEvaluateInnerCommand(ZepEditor& editor, IZepReplProvider* pProvider)
+    : ZepExCommand(editor)
+    , m_pProvider(pProvider)
+{
+    keymap_add(m_keymap, { "<C-S-Return>" }, ExCommandId());
+}
+
+void ZepReplEvaluateInnerCommand::Register(ZepEditor& editor, IZepReplProvider* pProvider)
+{
+    editor.RegisterExCommand(std::make_shared<ZepReplEvaluateInnerCommand>(editor, pProvider));
+}
+
+void ZepReplEvaluateInnerCommand::Run(const std::vector<std::string>& tokens)
+{
+    ZEP_UNUSED(tokens);
+    if (!GetEditor().GetActiveTabWindow())
+    {
+        return;
+    }
+
+    auto& buffer = GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer();
+    auto cursor = GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBufferCursor();
+
+    m_pProvider->ReplParse(buffer, cursor, ReplParseType::SubExpression);
+}
 const std::string PromptString = ">> ";
 const std::string ContinuationString = ".. ";
 
