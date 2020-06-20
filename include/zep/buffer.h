@@ -172,6 +172,12 @@ using tRangeMarkers = std::map<ByteIndex, std::set<std::shared_ptr<RangeMarker>>
 
 const ByteIndex InvalidByteIndex = -1;
 
+enum class ExpressionType
+{
+    Inner,
+    Outer
+};
+
 // A really big cursor move; which will likely clamp
 static const ByteIndex MaxCursorMove = ByteIndex(0xFFFFFFF);
 
@@ -320,7 +326,7 @@ public:
     GlyphIterator end() const;
     GlyphIterator begin() const;
 
-    NVec2i GetOuterExpression(const ByteIndex location, const std::vector<char>& beginExpression, const std::vector<char>& endExpression) const;
+    NVec2i GetExpression(ExpressionType type, const ByteIndex location, const std::vector<char>& beginExpression, const std::vector<char>& endExpression) const;
 
 private:
     void ClearRangeMarker(std::shared_ptr<RangeMarker> spMarker);
