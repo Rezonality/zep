@@ -362,17 +362,31 @@ void ZepSyntax::UpdateSyntax()
         findString('\"');
         findString('\'');
 
-        std::string commentStr = "/";
-        auto itrComment = buffer.find_first_of(itrFirst, itrLast, commentStr.begin(), commentStr.end());
-        if (itrComment != buffer.end())
+        if (m_flags & ZepSyntaxFlags::LispLike)
         {
-            auto itrCommentStart = itrComment++;
-            if (itrComment < buffer.end())
+            // Lisp languages use ; or # for comments
+            std::string commentStr = ";#";
+            auto itrComment = buffer.find_first_of(itrFirst, itrLast, commentStr.begin(), commentStr.end());
+            if (itrComment != buffer.end())
             {
-                if (*itrComment == '/')
+                itrLast = buffer.find_first_of(itrComment, buffer.end(), lineEnd.begin(), lineEnd.end());
+                mark(itrComment, itrLast, ThemeColor::Comment, ThemeColor::None);
+            }
+        }
+        else
+        {
+            std::string commentStr = "/";
+            auto itrComment = buffer.find_first_of(itrFirst, itrLast, commentStr.begin(), commentStr.end());
+            if (itrComment != buffer.end())
+            {
+                auto itrCommentStart = itrComment++;
+                if (itrComment < buffer.end())
                 {
-                    itrLast = buffer.find_first_of(itrCommentStart, buffer.end(), lineEnd.begin(), lineEnd.end());
-                    mark(itrCommentStart, itrLast, ThemeColor::Comment, ThemeColor::None);
+                    if (*itrComment == '/')
+                    {
+                        itrLast = buffer.find_first_of(itrCommentStart, buffer.end(), lineEnd.begin(), lineEnd.end());
+                        mark(itrCommentStart, itrLast, ThemeColor::Comment, ThemeColor::None);
+                    }
                 }
             }
         }
