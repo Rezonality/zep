@@ -75,6 +75,22 @@ public:
     
     virtual void Notify(std::shared_ptr<ZepMessage> message) override { ZEP_UNUSED(message); }
     virtual void Run(const std::vector<std::string>& args) override;
+    virtual const char* ExCommandName() const override { return "ZReplEvalOuter"; }
+    virtual const KeyMap* GetKeyMappings(ZepMode&) const override { return &m_keymap; }
+private:
+    IZepReplProvider* m_pProvider = nullptr;
+    KeyMap m_keymap;
+};
+
+class ZepReplEvaluateCommand : public ZepExCommand
+{
+public:
+    ZepReplEvaluateCommand(ZepEditor& editor, IZepReplProvider* pProvider);
+
+    static void Register(ZepEditor& editor, IZepReplProvider* pProvider);
+    
+    virtual void Notify(std::shared_ptr<ZepMessage> message) override { ZEP_UNUSED(message); }
+    virtual void Run(const std::vector<std::string>& args) override;
     virtual const char* ExCommandName() const override { return "ZReplEval"; }
     virtual const KeyMap* GetKeyMappings(ZepMode&) const override { return &m_keymap; }
 private:

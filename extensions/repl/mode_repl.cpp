@@ -37,6 +37,31 @@ void ZepReplEvaluateOuterCommand::Run(const std::vector<std::string>& tokens)
     m_pProvider->ReplParse(buffer, cursor, ReplParseType::OuterExpression);
 }
 
+ZepReplEvaluateCommand::ZepReplEvaluateCommand(ZepEditor& editor, IZepReplProvider* pProvider)
+    : ZepExCommand(editor)
+    , m_pProvider(pProvider)
+{
+    keymap_add(m_keymap, { "<S-Return>" }, ExCommandId());
+}
+
+void ZepReplEvaluateCommand::Register(ZepEditor& editor, IZepReplProvider* pProvider)
+{
+    editor.RegisterExCommand(std::make_shared<ZepReplEvaluateCommand>(editor, pProvider));
+}
+
+void ZepReplEvaluateCommand::Run(const std::vector<std::string>& tokens)
+{
+    ZEP_UNUSED(tokens);
+    if (!GetEditor().GetActiveTabWindow())
+    {
+        return;
+    }
+
+    auto& buffer = GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer();
+    auto cursor = GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBufferCursor();
+
+    m_pProvider->ReplParse(buffer, cursor, ReplParseType::All);
+}
 
 ZepReplEvaluateInnerCommand::ZepReplEvaluateInnerCommand(ZepEditor& editor, IZepReplProvider* pProvider)
     : ZepExCommand(editor)

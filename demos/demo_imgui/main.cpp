@@ -183,6 +183,7 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         ZepReplExCommand::Register(*spEditor, this);
         ZepReplEvaluateOuterCommand::Register(*spEditor, this);
         ZepReplEvaluateInnerCommand::Register(*spEditor, this);
+        ZepReplEvaluateCommand::Register(*spEditor, this);
 
         if (!startupFilePath.empty())
         {
@@ -218,6 +219,11 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         {
             range = buffer.GetExpression(ExpressionType::Inner, cursorOffset, { '(' }, { ')' });
         }
+        else
+        {
+            range = NVec2i(0, buffer.EndLocation());
+        }
+
         if (range.x >= range.y)
             return "<No Expression>";
 
