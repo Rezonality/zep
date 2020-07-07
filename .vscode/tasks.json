@@ -7,8 +7,8 @@
     },
     "tasks": [
         {
-            "label": "make",
-            "command": "cmake --build .",
+            "label": "Make Debug Zep",
+            "command": "cmake --build . --config Debug",
             "presentation": {
                 "echo": false,
                 "reveal": "always",

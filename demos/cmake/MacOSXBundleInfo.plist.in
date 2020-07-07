@@ -35,6 +35,6 @@
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
     <key>NSHighResolutionCapable</key>
-    <string>True</string>
+    <true/>
 </dict>
 </plist>
