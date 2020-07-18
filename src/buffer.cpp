@@ -569,10 +569,10 @@ void ZepBuffer::Load(const ZepPath& path)
     {
         m_filePath = GetEditor().GetFileSystem().Canonical(path);
         auto read = GetEditor().GetFileSystem().Read(path);
-        if (!read.empty())
-        {
-            SetText(read, true);
-        }
+
+        // Always set text, to ensure we prepare the buffer with 0 terminator,
+        // even if string is empty
+        SetText(read, true);
     }
     else
     {
