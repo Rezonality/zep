@@ -22,6 +22,7 @@
 #include <mutils/chibi/chibi.h>
 #include <mutils/file/file.h>
 #include <mutils/profile/profile.h>
+#include <mutils/ui/dpi.h>
 #include <tclap/CmdLine.h>
 
 #include "config_app.h"
@@ -99,7 +100,7 @@ void main()
 
 std::string startupFile;
 
-NVec2f GetDisplayScale()
+Zep::NVec2f GetDisplayScale()
 {
     float ddpi = 0.0f;
     float hdpi = 0.0f;
@@ -107,9 +108,9 @@ NVec2f GetDisplayScale()
     auto res = SDL_GetDisplayDPI(0, &ddpi, &hdpi, &vdpi);
     if (res == 0 && hdpi != 0)
     {
-        return NVec2f(hdpi, vdpi) / 96.0f;
+        return Zep::NVec2f(hdpi, vdpi) / 96.0f;
     }
-    return NVec2f(1.0f);
+    return Zep::NVec2f(1.0f);
 }
 
 } // namespace
@@ -209,7 +210,7 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         ZEP_UNUSED(cursorOffset);
         ZEP_UNUSED(type);
 
-        NVec2i range;
+        Zep::NVec2i range;
         if (type == ReplParseType::OuterExpression)
         {
             range = buffer.GetExpression(ExpressionType::Outer, cursorOffset, { '(' }, { ')' });
@@ -220,7 +221,7 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         }
         else
         {
-            range = NVec2i(0, buffer.EndLocation());
+            range = Zep::NVec2i(0, buffer.EndLocation());
         }
 
         if (range.x >= range.y)
@@ -443,7 +444,7 @@ int main(int argc, char** argv)
     cfg.OversampleH = 3;
     cfg.OversampleV = 3;
 
-    float fontPixelHeight = FontHeightPixelsFromPointSize(DemoFontPtSize, GetDisplayScale().y);
+    float fontPixelHeight = dpi_pixel_height_from_point_size(DemoFontPtSize, GetDisplayScale().y);
     io.Fonts->AddFontFromFileTTF((std::string(SDL_GetBasePath()) + "Cousine-Regular.ttf").c_str(), fontPixelHeight, &cfg, ranges.Data);
 
     unsigned int flags = 0; // ImGuiFreeType::NoHinting;
@@ -616,7 +617,7 @@ int main(int argc, char** argv)
         // Fill the window
         max.x = min.x + max.x;
         max.y = min.y + max.y;
-        zep.spEditor->SetDisplayRegion(NVec2f(min.x, min.y), NVec2f(max.x, max.y));
+        zep.spEditor->SetDisplayRegion(Zep::NVec2f(min.x, min.y), Zep::NVec2f(max.x, max.y));
 
         // Display the editor inside this window
         zep.spEditor->Display();
