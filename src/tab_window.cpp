@@ -130,9 +130,6 @@ void ZepTabWindow::SetActiveWindow(ZepWindow* pBuffer)
 // case to deal with that.
 ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, RegionLayoutType layoutType)
 {
-    /*LOG(INFO) << "AddWindow, Regions: ";
-    LOG(INFO) << "\n"
-              << *m_spRootRegion;*/
     // If we are replacing a default/unmodified start buffer, then this new window will replace it
     // This makes for nice behavior where adding a top-level window to the tab will nuke the default buffer
     if (m_windows.size() == 1 && pParent == nullptr)
@@ -382,10 +379,6 @@ void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
         SetDisplayRegion(m_lastRegionRect, true);
         assert(!m_spRootRegion->children.empty());
     }
-
-    //LOG(INFO) << "CloseWindow, Regions: ";
-    //LOG(INFO) << "\n"
-    //         << *m_spRootRegion;
 }
 
 void ZepTabWindow::Notify(std::shared_ptr<ZepMessage> pMsg)

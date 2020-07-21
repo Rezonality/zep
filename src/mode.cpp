@@ -193,7 +193,6 @@ void ZepMode::ClampCursorForMode()
     {
         GetCurrentWindow()->SetBufferCursor(GetCurrentWindow()->GetBuffer().ClampToVisibleLine(GetCurrentWindow()->GetBufferCursor()));
     }
-    //LOG(DEBUG) << GetCurrentWindow()->GetBuffer().GetName() << " : " << GetCurrentWindow()->GetBufferCursor();
 }
 
 void ZepMode::SwitchMode(EditorMode currentMode)
@@ -796,7 +795,7 @@ bool ZepMode::GetCommand(CommandContext& context)
 
                 for (auto& folder : searchFolders)
                 {
-                    LOG(INFO) << "Searching: " << folder.string();
+                    ZLOG(INFO, "Searching: " << folder.string());
 
                     GetEditor().GetFileSystem().ScanDirectory(folder, [&](const ZepPath& currentPath, bool& recurse) {
                         recurse = true;

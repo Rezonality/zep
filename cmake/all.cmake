@@ -9,6 +9,9 @@ else()
   message(WARNING "Unknown compiler, not setting flags")
 endif()
 
+# Ensure Debug Flags
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG -DDEBUG")
+
 message(STATUS "System: ${CMAKE_SYSTEM}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "Flags: ${CMAKE_CXX_FLAGS}")

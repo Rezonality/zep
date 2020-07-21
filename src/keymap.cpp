@@ -198,7 +198,8 @@ void keymap_find(const KeyMap& map, const std::string& strCommand, KeyMapResult&
                 }
                 catch (std::exception& ex)
                 {
-                    LOG(DEBUG) << ex.what();
+                    ZEP_UNUSED(ex);
+                    ZLOG(DBG, ex.what());
                 }
                 return true;
             }
@@ -375,7 +376,7 @@ void keymap_find(const KeyMap& map, const std::string& strCommand, KeyMapResult&
         }
     }
 
-    //LOG(DEBUG) << strCommand << " - " << findResult.searchPath;
+    //ZLOG(DBG, strCommand << " - " << findResult.searchPath);
 }
 
 } // namespace Zep

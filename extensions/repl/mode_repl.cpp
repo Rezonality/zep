@@ -141,7 +141,7 @@ void ZepReplExCommand::Notify(std::shared_ptr<ZepMessage> message)
         auto spBufferMsg = std::static_pointer_cast<BufferMessage>(message);
         if (spBufferMsg->pBuffer == m_pReplBuffer)
         {
-            LOG(DEBUG) << "Buffer Message";
+            ZLOG(DBG, "Buffer Message");
         }
     }
 }

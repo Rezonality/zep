@@ -15,7 +15,12 @@
 
 namespace Zep
 {
-structlog LOGCFG = { true, DEBUG };
+#ifdef _DEBUG
+Zep::ZLogger logger = { true, Zep::ZLT::DBG };
+#else
+Zep::ZLogger logger = { false, Zep::ZLT::INFO };
+#endif
+bool Zep::ZLog::disabled = false;
 }
 
 namespace Zep
@@ -115,7 +120,7 @@ void ZepEditor::OnFileChanged(const ZepPath& path)
 {
     if (path.filename() == "zep.cfg")
     {
-        LOG(INFO) << "Reloading config";
+        ZLOG(INFO, "Reloading config");
         LoadConfig(path);
         Broadcast(std::make_shared<ZepMessage>(Msg::ConfigChanged));
     }
@@ -306,7 +311,6 @@ ZepBuffer* ZepEditor::GetFileBuffer(const ZepPath& filePath, uint32_t fileFlags,
             {
                 if (GetFileSystem().Equivalent(pBuffer->GetFilePath(), path))
                 {
-                    //LOG(DEBUG) << "Found equivalent buffer for file: " << path.string();
                     return pBuffer.get();
                 }
             }

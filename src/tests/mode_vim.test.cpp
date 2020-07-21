@@ -458,7 +458,8 @@ TEST(Regex, VimRegex)
     {
         for (auto& m : match)
         {
-            LOG(DEBUG) << "Match: " << m.str();
+            ZEP_UNUSED(m);
+            ZLOG(DBG, "Match: " << m.str());
         }
     }
 }

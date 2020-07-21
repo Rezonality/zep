@@ -109,7 +109,6 @@ public:
             drawList->AddRectFilled(toImVec2(rc.topLeftPx), toImVec2(rc.bottomRightPx), ToPackedABGR(color));
             drawList->PopClipRect();
         }
-        //LOG(INFO) << "Draw: RC: " << rc << ", Color:" << color;
     }
 
     void SetClipRect(const NRectf& rc)

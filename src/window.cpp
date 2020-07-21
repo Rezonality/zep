@@ -369,7 +369,6 @@ void ZepWindow::UpdateLineSpans()
 {
     TIME_SCOPE(UpdateLineSpans);
 
-    //LOG(DEBUG) << "UpdateLineSpans: " << (uint64_t)this << ", " << m_pBuffer->GetName();
     m_maxDisplayLines = (long)std::max(0.0f, std::floor(m_textRegion->rect.Height() / m_defaultLineSize));
 
     const auto& textBuffer = m_pBuffer->GetText();
@@ -556,8 +555,6 @@ void ZepWindow::UpdateVisibleLineRange()
     }
 
     m_textSizePx.y = m_windowLines[m_windowLines.size() - 1]->yOffsetPx + GetEditor().GetDisplay().GetFontHeightPixels() + DPI_Y(GetEditor().GetConfig().lineMargins.y) + DPI_Y(GetEditor().GetConfig().lineMargins.x);
-
-    //LOG(DEBUG) << "Text Size: " << m_textSizePx;
 
     m_visibleLineIndices.y++;
     UpdateScrollers();

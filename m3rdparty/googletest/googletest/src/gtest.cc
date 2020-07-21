@@ -1473,7 +1473,7 @@ GTEST_IMPL_CMP_HELPER_(NE, !=)
 GTEST_IMPL_CMP_HELPER_(LE, <=)
 // Implements the helper function for {ASSERT|EXPECT}_LT with int or
 // enum arguments.
-GTEST_IMPL_CMP_HELPER_(LT, < )
+GTEST_IMPL_CMP_HELPER_(ZLT, < )
 // Implements the helper function for {ASSERT|EXPECT}_GE with int or
 // enum arguments.
 GTEST_IMPL_CMP_HELPER_(GE, >=)

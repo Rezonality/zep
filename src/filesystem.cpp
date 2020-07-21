@@ -1,4 +1,5 @@
 #include "zep/filesystem.h"
+#include "zep/editor.h"
 
 #include <fstream>
 
@@ -74,7 +75,7 @@ std::string ZepFileSystemCPP::Read(const ZepPath& fileName)
     }
     else
     {
-        LOG(typelog::ERROR) << "File Not Found: " << fileName.string();
+        ZLOG(ERROR, "File Not Found: " << fileName.string());
     }
     return std::string();
 }
@@ -119,7 +120,8 @@ bool ZepFileSystemCPP::Exists(const ZepPath& path) const
     }
     catch (cpp_fs::filesystem_error& err)
     {
-        LOG(typelog::ERROR) << "Exception: " << err.what();
+        ZEP_UNUSED(err);
+        ZLOG(ERROR, "Exception: " << err.what());
         return false;
     }
 }
@@ -137,7 +139,8 @@ bool ZepFileSystemCPP::Equivalent(const ZepPath& path1, const ZepPath& path2) co
     }
     catch (cpp_fs::filesystem_error& err)
     {
-        LOG(typelog::ERROR) << "Exception: " << err.what();
+        ZEP_UNUSED(err);
+        ZLOG(ERROR, "Exception: " << err.what());
         return path1 == path2;
     }
 }
@@ -150,7 +153,8 @@ ZepPath ZepFileSystemCPP::Canonical(const ZepPath& path) const
     }
     catch (cpp_fs::filesystem_error& err)
     {
-        LOG(typelog::ERROR) << "Exception: " << err.what();
+        ZEP_UNUSED(err);
+        ZLOG(ERROR, "Exception: " << err.what());
         return path;
     }
 }

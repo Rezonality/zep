@@ -248,7 +248,7 @@ void Indexer::StartSymbolSearch()
             auto fullPath = m_searchRoot / path;
             if (fs.Exists(fullPath))
             {
-                LOG(DEBUG) << "Parsing: " << fullPath.c_str();
+                ZLOG(DBG, "Parsing: " << fullPath.c_str());
                 auto strFile = GetEditor().GetFileSystem().Read(fullPath);
 
                 std::vector<std::string> tokens;
@@ -264,7 +264,7 @@ bool Indexer::StartIndexing()
     m_searchRoot = GetEditor().GetFileSystem().GetSearchRoot(GetEditor().GetFileSystem().GetWorkingDirectory(), foundGit);
     if (!foundGit)
     {
-        LOG(INFO) << "Not a git project";
+        ZLOG(INFO, "Not a git project");
         return false;
     }
 
@@ -275,7 +275,7 @@ bool Indexer::StartIndexing()
     {
         if (!fs.MakeDirectories(indexDBRoot))
         {
-            LOG(ERROR) << "Can't get the index folder";
+            ZLOG(ERROR, "Can't get the index folder");
             return false;
         }
     }

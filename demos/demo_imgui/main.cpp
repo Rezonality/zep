@@ -21,7 +21,6 @@
 #include <zep/mcommon/animation/timer.h>
 #include <mutils/chibi/chibi.h>
 #include <mutils/file/file.h>
-#include <mutils/logger/logger.h>
 #include <mutils/profile/profile.h>
 #include <tclap/CmdLine.h>
 
@@ -401,8 +400,8 @@ int main(int argc, char** argv)
 
     int x, y;
     SDL_GL_GetDrawableSize(window, &x, &y);
-    Zep::LOG(Zep::DEBUG) << "Draw   Area: " << x << "," << y;
-    Zep::LOG(Zep::DEBUG) << "Window Area: " << startWidth << "," << startHeight;
+    LOG(DBG, "Draw   Area: " << x << "," << y);
+    LOG(DBG, "Window Area: " << startWidth << "," << startHeight);
 
     // Initialize OpenGL loader
 #if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
