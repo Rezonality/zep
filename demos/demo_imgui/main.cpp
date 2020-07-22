@@ -395,14 +395,19 @@ int main(int argc, char** argv)
     int startWidth = uint32_t(current.w * .6666);
     int startHeight = uint32_t(startWidth / ratio);
 
+    ZLOG(INFO, "Start Size: " << Zep::NVec2i(startWidth, startHeight));
+
     SDL_Window* window = SDL_CreateWindow("Zep", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, startWidth, startHeight, SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     SDL_GL_SetSwapInterval(0); // Enable vsync
 
-    int x, y;
-    SDL_GL_GetDrawableSize(window, &x, &y);
-    LOG(DBG, "Draw   Area: " << x << "," << y);
-    LOG(DBG, "Window Area: " << startWidth << "," << startHeight);
+    MUtils::NVec2i winSize;
+    MUtils::NVec2i targetSize;
+    SDL_GetWindowSize(window, &winSize.x, &winSize.y);
+    SDL_GL_GetDrawableSize(window, &targetSize.x, &targetSize.y);
+    
+    ZLOG(INFO, "Screen Window Size: " << winSize);
+    ZLOG(INFO, "Drawable Size: " << targetSize);
 
     // Initialize OpenGL loader
 #if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
@@ -446,6 +451,9 @@ int main(int argc, char** argv)
 
     float fontPixelHeight = dpi_pixel_height_from_point_size(DemoFontPtSize, GetDisplayScale().y);
     io.Fonts->AddFontFromFileTTF((std::string(SDL_GetBasePath()) + "Cousine-Regular.ttf").c_str(), fontPixelHeight, &cfg, ranges.Data);
+
+    ZLOG(INFO, "DPI Scale: " << MUtils::NVec2f(GetDisplayScale().x, GetDisplayScale().y));
+    ZLOG(INFO, "Font Pixel Size: " << fontPixelHeight);
 
     unsigned int flags = 0; // ImGuiFreeType::NoHinting;
     ImGuiFreeType::BuildFontAtlas(io.Fonts, flags);
