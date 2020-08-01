@@ -146,8 +146,9 @@ bool ZepMode_Orca::HandleSpecialCommand(CommandContext& context)
         // Step at current rate; this just queues a step to occur
         pOrca->Step();
 
-        // We don't want to interfere with the regular tick of the time provider, so manually tick orca
-        TimeProvider::Instance().Beat();
+        /// We don't want to interfere with the regular tick of the time provider, so manually tick orca
+        // TODO: How to frame step?
+        //TimeProvider::Instance().Beat();
 
         return true;
     }

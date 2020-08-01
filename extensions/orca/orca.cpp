@@ -15,7 +15,6 @@ namespace Zep
 {
 
 Orca::Orca()
-    : m_eventPool(1000)
 {
 }
 
@@ -339,10 +338,8 @@ void Orca::Quit()
     TimeProvider::Instance().UnRegisterConsumer(this);
 }
 
-void Orca::AddTickEvent(MUtils::TimeLineEvent* pEv)
+void Orca::Tick()
 {
-    ZEP_UNUSED(pEv);
-
     if (!m_enable.load() && !m_step.load())
     {
         return;
@@ -387,17 +384,17 @@ void Orca::AddTickEvent(MUtils::TimeLineEvent* pEv)
                 // TODO: For now, play at next beat
                 // We know that m_time is 'on' the engine's beat
                 // Note: need time to be unique??!
-                auto time = pEv->m_time + nanoseconds(i) + tp.GetTimePerBeat() * 4;
+                auto time = TimeProvider::Instance().Now() + nanoseconds(i) + tp.GetTimePerBeat() * 4;
 
                 // Submit event
-                auto pEvent = m_eventPool.Alloc();
+                auto pEvent = m_timeline.GetEventPool().Alloc();
                 pEvent->SetTime(time, duration_cast<milliseconds>(duration));
                 pEvent->velocity = float(velocity);
                 pEvent->midiNote = note;
                 pEvent->pressed = true;
                 pEvent->channelId = note;
 
-                tp.StoreTimeEvent(pEvent);
+                m_timeline.StoreTimeEvent(pEvent);
             }
         }
 

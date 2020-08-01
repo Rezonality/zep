@@ -12,6 +12,7 @@
 #endif
 
 #include <mutils/time/time_provider.h>
+#include <mutils/time/timeline.h>
 
 #ifdef _WIN32
 #pragma warning(disable : 4505)
@@ -109,7 +110,8 @@ public:
     Orca();
     virtual ~Orca();
 
-    virtual void AddTickEvent(MUtils::TimeLineEvent* ev) override;
+    // ITimeConsumer
+    virtual void Tick() override;
 
     void Init(ZepEditor& editor);
     void WriteToBuffer(ZepBuffer* pBuffer, ZepWindow& window);
@@ -163,7 +165,7 @@ private:
 
     double m_lastBeat = 0.0;
     bool m_zeroQuantum = true;
-    MUtils::MemoryPool<MUtils::NoteEvent> m_eventPool;
+    MUtils::Timeline<MUtils::NoteEvent> m_timeline;
 };
 
 } // namespace Zep
