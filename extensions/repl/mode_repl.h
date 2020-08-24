@@ -20,7 +20,7 @@ enum class ReplParseType
 // you need to register this interface and handle the messages to run the repl.
 struct IZepReplProvider
 {
-    virtual std::string ReplParse(const ZepBuffer& text, ByteIndex cursorOffset, ReplParseType type)
+    virtual std::string ReplParse(const ZepBuffer& text, const GlyphIterator& cursorOffset, ReplParseType type)
     {
         ZEP_UNUSED(text);
         ZEP_UNUSED(cursorOffset);

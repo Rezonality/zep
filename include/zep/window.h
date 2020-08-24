@@ -19,13 +19,14 @@ struct Region;
 struct LineCharInfo
 {
     NVec2f size;
-    ByteIndex byteIndex = 0;
+    GlyphIterator GlyphIterator;
 };
+
 // Line information, calculated during display update.
 // A collection of spans that show split lines on the display
 struct SpanInfo
 {
-    BufferByteRange lineByteRange;                 // Begin/end range of the text buffer for this line, as always end is one beyond the end.
+    ByteRange lineByteRange;                       // Begin/end range of the text buffer for this line, as always end is one beyond the end.
     std::vector<LineCharInfo> lineCodePoints;      // Codepoints
     long bufferLineNumber = 0;                     // Line in the original buffer, not the screen line
     float yOffsetPx = 0.0f;                        // Position in the buffer in pixels, if the screen was as big as the buffer.
@@ -46,9 +47,9 @@ struct SpanInfo
         return lineByteRange.second - lineByteRange.first;
     }
 
-    bool BufferCursorInside(ByteIndex offset) const
+    bool BufferCursorInside(GlyphIterator offset) const
     {
-        return offset >= lineByteRange.first && offset < lineByteRange.second;
+        return offset.Index() >= lineByteRange.first && offset.Index() < lineByteRange.second;
     }
 };
 
@@ -109,7 +110,7 @@ struct Airline
 // Clients should return the marker information if appropriate
 struct ToolTipMessage : public ZepMessage
 {
-    ToolTipMessage(ZepBuffer* pBuff, const NVec2f& pos, const ByteIndex& loc = ByteIndex{-1})
+    ToolTipMessage(ZepBuffer* pBuff, const NVec2f& pos, const GlyphIterator& loc = GlyphIterator())
         : ZepMessage(Msg::ToolTip, pos)
         , pBuffer(pBuff)
         , location(loc)
@@ -117,7 +118,7 @@ struct ToolTipMessage : public ZepMessage
     }
 
     ZepBuffer* pBuffer;
-    ByteIndex location;
+    GlyphIterator location;
     std::shared_ptr<RangeMarker> spMarker;
 };
 
@@ -138,8 +139,8 @@ public:
     virtual void Display();
 
     // Cursor
-    virtual ByteIndex GetBufferCursor();
-    virtual void SetBufferCursor(ByteIndex location);
+    virtual GlyphIterator GetBufferCursor();
+    virtual void SetBufferCursor(GlyphIterator location);
     virtual void MoveCursorY(int yDistance, LineLocation clampLocation = LineLocation::LineLastNonCR);
     virtual NVec2i BufferToDisplay();
 
@@ -166,7 +167,7 @@ private:
     void EnsureCursorVisible();
     void UpdateVisibleLineRange();
 
-    NVec2i BufferToDisplay(const ByteIndex& location);
+    NVec2i BufferToDisplay(const GlyphIterator& location);
 
     void ScrollToCursor();
     bool IsInsideTextRegion(NVec2i pos) const;
@@ -178,7 +179,7 @@ private:
         Tab,
         Space
     };
-    void GetCharPointer(ByteIndex loc, const uint8_t*& pBegin, const uint8_t*& pEnd, SpecialChar& specialChar);
+    void GetCharPointer(GlyphIterator loc, const uint8_t*& pBegin, const uint8_t*& pEnd, SpecialChar& specialChar);
     const SpanInfo& GetCursorLineInfo(long y);
 
     float ToWindowY(float pos) const;
@@ -236,7 +237,7 @@ private:
     uint32_t m_windowFlags = WindowFlags::ShowWhiteSpace | WindowFlags::ShowIndicators | WindowFlags::ShowLineNumbers | WindowFlags::WrapText;
 
     // Cursor
-    ByteIndex m_bufferCursor = 0;                   // Location in buffer coordinates.  Each window has a different buffer cursor
+    GlyphIterator m_bufferCursor;                   // Location in buffer coordinates.  Each window has a different buffer cursor
     long m_lastCursorColumn = 0;                    // The last cursor column (could be removed and recalculated)
 
     // Visual stuff
@@ -255,7 +256,7 @@ private:
     // Tooltips
     timer m_toolTipTimer;                // Timer for when the tip is shown
     NVec2f m_mouseHoverPos;              // Current location for the tip
-    ByteIndex m_mouseBufferLocation;     // The character in the buffer the tip pos is over, or -1
+    GlyphIterator m_mouseBufferLocation;     // The character in the buffer the tip pos is over, or -1
     NVec2f m_lastTipQueryPos;            // last query location for the tip
     bool m_tipDisabledTillMove = false;  // Certain operations will stop the tip until the mouse is moved
     std::map<NVec2f, std::shared_ptr<RangeMarker>> m_toolTips;  // All tooltips for a given position, currently only 1 at a time

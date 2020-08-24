@@ -124,13 +124,13 @@ public:
     KeyMapResult keymap;
 
     ReplaceRangeMode replaceRangeMode = ReplaceRangeMode::Fill;
-    ByteIndex beginRange{-1};
-    ByteIndex endRange{-1};
+    GlyphIterator beginRange;
+    GlyphIterator endRange;
     ZepBuffer& buffer;
 
     // Cursor State
-    ByteIndex bufferCursor{-1};
-    ByteIndex cursorAfterOverride{-1};
+    GlyphIterator bufferCursor;
+    GlyphIterator cursorAfterOverride;
 
     // Register state
     std::stack<char> registers;
@@ -179,7 +179,7 @@ public:
     // Keys handled by modes
     virtual void AddCommandText(std::string strText);
 
-    virtual NVec2i GetNormalizedVisualRange() const;
+    virtual GlyphRange GetNormalizedVisualRange() const;
 
     virtual std::vector<Airline> GetAirlines(ZepWindow&) const { return std::vector<Airline>{}; }
 
@@ -195,7 +195,7 @@ protected:
 
     virtual bool HandleSpecialCommand(CommandContext&) { return false; };
 
-    virtual bool GetOperationRange(const std::string& op, EditorMode currentMode, ByteIndex& beginRange, ByteIndex& endRange) const;
+    virtual bool GetOperationRange(const std::string& op, EditorMode currentMode, GlyphIterator& beginRange, GlyphIterator& endRange) const;
 
     virtual void UpdateVisualSelection();
 
@@ -215,8 +215,8 @@ protected:
     std::stack<std::shared_ptr<ZepCommand>> m_redoStack;
     EditorMode m_currentMode = EditorMode::Normal;
     bool m_lineWise = false;
-    ByteIndex m_visualBegin = 0;
-    ByteIndex m_visualEnd = 0;
+    GlyphIterator m_visualBegin;
+    GlyphIterator m_visualEnd;
     std::string m_dotCommand;
 
     // Keyboard mappings
@@ -231,7 +231,7 @@ protected:
     std::string m_lastInsertString;
     std::string m_lastFind;
 
-    ByteIndex m_exCommandStartLocation = 0;
+    GlyphIterator m_exCommandStartLocation;
     CursorType m_visualCursorType = CursorType::Visual;
     uint32_t m_modeFlags = ModeFlags::None;
     uint32_t m_lastKey = 0;

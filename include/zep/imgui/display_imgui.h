@@ -43,9 +43,9 @@ public:
         //return (ImGui::GetFont()->Descent + ImGui::GetFont()->Ascent + 1) * 2.0f;
     }
 
-    NVec2f GetTextSize(const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const
+    NVec2f GetGapBufferSize(const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const
     {
-        // This is the code from ImGui internals; we can't call GetTextSize, because it doesn't return the correct 'advance' formula, which we
+        // This is the code from ImGui internals; we can't call GetGapBufferSize, because it doesn't return the correct 'advance' formula, which we
         // need as we draw one character at a time...
         ImFont* font = ImGui::GetFont();
         const float font_size = ImGui::GetFontSize();

@@ -23,10 +23,10 @@ ZepSyntax_Orca::ZepSyntax_Orca(ZepBuffer& buffer,
     m_adornments.clear();
 }
 
-SyntaxResult ZepSyntax_Orca::GetSyntaxAt(long index) const
+SyntaxResult ZepSyntax_Orca::GetSyntaxAt(const GlyphIterator& itr) const
 {
-    auto def = ZepSyntax::GetSyntaxAt(index);
-    if (m_syntax.size() <= index)
+    auto def = ZepSyntax::GetSyntaxAt(itr);
+    if (m_syntax.size() <= itr.Index())
     {
         SyntaxResult res;
         res.foreground = ThemeColor::Text;
@@ -36,7 +36,7 @@ SyntaxResult ZepSyntax_Orca::GetSyntaxAt(long index) const
 
     // Accomodate potential background effects from the base class (such as flash)
     // Looks cool (:ZTestFlash) but is it useful??
-    auto ret = m_syntax[index];
+    auto ret = m_syntax[itr.Index()];
     if (ret.background == ThemeColor::None && def.background != ThemeColor::None &&
         def.background != ThemeColor::Background)
     {
@@ -49,7 +49,7 @@ SyntaxResult ZepSyntax_Orca::GetSyntaxAt(long index) const
 
 void ZepSyntax_Orca::UpdateSyntax()
 {
-    auto& buffer = m_buffer.GetText();
+    auto& buffer = m_buffer.GetGapBuffer();
 
     // We don't do anything in orca mode, we get dynamically because Orca tells us the colors
     m_targetChar = long(0);

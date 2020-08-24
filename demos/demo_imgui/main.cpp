@@ -205,7 +205,7 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         spEditor.reset();
     }
 
-    virtual std::string ReplParse(const ZepBuffer& buffer, ByteIndex cursorOffset, ReplParseType type) override
+    virtual std::string ReplParse(const ZepBuffer& buffer, const GlyphIterator& cursorOffset, ReplParseType type) override
     {
         ZEP_UNUSED(cursorOffset);
         ZEP_UNUSED(type);
@@ -221,13 +221,13 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         }
         else
         {
-            range = Zep::NVec2i(0, buffer.EndLocation());
+            range = Zep::NVec2i(0, buffer.End().Index());
         }
 
         if (range.x >= range.y)
             return "<No Expression>";
 
-        const auto& text = buffer.GetText();
+        const auto& text = buffer.GetGapBuffer();
         auto eval = std::string(text.begin() + range.x, text.begin() + range.y);
 
         // Flash the evaluated expression
@@ -313,7 +313,7 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         else if (message->messageId == Msg::ToolTip)
         {
             auto spTipMsg = std::static_pointer_cast<ToolTipMessage>(message);
-            if (spTipMsg->location != -1l && spTipMsg->pBuffer)
+            if (spTipMsg->location.Valid() && spTipMsg->pBuffer)
             {
                 auto pSyntax = spTipMsg->pBuffer->GetSyntax();
                 if (pSyntax)

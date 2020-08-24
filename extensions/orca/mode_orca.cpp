@@ -251,9 +251,9 @@ void ZepMode_Orca::PreDisplay(ZepWindow& window)
     {
         m_bufferHeight = pBuffer->GetLineCount();
 
-        ByteIndex start, end;
-        pBuffer->GetLineOffsets(0, start, end);
-        m_bufferWidth = end - start;
+        ByteRange range;
+        pBuffer->GetLineOffsets(0, range);
+        m_bufferWidth = range.second - range.first;
     }
     else
     {

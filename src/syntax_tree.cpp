@@ -23,7 +23,7 @@ ZepSyntax_Tree::ZepSyntax_Tree(ZepBuffer& buffer,
 
 void ZepSyntax_Tree::UpdateSyntax()
 {
-    auto& buffer = m_buffer.GetText();
+    auto& buffer = m_buffer.GetGapBuffer();
     auto itrCurrent = buffer.begin();
     auto itrEnd = buffer.end();
 

@@ -8,7 +8,7 @@ namespace Zep
 class ZepCommand
 {
 public:
-    ZepCommand(ZepBuffer& currentMode, ByteIndex cursorBefore = -1, ByteIndex cursorAfter = -1)
+    ZepCommand(ZepBuffer& currentMode, const GlyphIterator& cursorBefore = GlyphIterator(), const GlyphIterator& cursorAfter = GlyphIterator())
         : m_buffer(currentMode)
         , m_cursorBefore(cursorBefore)
         , m_cursorAfter(cursorAfter)
@@ -22,19 +22,19 @@ public:
     virtual void Redo() = 0;
     virtual void Undo() = 0;
 
-    virtual ByteIndex GetCursorAfter() const
+    virtual GlyphIterator GetCursorAfter() const
     {
         return m_cursorAfter;
     }
-    virtual ByteIndex GetCursorBefore() const
+    virtual GlyphIterator GetCursorBefore() const
     {
         return m_cursorBefore;
     }
 
 protected:
     ZepBuffer& m_buffer;
-    ByteIndex m_cursorBefore = -1;
-    ByteIndex m_cursorAfter = -1;
+    GlyphIterator m_cursorBefore;
+    GlyphIterator m_cursorAfter;
 };
 
 class ZepCommand_GroupMarker : public ZepCommand
@@ -56,14 +56,14 @@ public:
 class ZepCommand_DeleteRange : public ZepCommand
 {
 public:
-    ZepCommand_DeleteRange(ZepBuffer& buffer, const ByteIndex& startIndex, const ByteIndex& endIndex, const ByteIndex& cursor = ByteIndex{-1}, const ByteIndex& cursorAfter = ByteIndex{-1});
+    ZepCommand_DeleteRange(ZepBuffer& buffer, const GlyphIterator& startIndex, const GlyphIterator& endIndex, const GlyphIterator& cursor = GlyphIterator(), const GlyphIterator& cursorAfter = GlyphIterator());
     virtual ~ZepCommand_DeleteRange(){};
 
     virtual void Redo() override;
     virtual void Undo() override;
 
-    ByteIndex m_startIndex;
-    ByteIndex m_endIndex;
+    GlyphIterator m_startIndex;
+    GlyphIterator m_endIndex;
 
     std::string m_deleted;
 };
@@ -77,14 +77,14 @@ enum class ReplaceRangeMode
 class ZepCommand_ReplaceRange : public ZepCommand
 {
 public:
-    ZepCommand_ReplaceRange(ZepBuffer& buffer, ReplaceRangeMode replaceMode, const ByteIndex& startIndex, const ByteIndex& endIndex, const std::string& ch, const ByteIndex& cursor = ByteIndex{-1}, const ByteIndex& cursorAfter = ByteIndex{-1});
+    ZepCommand_ReplaceRange(ZepBuffer& buffer, ReplaceRangeMode replaceMode, const GlyphIterator& startIndex, const GlyphIterator& endIndex, const std::string& ch, const GlyphIterator& cursor = GlyphIterator(), const GlyphIterator& cursorAfter = GlyphIterator());
     virtual ~ZepCommand_ReplaceRange(){};
 
     virtual void Redo() override;
     virtual void Undo() override;
 
-    ByteIndex m_startIndex;
-    ByteIndex m_endIndex;
+    GlyphIterator m_startIndex;
+    GlyphIterator m_endIndex;
 
     std::string m_strDeleted;
     std::string m_strReplace;
@@ -94,16 +94,16 @@ public:
 class ZepCommand_Insert : public ZepCommand
 {
 public:
-    ZepCommand_Insert(ZepBuffer& buffer, const ByteIndex& startIndex, const std::string& str, const ByteIndex& cursor = ByteIndex{-1}, const ByteIndex& cursorAfter = ByteIndex{-1});
+    ZepCommand_Insert(ZepBuffer& buffer, const GlyphIterator& startIndex, const std::string& str, const GlyphIterator& cursor = GlyphIterator(), const GlyphIterator& cursorAfter = GlyphIterator());
     virtual ~ZepCommand_Insert(){};
 
     virtual void Redo() override;
     virtual void Undo() override;
 
-    ByteIndex m_startIndex;
+    GlyphIterator m_startIndex;
     std::string m_strInsert;
 
-    ByteIndex m_endIndexInserted = -1;
+    GlyphIterator m_endIndexInserted;
 };
 
 } // namespace Zep

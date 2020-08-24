@@ -63,7 +63,7 @@ public:
         uint32_t flags = 0);
     virtual ~ZepSyntax();
 
-    virtual SyntaxResult GetSyntaxAt(long index) const;
+    virtual SyntaxResult GetSyntaxAt(const GlyphIterator& index) const;
     virtual void UpdateSyntax();
     virtual void Interrupt();
     virtual void Wait() const;
@@ -80,11 +80,11 @@ public:
     const NVec4f& ToBackgroundColor(const SyntaxResult& res) const;
     const NVec4f& ToForegroundColor(const SyntaxResult& res) const;
 
-    virtual void SetActiveLine(const BufferByteRange& range) { m_activeLineRange = range; }
+    virtual void SetActiveLine(const ByteRange& range) { m_activeLineRange = range; }
     virtual void IgnoreLineHighlight() { m_flags |= ZepSyntaxFlags::IgnoreLineHighlight; }
 
 private:
-    virtual void QueueUpdateSyntax(ByteIndex startLocation, ByteIndex endLocation);
+    virtual void QueueUpdateSyntax(GlyphIterator startLocation, GlyphIterator endLocation);
 
 protected:
     ZepBuffer& m_buffer;
@@ -105,7 +105,7 @@ protected:
     float m_flashDuration = 1.0f;
     timer m_flashTimer;
     SyntaxFlashType m_flashType = SyntaxFlashType::Cylon;
-    BufferByteRange m_activeLineRange = { 0, 0 };
+    ByteRange m_activeLineRange = { 0, 0 };
 };
 
 class ZepSyntaxAdorn : public ZepComponent
@@ -118,7 +118,7 @@ public:
     {
     }
 
-    virtual SyntaxResult GetSyntaxAt(long offset, bool& found) const = 0;
+    virtual SyntaxResult GetSyntaxAt(const GlyphIterator& offset, bool& found) const = 0;
 
 protected:
     ZepBuffer& m_buffer;

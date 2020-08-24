@@ -19,6 +19,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+set(gtest_force_shared_crt ON CACHE BOOL "Always use msvcrt.dll" FORCE)
+
 set(CMAKE_DEBUG_POSTFIX "-debug")
 set(CMAKE_RELWITHDEBINFO_POSTFIX "-reldbg")
 

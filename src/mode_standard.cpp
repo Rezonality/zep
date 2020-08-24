@@ -53,10 +53,10 @@ void ZepMode_Standard::Init()
     keymap_add({ &m_insertMap }, { "<C-y>" }, id_Redo);
     keymap_add({ &m_insertMap }, { "<C-z>" }, id_Undo);
 
-    keymap_add({ &m_insertMap }, { "<Left>" }, id_MotionStandardLeft);
-    keymap_add({ &m_insertMap }, { "<Right>" }, id_MotionStandardRight);
-    keymap_add({ &m_insertMap }, { "<Up>" }, id_MotionStandardUp);
-    keymap_add({ &m_insertMap }, { "<Down>" }, id_MotionStandardDown);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<Left>" }, id_MotionStandardLeft);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<Right>" }, id_MotionStandardRight);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<Up>" }, id_MotionStandardUp);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<Down>" }, id_MotionStandardDown);
    
     keymap_add({ &m_insertMap }, { "<C-Left>" }, id_MotionStandardLeftWord);
     keymap_add({ &m_insertMap }, { "<C-Right>" }, id_MotionStandardRightWord);
@@ -290,7 +290,7 @@ void ZepMode_Standard::Begin(ZepWindow* pWindow)
     if (copyRegion || op == CommandOperation::Copy)
     {
         // Grab it
-        std::string str = std::string(buffer.GetText().begin() + startOffset, buffer.GetText().begin() + endOffset);
+        std::string str = std::string(buffer.GetGapBuffer().begin() + startOffset, buffer.GetGapBuffer().begin() + endOffset);
         GetEditor().GetRegister('"').text = str;
         GetEditor().GetRegister('"').lineWise = lineWise;
         GetEditor().GetRegister('0').text = str;
@@ -348,7 +348,7 @@ void ZepMode_Standard::Begin(ZepWindow* pWindow)
 
     if (m_currentMode == EditorMode::Visual)
     {
-        buffer.SetSelection(BufferRange{m_visualBegin, m_visualEnd});
+        buffer.SetSelection(GlyphRange{m_visualBegin, m_visualEnd});
     }
 }
 */

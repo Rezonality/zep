@@ -15,11 +15,11 @@ public:
     virtual ~ZepSyntaxAdorn_RainbowBrackets();
 
     void Notify(std::shared_ptr<ZepMessage> payload) override;
-    virtual SyntaxResult GetSyntaxAt(long offset, bool& found) const override;
+    virtual SyntaxResult GetSyntaxAt(const GlyphIterator& offset, bool& found) const override;
 
-    virtual void Clear(long start, long end);
-    virtual void Insert(long start, long end);
-    virtual void Update(long start, long end);
+    virtual void Clear(const GlyphIterator& start, const GlyphIterator& end);
+    virtual void Insert(const GlyphIterator& start, const GlyphIterator& end);
+    virtual void Update(const GlyphIterator& start, const GlyphIterator& end);
 
 private:
     void RefreshBrackets();
@@ -38,7 +38,7 @@ private:
         bool is_open;
         bool valid = true;
     };
-    std::map<ByteIndex, Bracket> m_brackets;
+    std::map<long, Bracket> m_brackets;
 };
 
 } // namespace Zep

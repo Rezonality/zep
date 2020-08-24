@@ -11,8 +11,8 @@ class ZepTabWindow;
 struct SelectRegion
 {
     // For vertical select, we will have a list of spans...
-    ByteIndex start = 0;
-    ByteIndex end = 0;
+    GlyphIterator start;
+    GlyphIterator end;
     bool visible = true;
     bool vertical = false; // Not yet supported
 };
@@ -25,7 +25,7 @@ public:
 
     // Renderer specific overrides
     // Implement these to draw the buffer using whichever system you prefer
-    virtual NVec2f GetTextSize(const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const = 0;
+    virtual NVec2f GetGapBufferSize(const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const = 0;
     virtual float GetFontPointSize() const = 0;
     virtual void SetFontPointSize(float size)
     {
@@ -60,7 +60,7 @@ protected:
 class ZepDisplayNull : public ZepDisplay
 {
 public:
-    virtual NVec2f GetTextSize(const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const override
+    virtual NVec2f GetGapBufferSize(const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const override
     {
         return NVec2f(float(pEnd - pBegin), 10.0f);
     }

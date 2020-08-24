@@ -146,7 +146,7 @@ private:
 
 private:
     std::shared_ptr<ZepTree> m_spTree;
-    ByteIndex m_startLocation = ByteIndex{ 0 };
+    GlyphIterator m_startLocation = GlyphIterator{ 0 };
     ZepWindow& m_launchWindow;
     ZepWindow& m_window;
 };

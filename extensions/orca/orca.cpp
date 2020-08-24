@@ -85,14 +85,14 @@ void Orca::ReadFromBuffer(ZepBuffer* pBuffer)
 {
     std::unique_lock<std::mutex> lock(m_mutex);
 
-    ByteIndex start, end;
-    pBuffer->GetLineOffsets(0, start, end);
+    ByteRange range;
+    pBuffer->GetLineOffsets(0, range);
 
     // We don't have a pending buffer update to show if we just updated from the buffer
     m_updated.store(false);
 
     // Update field sizes
-    field_resize_raw_if_necessary(&m_field, pBuffer->GetLineCount(), (end - start - 1));
+    field_resize_raw_if_necessary(&m_field, pBuffer->GetLineCount(), (range.second - range.first - 1));
     if (m_lastField.size() < (m_field.width * m_field.height))
     {
         m_lastField.assign(m_field.width * m_field.height, 0);
@@ -101,7 +101,7 @@ void Orca::ReadFromBuffer(ZepBuffer* pBuffer)
     m_size = NVec2i(m_field.width, m_field.height);
 
     // Copy the buffer into the field
-    auto& text = pBuffer->GetText();
+    auto& text = pBuffer->GetGapBuffer();
     auto sz = text.size();
     for (int y = 0; y < m_field.height; y++)
     {

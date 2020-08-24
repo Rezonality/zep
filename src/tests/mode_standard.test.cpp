@@ -27,7 +27,7 @@ public:
         // Setup editor with a default fixed_size so that text doesn't wrap and confuse the tests!
         spEditor->SetDisplayRegion(NVec2f(0.0f, 0.0f), NVec2f(1024.0f, 1024.0f));
 
-        pWindow->SetBufferCursor(0);
+        pWindow->SetBufferCursor(pBuffer->Begin());
     
         spEditor->SetGlobalMode(Zep::ZepMode_Standard::StaticName());
         spMode = spEditor->GetGlobalMode();
@@ -108,7 +108,7 @@ TEST_F(StandardTest, CheckDisplaySucceeds)
                 mod = 0;                                           \
             }                                                      \
         }                                                          \
-        ASSERT_STREQ(pBuffer->GetText().string().c_str(), target); \
+        ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), target); \
     };
 
 TEST_F(StandardTest, UndoRedo)
@@ -119,12 +119,12 @@ TEST_F(StandardTest, UndoRedo)
     spMode->Undo();
     spMode->Redo();
     spMode->Undo();
-    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hello");
+    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "Hello");
 
     spMode->AddCommandText("iYo, ");
     spMode->Undo();
     spMode->Redo();
-    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "iYo, Hello");
+    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "iYo, Hello");
 }
 
 TEST_F(StandardTest, copy_pasteover_paste)
@@ -139,12 +139,12 @@ TEST_F(StandardTest, copy_pasteover_paste)
     spMode->AddKeyPress('c', ModifierKey::Ctrl);
 
     spMode->AddKeyPress('v', ModifierKey::Ctrl);
-    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hello Goodbye");
+    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "Hello Goodbye");
 
     spMode->AddKeyPress('v', ModifierKey::Ctrl);
-    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "HelloHello Goodbye");
+    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "HelloHello Goodbye");
 
-    ASSERT_EQ(pWindow->GetBufferCursor(), 10);
+    ASSERT_EQ(pWindow->GetBufferCursor().Index(), 10);
 }
 
 TEST_F(StandardTest, down_a_shorter_line)
@@ -157,7 +157,7 @@ TEST_F(StandardTest, down_a_shorter_line)
     spMode->AddKeyPress(ExtKeys::RIGHT);
     spMode->AddKeyPress(ExtKeys::DOWN);
     spMode->AddKeyPress('o');
-    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hello Goodbye\nFo");
+    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "Hello Goodbye\nFo");
 }
 
 TEST_F(StandardTest, DELETE)
@@ -165,21 +165,21 @@ TEST_F(StandardTest, DELETE)
     pBuffer->SetText("Hello");
     spMode->AddKeyPress(ExtKeys::DEL);
     spMode->AddKeyPress(ExtKeys::DEL);
-    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "llo");
+    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "llo");
 
     spMode->AddCommandText("vll");
     spMode->AddKeyPress(ExtKeys::DEL);
-    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "vlllo");
+    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "vlllo");
 
     // Doesn't delete H because the cursor was previously at the end?
     // Is this a behavior expectation or a bug?  Should the cursor clamp to the previously 
     // set text end, or reset to 0??
     pBuffer->SetText("H");
     spMode->AddKeyPress(ExtKeys::DEL);
-    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "H");
+    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "H");
     
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
-    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "");
+    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "");
 }
 
 TEST_F(StandardTest, BACKSPACE)
@@ -188,12 +188,12 @@ TEST_F(StandardTest, BACKSPACE)
     spMode->AddCommandText("ll");
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
-    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "Hello");
-    ASSERT_EQ(pWindow->GetBufferCursor(), 0);
+    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "Hello");
+    ASSERT_EQ(pWindow->GetBufferCursor().Index(), 0);
 
     spMode->AddCommandText("lli");
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
-    ASSERT_STREQ(pBuffer->GetText().string().c_str(), "llHello");
+    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "llHello");
 }
 
 #define CURSOR_TEST(name, source, command, xcoord, ycoord)    \
@@ -320,20 +320,27 @@ TEST_F(StandardTest, BACKSPACE)
                 mod = 0;                                      \
             }                                                 \
         }                                                     \
-        ASSERT_EQ(spMode->GetNormalizedVisualRange().x, start);         \
-        ASSERT_EQ(spMode->GetNormalizedVisualRange().y, end);           \
+        ASSERT_EQ(spMode->GetNormalizedVisualRange().first.Index(), start);         \
+        ASSERT_EQ(spMode->GetNormalizedVisualRange().second.Index(), end);           \
     }
 
 CURSOR_TEST(motion_right, "one two", "%r", 1, 0);
 CURSOR_TEST(motion_left, "one two", "%r%r%l", 1, 0);
+CURSOR_TEST(motion_left_over_newline, "one\ntwo", "%d%r%r%l%l%l", 3, 0);
+CURSOR_TEST(motion_right_over_newline, "one\ntwo", "%r%r%r%r%r", 1, 1);
 CURSOR_TEST(motion_down, "one\ntwo", "%d", 0, 1);
 CURSOR_TEST(motion_up, "one\ntwo", "%d%u", 0, 0);
 
 // NOTE: Cursor lands on the character after the shift select - i.e. the next 'Word'
+// These are CTRL+-> -< movements, tested for comparison with notepad behavior.
 CURSOR_TEST(motion_right_word, "one two", "%c%r", 4, 0);
 CURSOR_TEST(motion_right_twice_word, "one two", "%c%r%c%r", 7, 0);
 CURSOR_TEST(motion_right_twice_back_word, "one two", "%c%r%c%r%c%l", 4, 0);
 CURSOR_TEST(motion_left_word, "one two", "%r%r%r%r%c%l", 0, 0);
+CURSOR_TEST(motion_right_newline, "one\ntwo", "%c%r", 3, 0);
+CURSOR_TEST(motion_right_newline_twice, "one\ntwo", "%c%r%c%r", 0, 1);
+CURSOR_TEST(motion_right_newline_twice_back, "one\ntwo", "%c%r%c%r%c%l", 3, 0);
+CURSOR_TEST(motion_right_newline_twice_back_back, "one\ntwo", "%c%r%c%r%c%l%c%l", 0, 0);
 
 CURSOR_TEST(paste_over_cursor_after, "one", "%c%s%r%cc%cv", 3, 0);
 

@@ -194,7 +194,7 @@ void ZepMode_Search::ShowTreeResult()
         start = false;
     }
     m_window.GetBuffer().SetText(str.str());
-    m_window.SetBufferCursor(0);
+    m_window.SetBufferCursor(m_window.GetBuffer().Begin());
 }
 
 void ZepMode_Search::OpenSelection(OpenType type)
@@ -210,7 +210,7 @@ void ZepMode_Search::OpenSelection(OpenType type)
 
     GetEditor().GetActiveTabWindow()->SetActiveWindow(&m_launchWindow);
 
-    ByteIndex count = 0;
+    long count = 0;
     for (auto& index : m_indexTree.back()->indices)
     {
         if (count == line)

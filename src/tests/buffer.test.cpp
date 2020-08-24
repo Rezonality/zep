@@ -1,9 +1,41 @@
-#include <gtest/gtest.h>
+#include "config_app.h"
+#include "zep/mcommon/logger.h"
 
 #include "zep/buffer.h"
+#include "zep/display.h"
+#include "zep/editor.h"
+#include <gtest/gtest.h>
 
 using namespace Zep;
+class BufferTest : public testing::Test
+{
+public:
+    BufferTest()
+    {
+        // Disable threads for consistent tests, at the expense of not catching thread errors!
+        // TODO : Fix/understand test failures with threading
+        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZEP_ROOT, ZepEditorFlags::DisableThreads);
+        pBuffer = spEditor->InitWithText("", "");
+    }
 
-// TODO The buffer tests were depricated, need to replace?
-// They are covered pretty well by the mode tests
+    ~BufferTest()
+    {
+    }
 
+public:
+    std::shared_ptr<ZepEditor> spEditor;
+    ZepBuffer* pBuffer;
+};
+
+TEST_F(BufferTest, CreatedProperly)
+{
+    ASSERT_TRUE(pBuffer->GetGapBuffer().size() == 1);
+}
+
+TEST_F(BufferTest, DefaultConstructedWith0)
+{
+    auto pNew = std::make_shared<ZepBuffer>(*spEditor, std::string("empty"));
+    ASSERT_TRUE(pNew->GetGapBuffer().size() == 1);
+}
+
+// TODO

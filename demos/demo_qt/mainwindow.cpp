@@ -162,12 +162,12 @@ std::string MainWindow::ReplParse(const std::string& str)
     return ret;
 }
 
-std::string MainWindow::ReplParse(const ZepBuffer& buffer, ByteIndex cursorOffset, ReplParseType type)
+std::string MainWindow::ReplParse(const ZepBuffer& buffer, const GlyphIterator& cursorOffset, ReplParseType type)
 {
     ZEP_UNUSED(cursorOffset);
     ZEP_UNUSED(type);
 
-    auto ret = chibi_repl(scheme, NULL, buffer.GetText().string());
+    auto ret = chibi_repl(scheme, NULL, buffer.GetGapBuffer().string());
     ret = RTrim(ret);
     return ret;
 }

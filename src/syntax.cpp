@@ -24,7 +24,7 @@ ZepSyntax::ZepSyntax(
     , m_stop(false)
     , m_flags(flags)
 {
-    m_syntax.resize(m_buffer.GetText().size());
+    m_syntax.resize(m_buffer.GetGapBuffer().size());
     m_adornments.push_back(std::make_shared<ZepSyntaxAdorn_RainbowBrackets>(*this, m_buffer));
 }
 
@@ -33,20 +33,20 @@ ZepSyntax::~ZepSyntax()
     Interrupt();
 }
 
-SyntaxResult ZepSyntax::GetSyntaxAt(long offset) const
+SyntaxResult ZepSyntax::GetSyntaxAt(const GlyphIterator& offset) const
 {
     Zep::SyntaxResult result;
 
     Wait();
 
-    if (m_processedChar < offset || (long)m_syntax.size() <= offset)
+    if (m_processedChar < offset.Index() || (long)m_syntax.size() <= offset.Index())
     {
         return result;
     }
 
-    result.background = m_syntax[offset].background;
-    result.foreground = m_syntax[offset].foreground;
-    result.underline = m_syntax[offset].underline;
+    result.background = m_syntax[offset.Index()].background;
+    result.foreground = m_syntax[offset.Index()].foreground;
+    result.underline = m_syntax[offset.Index()].underline;
 
     bool found = false;
     for (auto& adorn : m_adornments)
@@ -61,13 +61,13 @@ SyntaxResult ZepSyntax::GetSyntaxAt(long offset) const
 
     if (!(m_flags & ZepSyntaxFlags::IgnoreLineHighlight))
     {
-        if (offset >= m_activeLineRange.first && offset < (m_activeLineRange.second - 1))
+        if (offset.Index() >= m_activeLineRange.first && offset.Index() < (m_activeLineRange.second - 1))
         {
             result.background = ThemeColor::CursorLineBackground;
         }
     }
 
-    if (m_flashRange.x != m_flashRange.y && m_flashRange.x <= offset && m_flashRange.y > offset)
+    if (m_flashRange.x != m_flashRange.y && m_flashRange.x <= offset.Index() && m_flashRange.y > offset.Index())
     {
         auto elapsed = timer_get_elapsed_seconds(m_flashTimer);
         if (elapsed < m_flashDuration)
@@ -114,7 +114,7 @@ SyntaxResult ZepSyntax::GetSyntaxAt(long offset) const
                 auto center = range * t;
 
                 // Sample a bell curve about the current point, but don't draw the head
-                auto distance = bellCurve(((offset - center) / range));
+                auto distance = bellCurve(((offset.Index() - center) / range));
 
                 distance = std::min(1.0f, distance);
                 distance = std::max(0.0f, distance);
@@ -148,23 +148,24 @@ void ZepSyntax::Interrupt()
     m_stop = false;
 }
 
-void ZepSyntax::QueueUpdateSyntax(ByteIndex startLocation, ByteIndex endLocation)
+void ZepSyntax::QueueUpdateSyntax(GlyphIterator startLocation, GlyphIterator endLocation)
 {
-    assert(startLocation >= 0);
+    assert(startLocation.Valid());
     assert(endLocation >= startLocation);
     // Record the max location the syntax is valid up to.  This will
     // ensure that multiple calls to restart the thread keep track of where to start
     // This means a small edit at the end of a big file, followed by a small edit at the top
     // is the worst case scenario, because
-    m_processedChar = std::min(startLocation, long(m_processedChar));
-    m_targetChar = std::max(endLocation, long(m_targetChar));
+    m_processedChar = std::min(startLocation.Index(), long(m_processedChar));
+    m_targetChar = std::max(endLocation.Index(), long(m_targetChar));
 
     // Make sure the syntax buffer is big enough - adding normal syntax to the end
     // This may also 'chop'
-    m_syntax.resize(m_buffer.GetText().size(), SyntaxData{});
+    // TODO: Unicode? I _think_ this may be OK, but need to revisit
+    m_syntax.resize(m_buffer.GetGapBuffer().size(), SyntaxData{});
 
-    m_processedChar = std::min(long(m_processedChar), long(m_buffer.GetText().size() - 1));
-    m_targetChar = std::min(long(m_targetChar), long(m_buffer.GetText().size() - 1));
+    m_processedChar = std::min(long(m_processedChar), long(m_buffer.GetGapBuffer().size() - 1));
+    m_targetChar = std::min(long(m_targetChar), long(m_buffer.GetGapBuffer().size() - 1));
 
     // Have the thread update the syntax in the new region
     // If the pool has no threads, this will end up serial
@@ -190,13 +191,13 @@ void ZepSyntax::Notify(std::shared_ptr<ZepMessage> spMsg)
         else if (spBufferMsg->type == BufferMessageType::TextDeleted)
         {
             Interrupt();
-            m_syntax.erase(m_syntax.begin() + spBufferMsg->startLocation, m_syntax.begin() + spBufferMsg->endLocation);
+            m_syntax.erase(m_syntax.begin() + spBufferMsg->startLocation.Index(), m_syntax.begin() + spBufferMsg->endLocation.Index());
             QueueUpdateSyntax(spBufferMsg->startLocation, spBufferMsg->endLocation);
         }
         else if (spBufferMsg->type == BufferMessageType::TextAdded || spBufferMsg->type == BufferMessageType::Loaded)
         {
             Interrupt();
-            m_syntax.insert(m_syntax.begin() + spBufferMsg->startLocation, spBufferMsg->endLocation - spBufferMsg->startLocation, SyntaxData{});
+            m_syntax.insert(m_syntax.begin() + spBufferMsg->startLocation.Index(), ByteDistance(spBufferMsg->startLocation, spBufferMsg->endLocation), SyntaxData{});
             QueueUpdateSyntax(spBufferMsg->startLocation, spBufferMsg->endLocation);
         }
         else if (spBufferMsg->type == BufferMessageType::TextChanged)
@@ -210,7 +211,7 @@ void ZepSyntax::Notify(std::shared_ptr<ZepMessage> spMsg)
 // TODO: Multiline comments
 void ZepSyntax::UpdateSyntax()
 {
-    auto& buffer = m_buffer.GetText();
+    auto& buffer = m_buffer.GetGapBuffer();
     auto itrCurrent = buffer.begin() + m_processedChar;
     auto itrEnd = buffer.begin() + m_targetChar;
 

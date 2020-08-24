@@ -123,13 +123,13 @@ void ZepReplExCommand::Run(const std::vector<std::string>& tokens)
 
 void ZepReplExCommand::Prompt()
 {
-    m_pReplBuffer->Insert(m_pReplBuffer->EndLocation(), PromptString);
+    m_pReplBuffer->Insert(m_pReplBuffer->End(), PromptString);
     MoveToEnd();
 }
 
 void ZepReplExCommand::MoveToEnd()
 {
-    m_pReplWindow->SetBufferCursor(m_pReplBuffer->GetLinePos(m_pReplBuffer->EndLocation(), LineLocation::LineCRBegin));
+    m_pReplWindow->SetBufferCursor(m_pReplBuffer->GetLinePos(m_pReplBuffer->End(), LineLocation::LineCRBegin));
     //m_startLocation = m_pCurrentWindow->GetBufferCursor();
 }
 
@@ -157,7 +157,7 @@ void ZepMode_Repl::AddKeyPress(uint32_t key, uint32_t modifiers)
     else if (key == ExtKeys::RETURN)
     {
         auto& buffer = GetCurrentWindow()->GetBuffer();
-        std::string str = std::string(buffer.GetText().begin() + m_startLocation, buffer.GetText().end());
+        std::string str = std::string(buffer.GetGapBuffer().begin() + m_startLocation, buffer.GetGapBuffer().end());
         buffer.Insert(buffer.EndLocation(), "\n");
 
         auto stripLineStarts = [](std::string& str) {

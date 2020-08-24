@@ -1,7 +1,6 @@
 # Tests cannot be build without the ImGui parts
 
 SET(TEST_ROOT ${CMAKE_CURRENT_LIST_DIR})
-
 if (BUILD_TESTS AND BUILD_IMGUI)
 
 project(unittests)

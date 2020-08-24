@@ -15,7 +15,7 @@ public:
         uint32_t flags = 0);
 
     virtual void UpdateSyntax() override;
-    virtual SyntaxResult GetSyntaxAt(long index) const override;
+    virtual SyntaxResult GetSyntaxAt(const GlyphIterator& itr) const override;
     
     virtual void UpdateSyntax(std::vector<SyntaxResult>& flags);
 private:
