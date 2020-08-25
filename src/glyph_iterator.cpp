@@ -186,7 +186,7 @@ GlyphIterator GlyphIterator::Peek(long count) const
     return copy;
 }
 
-GlyphIterator GlyphIterator::PeekClamped(long count, LineLocation clamp) const
+GlyphIterator GlyphIterator::PeekLineClamped(long count, LineLocation clamp) const
 {
     GlyphIterator copy(*this);
     copy.MoveClamped(count, clamp);

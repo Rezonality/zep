@@ -173,11 +173,15 @@ void ZepMode_Vim::SetupKeyMaps()
 
     AddKeyMapWithCountRegisters({ &m_normalMap }, { "<Return>" }, id_MotionNextFirstChar);
 
-    AddKeyMapWithCountRegisters({ &m_normalMap }, { "<C-r>" }, id_Redo);
-    AddKeyMapWithCountRegisters({ &m_normalMap }, { "<C-z>", "u" }, id_Undo);
+    AddKeyMapWithCountRegisters({ &m_normalMap, &m_visualMap }, { "<C-r>" }, id_Redo);
+    AddKeyMapWithCountRegisters({ &m_normalMap, &m_visualMap }, { "<C-z>", "u" }, id_Undo);
 
-    // Insert Mode
+    keymap_add({ &m_normalMap }, { "<Backspace>" }, id_MotionStandardLeft);
+    
+    // No count allowed on backspace in insert mode, or that would interfere with text.
     keymap_add({ &m_insertMap }, { "<Backspace>" }, id_Backspace);
+    keymap_add({ &m_insertMap }, { "<Del>" }, id_Delete);
+
     keymap_add({ &m_insertMap }, { "<Return>" }, id_InsertCarriageReturn);
     keymap_add({ &m_insertMap }, { "<Tab>" }, id_InsertTab);
 }

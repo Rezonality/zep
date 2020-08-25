@@ -66,7 +66,7 @@ public:
     GlyphIterator& Clamp();
 
     GlyphIterator Peek(long count) const;
-    GlyphIterator PeekClamped(long count, LineLocation clamp = LineLocation::LineLastNonCR) const;
+    GlyphIterator PeekLineClamped(long count, LineLocation clamp = LineLocation::LineLastNonCR) const;
     GlyphIterator PeekByteOffset(long count) const;
     GlyphIterator Clamped() const;
 

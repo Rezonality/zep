@@ -20,6 +20,7 @@ public:
     virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
     virtual void Begin(ZepWindow* pWindow) override;
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
+    virtual EditorMode DefaultMode() const override { return EditorMode::Normal; }
     
     static const char* StaticName()
     {

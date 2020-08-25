@@ -37,7 +37,7 @@ void ZepMode_Standard::Init()
     // In standard mode, we always show the insert cursor type
     m_visualCursorType = CursorType::Insert;
 
-    m_modeFlags |= ModeFlags::InsertModeGroupUndo;
+    m_modeFlags |= ModeFlags::InsertModeGroupUndo | ModeFlags::StayInInsertMode;
 
     for (int i = 0; i <= 9; i++)
     {
@@ -50,8 +50,8 @@ void ZepMode_Standard::Init()
     keymap_add({ &m_insertMap }, { "<Return>" }, id_InsertCarriageReturn);
     keymap_add({ &m_insertMap }, { "<Tab>" }, id_InsertTab);
     keymap_add({ &m_insertMap }, { "<Del>" }, id_Delete);
-    keymap_add({ &m_insertMap }, { "<C-y>" }, id_Redo);
-    keymap_add({ &m_insertMap }, { "<C-z>" }, id_Undo);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<C-y>" }, id_Redo);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<C-z>" }, id_Undo);
 
     keymap_add({ &m_insertMap, &m_visualMap }, { "<Left>" }, id_MotionStandardLeft);
     keymap_add({ &m_insertMap, &m_visualMap }, { "<Right>" }, id_MotionStandardRight);
@@ -75,6 +75,7 @@ void ZepMode_Standard::Init()
     keymap_add({ &m_visualMap }, { "<C-c>" }, id_StandardCopy);
 
     keymap_add({ &m_normalMap, &m_visualMap, &m_insertMap }, { "<Escape>" }, id_InsertMode);
+    keymap_add({ &m_normalMap }, { "<Backspace>" }, id_MotionStandardLeft);
 }
 
 void ZepMode_Standard::Begin(ZepWindow* pWindow)

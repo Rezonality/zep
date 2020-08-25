@@ -218,7 +218,7 @@ void ZepMode::SwitchMode(EditorMode currentMode)
     // Force normal mode if the file is read only
     if (currentMode == EditorMode::Insert && buffer.HasFileFlags(FileFlags::ReadOnly))
     {
-        currentMode = EditorMode::Normal;
+        currentMode = DefaultMode();
     }
 
     // When leaving Ex mode, reset search markers
@@ -432,6 +432,16 @@ void ZepMode::HandleMappedInput(const std::string& input)
     }
 
     spContext->foundCommand = GetCommand(*spContext);
+
+    // Stay in insert mode unless commanded otherwise
+    if (spContext->commandResult.modeSwitch == EditorMode::None &&
+        spContext->foundCommand)
+    {
+        if (m_modeFlags & ModeFlags::StayInInsertMode)
+        {
+            spContext->commandResult.modeSwitch = EditorMode::Insert;
+        }
+    }
 
     // A lambda to check for a pending mode switch after the command
     auto enteringMode = [=](auto mode) {
@@ -659,7 +669,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         if (HandleExCommand(context.fullCommand))
         {
             //buffer.GetMode()->Begin(GetCurrentWindow());
-            SwitchMode(EditorMode::Normal);
+            SwitchMode(DefaultMode());
             ResetCommand();
             return true;
         }
@@ -859,11 +869,13 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_Redo)
     {
+        context.commandResult.modeSwitch = DefaultMode();
         Redo();
         return true;
     }
     else if (mappedCommand == id_Undo)
     {
+        context.commandResult.modeSwitch = DefaultMode();
         Undo();
         return true;
     }
@@ -919,30 +931,23 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_MotionStandardRight)
     {
-        context.commandResult.modeSwitch = EditorMode::Insert;
         GetCurrentWindow()->SetBufferCursor(cursorItr.Move(context.keymap.TotalCount()));
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
     else if (mappedCommand == id_MotionStandardLeft)
     {
-        context.commandResult.modeSwitch = EditorMode::Insert;
-        GetCurrentWindow()->SetBufferCursor(cursorItr.Move(context.keymap.TotalCount()));
         GetCurrentWindow()->SetBufferCursor(cursorItr.Move(-context.keymap.TotalCount()));
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
     else if (mappedCommand == id_MotionStandardUp)
     {
-        context.commandResult.modeSwitch = EditorMode::Insert;
-        GetCurrentWindow()->SetBufferCursor(cursorItr.Move(context.keymap.TotalCount()));
         GetCurrentWindow()->MoveCursorY(-1, LineLocation::LineCRBegin);
         return true;
     }
     else if (mappedCommand == id_MotionStandardDown)
     {
-        context.commandResult.modeSwitch = EditorMode::Insert;
-        GetCurrentWindow()->SetBufferCursor(cursorItr.Move(context.keymap.TotalCount()));
         GetCurrentWindow()->MoveCursorY(1, LineLocation::LineCRBegin);
         return true;
     }
@@ -992,16 +997,12 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_MotionStandardRightWord)
     {
-        context.commandResult.modeSwitch = EditorMode::Insert;
-        GetCurrentWindow()->SetBufferCursor(cursorItr.Move(context.keymap.TotalCount()));
         auto target = buffer.StandardCtrlMotion(bufferCursor, SearchDirection::Forward);
         GetCurrentWindow()->SetBufferCursor(target.second);
         return true;
     }
     else if (mappedCommand == id_MotionStandardLeftWord)
     {
-        context.commandResult.modeSwitch = EditorMode::Insert;
-        GetCurrentWindow()->SetBufferCursor(cursorItr.Move(context.keymap.TotalCount()));
         auto target = buffer.StandardCtrlMotion(bufferCursor, SearchDirection::Backward);
         GetCurrentWindow()->SetBufferCursor(target.second);
         return true;
@@ -1086,7 +1087,7 @@ bool ZepMode::GetCommand(CommandContext& context)
     else if (mappedCommand == id_Backspace)
     {
         // In insert mode, we are 'on' the character after the one we want to delete
-        context.beginRange = cursorItr.PeekClamped(-1);
+        context.beginRange = cursorItr.Peek(-1);
         context.endRange = cursorItr;
         context.op = CommandOperation::Delete;
     }
@@ -1172,7 +1173,7 @@ bool ZepMode::GetCommand(CommandContext& context)
     {
         if (m_currentMode == EditorMode::Visual)
         {
-            context.commandResult.modeSwitch = EditorMode::Normal;
+            context.commandResult.modeSwitch = DefaultMode();
         }
         else
         {
@@ -1199,13 +1200,20 @@ bool ZepMode::GetCommand(CommandContext& context)
             context.beginRange = range.first;
             context.endRange = range.second;
             context.op = CommandOperation::Delete;
-            context.commandResult.modeSwitch = EditorMode::Normal;
+            context.commandResult.modeSwitch = DefaultMode();
         }
         else
         {
-            // Remember all ranges are exclusive of the end; so we allow to delete to the line end
             context.beginRange = cursorItr;
-            context.endRange = cursorItr.PeekClamped(context.keymap.TotalCount(), LineLocation::LineCRBegin);
+            if (m_currentMode == EditorMode::Normal)
+            {
+                // Normal/Vim mode clamped to end of line
+                context.endRange = cursorItr.PeekLineClamped(context.keymap.TotalCount(), LineLocation::LineCRBegin);
+            }
+            else
+            {
+                context.endRange = cursorItr.Peek(context.keymap.TotalCount());
+            }
             context.op = CommandOperation::Delete;
             context.commandResult.flags |= CommandResultFlags::HandledCount;
         }
@@ -1263,7 +1271,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         context.beginRange = context.buffer.GetLinePos(context.bufferCursor, LineLocation::LineBegin);
         context.endRange = context.buffer.GetLinePos(context.bufferCursor, LineLocation::BeyondLineEnd);
         context.op = CommandOperation::CopyLines;
-        context.commandResult.modeSwitch = EditorMode::Normal;
+        context.commandResult.modeSwitch = DefaultMode();
         context.cursorAfterOverride = context.beginRange;
     }
     else if (mappedCommand == id_Yank)
@@ -1276,24 +1284,26 @@ bool ZepMode::GetCommand(CommandContext& context)
         context.endRange = range.second;
         // Note: select line wise yank if we started in linewise copy mode
         context.op = m_lineWise ? CommandOperation::CopyLines : CommandOperation::Copy;
-        context.commandResult.modeSwitch = EditorMode::Normal;
+        context.commandResult.modeSwitch = DefaultMode();
         context.cursorAfterOverride = context.beginRange;
     }
     else if (mappedCommand == id_StandardCopy)
     {
-        context.registers.push('0');
-        context.registers.push('*');
-        context.registers.push('+');
+        // Ignore empty copy
         auto range = GetNormalizedVisualRange();
         context.beginRange = range.first;
         context.endRange = range.second;
-        context.cursorAfterOverride = context.bufferCursor;
-
-        // Ignore empty copy
         if (context.beginRange == context.endRange)
         {
             return true;
         }
+
+        // Copy in standard mode stays in visual mode
+        context.commandResult.modeSwitch = EditorMode::Visual;
+        context.registers.push('0');
+        context.registers.push('*');
+        context.registers.push('+');
+        context.cursorAfterOverride = context.bufferCursor;
 
         // Note: select line wise yank if we started in linewise copy mode
         context.op = CommandOperation::Copy;
@@ -1329,7 +1339,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             }
             else
             {
-                context.beginRange = cursorItr.PeekClamped(1, LineLocation::LineCRBegin);
+                context.beginRange = cursorItr.PeekLineClamped(1, LineLocation::LineCRBegin);
             }
             context.op = CommandOperation::Insert;
         }
@@ -1414,7 +1424,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         if (GetOperationRange("visual", context.currentMode, context.beginRange, context.endRange))
         {
             context.op = CommandOperation::Delete;
-            context.commandResult.modeSwitch = EditorMode::Normal;
+            context.commandResult.modeSwitch = DefaultMode();
         }
     }
     else if (mappedCommand == id_DeleteLine)
@@ -1422,7 +1432,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         if (GetOperationRange("line", context.currentMode, context.beginRange, context.endRange))
         {
             context.op = CommandOperation::DeleteLines;
-            context.commandResult.modeSwitch = EditorMode::Normal;
+            context.commandResult.modeSwitch = DefaultMode();
         }
     }
     else if (mappedCommand == id_DeleteWord)
@@ -1640,10 +1650,10 @@ bool ZepMode::GetCommand(CommandContext& context)
             if (!GetOperationRange("visual", context.currentMode, context.beginRange, context.endRange))
             {
                 context.beginRange = cursorItr;
-                context.endRange = cursorItr.PeekClamped(context.keymap.TotalCount(), LineLocation::LineCRBegin);
+                context.endRange = cursorItr.PeekLineClamped(context.keymap.TotalCount(), LineLocation::LineCRBegin);
             }
 
-            context.commandResult.modeSwitch = EditorMode::Normal;
+            context.commandResult.modeSwitch = DefaultMode();
         }
     }
     else if (mappedCommand == id_ChangeToChar)
@@ -1820,7 +1830,7 @@ bool ZepMode::GetOperationRange(const std::string& op, EditorMode currentMode, G
     {
         auto cursorItr = bufferCursor;
         beginRange = cursorItr;
-        endRange = cursorItr.PeekClamped(1);
+        endRange = cursorItr.PeekLineClamped(1);
     }
     return beginRange.Valid();
 }
@@ -1844,7 +1854,7 @@ void ZepMode::UpdateVisualSelection()
             }
             else
             {
-                m_visualEnd = GetCurrentWindow()->GetBufferCursor().PeekClamped(1, LineLocation::LineCRBegin);
+                m_visualEnd = GetCurrentWindow()->GetBufferCursor().PeekLineClamped(1, LineLocation::LineCRBegin);
             }
         }
 
@@ -2156,7 +2166,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
                 spMarker->description = "This is an example error mark";
             }
             buffer.AddRangeMarker(spMarker);
-            SwitchMode(EditorMode::Normal);
+            SwitchMode(DefaultMode());
         }
         else if (strCommand == ":ZTabs")
         {
@@ -2376,8 +2386,7 @@ void ZepMode::AddNavigationKeyMaps(bool allowInVisualMode)
     AddKeyMapWithCountRegisters(navigationMaps, { "j", "<Down>" }, id_MotionDown);
     AddKeyMapWithCountRegisters(navigationMaps, { "k", "<Up>" }, id_MotionUp);
     AddKeyMapWithCountRegisters(navigationMaps, { "l", "<Right>" }, id_MotionRight);
-    AddKeyMapWithCountRegisters(navigationMaps, { "h", "<Left>", "<Backspace>" }, id_MotionLeft);
-    AddKeyMapWithCountRegisters(navigationMaps, { "<Backspace>" }, id_MotionStandardLeft);
+    AddKeyMapWithCountRegisters(navigationMaps, { "h", "<Left>" }, id_MotionLeft);
 
     // Page Motions
     AddKeyMapWithCountRegisters(navigationMaps, { "<C-f>", "<PageDown>" }, id_MotionPageForward);

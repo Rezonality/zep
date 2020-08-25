@@ -89,7 +89,8 @@ namespace ModeFlags
 enum
 {
     None = (0),
-    InsertModeGroupUndo = (1 << 0)
+    InsertModeGroupUndo = (1 << 0),
+    StayInInsertMode = (1 << 1)
 };
 }
 
@@ -160,6 +161,7 @@ public:
     virtual void Notify(std::shared_ptr<ZepMessage> message) override {}
     virtual uint32_t ModifyWindowFlags(uint32_t windowFlags) { return windowFlags; }
     virtual EditorMode GetEditorMode() const;
+    virtual EditorMode DefaultMode() const = 0;
     
     // About to display this window, which is associated with this mode
     virtual void PreDisplay(ZepWindow&){};
