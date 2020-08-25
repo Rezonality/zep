@@ -18,11 +18,11 @@ void ZepDisplay::InvalidateCharCache()
 void ZepDisplay::BuildCharCache()
 {
     const char chA = 'A';
-    m_defaultCharSize = GetGapBufferSize((const uint8_t*)&chA, (const uint8_t*)&chA + 1);
+    m_defaultCharSize = GetTextSize((const uint8_t*)&chA, (const uint8_t*)&chA + 1);
     for (int i = 0; i < 127; i++)
     {
         uint8_t ch = (uint8_t)i;
-        m_charCacheASCII[i] = GetGapBufferSize(&ch, &ch + 1);
+        m_charCacheASCII[i] = GetTextSize(&ch, &ch + 1);
     }
     m_charCacheDirty = false;
 }
@@ -67,7 +67,7 @@ NVec2f ZepDisplay::GetCharSize(const uint8_t* pCh)
         return itr->second;
     }
      
-    auto sz = GetGapBufferSize(pCh, pCh + utf8_codepoint_length(*pCh));
+    auto sz = GetTextSize(pCh, pCh + utf8_codepoint_length(*pCh));
     m_charCache[(uint32_t)ch32] = sz;
 
     return sz;

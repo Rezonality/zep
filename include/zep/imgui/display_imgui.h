@@ -25,14 +25,16 @@ public:
     // ImGui specific display methods
     float GetFontPointSize() const
     {
-        return ImGui::GetFontSize();
+        return ImGui::GetFontSize() * ImGui::GetIO().FontGlobalScale;
     }
 
     void SetFontPointSize(float size)
     {
-        // TODO: Allow change of font size in ImGui
-        // See the Qt demo for functional font size changing with CTRL+/-
-        (void)size;
+        // A crude scaling in ImGui for now...
+        // We use global font scale instead of doing it 'properly'
+        // See the Qt demo for better scaling, because that's built into Qt.
+        m_charCacheDirty = true;
+        ImGui::GetIO().FontGlobalScale = size / ImGui::GetFontSize();
     }
 
     float GetFontHeightPixels() const
@@ -43,9 +45,9 @@ public:
         //return (ImGui::GetFont()->Descent + ImGui::GetFont()->Ascent + 1) * 2.0f;
     }
 
-    NVec2f GetGapBufferSize(const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const
+    NVec2f GetTextSize(const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const
     {
-        // This is the code from ImGui internals; we can't call GetGapBufferSize, because it doesn't return the correct 'advance' formula, which we
+        // This is the code from ImGui internals; we can't call GetTextSize, because it doesn't return the correct 'advance' formula, which we
         // need as we draw one character at a time...
         ImFont* font = ImGui::GetFont();
         const float font_size = ImGui::GetFontSize();
@@ -118,6 +120,7 @@ public:
 
 private:
     NRectf m_clipRect;
+    float m_fontScale = 1.0f;
 };
 
 } // namespace Zep

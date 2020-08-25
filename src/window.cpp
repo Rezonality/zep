@@ -583,7 +583,7 @@ float ZepWindow::TipBoxShadowWidth() const
 
 void ZepWindow::DisplayToolTip(const NVec2f& pos, const RangeMarker& marker) const
 {
-    auto textSize = GetEditor().GetDisplay().GetGapBufferSize((const uint8_t*)marker.description.c_str(), (const uint8_t*)(marker.description.c_str() + marker.description.size()));
+    auto textSize = GetEditor().GetDisplay().GetTextSize((const uint8_t*)marker.description.c_str(), (const uint8_t*)(marker.description.c_str() + marker.description.size()));
 
     auto boxShadowWidth = TipBoxShadowWidth();
 
@@ -697,7 +697,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
             strNum = std::to_string(lineInfo.bufferLineNumber);
         }
 
-        auto textSize = display.GetGapBufferSize((const uint8_t*)strNum.c_str(), (const uint8_t*)(strNum.c_str() + strNum.size()));
+        auto textSize = display.GetTextSize((const uint8_t*)strNum.c_str(), (const uint8_t*)(strNum.c_str() + strNum.size()));
 
         auto digitCol = m_pBuffer->GetTheme().GetColor(ThemeColor::LineNumber);
         if (lineInfo.BufferCursorInside(m_bufferCursor))
@@ -933,7 +933,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
         {
             DrawLineWidgets(lineInfo);
 
-            if ((special != SpecialChar::Hidden) || GetWindowFlags() & WindowFlags::ShowCR)
+            if ((special != SpecialChar::Hidden) || (GetWindowFlags() & WindowFlags::ShowCR))
             {
                 auto centerY = ToWindowY(lineInfo.yOffsetPx) + cp.size.y / 2;
                 auto centerChar = NVec2f(screenPosX + cp.size.x / 2, centerY);
@@ -973,7 +973,8 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                     ws = col;
                 }
 
-                if (special == SpecialChar::None)
+                if (special == SpecialChar::None || 
+                    special == SpecialChar::Hidden)
                 {
                     display.DrawChars(NVec2f(screenPosX, ToWindowY(lineInfo.yOffsetPx + lineInfo.padding.x)), col, pCh, pEnd);
                 }
@@ -1250,7 +1251,7 @@ void ZepWindow::GetCursorInfo(NVec2f& pos, NVec2f& size)
 
 void ZepWindow::PlaceToolTip(const NVec2f& pos, ToolTipPos location, uint32_t lineGap, const std::shared_ptr<RangeMarker> spMarker)
 {
-    auto textSize = GetEditor().GetDisplay().GetGapBufferSize((const uint8_t*)spMarker->description.c_str(), (const uint8_t*)(spMarker->description.c_str() + spMarker->description.size()));
+    auto textSize = GetEditor().GetDisplay().GetTextSize((const uint8_t*)spMarker->description.c_str(), (const uint8_t*)(spMarker->description.c_str() + spMarker->description.size()));
     float boxShadowWidth = TipBoxShadowWidth();
 
     NRectf tipBox;
@@ -1515,7 +1516,7 @@ void ZepWindow::Display()
             for (int i = 0; i < (int)airline.leftBoxes.size(); i++)
             {
                 auto pText = (const uint8_t*)airline.leftBoxes[i].text.c_str();
-                auto textSize = display.GetGapBufferSize(pText, pText + airline.leftBoxes[i].text.size());
+                auto textSize = display.GetTextSize(pText, pText + airline.leftBoxes[i].text.size());
                 textSize.x += border * 2;
 
                 auto col = airline.leftBoxes[i].background;
@@ -1536,14 +1537,14 @@ void ZepWindow::Display()
                 for (int i = 0; i < (int)airline.rightBoxes.size(); i++)
                 {
                     auto pText = (const uint8_t*)airline.rightBoxes[i].text.c_str();
-                    totalRightSize += display.GetGapBufferSize(pText, pText + airline.rightBoxes[i].text.size()).x + border * 2;
+                    totalRightSize += display.GetTextSize(pText, pText + airline.rightBoxes[i].text.size()).x + border * 2;
                 }
 
                 screenPosYPx.x = m_airlineRegion->rect.Right() - totalRightSize;
                 for (int i = 0; i < (int)airline.rightBoxes.size(); i++)
                 {
                     auto pText = (const uint8_t*)airline.rightBoxes[i].text.c_str();
-                    auto textSize = display.GetGapBufferSize(pText, pText + airline.rightBoxes[i].text.size());
+                    auto textSize = display.GetTextSize(pText, pText + airline.rightBoxes[i].text.size());
                     textSize.x += border * 2;
 
                     auto col = airline.rightBoxes[i].background;

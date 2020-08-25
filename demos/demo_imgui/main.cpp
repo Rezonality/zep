@@ -446,8 +446,8 @@ int main(int argc, char** argv)
     builder.BuildRanges(&ranges); // Build the final result (ordered ranges with all the unique characters submitted)
 
     ImFontConfig cfg;
-    cfg.OversampleH = 3;
-    cfg.OversampleV = 3;
+    cfg.OversampleH = 4;
+    cfg.OversampleV = 4;
 
     float fontPixelHeight = dpi_pixel_height_from_point_size(DemoFontPtSize, GetDisplayScale().y);
     io.Fonts->AddFontFromFileTTF((std::string(SDL_GetBasePath()) + "Cousine-Regular.ttf").c_str(), fontPixelHeight, &cfg, ranges.Data);

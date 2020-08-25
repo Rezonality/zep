@@ -81,7 +81,7 @@ public:
         return m_fontHeight;
     }
 
-    NVec2f GetGapBufferSize(const uint8_t* pBegin, const uint8_t* pEnd) const
+    NVec2f GetTextSize(const uint8_t* pBegin, const uint8_t* pEnd) const
     {
         QFontMetrics met(qApp->font());
         if (pEnd == nullptr)

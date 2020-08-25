@@ -584,7 +584,7 @@ void ZepEditor::UpdateTabs()
                 tabColor = tabColor * .55f;
                 tabColor.w = 1.0f;
             }
-            auto tabLength = m_pDisplay->GetGapBufferSize((const uint8_t*)name.c_str()).x + DPI_X(textBorder) * 2;
+            auto tabLength = m_pDisplay->GetTextSize((const uint8_t*)name.c_str()).x + DPI_X(textBorder) * 2;
 
             auto spTabRegionTab = std::make_shared<TabRegionTab>();
             spTabRegionTab->color = tabColor;
@@ -1116,7 +1116,7 @@ void ZepEditor::Display()
     {
         if (!commandLines[i].empty())
         {
-            auto textSize = m_pDisplay->GetGapBufferSize((const uint8_t*)commandLines[i].c_str(), (const uint8_t*)commandLines[i].c_str() + commandLines[i].size());
+            auto textSize = m_pDisplay->GetTextSize((const uint8_t*)commandLines[i].c_str(), (const uint8_t*)commandLines[i].c_str() + commandLines[i].size());
             m_pDisplay->DrawChars(screenPosYPx, GetTheme().GetColor(ThemeColor::Text), (const uint8_t*)commandLines[i].c_str());
         }
 
