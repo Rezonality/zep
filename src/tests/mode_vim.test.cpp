@@ -3,10 +3,10 @@
 #include "zep/buffer.h"
 #include "zep/display.h"
 #include "zep/editor.h"
+#include "zep/mcommon/logger.h"
 #include "zep/mode_vim.h"
 #include "zep/tab_window.h"
 #include "zep/window.h"
-#include "zep/mcommon/logger.h"
 
 #include <gtest/gtest.h>
 #include <regex>
@@ -61,6 +61,57 @@ public:
     std::shared_ptr<ZepMode_Vim> spMode;
 };
 
+#define HANDLE_VIM_COMMAND(command)               \
+    for (auto& ch : command)                      \
+    {                                             \
+        if (ch == 0)                              \
+            continue;                             \
+        if (ch == '\n')                           \
+        {                                         \
+            spMode->AddKeyPress(ExtKeys::RETURN); \
+        }                                         \
+        else                                      \
+        {                                         \
+            spMode->AddKeyPress(ch);              \
+        }                                         \
+    }
+
+#define CURSOR_TEST(name, source, command, xcoord, ycoord) \
+    TEST_F(VimTest, name)                                  \
+    {                                                      \
+        pBuffer->SetText(source);                          \
+        HANDLE_VIM_COMMAND(command);                       \
+        ASSERT_EQ(pWindow->BufferToDisplay().x, xcoord);   \
+        ASSERT_EQ(pWindow->BufferToDisplay().y, ycoord);   \
+    };
+
+#define VISUAL_TEST(name, source, command, start, end) \
+    TEST_F(VimTest, name)                                  \
+    {                                                      \
+        pBuffer->SetText(source);                          \
+        HANDLE_VIM_COMMAND(command);                       \
+        ASSERT_EQ(spMode->GetInclusiveVisualRange().first.Index(), start); \
+        ASSERT_EQ(spMode->GetInclusiveVisualRange().second.Index(), end);  \
+    };
+
+// Given a sample text, a keystroke list and a target text, check the test returns the right thing
+#define COMMAND_TEST(name, source, command, target)                     \
+    TEST_F(VimTest, name)                                               \
+    {                                                                   \
+        pBuffer->SetText(source);                                       \
+        spMode->AddCommandText(command);                                \
+        ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), target); \
+    };
+
+#define COMMAND_TEST_RET(name, source, command, target)                 \
+    TEST_F(VimTest, name)                                               \
+    {                                                                   \
+        pBuffer->SetText(source);                                       \
+        spMode->AddCommandText(command);                                \
+        spMode->AddKeyPress(ExtKeys::RETURN);                           \
+        ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), target); \
+    };
+
 TEST_F(VimTest, CheckDisplaySucceeds)
 {
     pBuffer->SetText("Some text to display\nThis is a test.");
@@ -75,24 +126,6 @@ TEST_F(VimTest, CheckDisplayWrap)
     ASSERT_NO_FATAL_FAILURE(spEditor->Display());
     ASSERT_FALSE(pTabWindow->GetWindows().empty());
 }
-// Given a sample text, a keystroke list and a target text, check the test returns the right thing
-#define COMMAND_TEST(name, source, command, target)                \
-    TEST_F(VimTest, name)                                          \
-    {                                                              \
-        pBuffer->SetText(source);                                  \
-        spMode->AddCommandText(command);                           \
-        ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), target); \
-    };
-
-#define COMMAND_TEST_RET(name, source, command, target)            \
-    TEST_F(VimTest, name)                                          \
-    {                                                              \
-        pBuffer->SetText(source);                                  \
-        spMode->AddCommandText(command);                           \
-        spMode->AddKeyPress(ExtKeys::RETURN);                      \
-        ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), target); \
-    };
-
 TEST_F(VimTest, UndoRedo)
 {
     // The issue here is that setting the text _should_ update the buffer!
@@ -353,6 +386,7 @@ COMMAND_TEST(change_to_digit, "one 1wo", "ct1hey", "hey1wo");
 
 COMMAND_TEST(delete_to_char, "one 1wo", "dt1", "1wo");
 COMMAND_TEST(delete_to_digit, "one two", "dtt", "two");
+//COMMAND_TEST(delete_final_line, "one\n", "jdd", "one");
 
 COMMAND_TEST(visual_inner_word, "one-three", "lviwd", "-three");
 COMMAND_TEST(visual_inner_word_undo, "one-three", "lviwdu", "one-three");
@@ -363,27 +397,7 @@ COMMAND_TEST(visual_a_word_undo, "one three", "vawdu", "one three");
 COMMAND_TEST(visual_a_WORD, "one-three four", "vaWd", "four");
 COMMAND_TEST(visual_a_WORD_undo, "one-three four", "vaWdu", "one-three four");
 
-
-#define CURSOR_TEST(name, source, command, xcoord, ycoord) \
-    TEST_F(VimTest, name)                                  \
-    {                                                      \
-        pBuffer->SetText(source);                          \
-        for (auto& ch : command)                           \
-        {                                                  \
-            if (ch == 0)                                   \
-                continue;                                  \
-            if (ch == '\n')                                \
-            {                                              \
-                spMode->AddKeyPress(ExtKeys::RETURN);      \
-            }                                              \
-            else                                           \
-            {                                              \
-                spMode->AddKeyPress(ch);                   \
-            }                                              \
-        }                                                  \
-        ASSERT_EQ(pWindow->BufferToDisplay().x, xcoord);   \
-        ASSERT_EQ(pWindow->BufferToDisplay().y, ycoord);   \
-    };
+VISUAL_TEST(visual_select_from_end, "one\n", "jvk", 0, 4);
 
 // Motions
 CURSOR_TEST(motion_lright, "one", "ll", 2, 0);
@@ -441,7 +455,6 @@ CURSOR_TEST(find_a_char_repeat, "one one one", "fo;", 8, 0);
 CURSOR_TEST(find_a_char_num, "one2 one2", "2f2", 8, 0);
 CURSOR_TEST(find_a_char_beside, "ooo", "fo;", 2, 0);
 CURSOR_TEST(find_backwards, "foo", "lllllFf", 0, 0);
-
 
 inline std::string MakeCommandRegex(const std::string& command)
 {

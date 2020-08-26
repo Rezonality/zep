@@ -1,20 +1,6 @@
 #pragma once
 
-/*#include <functional>
-#include <set>
-
-#include "zep/mcommon/file/path.h"
-#include "zep/mcommon/logger.h"
-#include "zep/mcommon/string/stringutils.h"
-#include "zep/mcommon/utf8/unchecked.h"
-*/
-
 #include "gap_buffer.h"
-
-/*#include "editor.h"
-#include "line_widgets.h"
-#include "theme.h"
-*/
 
 namespace Zep
 {
@@ -101,6 +87,7 @@ struct GlyphRange
     GlyphRange();
     bool ContainsLocation(long loc) const;
     bool ContainsLocation(GlyphIterator loc) const;
+    bool ContainsInclusiveLocation(GlyphIterator loc) const;
 };
 
 } // namespace Zep
