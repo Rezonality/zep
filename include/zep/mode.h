@@ -181,7 +181,7 @@ public:
     // Keys handled by modes
     virtual void AddCommandText(std::string strText);
 
-    virtual GlyphRange GetNormalizedVisualRange() const;
+    virtual GlyphRange GetInclusiveVisualRange() const;
 
     virtual std::vector<Airline> GetAirlines(ZepWindow&) const { return std::vector<Airline>{}; }
 

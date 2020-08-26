@@ -880,7 +880,9 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                 if (GetBuffer().HasSelection())
                 {
                     auto sel = m_pBuffer->GetSelection();
-                    if (sel.ContainsLocation(cp.GlyphIterator))
+
+                    // Visual selection is 'inclusive' - it starts/ends on the cursor
+                    if (sel.ContainsInclusiveLocation(cp.GlyphIterator))
                     {
                         display.DrawRectFilled(NRectf(NVec2f(screenPosX, ToWindowY(lineInfo.yOffsetPx)), NVec2f(screenPosX + cp.size.x, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx()))), m_pBuffer->GetTheme().GetColor(ThemeColor::VisualSelectBackground));
                     }

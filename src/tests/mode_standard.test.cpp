@@ -143,8 +143,8 @@ TEST_F(StandardTest, CheckDisplaySucceeds)
     {                                                                       \
         pBuffer->SetText(source);                                           \
         PARSE_COMMAND(command)                                              \
-        ASSERT_EQ(spMode->GetNormalizedVisualRange().first.Index(), start); \
-        ASSERT_EQ(spMode->GetNormalizedVisualRange().second.Index(), end);  \
+        ASSERT_EQ(spMode->GetInclusiveVisualRange().first.Index(), start); \
+        ASSERT_EQ(spMode->GetInclusiveVisualRange().second.Index(), end);  \
     }
 
 TEST_F(StandardTest, UndoRedo)
@@ -264,9 +264,9 @@ CURSOR_TEST(motion_right_newline_twice_back_back, "one\ntwo", "%c%r%c%r%c%l%c%l"
 CURSOR_TEST(paste_over_cursor_after, "one", "%c%s%r%cc%cv", 3, 0);
 
 // Visual Range selection
-VISUAL_TEST(visual_shift_right, "one two", "%c%s%r", 0, 4);
-VISUAL_TEST(visual_shift_right_right, "one two three", "%c%s%r%c%s%r", 0, 8);
-VISUAL_TEST(visual_shift_right_right_back, "one two three", "%c%s%r%c%s%r%c%s%l", 0, 4);
+VISUAL_TEST(visual_shift_right, "one two", "%c%s%r", 0, 3);
+VISUAL_TEST(visual_shift_right_right, "one two three", "%c%s%r%c%s%r", 0, 7);
+VISUAL_TEST(visual_shift_right_right_back, "one two three", "%c%s%r%c%s%r%c%s%l", 0, 3);
 
 COMMAND_TEST(paste_over, "one", "%s%r%s%r%s%r%cc%cv", "one");
 COMMAND_TEST(paste_over_paste, "one", "%s%r%s%r%s%r%cc%cv%cv", "oneone");

@@ -167,7 +167,8 @@ GlyphIterator& GlyphIterator::Clamp()
         return *this;
     }
 
-    // Clamp to the last char, not the 0 on the end
+    // Clamp to the 0 on the end of the buffer 
+    // Since indices are usually exclusive, this allows selection of everything but the 0
     m_index = std::min(m_index, long(m_pBuffer->GetGapBuffer().size()) - 1);
     m_index = std::max(m_index, 0l);
     return *this;
@@ -257,6 +258,10 @@ bool GlyphRange::ContainsLocation(GlyphIterator loc) const
     return loc >= first && loc < second;
 }
 
+bool GlyphRange::ContainsInclusiveLocation(GlyphIterator loc) const
+{
+    return loc >= first && loc <= second;
+}
 
 /*
 long operator-(const GlyphIterator& lhs, const GlyphIterator& rhs)

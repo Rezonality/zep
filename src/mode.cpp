@@ -640,15 +640,23 @@ void ZepMode::Undo()
     };
 }
 
-GlyphRange ZepMode::GetNormalizedVisualRange() const
+GlyphRange ZepMode::GetInclusiveVisualRange() const
 {
     // Clamp and orient the correct way around
     auto startOffset = m_visualBegin.Clamped();
     auto endOffset = m_visualEnd.Clamped();
+
     if (startOffset > endOffset)
     {
         std::swap(startOffset, endOffset);
     }
+
+    if (DefaultMode() == EditorMode::Insert)
+    {
+        // In standard/insert mode, selections exclude the last character
+        endOffset.Move(-1);
+    }
+
     return GlyphRange(startOffset, endOffset);
 }
 
@@ -1180,7 +1188,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             if (mappedCommand == id_VisualLineMode)
             {
                 m_visualBegin = context.buffer.GetLinePos(context.bufferCursor, LineLocation::LineBegin);
-                m_visualEnd = context.buffer.GetLinePos(context.bufferCursor, LineLocation::BeyondLineEnd);
+                m_visualEnd = context.buffer.GetLinePos(context.bufferCursor, LineLocation::LineCRBegin);
             }
             else
             {
@@ -1196,9 +1204,9 @@ bool ZepMode::GetCommand(CommandContext& context)
     {
         if (m_currentMode == EditorMode::Visual)
         {
-            auto range = GetNormalizedVisualRange();
+            auto range = GetInclusiveVisualRange();
             context.beginRange = range.first;
-            context.endRange = range.second;
+            context.endRange = range.second.Peek(1);
             context.op = CommandOperation::Delete;
             context.commandResult.modeSwitch = DefaultMode();
         }
@@ -1279,9 +1287,9 @@ bool ZepMode::GetCommand(CommandContext& context)
         context.registers.push('0');
         context.registers.push('*');
         context.registers.push('+');
-        auto range = GetNormalizedVisualRange();
+        auto range = GetInclusiveVisualRange();
         context.beginRange = range.first;
-        context.endRange = range.second;
+        context.endRange = range.second.Peek(1);
         // Note: select line wise yank if we started in linewise copy mode
         context.op = m_lineWise ? CommandOperation::CopyLines : CommandOperation::Copy;
         context.commandResult.modeSwitch = DefaultMode();
@@ -1290,9 +1298,9 @@ bool ZepMode::GetCommand(CommandContext& context)
     else if (mappedCommand == id_StandardCopy)
     {
         // Ignore empty copy
-        auto range = GetNormalizedVisualRange();
+        auto range = GetInclusiveVisualRange();
         context.beginRange = range.first;
-        context.endRange = range.second;
+        context.endRange = range.second.Peek(1);
         if (context.beginRange == context.endRange)
         {
             return true;
@@ -1315,9 +1323,9 @@ bool ZepMode::GetCommand(CommandContext& context)
             context.replaceRangeMode = ReplaceRangeMode::Replace;
             context.op = CommandOperation::Replace;
             context.pRegister = &GetEditor().GetRegister('"');
-            auto range = GetNormalizedVisualRange();
+            auto range = GetInclusiveVisualRange();
             context.beginRange = range.first;
-            context.endRange = range.second;
+            context.endRange = range.second.Peek(1);
             context.cursorAfterOverride = context.beginRange.PeekByteOffset(long(context.pRegister->text.size()));
             context.commandResult.modeSwitch = EditorMode::Insert;
         }
@@ -1765,9 +1773,9 @@ bool ZepMode::GetOperationRange(const std::string& op, EditorMode currentMode, G
     {
         if (currentMode == EditorMode::Visual)
         {
-            auto range = GetNormalizedVisualRange();
+            auto range = GetInclusiveVisualRange();
             beginRange = range.first;
-            endRange = range.second;
+            endRange = range.second.Peek(1);
         }
     }
     else if (op == "line")
@@ -1843,22 +1851,14 @@ void ZepMode::UpdateVisualSelection()
         // Update the visual range
         if (m_lineWise)
         {
-            m_visualEnd = GetCurrentWindow()->GetBuffer().GetLinePos(GetCurrentWindow()->GetBufferCursor(), LineLocation::BeyondLineEnd);
+            m_visualEnd = GetCurrentWindow()->GetBuffer().GetLinePos(GetCurrentWindow()->GetBufferCursor(), LineLocation::LineCRBegin);
         }
         else
         {
-            // In standard mode, when using an insert cursor, the visual selection stops at the character before the cursor insert point
-            if (m_visualCursorType == CursorType::Insert)
-            {
-                m_visualEnd = GetCurrentWindow()->GetBufferCursor();
-            }
-            else
-            {
-                m_visualEnd = GetCurrentWindow()->GetBufferCursor().PeekLineClamped(1, LineLocation::LineCRBegin);
-            }
+            m_visualEnd = GetCurrentWindow()->GetBufferCursor();
         }
 
-        auto range = GetNormalizedVisualRange();
+        auto range = GetInclusiveVisualRange();
         GetCurrentWindow()->GetBuffer().SetSelection(range);
     }
 }
