@@ -396,6 +396,7 @@ COMMAND_TEST(visual_a_word, "one three", "vawd", "three");
 COMMAND_TEST(visual_a_word_undo, "one three", "vawdu", "one three");
 COMMAND_TEST(visual_a_WORD, "one-three four", "vaWd", "four");
 COMMAND_TEST(visual_a_WORD_undo, "one-three four", "vaWdu", "one-three four");
+COMMAND_TEST(visual_copy_paste_over, "hello goodbye", "vllllyllllllvlllllllp", "hello hello");
 
 VISUAL_TEST(visual_select_from_end, "one\n", "jvk", 0, 4);
 
