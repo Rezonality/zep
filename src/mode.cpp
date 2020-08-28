@@ -371,8 +371,17 @@ void ZepMode::AddKeyPress(uint32_t key, uint32_t modifierKeys)
         return;
     }
 
-    // For now, slice off the UTF8 ;)
-    key = key & 0xFF;
+    // Temporarily accept up to 255; this is not fully allowing UTF8 input yet (though display and management of buffers with
+    // utf8 is just fine)
+    key &= 0xFF;
+
+    // Keys in this range converted to UTF8.  I need to figure out how to generically receive UTF8 here, but this
+    // temporary fix enables £-sign and other specials to display and work correctly
+    if (key >= 127 && key <= 255)
+    {
+
+        key = (0x00C2 | ((key & 0xFF) << 8));
+    }
 
     m_lastKey = key;
 
@@ -1718,7 +1727,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         // If not a single char, then we are trying to input a special, which isn't allowed
         // TOOD: Cleaner detection of this?
         // Special case for 'j + another character' which is an insert
-        if (context.keymap.commandWithoutGroups.size() == 1 || ((context.keymap.commandWithoutGroups.size() == 2) && context.keymap.commandWithoutGroups[0] == 'j'))
+        if (true)//context.keymap.commandWithoutGroups.size() == 1 || ((context.keymap.commandWithoutGroups.size() == 2) && context.keymap.commandWithoutGroups[0] == 'j'))
         {
             context.beginRange = context.bufferCursor;
             context.tempReg.text = context.keymap.commandWithoutGroups;

@@ -232,7 +232,15 @@ public:
     {
         if (provider.syntaxID != m_syntaxProvider.syntaxID)
         {
-            m_spSyntax = provider.factory(this);
+            if (provider.factory)
+            {
+                m_spSyntax = provider.factory(this);
+            }
+            else
+            {
+                m_spSyntax.reset();
+            }
+
             m_syntaxProvider = provider;
         }
     }

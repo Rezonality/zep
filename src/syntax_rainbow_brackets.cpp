@@ -124,7 +124,7 @@ void ZepSyntaxAdorn_RainbowBrackets::Update(const GlyphIterator& start, const Gl
     auto itrStart = start;
     auto itrEnd = end;
 
-    for (auto itrBracket = itrStart; itrBracket != itrEnd; itrBracket++)
+    for (auto itrBracket = itrStart; itrBracket < itrEnd; itrBracket++)
     {
         if (*itrBracket == '(')
         {
