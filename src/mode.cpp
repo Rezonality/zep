@@ -434,8 +434,7 @@ void ZepMode::HandleMappedInput(const std::string& input)
     spContext->foundCommand = GetCommand(*spContext);
 
     // Stay in insert mode unless commanded otherwise
-    if (spContext->commandResult.modeSwitch == EditorMode::None &&
-        spContext->foundCommand)
+    if (spContext->commandResult.modeSwitch == EditorMode::None && spContext->foundCommand)
     {
         if (m_modeFlags & ModeFlags::StayInInsertMode)
         {
@@ -1340,16 +1339,31 @@ bool ZepMode::GetCommand(CommandContext& context)
     {
         if (!context.pRegister->text.empty())
         {
-            if (context.pRegister->lineWise)
+            // Already in visual mode, so replace the selection
+            if (context.currentMode == EditorMode::Visual)
             {
-                context.beginRange = context.buffer.GetLinePos(context.bufferCursor, LineLocation::BeyondLineEnd);
-                context.cursorAfterOverride = context.beginRange;
+                context.replaceRangeMode = ReplaceRangeMode::Replace;
+                context.op = CommandOperation::Replace;
+                context.pRegister = &GetEditor().GetRegister('"');
+                auto range = GetInclusiveVisualRange();
+                context.beginRange = range.first;
+                context.endRange = range.second.Peek(1);
+                context.cursorAfterOverride = context.beginRange.PeekByteOffset(long(context.pRegister->text.size()));
+                context.commandResult.modeSwitch = EditorMode::Insert;
             }
             else
             {
-                context.beginRange = cursorItr.PeekLineClamped(1, LineLocation::LineCRBegin);
+                if (context.pRegister->lineWise)
+                {
+                    context.beginRange = context.buffer.GetLinePos(context.bufferCursor, LineLocation::BeyondLineEnd);
+                    context.cursorAfterOverride = context.beginRange;
+                }
+                else
+                {
+                    context.beginRange = cursorItr.PeekLineClamped(1, LineLocation::LineCRBegin);
+                }
+                context.op = CommandOperation::Insert;
             }
-            context.op = CommandOperation::Insert;
         }
         context.commandResult.flags = ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
     }
@@ -1357,15 +1371,30 @@ bool ZepMode::GetCommand(CommandContext& context)
     {
         if (!context.pRegister->text.empty())
         {
-            if (context.pRegister->lineWise)
+            // Already in visual mode, so replace the selection with whatever we copied
+            if (context.currentMode == EditorMode::Visual)
             {
-                context.beginRange = context.buffer.GetLinePos(context.bufferCursor, LineLocation::LineBegin);
+                context.pRegister = &GetEditor().GetRegister('"');
+                auto range = GetInclusiveVisualRange();
+                context.beginRange = range.first;
+                context.endRange = range.second.Peek(1);
+                context.cursorAfterOverride = context.beginRange.PeekByteOffset(long(context.pRegister->text.size()));
+                context.commandResult.modeSwitch = EditorMode::Insert;
+                context.replaceRangeMode = ReplaceRangeMode::Replace;
+                context.op = CommandOperation::Replace;
             }
             else
             {
-                context.beginRange = context.bufferCursor;
+                if (context.pRegister->lineWise)
+                {
+                    context.beginRange = context.buffer.GetLinePos(context.bufferCursor, LineLocation::LineBegin);
+                }
+                else
+                {
+                    context.beginRange = context.bufferCursor;
+                }
+                context.op = CommandOperation::Insert;
             }
-            context.op = CommandOperation::Insert;
         }
         context.commandResult.flags = ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
     }
