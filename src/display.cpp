@@ -19,7 +19,7 @@ void ZepDisplay::BuildCharCache()
 {
     const char chA = 'A';
     m_defaultCharSize = GetTextSize((const uint8_t*)&chA, (const uint8_t*)&chA + 1);
-    for (int i = 0; i < 127; i++)
+    for (int i = 0; i < 256; i++)
     {
         uint8_t ch = (uint8_t)i;
         m_charCacheASCII[i] = GetTextSize(&ch, &ch + 1);

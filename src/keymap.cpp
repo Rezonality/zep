@@ -171,6 +171,16 @@ void keymap_dump(const KeyMap& map, std::ostringstream& str)
     fnDump(map.spRoot, 0);
 }
 
+// std::isdigit asserts on unicode characters!
+bool isDigit(const char ch)
+{
+    if (ch >= '0' && ch <= '9')
+    {
+        return true;
+    }
+    return false;
+}
+
 // Walk the tree of tokens, figuring out which command this is
 // Input to this function:
 // <C-x>fgh
@@ -182,7 +192,7 @@ void keymap_find(const KeyMap& map, const std::string& strCommand, KeyMapResult&
         {
             // Walk along grabbing digits
             auto itrStart = itrChar;
-            while (itrChar != itrEnd && std::isdigit(*itrChar))
+            while (itrChar != itrEnd && isDigit(*itrChar))
             {
                 itrChar++;
             }
