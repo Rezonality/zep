@@ -1441,6 +1441,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         {
             context.op = CommandOperation::DeleteLines;
             context.commandResult.modeSwitch = DefaultMode();
+            context.cursorAfterOverride = context.buffer.GetLinePos(context.beginRange, LineLocation::LineBegin);
         }
     }
     else if (mappedCommand == id_DeleteWord)
@@ -1719,7 +1720,8 @@ bool ZepMode::GetCommand(CommandContext& context)
             context.buffer,
             context.beginRange,
             context.endRange,
-            context.bufferCursor);
+            context.bufferCursor, 
+            context.cursorAfterOverride);
         context.commandResult.spCommand = std::static_pointer_cast<ZepCommand>(cmd);
         context.commandResult.flags = ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
         return true;
@@ -1778,11 +1780,17 @@ bool ZepMode::GetOperationRange(const std::string& op, EditorMode currentMode, G
             endRange = range.second.Peek(1);
         }
     }
+    // Whole line
     else if (op == "line")
     {
-        // Whole line
         beginRange = buffer.GetLinePos(bufferCursor, LineLocation::LineBegin);
         endRange = buffer.GetLinePos(bufferCursor, LineLocation::BeyondLineEnd);
+
+        // Special case; if this is the last line, remove the previous newline in favour of the terminator
+        if (endRange.Char() == 0)
+        {
+            beginRange.Move(-1);
+        }
     }
     else if (op == "$")
     {

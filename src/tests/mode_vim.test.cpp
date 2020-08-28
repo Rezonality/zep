@@ -287,7 +287,9 @@ COMMAND_TEST(delete_cw, "one two three", "cwabc", "abc two three");
 COMMAND_TEST(delete_cw_inside, "one two three", "lcwabc", "oabc two three");
 COMMAND_TEST(delete_cw_inside_2, "one two three", "llllllllcwabc", "one two abc");
 
-// TODO:
+// TODO: Inner count doesn't work, counts on changing words doesn't work.
+// I think this is because the first command runs and the second one tries to modify the following space instead of the next word.
+// Need to debug..
 //COMMAND_TEST(delete_c2w, "one two three", "c2w", " three");
 
 // cW
@@ -386,7 +388,7 @@ COMMAND_TEST(change_to_digit, "one 1wo", "ct1hey", "hey1wo");
 
 COMMAND_TEST(delete_to_char, "one 1wo", "dt1", "1wo");
 COMMAND_TEST(delete_to_digit, "one two", "dtt", "two");
-//COMMAND_TEST(delete_final_line, "one\n", "jdd", "one");
+COMMAND_TEST(delete_final_line, "one\n", "jdd", "one");
 
 COMMAND_TEST(visual_inner_word, "one-three", "lviwd", "-three");
 COMMAND_TEST(visual_inner_word_undo, "one-three", "lviwdu", "one-three");
