@@ -200,7 +200,7 @@ private:
 
     void DrawLineWidgets(SpanInfo& lineInfo);
 
-    float GetLineTopPadding(long line);
+    float GetLineWidgetHeight(long line);
     
     bool IsActiveWindow() const;
 

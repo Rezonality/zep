@@ -338,7 +338,7 @@ void ZepWindow::GetCharPointer(GlyphIterator loc, const uint8_t*& pBegin, const 
     pEnd = pBegin + utf8_codepoint_length(*pBegin);
 }
 
-float ZepWindow::GetLineTopPadding(long line)
+float ZepWindow::GetLineWidgetHeight(long line)
 {
     float height = 0.0f;// DPI_Y((float)GetEditor().GetConfig().lineMargins.x);
     auto markers = m_pBuffer->GetRangeMarkersOnLine(line);
@@ -404,10 +404,13 @@ void ZepWindow::UpdateLineSpans()
         if (!m_pBuffer->GetLineOffsets(bufferLine, lineByteRange))
             break;
 
-
+        // Padding at the top of the line 
         NVec2f topPadding = NVec2f(DPI_Y((float)GetEditor().GetConfig().lineMargins.x), DPI_Y((float)GetEditor().GetConfig().lineMargins.y));
-        
-        bufferPosYPx += GetLineTopPadding(bufferLine);
+       
+        // Move the line down by the height of the widget
+        bufferPosYPx += GetLineWidgetHeight(bufferLine);
+
+        // text line height is top/bottom pad
         float fullLineHeight = textHeight + topPadding.x + topPadding.y;
 
         // Start a new line
@@ -646,8 +649,9 @@ void ZepWindow::DrawLineWidgets(SpanInfo& lineInfo)
     auto lineMargins = DPI_VEC2(GetEditor().GetConfig().lineMargins);
     auto widgetMargins = DPI_VEC2(GetEditor().GetConfig().widgetMargins);
 
+    float widgetHeight = GetLineWidgetHeight(lineInfo.bufferLineNumber);
     NVec2f linePx = GetSpanPixelRange(lineInfo);
-    float currentY = lineMargins.x;
+    float currentY = 0.0f;// lineMargins.x;
 
     for (auto& [index, markerSet] : markers)
     {
@@ -661,7 +665,7 @@ void ZepWindow::DrawLineWidgets(SpanInfo& lineInfo)
             auto widgetSize = DPI_VEC2(spMarker->m_spLineWidget->GetSize());
 
             currentY += widgetMargins.x;
-            spMarker->m_spLineWidget->Draw(*m_pBuffer, NVec2f(linePx.x, ToWindowY(currentY + lineInfo.yOffsetPx)));
+            spMarker->m_spLineWidget->Draw(*m_pBuffer, NVec2f(linePx.x, ToWindowY(currentY + lineInfo.yOffsetPx - widgetHeight)));
             currentY += widgetSize.y;
             currentY += widgetMargins.y;
         }
