@@ -279,8 +279,8 @@ COMMAND_TEST(delete_ciw_space_start, " one two three", "ciwabc", "abcone two thr
 
 // ciW
 COMMAND_TEST(delete_ciW_first, "one! two three", "ciWabc", "abc two three");
-COMMAND_TEST(delete_ciw_nonascii, "one\200 two three", "ciwabc", "abc\200 two three");
-COMMAND_TEST(delete_ciW_nonascii, "one\200 two three", "ciWabc", "abc\200 two three");
+COMMAND_TEST(delete_ciw_nonascii, "one£ two three", "ciwabc", "abc£ two three");
+COMMAND_TEST(delete_ciW_nonascii, "one£ two three", "ciWabc", "abc£ two three");
 
 // cw
 COMMAND_TEST(delete_cw, "one two three", "cwabc", "abc two three");
@@ -428,8 +428,8 @@ CURSOR_TEST(motion_w_space, "one two three", "lllw", 4, 0);
 CURSOR_TEST(motion_W, "one! two three", "W", 5, 0);
 CURSOR_TEST(motion_W_over_line, "one;\ntwo", "W", 0, 1);
 
-CURSOR_TEST(motion_w_over_nonascii, "abc\200 def", "w", 3, 0);
-CURSOR_TEST(motion_W_over_nonascii, "abc\200 def", "W", 3, 0);
+CURSOR_TEST(motion_w_over_nonascii, "abc£ def", "w", 3, 0);
+CURSOR_TEST(motion_W_over_nonascii, "abc£ def", "W", 3, 0);
 
 CURSOR_TEST(motion_b, "one! two three", "wwb", 3, 0);
 CURSOR_TEST(motion_b_from_non_word, "one! two three", "wwbb", 0, 0);

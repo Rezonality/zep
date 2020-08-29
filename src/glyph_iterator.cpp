@@ -35,6 +35,10 @@ bool GlyphIterator::Valid() const
     {
         return false;
     }
+
+    // We should never have a valid buffer index but be outside the start of a 
+    // utf8 glyph
+    assert(!utf8_is_trailing(Char()));
     return true;
 }
 

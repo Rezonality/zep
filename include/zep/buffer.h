@@ -106,7 +106,8 @@ enum
 {
     Message = (1 << 0),
     Search = (1 << 1),
-    All = (Message | Search)
+    Widget = (1 << 2),
+    All = (Message | Search | Widget)
 };
 };
 
@@ -136,6 +137,7 @@ struct RangeMarker
     std::string name;
     std::string description;
     ToolTipPos tipPos = ToolTipPos::AboveLine;
+    std::shared_ptr<ILineWidget> m_spLineWidget;
 
     bool ContainsLocation(GlyphIterator loc) const
     {
@@ -270,10 +272,11 @@ public:
     void ClearRangeMarkers(const std::set<std::shared_ptr<RangeMarker>>& markers);
     void ClearRangeMarkers(uint32_t types);
     tRangeMarkers GetRangeMarkers(uint32_t types) const;
+    tRangeMarkers GetRangeMarkersOnLine(long line) const;
     void HideMarkers(uint32_t markerType);
     void ShowMarkers(uint32_t markerType, uint32_t displayType);
 
-    void ForEachMarker(uint32_t types, SearchDirection dir, GlyphIterator begin, GlyphIterator end, std::function<bool(const std::shared_ptr<RangeMarker>&)> fnCB) const;
+    void ForEachMarker(uint32_t types, SearchDirection dir, const GlyphIterator& begin, const GlyphIterator& end, std::function<bool(const std::shared_ptr<RangeMarker>&)> fnCB) const;
     std::shared_ptr<RangeMarker> FindNextMarker(GlyphIterator start, SearchDirection dir, uint32_t markerType);
 
     void SetBufferType(BufferType type);
@@ -284,11 +287,6 @@ public:
 
     ZepMode* GetMode() const;
     void SetMode(std::shared_ptr<ZepMode> spMode);
-
-    using tLineWidgets = std::vector<std::shared_ptr<ILineWidget>>;
-    void AddLineWidget(long line, std::shared_ptr<ILineWidget> spWidget);
-    void ClearLineWidgets(long line);
-    const tLineWidgets* GetLineWidgets(long line) const;
 
     uint64_t GetLastUpdateTime() const
     {
@@ -335,9 +333,6 @@ private:
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::shared_ptr<ZepTheme> m_spOverrideTheme;
     SyntaxProvider m_syntaxProvider;
-
-    // Widgets
-    std::map<ByteIndex, std::vector<std::shared_ptr<ILineWidget>>> m_lineWidgets;
 
     // Selections
     GlyphRange m_selection;

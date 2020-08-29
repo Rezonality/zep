@@ -340,13 +340,16 @@ void ZepWindow::GetCharPointer(GlyphIterator loc, const uint8_t*& pBegin, const 
 
 float ZepWindow::GetLineTopPadding(long line)
 {
-    float height = DPI_Y((float)GetEditor().GetConfig().lineMargins.x);
-    auto pLineWidgets = m_pBuffer->GetLineWidgets(line);
-    if (pLineWidgets)
+    float height = 0.0f;// DPI_Y((float)GetEditor().GetConfig().lineMargins.x);
+    auto markers = m_pBuffer->GetRangeMarkersOnLine(line);
+    for (auto& [index, markerSet] : markers)
     {
-        for (auto& widget : *pLineWidgets)
+        for (auto& spMarker : markerSet)
         {
-            auto size = DPI_VEC2(widget->GetSize());
+            if (spMarker->m_spLineWidget == nullptr)
+                continue;
+
+            auto size = DPI_VEC2(spMarker->m_spLineWidget->GetSize());
             auto margins = DPI_VEC2(GetEditor().GetConfig().widgetMargins);
 
             // Each widget has a margin then its height then the bottom
@@ -401,8 +404,11 @@ void ZepWindow::UpdateLineSpans()
         if (!m_pBuffer->GetLineOffsets(bufferLine, lineByteRange))
             break;
 
-        NVec2f padding = NVec2f(GetLineTopPadding(bufferLine), DPI_Y((float)GetEditor().GetConfig().lineMargins.y));
-        float fullLineHeight = textHeight + padding.x + padding.y;
+
+        NVec2f topPadding = NVec2f(DPI_Y((float)GetEditor().GetConfig().lineMargins.x), DPI_Y((float)GetEditor().GetConfig().lineMargins.y));
+        
+        bufferPosYPx += GetLineTopPadding(bufferLine);
+        float fullLineHeight = textHeight + topPadding.x + topPadding.y;
 
         // Start a new line
         SpanInfo* lineInfo = new SpanInfo();
@@ -411,7 +417,7 @@ void ZepWindow::UpdateLineSpans()
         lineInfo->lineByteRange.first = lineByteRange.first;
         lineInfo->lineByteRange.second = lineByteRange.first;
         lineInfo->yOffsetPx = bufferPosYPx;
-        lineInfo->padding = padding;
+        lineInfo->padding = topPadding;
         lineInfo->textSizePx.x = xOffset;
         lineInfo->textSizePx.y = textHeight;
         lineInfo->isSplitContinuation = false;
@@ -441,15 +447,15 @@ void ZepWindow::UpdateLineSpans()
 
                     // Reset the line margin and height, because when we split a line we don't include a
                     // custom widget space above it.  That goes just above the first part of the line
-                    padding.x = (float)GetEditor().GetConfig().lineMargins.x;
-                    fullLineHeight = textHeight + padding.x + padding.y;
+                    topPadding.x = (float)GetEditor().GetConfig().lineMargins.x;
+                    fullLineHeight = textHeight + topPadding.x + topPadding.y;
 
                     // Now jump to the next 'screen line' for the rest of this 'buffer line'
                     lineInfo->lineByteRange = ByteRange(ch, ch + utf8_codepoint_length(textBuffer[ch]));
                     lineInfo->spanLineIndex = spanLine;
                     lineInfo->bufferLineNumber = bufferLine;
                     lineInfo->yOffsetPx = bufferPosYPx;
-                    lineInfo->padding = padding;
+                    lineInfo->padding = topPadding;
                     lineInfo->textSizePx.y = textHeight;
                     lineInfo->textSizePx.x = xOffset;
                     lineInfo->isSplitContinuation = true;
@@ -631,8 +637,8 @@ void ZepWindow::DrawLineWidgets(SpanInfo& lineInfo)
     if (lineInfo.isSplitContinuation)
         return;
 
-    auto pLineWidgets = m_pBuffer->GetLineWidgets(lineInfo.bufferLineNumber);
-    if (!pLineWidgets)
+    auto markers = m_pBuffer->GetRangeMarkersOnLine(lineInfo.bufferLineNumber);
+    if (markers.empty())
     {
         return;
     }
@@ -642,13 +648,23 @@ void ZepWindow::DrawLineWidgets(SpanInfo& lineInfo)
 
     NVec2f linePx = GetSpanPixelRange(lineInfo);
     float currentY = lineMargins.x;
-    for (auto& pWidget : *pLineWidgets)
-    {
-        auto widgetSize = DPI_VEC2(pWidget->GetSize());
 
-        currentY += widgetMargins.x;
-        pWidget->Draw(*m_pBuffer, NVec2f(linePx.x, ToWindowY(currentY + lineInfo.yOffsetPx)));
-        currentY += widgetMargins.y;
+    for (auto& [index, markerSet] : markers)
+    {
+        for (auto& spMarker : markerSet)
+        {
+            if (spMarker->m_spLineWidget == nullptr)
+            {
+                continue;
+            }
+
+            auto widgetSize = DPI_VEC2(spMarker->m_spLineWidget->GetSize());
+
+            currentY += widgetMargins.x;
+            spMarker->m_spLineWidget->Draw(*m_pBuffer, NVec2f(linePx.x, ToWindowY(currentY + lineInfo.yOffsetPx)));
+            currentY += widgetSize.y;
+            currentY += widgetMargins.y;
+        }
     }
 }
 
@@ -789,6 +805,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
 
     display.SetClipRect(m_textRegion->rect);
 
+    bool lineStart = true;
     //auto pText = &m_pBuffer->GetGapBuffer()[0];
     // Walk from the start of the line to the end of the line (in buffer chars)
     for (auto cp : lineInfo.lineCodePoints)
@@ -933,7 +950,10 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
         // Second pass, characters
         else
         {
-            DrawLineWidgets(lineInfo);
+            if (lineStart)
+            {
+                DrawLineWidgets(lineInfo);
+            }
 
             if ((special != SpecialChar::Hidden) || (GetWindowFlags() & WindowFlags::ShowCR))
             {
@@ -1002,6 +1022,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
         }
 
         screenPosX += cp.size.x + m_xPad;
+        lineStart = false;
     }
 
     display.SetClipRect(NRectf{});

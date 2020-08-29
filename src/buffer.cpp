@@ -36,7 +36,8 @@ inline bool IsWORDChar(const char c)
     auto ch = ToASCII(c);
     return std::isgraph(ch);
 }
-inline bool IsWORDOrSepChar(const char c) {
+inline bool IsWORDOrSepChar(const char c)
+{
     auto ch = ToASCII(c);
     return std::isgraph(ch) || ch == ' ' || ch == '\n' || ch == 0;
 }
@@ -275,8 +276,8 @@ GlyphRange ZepBuffer::StandardCtrlMotion(GlyphIterator cursor, SearchDirection s
 }
 
 // Note:
-// In general I'm unhappy with these word motion functions.  They are _hard_ ; especially if you 
-// want them to conform to the quirks of Vim.  I haven't found a cleaner way than this to make them 
+// In general I'm unhappy with these word motion functions.  They are _hard_ ; especially if you
+// want them to conform to the quirks of Vim.  I haven't found a cleaner way than this to make them
 // work.
 GlyphRange ZepBuffer::InnerWordMotion(GlyphIterator start, uint32_t searchType) const
 {
@@ -688,6 +689,9 @@ void ZepBuffer::Clear()
     {
         m_gapBuffer.clear();
         m_gapBuffer.push_back(0);
+        m_lineEnds.clear();
+        m_fileFlags = ZSetFlags(m_fileFlags, FileFlags::TerminatedWithZero);
+        m_lineEnds.push_back(End().Index() + 1);
         return;
     }
 
@@ -772,7 +776,7 @@ void ZepBuffer::SetText(const std::string& text, bool initFromFile)
     }
 
     // TODO: Why is a line end needed always?
-    // TODO: Line ends 1 beyond, or just for end?  Can't remember this detail: 
+    // TODO: Line ends 1 beyond, or just for end?  Can't remember this detail:
     // understand it, then write a unit test to ensure it.
     m_lineEnds.push_back(End().Index() + 1);
 
@@ -928,118 +932,70 @@ GlyphIterator ZepBuffer::GetLinePos(GlyphIterator bufferLocation, LineLocation l
 
 void ZepBuffer::UpdateForDelete(const GlyphIterator& startItr, const GlyphIterator& endItr)
 {
+    std::set<std::shared_ptr<RangeMarker>> victims;
+
     auto distance = ByteDistance(startItr, endItr);
     ForEachMarker(RangeMarkerType::All, Zep::SearchDirection::Forward, startItr, End(), [&](const std::shared_ptr<RangeMarker>& marker) {
-        if (startItr.Index() >= marker->range.second)
+        if (startItr.Index() > marker->range.second)
         {
             return true;
         }
-        else if (endItr.Index() <= marker->range.first)
+        else if (endItr.Index() <= marker->range.second)
         {
-            // Note: distance is codepoints, not bytes.
+            // Note: distance is bytes not codepoints
             marker->range.first -= distance;
             marker->range.second -= distance;
         }
         else
         {
-            auto overlapStart = std::max(startItr.Index(), marker->range.first);
-            auto overlapEnd = std::min(endItr.Index(), marker->range.second);
-            auto dist = overlapEnd - overlapStart;
-            marker->range.second -= dist;
+            auto overlap = marker->range.first - startItr.Index();
+            marker->range.first -= overlap;
+            marker->range.second -= overlap;
+            victims.insert(marker);
         }
         return true;
     });
 
-    if (!m_lineWidgets.empty())
+    for (auto& spVictim : victims)
     {
-        std::map<ByteIndex, ByteIndex> lineMoves;
-        auto itr = m_lineWidgets.begin();
-        while (itr != m_lineWidgets.end())
-        {
-            auto pWidget = itr->second;
-            if (startItr.Index() >= itr->first)
-            {
-                // Nothing to do, the widgets are behind the area removed
-                break;
-            }
-            else if (startItr.Index() < itr->first)
-            {
-                // Removed before, jump back by this many
-                lineMoves[itr->first] = itr->first - distance;
-            }
-            else
-            {
-                auto overlapStart = std::max(startItr.Index(), itr->first);
-                auto overlapEnd = std::min(endItr.Index(), itr->first);
-                auto dist = overlapEnd - overlapStart;
-                lineMoves[itr->first] = itr->first - dist;
-            }
-            itr++;
-        }
-
-        for (auto& replace : lineMoves)
-        {
-            auto pWidgets = m_lineWidgets[replace.first];
-            m_lineWidgets.erase(replace.first);
-
-            if (replace.second >= 0 && replace.second < (m_gapBuffer.size() - 1))
-            {
-                m_lineWidgets[replace.second] = pWidgets;
-            }
-        }
+        ClearRangeMarker(spVictim);
     }
 }
 
-void ZepBuffer::UpdateForInsert(const GlyphIterator& startIndex, const GlyphIterator& endIndex)
+void ZepBuffer::UpdateForInsert(const GlyphIterator& startItr, const GlyphIterator& endItr)
 {
+    std::set<std::shared_ptr<RangeMarker>> victims;
+
     // Move the markers after the insert point forwards, or
     // expand the marker range if inserting inside it (that's a guess!)
-    auto distance = ByteDistance(startIndex, endIndex);
+    auto distance = ByteDistance(startItr, endItr);
 
-    ForEachMarker(RangeMarkerType::All, SearchDirection::Forward, startIndex, End(), [&](const std::shared_ptr<RangeMarker>& marker) {
-        if (marker->range.second <= startIndex.Index())
+    ForEachMarker(RangeMarkerType::All, SearchDirection::Forward, startItr, End(), [&](const std::shared_ptr<RangeMarker>& marker) {
+        if (startItr.Index() > marker->range.second)
         {
             return true;
         }
-
-        if (marker->range.first >= startIndex.Index())
+        else if (endItr.Index() <= marker->range.second)
         {
+            // Note: distance is bytes not codepoints
             marker->range.first += distance;
             marker->range.second += distance;
+        }
+        else
+        {
+            auto overlap = marker->range.first - startItr.Index();
+            marker->range.first += overlap;
+            marker->range.second += overlap;
+            victims.insert(marker);
         }
         return true;
     });
 
-    if (!m_lineWidgets.empty())
+    for (auto& spVictim : victims)
     {
-        std::map<long, long> lineMoves;
-        auto itr = m_lineWidgets.begin();
-        while (itr != m_lineWidgets.end())
-        {
-            auto pWidget = itr->second;
-            if (startIndex.Index() > itr->first)
-            {
-                // Nothing to do, the widgets are behind the area inserted
-                break;
-            }
-            else if (startIndex.Index() <= itr->first)
-            {
-                // Add
-                lineMoves[itr->first] = itr->first + distance;
-            }
-            itr++;
-        }
-
-        for (auto& replace : lineMoves)
-        {
-            auto pWidgets = m_lineWidgets[replace.first];
-            m_lineWidgets.erase(replace.first);
-            if (replace.second >= 0 && replace.second < (m_gapBuffer.size() - 1))
-            {
-                m_lineWidgets[replace.second] = pWidgets;
-            }
-        }
+        ClearRangeMarker(spVictim);
     }
+
 }
 
 bool ZepBuffer::Insert(const GlyphIterator& startIndex, const std::string& str)
@@ -1051,12 +1007,12 @@ bool ZepBuffer::Insert(const GlyphIterator& startIndex, const std::string& str)
 
     GlyphIterator endIndex(this, startIndex.Index() + long(str.length()));
 
+    UpdateForInsert(startIndex, endIndex);
+
     // We are about to modify this range
     // TODO: Is this correct, and/or useful in any way??
     // We aren't changing this range at all; we are shifting those characters forward and replacing the area
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, startIndex, endIndex));
-
-    UpdateForInsert(startIndex, endIndex);
 
     // abcdef\r\nabc<insert>dfdf\r\n
     auto itrLine = std::lower_bound(m_lineEnds.begin(), m_lineEnds.end(), startIndex.Index());
@@ -1283,20 +1239,27 @@ void ZepBuffer::ClearRangeMarkers(uint32_t markerType)
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::MarkersChanged, Begin(), End()));
 }
 
-void ZepBuffer::ForEachMarker(uint32_t markerType, SearchDirection dir, GlyphIterator begin, GlyphIterator end, std::function<bool(const std::shared_ptr<RangeMarker>&)> fnCB) const
+void ZepBuffer::ForEachMarker(uint32_t markerType, SearchDirection dir, const GlyphIterator& begin, const GlyphIterator& end, std::function<bool(const std::shared_ptr<RangeMarker>&)> fnCB) const
 {
-    auto itrStart = m_rangeMarkers.lower_bound(begin.Index());
-    if (itrStart == m_rangeMarkers.end())
-        return;
+    //auto itrStart = m_rangeMarkers.lower_bound(begin.Index());
+    //if (itrStart == m_rangeMarkers.end())
+    //    return;
 
-    auto itrEnd = m_rangeMarkers.upper_bound(end.Index());
+    //auto itrEnd = m_rangeMarkers.upper_bound(end.Index());
 
     if (dir == SearchDirection::Forward)
     {
-        for (auto itr = itrStart; itr != itrEnd; itr++)
+        for (auto itr = m_rangeMarkers.begin(); itr != m_rangeMarkers.end(); itr++)
         {
             for (auto& markerItem : itr->second)
             {
+                // TODO: This shouldn't be necessary, but the bound above is not working as expected!
+                if (markerItem->range.second < begin.Index() ||
+                    markerItem->range.first >= end.Index())
+                {
+                    continue;
+                }
+
                 if ((markerItem->markerType & markerType) == 0)
                 {
                     continue;
@@ -1311,8 +1274,8 @@ void ZepBuffer::ForEachMarker(uint32_t markerType, SearchDirection dir, GlyphIte
     }
     else
     {
-        auto itrREnd = std::make_reverse_iterator(itrStart);
-        auto itrRStart = std::make_reverse_iterator(itrEnd);
+        auto itrREnd = std::make_reverse_iterator(m_rangeMarkers.begin());
+        auto itrRStart = std::make_reverse_iterator(m_rangeMarkers.end());
 
         for (auto itr = itrRStart; itr != itrREnd; itr++)
         {
@@ -1441,46 +1404,20 @@ void ZepBuffer::SetMode(std::shared_ptr<ZepMode> spMode)
     m_spMode = spMode;
 }
 
-void ZepBuffer::AddLineWidget(long line, std::shared_ptr<ILineWidget> spWidget)
-{
-    // TODO: Add layout changed message
-    ByteRange range;
-    GetLineOffsets(line, range);
-
-    m_lineWidgets[range.first].push_back(spWidget);
-
-    // TODO: This doesn't make sense - what was the intention here?
-    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextChanged, Begin(), Begin()));
-}
-
-void ZepBuffer::ClearLineWidgets(long line)
-{
-    if (line != -1)
-    {
-        ByteRange range;
-        GetLineOffsets(line, range);
-        m_lineWidgets.erase(range.first);
-    }
-    else
-    {
-        m_lineWidgets.clear();
-    }
-
-    // TODO: This doesn't make sense - what was the intention her
-    GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::TextChanged, Begin(), Begin()));
-}
-
-const ZepBuffer::tLineWidgets* ZepBuffer::GetLineWidgets(long line) const
+tRangeMarkers ZepBuffer::GetRangeMarkersOnLine(long line) const
 {
     ByteRange range;
     GetLineOffsets(line, range);
 
-    auto itrFound = m_lineWidgets.find(range.first);
-    if (itrFound != m_lineWidgets.end())
-    {
-        return &itrFound->second;
-    }
-    return nullptr;
+    tRangeMarkers rangeMarkers;
+    ForEachMarker(RangeMarkerType::All,
+        Zep::SearchDirection::Forward,
+        GlyphIterator(this, range.first), GlyphIterator(this, range.second),
+        [&](const std::shared_ptr<RangeMarker>& marker) {
+            rangeMarkers[marker->range.first].insert(marker);
+            return true;
+        });
+    return rangeMarkers;
 }
 
 bool ZepBuffer::IsHidden() const

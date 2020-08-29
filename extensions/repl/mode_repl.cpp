@@ -129,7 +129,7 @@ void ZepReplExCommand::Prompt()
 
 void ZepReplExCommand::MoveToEnd()
 {
-    m_pReplWindow->SetBufferCursor(m_pReplBuffer->GetLinePos(m_pReplBuffer->End(), LineLocation::LineCRBegin));
+    m_pReplWindow->SetBufferCursor(m_pReplBuffer->End());
     //m_startLocation = m_pCurrentWindow->GetBufferCursor();
 }
 
@@ -141,6 +141,10 @@ void ZepReplExCommand::Notify(std::shared_ptr<ZepMessage> message)
         auto spBufferMsg = std::static_pointer_cast<BufferMessage>(message);
         if (spBufferMsg->pBuffer == m_pReplBuffer)
         {
+            // TODO: Reimplement the Repl here.  It used to be a mode, but this way is easier.
+            // Just parse the buffer changes an update the repl; don't need to handle keyboard input.
+            // The code commented below is from the original repl
+            // Note that we know the window, the buffer and the mode.  But we are assuming a single repl.
             ZLOG(DBG, "Buffer Message");
         }
     }

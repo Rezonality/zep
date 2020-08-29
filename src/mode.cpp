@@ -2111,9 +2111,15 @@ bool ZepMode::HandleExCommand(std::string strCommand)
         }
         else if (strCommand.find(":ZTestFloatSlider") == 0)
         {
-            auto line = buffer.GetBufferLine(bufferCursor);
+            //auto line = buffer.GetBufferLine(bufferCursor);
             auto pSlider = std::make_shared<FloatSlider>(GetEditor(), 4);
-            buffer.AddLineWidget(line, pSlider);
+
+            auto spMarker = std::make_shared<RangeMarker>();
+            spMarker->range = ByteRange(bufferCursor.Index(), bufferCursor.Peek(1).Index());
+            spMarker->m_spLineWidget = pSlider;
+            spMarker->markerType = RangeMarkerType::Widget;
+            spMarker->displayType = RangeMarkerDisplayType::Hidden;
+            buffer.AddRangeMarker(spMarker);
         }
         else if (strCommand.find(":ZTestFlash") == 0)
         {
