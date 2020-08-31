@@ -32,6 +32,7 @@ struct WindowPass
 namespace Zep
 {
 
+long tempMarkerIndex = -50;
 const float ScrollBarSize = 17.0f;
 ZepWindow::ZepWindow(ZepTabWindow& window, ZepBuffer* buffer)
     : ZepComponent(window.GetEditor())
@@ -346,10 +347,10 @@ float ZepWindow::GetLineWidgetHeight(long line)
     {
         for (auto& spMarker : markerSet)
         {
-            if (spMarker->m_spLineWidget == nullptr)
+            if (spMarker->spLineWidget == nullptr)
                 continue;
 
-            auto size = DPI_VEC2(spMarker->m_spLineWidget->GetSize());
+            auto size = DPI_VEC2(spMarker->spLineWidget->GetSize());
             auto margins = DPI_VEC2(GetEditor().GetConfig().widgetMargins);
 
             // Each widget has a margin then its height then the bottom
@@ -431,6 +432,12 @@ void ZepWindow::UpdateLineSpans()
         {
             const uint8_t* pCh = &textBuffer[ch];
             const auto textSize = display.GetCharSize(pCh);
+
+            if (tempMarkerIndex == ch)
+            {
+                xOffset += 50.0f;
+                lineInfo->textSizePx.x = xOffset;
+            }
 
             // Wrap if we have displayed at least one char, and we have to
             if (ZTestFlags(GetWindowFlags(), WindowFlags::WrapText) && ch != lineByteRange.first)
@@ -657,15 +664,15 @@ void ZepWindow::DrawLineWidgets(SpanInfo& lineInfo)
     {
         for (auto& spMarker : markerSet)
         {
-            if (spMarker->m_spLineWidget == nullptr)
+            if (spMarker->spLineWidget == nullptr)
             {
                 continue;
             }
 
-            auto widgetSize = DPI_VEC2(spMarker->m_spLineWidget->GetSize());
+            auto widgetSize = DPI_VEC2(spMarker->spLineWidget->GetSize());
 
             currentY += widgetMargins.x;
-            spMarker->m_spLineWidget->Draw(*m_pBuffer, NVec2f(linePx.x, ToWindowY(currentY + lineInfo.yOffsetPx - widgetHeight)));
+            spMarker->spLineWidget->Draw(*m_pBuffer, NVec2f(linePx.x, ToWindowY(currentY + lineInfo.yOffsetPx - widgetHeight)));
             currentY += widgetSize.y;
             currentY += widgetMargins.y;
         }
@@ -818,6 +825,13 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
         const uint8_t* pEnd;
         SpecialChar special;
         GetCharPointer(cp.GlyphIterator, pCh, pEnd, special);
+
+        if (tempMarkerIndex == cp.GlyphIterator.Index())
+        {
+            NRectf markRect(NVec2f(screenPosX, ToWindowY(lineInfo.yOffsetPx)), NVec2f(screenPosX + 50.0f, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx())));
+            display.DrawRectFilled(markRect, NVec4f(1.0f, .2f, .1f, 1.0f));
+            screenPosX += 50.0f;
+        }
 
         // TODO : Cache this for speed - a little sluggish on debug builds.
         if (displayPass == WindowPass::Background)

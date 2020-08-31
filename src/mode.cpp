@@ -2116,7 +2116,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
 
             auto spMarker = std::make_shared<RangeMarker>();
             spMarker->range = ByteRange(bufferCursor.Index(), bufferCursor.Peek(1).Index());
-            spMarker->m_spLineWidget = pSlider;
+            spMarker->spLineWidget = pSlider;
             spMarker->markerType = RangeMarkerType::Widget;
             spMarker->displayType = RangeMarkerDisplayType::Hidden;
             buffer.AddRangeMarker(spMarker);

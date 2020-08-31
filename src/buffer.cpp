@@ -932,70 +932,42 @@ GlyphIterator ZepBuffer::GetLinePos(GlyphIterator bufferLocation, LineLocation l
 
 void ZepBuffer::UpdateForDelete(const GlyphIterator& startItr, const GlyphIterator& endItr)
 {
-    std::set<std::shared_ptr<RangeMarker>> victims;
-
-    auto distance = ByteDistance(startItr, endItr);
     ForEachMarker(RangeMarkerType::All, Zep::SearchDirection::Forward, startItr, End(), [&](const std::shared_ptr<RangeMarker>& marker) {
         if (startItr.Index() > marker->range.second)
         {
             return true;
         }
-        else if (endItr.Index() <= marker->range.second)
-        {
-            // Note: distance is bytes not codepoints
-            marker->range.first -= distance;
-            marker->range.second -= distance;
-        }
         else
         {
-            auto overlap = marker->range.first - startItr.Index();
-            marker->range.first -= overlap;
-            marker->range.second -= overlap;
-            victims.insert(marker);
+            auto distance = endItr.Index() - startItr.Index();
+            marker->range.first -= distance;
+            marker->range.second -= distance;
+
+            marker->range.first = std::clamp(marker->range.first, 0l, End().Index());
+            marker->range.second = std::clamp(marker->range.second, 0l, End().Index());
         }
         return true;
     });
-
-    for (auto& spVictim : victims)
-    {
-        ClearRangeMarker(spVictim);
-    }
 }
 
 void ZepBuffer::UpdateForInsert(const GlyphIterator& startItr, const GlyphIterator& endItr)
 {
-    std::set<std::shared_ptr<RangeMarker>> victims;
-
-    // Move the markers after the insert point forwards, or
-    // expand the marker range if inserting inside it (that's a guess!)
-    auto distance = ByteDistance(startItr, endItr);
-
     ForEachMarker(RangeMarkerType::All, SearchDirection::Forward, startItr, End(), [&](const std::shared_ptr<RangeMarker>& marker) {
         if (startItr.Index() > marker->range.second)
         {
             return true;
         }
-        else if (endItr.Index() <= marker->range.second)
+        else 
         {
-            // Note: distance is bytes not codepoints
+            auto distance = endItr.Index() - startItr.Index();
             marker->range.first += distance;
             marker->range.second += distance;
-        }
-        else
-        {
-            auto overlap = marker->range.first - startItr.Index();
-            marker->range.first += overlap;
-            marker->range.second += overlap;
-            victims.insert(marker);
+
+            marker->range.first = std::clamp(marker->range.first, 0l, End().Index());
+            marker->range.second = std::clamp(marker->range.second, 0l, End().Index());
         }
         return true;
     });
-
-    for (auto& spVictim : victims)
-    {
-        ClearRangeMarker(spVictim);
-    }
-
 }
 
 bool ZepBuffer::Insert(const GlyphIterator& startIndex, const std::string& str)
@@ -1253,14 +1225,14 @@ void ZepBuffer::ForEachMarker(uint32_t markerType, SearchDirection dir, const Gl
         {
             for (auto& markerItem : itr->second)
             {
-                // TODO: This shouldn't be necessary, but the bound above is not working as expected!
-                if (markerItem->range.second < begin.Index() ||
-                    markerItem->range.first >= end.Index())
+                if ((markerItem->markerType & markerType) == 0)
                 {
                     continue;
                 }
 
-                if ((markerItem->markerType & markerType) == 0)
+                // TODO: This shouldn't be necessary, but the bound above is not working as expected!
+                if (markerItem->range.second < begin.Index() ||
+                    markerItem->range.first >= end.Index())
                 {
                     continue;
                 }

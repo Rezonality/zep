@@ -76,6 +76,32 @@ enum class BufferType
     Tree
 };
 
+using ByteIndex = long;
+struct ByteRange
+{
+    ByteRange(ByteIndex a = 0, ByteIndex b = 0)
+        : first(a),
+        second(b)
+    { }
+    ByteIndex first;
+    ByteIndex second;
+    bool ContainsLocation(ByteIndex loc) const
+    {
+        return loc >= first && loc < second;
+    }
+};
+
+namespace RangeMarkerType
+{
+enum
+{
+    Message = (1 << 0),
+    Search = (1 << 1),
+    Widget = (1 << 2),
+    All = (Message | Search | Widget)
+};
+};
+
 namespace RangeMarkerDisplayType
 {
 enum
@@ -100,32 +126,6 @@ enum class ToolTipPos
     Count = 3
 };
 
-namespace RangeMarkerType
-{
-enum
-{
-    Message = (1 << 0),
-    Search = (1 << 1),
-    Widget = (1 << 2),
-    All = (Message | Search | Widget)
-};
-};
-
-using ByteIndex = long;
-struct ByteRange
-{
-    ByteRange(ByteIndex a = 0, ByteIndex b = 0)
-        : first(a),
-        second(b)
-    { }
-    ByteIndex first;
-    ByteIndex second;
-    bool ContainsLocation(ByteIndex loc) const
-    {
-        return loc >= first && loc < second;
-    }
-};
-
 struct RangeMarker
 {
     ByteRange range;
@@ -137,7 +137,7 @@ struct RangeMarker
     std::string name;
     std::string description;
     ToolTipPos tipPos = ToolTipPos::AboveLine;
-    std::shared_ptr<ILineWidget> m_spLineWidget;
+    std::shared_ptr<ILineWidget> spLineWidget;
 
     bool ContainsLocation(GlyphIterator loc) const
     {
