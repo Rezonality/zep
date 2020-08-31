@@ -267,13 +267,4 @@ bool GlyphRange::ContainsInclusiveLocation(GlyphIterator loc) const
     return loc >= first && loc <= second;
 }
 
-/*
-long operator-(const GlyphIterator& lhs, const GlyphIterator& rhs)
-{
-    return lhs.Index() - rhs.Index();
-}
-*/
-
-
-
 } // namespace Zep
