@@ -10,6 +10,7 @@ tags
 *.sln.docstates
 **/build/*
 indexdb
+cmake-build*
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 **/*.DS_Store
