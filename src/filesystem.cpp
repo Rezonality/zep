@@ -149,7 +149,13 @@ ZepPath ZepFileSystemCPP::Canonical(const ZepPath& path) const
 {
     try
     {
+#ifdef __unix__
+        // TODO: Remove when unix doesn't need <experimental/filesystem>
+        // I can't remember why weakly_connical is used....
+        return ZepPath(cpp_fs::canonical(path.string()).string());
+#else
         return ZepPath(cpp_fs::weakly_canonical(path.string()).string());
+#endif
     }
     catch (cpp_fs::filesystem_error& err)
     {
