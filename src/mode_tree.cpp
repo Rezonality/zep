@@ -74,8 +74,9 @@ void ZepMode_Tree::BuildTree()
         }
     }
 
+    ChangeRecord tempRecord;
     buffer.Clear();
-    buffer.Insert(buffer.Begin(), strBuffer.str());
+    buffer.Insert(buffer.Begin(), strBuffer.str(), tempRecord);
 }
 
 void ZepMode_Tree::Begin(ZepWindow* pWindow)

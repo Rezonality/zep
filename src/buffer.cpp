@@ -930,8 +930,10 @@ GlyphIterator ZepBuffer::GetLinePos(GlyphIterator bufferLocation, LineLocation l
     }
 }
 
-void ZepBuffer::UpdateForDelete(const GlyphIterator& startItr, const GlyphIterator& endItr)
+void ZepBuffer::UpdateForDelete(const GlyphIterator& startItr, const GlyphIterator& endItr, ChangeRecord& changeRecord)
 {
+    changeRecord.strDeleted = std::string(m_gapBuffer.begin() + startItr.Index(), m_gapBuffer.begin() + endItr.Index());
+
     ForEachMarker(RangeMarkerType::All, Zep::SearchDirection::Forward, startItr, End(), [&](const std::shared_ptr<RangeMarker>& marker) {
         if (startItr.Index() > marker->range.second)
         {
@@ -940,17 +942,20 @@ void ZepBuffer::UpdateForDelete(const GlyphIterator& startItr, const GlyphIterat
         else
         {
             auto distance = endItr.Index() - startItr.Index();
+
+            auto oldRange = marker->range;
             marker->range.first -= distance;
             marker->range.second -= distance;
-
             marker->range.first = std::clamp(marker->range.first, 0l, End().Index());
             marker->range.second = std::clamp(marker->range.second, 0l, End().Index());
+            
+            changeRecord.markerMoves.push_back(std::make_pair(oldRange, marker->range));
         }
         return true;
     });
 }
 
-void ZepBuffer::UpdateForInsert(const GlyphIterator& startItr, const GlyphIterator& endItr)
+void ZepBuffer::UpdateForInsert(const GlyphIterator& startItr, const GlyphIterator& endItr, ChangeRecord& changeRecord)
 {
     ForEachMarker(RangeMarkerType::All, SearchDirection::Forward, startItr, End(), [&](const std::shared_ptr<RangeMarker>& marker) {
         if (startItr.Index() > marker->range.second)
@@ -960,17 +965,21 @@ void ZepBuffer::UpdateForInsert(const GlyphIterator& startItr, const GlyphIterat
         else 
         {
             auto distance = endItr.Index() - startItr.Index();
+
+            auto oldRange = marker->range;
             marker->range.first += distance;
             marker->range.second += distance;
 
             marker->range.first = std::clamp(marker->range.first, 0l, End().Index());
             marker->range.second = std::clamp(marker->range.second, 0l, End().Index());
+            
+            changeRecord.markerMoves.push_back(std::make_pair(oldRange, marker->range));
         }
         return true;
     });
 }
 
-bool ZepBuffer::Insert(const GlyphIterator& startIndex, const std::string& str)
+bool ZepBuffer::Insert(const GlyphIterator& startIndex, const std::string& str, ChangeRecord& changeRecord)
 {
     if (!startIndex.Valid())
     {
@@ -979,7 +988,7 @@ bool ZepBuffer::Insert(const GlyphIterator& startIndex, const std::string& str)
 
     GlyphIterator endIndex(this, startIndex.Index() + long(str.length()));
 
-    UpdateForInsert(startIndex, endIndex);
+    UpdateForInsert(startIndex, endIndex, changeRecord);
 
     // We are about to modify this range
     // TODO: Is this correct, and/or useful in any way??
@@ -1031,6 +1040,7 @@ bool ZepBuffer::Insert(const GlyphIterator& startIndex, const std::string& str)
         m_lineEnds.insert(itrLine, lines.begin(), lines.end());
     }
 
+    changeRecord.strInserted = str;
     m_gapBuffer.insert(m_gapBuffer.begin() + startIndex.Index(), str.begin(), str.end());
 
     MarkUpdate();
@@ -1041,12 +1051,14 @@ bool ZepBuffer::Insert(const GlyphIterator& startIndex, const std::string& str)
     return true;
 }
 
-bool ZepBuffer::Replace(const GlyphIterator& startIndex, const GlyphIterator& endIndex, const std::string& str)
+bool ZepBuffer::Replace(const GlyphIterator& startIndex, const GlyphIterator& endIndex, const std::string& str, ChangeRecord& changeRecord)
 {
     if (!startIndex.Valid() || !endIndex.Valid())
     {
         return false;
     }
+
+    UpdateForDelete(startIndex, endIndex, changeRecord);
 
     // We are about to modify this range
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, startIndex, endIndex));
@@ -1075,7 +1087,7 @@ bool ZepBuffer::Replace(const GlyphIterator& startIndex, const GlyphIterator& en
 // This helps them to fix up their data structures without rebuilding.
 // Assumption: The buffer always is at least a single line/character of '0', representing file end.
 // This makes a few things fall out more easily
-bool ZepBuffer::Delete(const GlyphIterator& startIndex, const GlyphIterator& endIndex)
+bool ZepBuffer::Delete(const GlyphIterator& startIndex, const GlyphIterator& endIndex, ChangeRecord& changeRecord)
 {
     assert(startIndex.Valid());
     assert(endIndex.Valid());
@@ -1083,7 +1095,7 @@ bool ZepBuffer::Delete(const GlyphIterator& startIndex, const GlyphIterator& end
     // We are about to modify this range
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, startIndex, endIndex));
 
-    UpdateForDelete(startIndex, endIndex);
+    UpdateForDelete(startIndex, endIndex, changeRecord);
 
     auto itrLine = std::lower_bound(m_lineEnds.begin(), m_lineEnds.end(), startIndex.Index());
     if (itrLine == m_lineEnds.end())

@@ -35,6 +35,7 @@ protected:
     ZepBuffer& m_buffer;
     GlyphIterator m_cursorBefore;
     GlyphIterator m_cursorAfter;
+    ChangeRecord m_changeRecord;
 };
 
 class ZepCommand_GroupMarker : public ZepCommand
@@ -64,8 +65,6 @@ public:
 
     GlyphIterator m_startIndex;
     GlyphIterator m_endIndex;
-
-    std::string m_deleted;
 };
 
 enum class ReplaceRangeMode
@@ -86,9 +85,9 @@ public:
     GlyphIterator m_startIndex;
     GlyphIterator m_endIndex;
 
-    std::string m_strDeleted;
     std::string m_strReplace;
     ReplaceRangeMode m_mode;
+    ChangeRecord m_deleteStepChange;
 };
 
 class ZepCommand_Insert : public ZepCommand
@@ -102,7 +101,6 @@ public:
 
     GlyphIterator m_startIndex;
     std::string m_strInsert;
-
     GlyphIterator m_endIndexInserted;
 };
 

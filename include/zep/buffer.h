@@ -161,6 +161,23 @@ enum class ExpressionType
     Outer
 };
 
+using tMarkerMoves = std::vector<std::pair<ByteRange, ByteRange>>;
+struct ChangeRecord
+{
+    std::string strDeleted;
+    std::string strInserted;
+    tMarkerMoves markerMoves;
+    GlyphIterator itrStart;
+    GlyphIterator itrEnd;
+
+    void Clear()
+    {
+        strDeleted.clear();
+        markerMoves.clear();
+        itrStart.Invalidate();
+        itrEnd.Invalidate();
+    }
+};
 
 class ZepBuffer : public ZepComponent
 {
@@ -199,9 +216,10 @@ public:
     GlyphRange InnerWordMotion(GlyphIterator start, uint32_t searchType) const;
     GlyphRange StandardCtrlMotion(GlyphIterator cursor, SearchDirection searchDir) const;
 
-    bool Delete(const GlyphIterator& startOffset, const GlyphIterator& endOffset);
-    bool Insert(const GlyphIterator& startOffset, const std::string& str);
-    bool Replace(const GlyphIterator& startOffset, const GlyphIterator& endOffset, const std::string& str);
+    // Things that change
+    bool Delete(const GlyphIterator& startOffset, const GlyphIterator& endOffset, ChangeRecord& changeRecord);
+    bool Insert(const GlyphIterator& startOffset, const std::string& str, ChangeRecord& changeRecord);
+    bool Replace(const GlyphIterator& startOffset, const GlyphIterator& endOffset, const std::string& str, ChangeRecord& changeRecord);
 
     long GetLineCount() const
     {
@@ -312,8 +330,8 @@ private:
 
     void MarkUpdate();
 
-    void UpdateForInsert(const GlyphIterator& startOffset, const GlyphIterator& endOffset);
-    void UpdateForDelete(const GlyphIterator& startOffset, const GlyphIterator& endOffset);
+    void UpdateForInsert(const GlyphIterator& startOffset, const GlyphIterator& endOffset, ChangeRecord& changeRecord);
+    void UpdateForDelete(const GlyphIterator& startOffset, const GlyphIterator& endOffset, ChangeRecord& changeRecord);
 
 private:
     // Buffer & record of the line end locations

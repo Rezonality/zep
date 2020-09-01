@@ -27,18 +27,16 @@ void ZepCommand_DeleteRange::Redo()
 {
     if (m_startIndex != m_endIndex)
     {
-        // TODO: Helper function to extract string from glyph range
-        m_deleted = std::string(m_buffer.GetGapBuffer().begin() + m_startIndex.Index(), m_buffer.GetGapBuffer().begin() + m_endIndex.Index());
-
-        m_buffer.Delete(m_startIndex, m_endIndex);
+        m_changeRecord.Clear();
+        m_buffer.Delete(m_startIndex, m_endIndex, m_changeRecord);
     }
 }
 
 void ZepCommand_DeleteRange::Undo()
 {
-    if (m_deleted.empty())
+    if (m_changeRecord.strDeleted.empty())
         return;
-    m_buffer.Insert(m_startIndex, m_deleted);
+    m_buffer.Insert(m_startIndex, m_changeRecord.strDeleted, m_changeRecord);
 }
 
 // Insert a string
@@ -52,7 +50,8 @@ ZepCommand_Insert::ZepCommand_Insert(ZepBuffer& buffer, const GlyphIterator& sta
 
 void ZepCommand_Insert::Redo()
 {
-    bool ret = m_buffer.Insert(m_startIndex, m_strInsert);
+    m_changeRecord.Clear();
+    bool ret = m_buffer.Insert(m_startIndex, m_strInsert, m_changeRecord);
     assert(ret);
     if (ret == true)
     {
@@ -68,7 +67,7 @@ void ZepCommand_Insert::Undo()
 {
     if (m_endIndexInserted.Valid())
     {
-        m_buffer.Delete(m_startIndex, m_endIndexInserted);
+        m_buffer.Delete(m_startIndex, m_endIndexInserted, m_changeRecord);
     }
 }
 
@@ -87,15 +86,16 @@ void ZepCommand_ReplaceRange::Redo()
 {
     if (m_startIndex != m_endIndex)
     {
-        m_strDeleted = std::string(m_buffer.GetGapBuffer().begin() + m_startIndex.Index(), m_buffer.GetGapBuffer().begin() + m_endIndex.Index());
+        m_changeRecord.Clear();
+        m_deleteStepChange.Clear();
         if (m_mode == ReplaceRangeMode::Fill)
         {
-            m_buffer.Replace(m_startIndex, m_endIndex, m_strReplace);
+            m_buffer.Replace(m_startIndex, m_endIndex, m_strReplace, m_changeRecord);
         }
         else
         {
-            m_buffer.Delete(m_startIndex, m_endIndex);
-            m_buffer.Insert(m_startIndex, m_strReplace);
+            m_buffer.Delete(m_startIndex, m_endIndex, m_deleteStepChange);
+            m_buffer.Insert(m_startIndex, m_strReplace, m_changeRecord);
         }
     }
 }
@@ -106,15 +106,16 @@ void ZepCommand_ReplaceRange::Undo()
     {
         if (m_mode == ReplaceRangeMode::Fill)
         {
-            m_buffer.Delete(m_startIndex, m_endIndex);
-            m_buffer.Insert(m_startIndex, m_strDeleted);
+            ChangeRecord tempChange;
+            m_buffer.Delete(m_startIndex, m_endIndex, tempChange);
+            m_buffer.Insert(m_startIndex, m_changeRecord.strDeleted, m_changeRecord);
         }
         else
         {
             // Delete the previous inserted text
-            m_buffer.Delete(m_startIndex, m_startIndex.PeekByteOffset((long)m_strReplace.length()));
+            m_buffer.Delete(m_startIndex, m_startIndex.PeekByteOffset((long)m_strReplace.length()), m_changeRecord);
             // Insert the deleted text
-            m_buffer.Insert(m_startIndex, m_strDeleted);
+            m_buffer.Insert(m_startIndex, m_deleteStepChange.strDeleted, m_deleteStepChange);
         }
     }
 }

@@ -123,7 +123,9 @@ void ZepReplExCommand::Run(const std::vector<std::string>& tokens)
 
 void ZepReplExCommand::Prompt()
 {
-    m_pReplBuffer->Insert(m_pReplBuffer->End(), PromptString);
+    // TODO: Repl broken, but when not, need to consider undo 
+    ChangeRecord changeRecord;
+    m_pReplBuffer->Insert(m_pReplBuffer->End(), PromptString, changeRecord);
     MoveToEnd();
 }
 
