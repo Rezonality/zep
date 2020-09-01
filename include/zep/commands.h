@@ -67,12 +67,6 @@ public:
     GlyphIterator m_endIndex;
 };
 
-enum class ReplaceRangeMode
-{
-    Fill,
-    Replace,
-};
-
 class ZepCommand_ReplaceRange : public ZepCommand
 {
 public:

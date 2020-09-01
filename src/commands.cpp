@@ -87,16 +87,7 @@ void ZepCommand_ReplaceRange::Redo()
     if (m_startIndex != m_endIndex)
     {
         m_changeRecord.Clear();
-        m_deleteStepChange.Clear();
-        if (m_mode == ReplaceRangeMode::Fill)
-        {
-            m_buffer.Replace(m_startIndex, m_endIndex, m_strReplace, m_changeRecord);
-        }
-        else
-        {
-            m_buffer.Delete(m_startIndex, m_endIndex, m_deleteStepChange);
-            m_buffer.Insert(m_startIndex, m_strReplace, m_changeRecord);
-        }
+        m_buffer.Replace(m_startIndex, m_endIndex, m_strReplace, m_mode, m_changeRecord);
     }
 }
 
@@ -104,19 +95,8 @@ void ZepCommand_ReplaceRange::Undo()
 {
     if (m_startIndex != m_endIndex)
     {
-        if (m_mode == ReplaceRangeMode::Fill)
-        {
-            ChangeRecord tempChange;
-            m_buffer.Delete(m_startIndex, m_endIndex, tempChange);
-            m_buffer.Insert(m_startIndex, m_changeRecord.strDeleted, m_changeRecord);
-        }
-        else
-        {
-            // Delete the previous inserted text
-            m_buffer.Delete(m_startIndex, m_startIndex.PeekByteOffset((long)m_strReplace.length()), m_changeRecord);
-            // Insert the deleted text
-            m_buffer.Insert(m_startIndex, m_deleteStepChange.strDeleted, m_deleteStepChange);
-        }
+        // Replace the range we replaced previously with the old thing
+        m_buffer.Replace(m_startIndex, m_mode == ReplaceRangeMode::Fill ? m_endIndex : m_startIndex.PeekByteOffset((long)m_strReplace.length()), m_changeRecord.strDeleted, ReplaceRangeMode::Replace, m_changeRecord);
     }
 }
 

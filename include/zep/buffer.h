@@ -161,6 +161,13 @@ enum class ExpressionType
     Outer
 };
 
+// The type of replacement that happens in the buffer
+enum class ReplaceRangeMode
+{
+    Fill,
+    Replace,
+};
+
 using tMarkerMoves = std::vector<std::pair<ByteRange, ByteRange>>;
 struct ChangeRecord
 {
@@ -219,7 +226,7 @@ public:
     // Things that change
     bool Delete(const GlyphIterator& startOffset, const GlyphIterator& endOffset, ChangeRecord& changeRecord);
     bool Insert(const GlyphIterator& startOffset, const std::string& str, ChangeRecord& changeRecord);
-    bool Replace(const GlyphIterator& startOffset, const GlyphIterator& endOffset, const std::string& str, ChangeRecord& changeRecord);
+    bool Replace(const GlyphIterator& startOffset, const GlyphIterator& endOffset, /*note; not ref*/ std::string str, ReplaceRangeMode mode, ChangeRecord& changeRecord);
 
     long GetLineCount() const
     {

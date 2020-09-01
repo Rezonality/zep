@@ -1051,19 +1051,30 @@ bool ZepBuffer::Insert(const GlyphIterator& startIndex, const std::string& str, 
     return true;
 }
 
-bool ZepBuffer::Replace(const GlyphIterator& startIndex, const GlyphIterator& endIndex, const std::string& str, ChangeRecord& changeRecord)
+bool ZepBuffer::Replace(const GlyphIterator& startIndex, const GlyphIterator& endIndex, std::string str, ReplaceRangeMode mode, ChangeRecord& changeRecord)
 {
     if (!startIndex.Valid() || !endIndex.Valid())
     {
         return false;
     }
 
-    UpdateForDelete(startIndex, endIndex, changeRecord);
+    if (mode == ReplaceRangeMode::Replace)
+    {
+        // A replace is really 2 steps; remove the current, insert the new
+        Delete(startIndex, endIndex, changeRecord);
+
+        ChangeRecord tempRecord;
+        Insert(startIndex, str, tempRecord);
+        return true;
+    }
+
+    // This is what we effectively delete when we do the replace
+    changeRecord.strDeleted = std::string(m_gapBuffer.begin() + startIndex.Index(), m_gapBuffer.begin() + endIndex.Index());
 
     // We are about to modify this range
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::PreBufferChange, startIndex, endIndex));
 
-    // Perform a straight replace
+    // Perform a fill
     for (auto loc = startIndex; loc < endIndex; loc++)
     {
         // Note we don't support utf8 yet
