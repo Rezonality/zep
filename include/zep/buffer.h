@@ -152,7 +152,7 @@ struct RangeMarker
 using tRangeMarkers = std::map<ByteIndex, std::set<std::shared_ptr<RangeMarker>>>;
 
 // A really big cursor move; which will likely clamp
-//static const GlyphIterator MaxCursorMove = GlyphIterator(0xFFFFFFF);
+//static const iterator MaxCursorMove = iterator(0xFFFFFFF);
 //const long InvalidByteIndex = -1;
 
 enum class ExpressionType

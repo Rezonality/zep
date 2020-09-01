@@ -19,7 +19,7 @@ struct Region;
 struct LineCharInfo
 {
     NVec2f size;
-    GlyphIterator GlyphIterator;
+    GlyphIterator iterator;
 };
 
 // Line information, calculated during display update.
