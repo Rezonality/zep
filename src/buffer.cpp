@@ -359,7 +359,7 @@ GlyphIterator ZepBuffer::Find(GlyphIterator start, const uint8_t* pBeginString, 
             itrNext++;
         };
 
-        // We sucesfully got to the end
+        // We successfully got to the end
         if (pCurrent == pEndString)
         {
             return itrBuffer;
@@ -560,7 +560,7 @@ std::string ZepBuffer::GetFileExtension() const
     return ext;
 }
 
-// Basic load suppot; read a file if it's present, but keep
+// Basic load support; read a file if it's present, but keep
 // the file path in case you want to write later
 void ZepBuffer::Load(const ZepPath& path)
 {
@@ -720,7 +720,7 @@ void ZepBuffer::SetText(const std::string& text, bool initFromFile)
     if (!text.empty())
     {
         // Since incremental insertion of a big file into a gap buffer gives us worst case performance,
-        // We build the buffer in a seperate array and assign it.  Much faster.
+        // We build the buffer in a separate array and assign it.  Much faster.
         std::vector<uint8_t> input;
 
         m_lineEnds.clear();
