@@ -983,6 +983,12 @@ void ZepBuffer::UpdateForDelete(const GlyphIterator& startItr, const GlyphIterat
     });
 }
 
+std::string ZepBuffer::GetBufferText(const GlyphIterator& start, const GlyphIterator& end) const
+{
+
+    return std::string(m_gapBuffer.begin() + start.Index(), m_gapBuffer.begin() + end.Index());
+}
+
 void ZepBuffer::UpdateForInsert(const GlyphIterator& startItr, const GlyphIterator& endItr, ChangeRecord& changeRecord)
 {
     ForEachMarker(RangeMarkerType::All, Direction::Forward, startItr, End(), [&](const std::shared_ptr<RangeMarker>& marker) {
@@ -1591,6 +1597,16 @@ GlyphIterator ZepBuffer::End() const
 GlyphIterator ZepBuffer::Begin() const
 {
     return GlyphIterator(this);
+}
+
+void ZepBuffer::SetPostKeyNotifier(fnKeyNotifier notifier)
+{
+    m_postKeyNotifier = notifier;
+}
+
+fnKeyNotifier ZepBuffer::GetPostKeyNotifier() const
+{
+    return m_postKeyNotifier;
 }
 
 } // namespace Zep

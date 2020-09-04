@@ -50,10 +50,11 @@ public:
 
     static void Register(ZepEditor& editor, IZepReplProvider* pProvider);
     
-    virtual void Notify(std::shared_ptr<ZepMessage> message) override;
     virtual void Run(const std::vector<std::string>& args) override;
     virtual const char* ExCommandName() const override { return "ZRepl"; }
     virtual const KeyMap* GetKeyMappings(ZepMode&) const override { return &m_keymap; }
+
+    virtual bool AddKeyPress(uint32_t key, uint32_t modifiers);
 
 private:
     void Prompt();
@@ -64,6 +65,8 @@ private:
     ZepBuffer* m_pReplBuffer = nullptr;
     ZepWindow* m_pReplWindow = nullptr;
     KeyMap m_keymap;
+    GlyphIterator m_startLocation;
+    bool m_ignoreMessages = false;
 };
 
 class ZepReplEvaluateOuterCommand : public ZepExCommand

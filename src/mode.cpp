@@ -389,6 +389,12 @@ void ZepMode::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     // We convert CTRL + f to a string: "<C-f>"
     HandleMappedInput(ConvertInputToMapString(key, modifierKeys));
 
+    auto notifier = m_pCurrentWindow->GetBuffer().GetPostKeyNotifier();
+    if (notifier != nullptr)
+    {
+        notifier(key, modifierKeys);
+    }
+
     timer_restart(m_lastKeyPressTimer);
 }
 
@@ -1987,6 +1993,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
                 {
                     std::string displayText = reg.second.text;
                     displayText = string_replace(displayText, "\n", "^J");
+                    displayText = string_replace(displayText, "\r", "");
                     str << "\"" << reg.first << "   " << displayText << '\n';
                 }
             }

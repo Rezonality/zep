@@ -201,6 +201,7 @@ struct ChangeRecord
     }
 };
 
+using fnKeyNotifier = std::function<bool(uint32_t key, uint32_t modifier)>;
 class ZepBuffer : public ZepComponent
 {
 public:
@@ -347,6 +348,10 @@ public:
     void ToggleFileFlag(uint32_t flags);
 
     NVec2i GetExpression(ExpressionType type, const GlyphIterator location, const std::vector<char>& beginExpression, const std::vector<char>& endExpression) const;
+    std::string GetBufferText(const GlyphIterator& start, const GlyphIterator& end) const;
+
+    void SetPostKeyNotifier(fnKeyNotifier notifier);
+    fnKeyNotifier GetPostKeyNotifier() const;
 
 private:
     void ClearRangeMarker(std::shared_ptr<RangeMarker> spMarker);
@@ -381,6 +386,7 @@ private:
 
     // Modes
     std::shared_ptr<ZepMode> m_spMode;
+    fnKeyNotifier m_postKeyNotifier;
 };
 
 // Notification payload
