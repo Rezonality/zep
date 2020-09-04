@@ -22,7 +22,7 @@ class ZepTheme;
 class ZepMode;
 enum class ThemeColor;
 
-enum class SearchDirection
+enum class Direction
 {
     Forward,
     Backward
@@ -168,7 +168,22 @@ enum class ReplaceRangeMode
     Replace,
 };
 
-using tMarkerMoves = std::vector<std::pair<ByteRange, ByteRange>>;
+struct MarkerMove
+{
+    MarkerMove(ByteIndex markerFrom, ByteIndex markerTo, const std::shared_ptr<RangeMarker> spMarker)
+        : from(markerFrom),
+        to(markerTo),
+        marker(spMarker)
+    {
+
+    }
+
+    ByteIndex from;
+    ByteIndex to;
+    std::shared_ptr<RangeMarker> marker;
+};
+
+using tMarkerMoves = std::vector<MarkerMove>;
 struct ChangeRecord
 {
     std::string strDeleted;
@@ -208,20 +223,20 @@ public:
     long GetBufferColumn(GlyphIterator location) const;
     using fnMatch = std::function<bool(const char)>;
 
-    bool Move(GlyphIterator& loc, SearchDirection dir) const;
+    bool Move(GlyphIterator& loc, Direction dir) const;
     void MotionBegin(GlyphIterator& start) const;
-    bool Skip(fnMatch IsToken, GlyphIterator& start, SearchDirection dir) const;
-    bool SkipOne(fnMatch IsToken, GlyphIterator& start, SearchDirection dir) const;
-    bool SkipNot(fnMatch IsToken, GlyphIterator& start, SearchDirection dir) const;
+    bool Skip(fnMatch IsToken, GlyphIterator& start, Direction dir) const;
+    bool SkipOne(fnMatch IsToken, GlyphIterator& start, Direction dir) const;
+    bool SkipNot(fnMatch IsToken, GlyphIterator& start, Direction dir) const;
 
     GlyphIterator Find(GlyphIterator start, const uint8_t* pBegin, const uint8_t* pEnd) const;
-    GlyphIterator FindOnLineMotion(GlyphIterator start, const uint8_t* pCh, SearchDirection dir) const;
-    GlyphIterator WordMotion(GlyphIterator start, uint32_t searchType, SearchDirection dir) const;
-    GlyphIterator EndWordMotion(GlyphIterator start, uint32_t searchType, SearchDirection dir) const;
-    GlyphIterator ChangeWordMotion(GlyphIterator start, uint32_t searchType, SearchDirection dir) const;
+    GlyphIterator FindOnLineMotion(GlyphIterator start, const uint8_t* pCh, Direction dir) const;
+    GlyphIterator WordMotion(GlyphIterator start, uint32_t searchType, Direction dir) const;
+    GlyphIterator EndWordMotion(GlyphIterator start, uint32_t searchType, Direction dir) const;
+    GlyphIterator ChangeWordMotion(GlyphIterator start, uint32_t searchType, Direction dir) const;
     GlyphRange AWordMotion(GlyphIterator start, uint32_t searchType) const;
     GlyphRange InnerWordMotion(GlyphIterator start, uint32_t searchType) const;
-    GlyphRange StandardCtrlMotion(GlyphIterator cursor, SearchDirection searchDir) const;
+    GlyphRange StandardCtrlMotion(GlyphIterator cursor, Direction searchDir) const;
 
     // Things that change
     bool Delete(const GlyphIterator& startOffset, const GlyphIterator& endOffset, ChangeRecord& changeRecord);
@@ -289,7 +304,7 @@ public:
     void SetTheme(std::shared_ptr<ZepTheme> spTheme);
 
     void SetSelection(const GlyphRange& sel);
-    GlyphRange GetSelection() const;
+    GlyphRange GetInclusiveSelection() const;
     bool HasSelection() const;
     void ClearSelection();
 
@@ -301,8 +316,9 @@ public:
     void HideMarkers(uint32_t markerType);
     void ShowMarkers(uint32_t markerType, uint32_t displayType);
 
-    void ForEachMarker(uint32_t types, SearchDirection dir, const GlyphIterator& begin, const GlyphIterator& end, std::function<bool(const std::shared_ptr<RangeMarker>&)> fnCB) const;
-    std::shared_ptr<RangeMarker> FindNextMarker(GlyphIterator start, SearchDirection dir, uint32_t markerType);
+    void ForEachMarker(uint32_t types, Direction dir, const GlyphIterator& begin, const GlyphIterator& end, std::function<bool(const std::shared_ptr<RangeMarker>&)> fnCB) const;
+    std::shared_ptr<RangeMarker> FindNextMarker(GlyphIterator start, Direction dir, uint32_t markerType);
+    void MoveMarkers(ChangeRecord& record, Direction direction);
 
     void SetBufferType(BufferType type);
     BufferType GetBufferType() const;

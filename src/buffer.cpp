@@ -116,18 +116,18 @@ void ZepBuffer::MotionBegin(GlyphIterator& start) const
     }
 }
 
-bool ZepBuffer::Move(GlyphIterator& loc, SearchDirection dir) const
+bool ZepBuffer::Move(GlyphIterator& loc, Direction dir) const
 {
-    if (dir == SearchDirection::Backward && loc.Index() == 0)
+    if (dir == Direction::Backward && loc.Index() == 0)
     {
         return false;
     }
-    else if (dir == SearchDirection::Forward && loc.Index() == End().Index())
+    else if (dir == Direction::Forward && loc.Index() == End().Index())
     {
         return false;
     }
 
-    if (dir == SearchDirection::Backward)
+    if (dir == Direction::Backward)
     {
         loc--;
     }
@@ -138,7 +138,7 @@ bool ZepBuffer::Move(GlyphIterator& loc, SearchDirection dir) const
     return true;
 }
 
-bool ZepBuffer::Skip(fnMatch IsToken, GlyphIterator& start, SearchDirection dir) const
+bool ZepBuffer::Skip(fnMatch IsToken, GlyphIterator& start, Direction dir) const
 {
     if (!start.Valid())
     {
@@ -158,7 +158,7 @@ bool ZepBuffer::Skip(fnMatch IsToken, GlyphIterator& start, SearchDirection dir)
     return found;
 }
 
-bool ZepBuffer::SkipOne(fnMatch IsToken, GlyphIterator& start, SearchDirection dir) const
+bool ZepBuffer::SkipOne(fnMatch IsToken, GlyphIterator& start, Direction dir) const
 {
     if (!start.Valid())
     {
@@ -174,7 +174,7 @@ bool ZepBuffer::SkipOne(fnMatch IsToken, GlyphIterator& start, SearchDirection d
     return found;
 }
 
-bool ZepBuffer::SkipNot(fnMatch IsToken, GlyphIterator& start, SearchDirection dir) const
+bool ZepBuffer::SkipNot(fnMatch IsToken, GlyphIterator& start, Direction dir) const
 {
     if (!start.Valid())
         return false;
@@ -201,28 +201,28 @@ GlyphRange ZepBuffer::AWordMotion(GlyphIterator start, uint32_t searchType) cons
     MotionBegin(start);
 
     // Already on a word; find the limits, and include the space
-    if (Skip(IsWord, start, SearchDirection::Backward))
+    if (Skip(IsWord, start, Direction::Backward))
     {
-        SkipNot(IsWord, start, SearchDirection::Forward);
+        SkipNot(IsWord, start, Direction::Forward);
         r.first = start;
-        Skip(IsWord, start, SearchDirection::Forward);
-        Skip(IsSpace, start, SearchDirection::Forward);
+        Skip(IsWord, start, Direction::Forward);
+        Skip(IsSpace, start, Direction::Forward);
         r.second = start;
     }
     // ... or skip space
-    else if (Skip(IsSpace, start, SearchDirection::Forward))
+    else if (Skip(IsSpace, start, Direction::Forward))
     {
-        Skip(IsWord, start, SearchDirection::Forward);
+        Skip(IsWord, start, Direction::Forward);
         r.second = start;
     }
     // On a non-word, find the beginning, remove including following spaces
-    else if (SkipNot(IsWord, start, SearchDirection::Backward))
+    else if (SkipNot(IsWord, start, Direction::Backward))
     {
-        Skip(IsSpace, start, SearchDirection::Forward);
-        Skip(IsWord, start, SearchDirection::Forward);
+        Skip(IsSpace, start, Direction::Forward);
+        Skip(IsWord, start, Direction::Forward);
         r.first = start;
-        SkipNot(IsWord, start, SearchDirection::Forward);
-        Skip(IsSpace, start, SearchDirection::Forward);
+        SkipNot(IsWord, start, Direction::Forward);
+        Skip(IsSpace, start, Direction::Forward);
         r.second = start;
     }
 
@@ -234,7 +234,7 @@ GlyphRange ZepBuffer::AWordMotion(GlyphIterator start, uint32_t searchType) cons
 // Playing around with CTRL+ arrows and shift in an app like notepad will teach you that the rules for how far to jump
 // depend on what you are over, and which direction you are going.....
 // The unit tests are designed to enforce the behavior here
-GlyphRange ZepBuffer::StandardCtrlMotion(GlyphIterator cursor, SearchDirection searchDir) const
+GlyphRange ZepBuffer::StandardCtrlMotion(GlyphIterator cursor, Direction searchDir) const
 {
     MotionBegin(cursor);
 
@@ -245,7 +245,7 @@ GlyphRange ZepBuffer::StandardCtrlMotion(GlyphIterator cursor, SearchDirection s
     r.first = current;
     r.second = current;
 
-    if (searchDir == SearchDirection::Forward)
+    if (searchDir == Direction::Forward)
     {
         if (Skip(IsWORDChar, current, searchDir))
         {
@@ -267,7 +267,7 @@ GlyphRange ZepBuffer::StandardCtrlMotion(GlyphIterator cursor, SearchDirection s
         {
             SkipNot(IsWORDChar, current, searchDir);
             Skip(IsWORDChar, current, searchDir);
-            SkipNot(IsWORDChar, current, SearchDirection::Forward);
+            SkipNot(IsWORDChar, current, Direction::Forward);
         }
     }
     r.second = current.Clamp();
@@ -292,29 +292,29 @@ GlyphRange ZepBuffer::InnerWordMotion(GlyphIterator start, uint32_t searchType) 
     {
         r.first = r.second = start;
     }
-    else if (SkipNot(IsWordOrSpace, start, SearchDirection::Forward))
+    else if (SkipNot(IsWordOrSpace, start, Direction::Forward))
     {
         r.second = start;
         start--;
-        SkipNot(IsWordOrSpace, start, SearchDirection::Backward);
-        Skip(IsWordOrSpace, start, SearchDirection::Forward);
+        SkipNot(IsWordOrSpace, start, Direction::Backward);
+        Skip(IsWordOrSpace, start, Direction::Forward);
         r.first = start;
     }
-    else if (Skip(IsSpace, start, SearchDirection::Forward))
+    else if (Skip(IsSpace, start, Direction::Forward))
     {
         r.second = start;
         start--;
-        Skip(IsSpace, start, SearchDirection::Backward);
-        SkipNot(IsSpace, start, SearchDirection::Forward);
+        Skip(IsSpace, start, Direction::Backward);
+        SkipNot(IsSpace, start, Direction::Forward);
         r.first = start;
     }
     else
     {
-        Skip(IsWord, start, SearchDirection::Forward);
+        Skip(IsWord, start, Direction::Forward);
         r.second = start;
         start--;
-        Skip(IsWord, start, SearchDirection::Backward);
-        SkipNot(IsWord, start, SearchDirection::Forward);
+        Skip(IsWord, start, Direction::Backward);
+        SkipNot(IsWord, start, Direction::Forward);
         r.first = start;
     }
     return r;
@@ -371,7 +371,7 @@ GlyphIterator ZepBuffer::Find(GlyphIterator start, const uint8_t* pBeginString, 
     return GlyphIterator();
 }
 
-GlyphIterator ZepBuffer::FindOnLineMotion(GlyphIterator start, const uint8_t* pCh, SearchDirection dir) const
+GlyphIterator ZepBuffer::FindOnLineMotion(GlyphIterator start, const uint8_t* pCh, Direction dir) const
 {
     auto entry = start;
     auto IsMatch = [pCh](const char ch) {
@@ -385,7 +385,7 @@ GlyphIterator ZepBuffer::FindOnLineMotion(GlyphIterator start, const uint8_t* pC
         return false;
     };
 
-    if (dir == SearchDirection::Forward)
+    if (dir == Direction::Forward)
     {
         SkipOne(IsMatch, start, dir);
         Skip(NotMatchNotEnd, start, dir);
@@ -403,13 +403,13 @@ GlyphIterator ZepBuffer::FindOnLineMotion(GlyphIterator start, const uint8_t* pC
     return entry;
 }
 
-GlyphIterator ZepBuffer::WordMotion(GlyphIterator start, uint32_t searchType, SearchDirection dir) const
+GlyphIterator ZepBuffer::WordMotion(GlyphIterator start, uint32_t searchType, Direction dir) const
 {
     auto IsWord = searchType == SearchType::Word ? IsWordChar : IsWORDChar;
 
     MotionBegin(start);
 
-    if (dir == SearchDirection::Forward)
+    if (dir == Direction::Forward)
     {
         if (Skip(IsWord, start, dir))
         {
@@ -431,7 +431,7 @@ GlyphIterator ZepBuffer::WordMotion(GlyphIterator start, uint32_t searchType, Se
             // If we weren't already on the first char of the word, then we have gone back a word!
             if (startSearch != (start + 1))
             {
-                SkipNot(IsWord, start, SearchDirection::Forward);
+                SkipNot(IsWord, start, Direction::Forward);
                 return start;
             }
         }
@@ -446,19 +446,19 @@ GlyphIterator ZepBuffer::WordMotion(GlyphIterator start, uint32_t searchType, Se
         // Go back to the beginning of the word
         if (Skip(IsWord, start, dir))
         {
-            SkipNot(IsWord, start, SearchDirection::Forward);
+            SkipNot(IsWord, start, Direction::Forward);
         }
     }
     return start;
 }
 
-GlyphIterator ZepBuffer::EndWordMotion(GlyphIterator start, uint32_t searchType, SearchDirection dir) const
+GlyphIterator ZepBuffer::EndWordMotion(GlyphIterator start, uint32_t searchType, Direction dir) const
 {
     auto IsWord = searchType == SearchType::Word ? IsWordChar : IsWORDChar;
 
     MotionBegin(start);
 
-    if (dir == SearchDirection::Forward)
+    if (dir == Direction::Forward)
     {
         auto startSearch = start;
 
@@ -468,7 +468,7 @@ GlyphIterator ZepBuffer::EndWordMotion(GlyphIterator start, uint32_t searchType,
             // We moved a bit, so we found the end of the current word
             if (startSearch != start - 1)
             {
-                SkipNot(IsWord, start, SearchDirection::Backward);
+                SkipNot(IsWord, start, Direction::Backward);
                 return start;
             }
         }
@@ -483,7 +483,7 @@ GlyphIterator ZepBuffer::EndWordMotion(GlyphIterator start, uint32_t searchType,
         // Go back to the beginning of the word
         if (Skip(IsWord, start, dir))
         {
-            SkipNot(IsWord, start, SearchDirection::Backward);
+            SkipNot(IsWord, start, Direction::Backward);
         }
     }
     else // Backward
@@ -502,7 +502,7 @@ GlyphIterator ZepBuffer::EndWordMotion(GlyphIterator start, uint32_t searchType,
     return start;
 }
 
-GlyphIterator ZepBuffer::ChangeWordMotion(GlyphIterator start, uint32_t searchType, SearchDirection dir) const
+GlyphIterator ZepBuffer::ChangeWordMotion(GlyphIterator start, uint32_t searchType, Direction dir) const
 {
     // Change word is different to work skipping; it will change a string of spaces, for example.
     // Essentially it changes 'what you are over', based on the word rule
@@ -930,26 +930,54 @@ GlyphIterator ZepBuffer::GetLinePos(GlyphIterator bufferLocation, LineLocation l
     }
 }
 
+void ZepBuffer::MoveMarkers(ChangeRecord& record, Direction direction)
+{
+    for (auto& r : record.markerMoves)
+    {
+        auto from = r.from;
+        auto to = r.to;
+
+        if (direction == Direction::Backward)
+        {
+            std::swap(from, to);
+        }
+
+        if (to != from)
+        {
+            m_rangeMarkers[from].erase(r.marker);
+            if (m_rangeMarkers[from].empty())
+            {
+                m_rangeMarkers.erase(from);
+            }
+        }
+
+        //to = std::clamp(to, 0l, End().Index());
+        //from = std::clamp(from, 0l, End().Index());
+
+        auto dist = to - from;
+        r.marker->range.first += dist;
+        r.marker->range.second += dist;
+        m_rangeMarkers[to].insert(r.marker);
+    }
+}
+
 void ZepBuffer::UpdateForDelete(const GlyphIterator& startItr, const GlyphIterator& endItr, ChangeRecord& changeRecord)
 {
     changeRecord.strDeleted = std::string(m_gapBuffer.begin() + startItr.Index(), m_gapBuffer.begin() + endItr.Index());
 
-    ForEachMarker(RangeMarkerType::All, Zep::SearchDirection::Forward, startItr, End(), [&](const std::shared_ptr<RangeMarker>& marker) {
+    ForEachMarker(RangeMarkerType::All, Zep::Direction::Forward, startItr, End(), [&](const std::shared_ptr<RangeMarker>& marker) {
         if (startItr.Index() > marker->range.second)
         {
             return true;
         }
         else
         {
-            auto distance = endItr.Index() - startItr.Index();
-
-            auto oldRange = marker->range;
-            marker->range.first -= distance;
-            marker->range.second -= distance;
-            marker->range.first = std::clamp(marker->range.first, 0l, End().Index());
-            marker->range.second = std::clamp(marker->range.second, 0l, End().Index());
-            
-            changeRecord.markerMoves.push_back(std::make_pair(oldRange, marker->range));
+            ZLOG(INFO, "Range: " << startItr.Index() << ", " << endItr.Index() << " : mark: " << marker->range.first);
+            auto distance = std::min(endItr.Index(), marker->range.first) - startItr.Index();
+            changeRecord.markerMoves.push_back(
+                MarkerMove(marker->range.first,
+                    marker->range.first - distance,
+                    marker));
         }
         return true;
     });
@@ -957,23 +985,19 @@ void ZepBuffer::UpdateForDelete(const GlyphIterator& startItr, const GlyphIterat
 
 void ZepBuffer::UpdateForInsert(const GlyphIterator& startItr, const GlyphIterator& endItr, ChangeRecord& changeRecord)
 {
-    ForEachMarker(RangeMarkerType::All, SearchDirection::Forward, startItr, End(), [&](const std::shared_ptr<RangeMarker>& marker) {
+    ForEachMarker(RangeMarkerType::All, Direction::Forward, startItr, End(), [&](const std::shared_ptr<RangeMarker>& marker) {
         if (startItr.Index() > marker->range.second)
         {
             return true;
         }
         else 
         {
+            //auto distance = std::min(endItr.Index(), marker->range.first) - startItr.Index();
             auto distance = endItr.Index() - startItr.Index();
-
-            auto oldRange = marker->range;
-            marker->range.first += distance;
-            marker->range.second += distance;
-
-            marker->range.first = std::clamp(marker->range.first, 0l, End().Index());
-            marker->range.second = std::clamp(marker->range.second, 0l, End().Index());
-            
-            changeRecord.markerMoves.push_back(std::make_pair(oldRange, marker->range));
+            changeRecord.markerMoves.push_back(
+                MarkerMove(marker->range.first,
+                    marker->range.first + distance,
+                    marker));
         }
         return true;
     });
@@ -1169,7 +1193,7 @@ void ZepBuffer::ClearSelection()
     m_selection.second = Begin();
 }
 
-GlyphRange ZepBuffer::GetSelection() const
+GlyphRange ZepBuffer::GetInclusiveSelection() const
 {
     return m_selection;
 }
@@ -1221,7 +1245,7 @@ void ZepBuffer::ClearRangeMarkers(const std::set<std::shared_ptr<RangeMarker>>& 
 void ZepBuffer::ClearRangeMarkers(uint32_t markerType)
 {
     std::set<std::shared_ptr<RangeMarker>> markers;
-    ForEachMarker(markerType, SearchDirection::Forward, Begin(), End(), [&](const std::shared_ptr<RangeMarker>& pMarker) {
+    ForEachMarker(markerType, Direction::Forward, Begin(), End(), [&](const std::shared_ptr<RangeMarker>& pMarker) {
         markers.insert(pMarker);
         return true;
     });
@@ -1234,15 +1258,22 @@ void ZepBuffer::ClearRangeMarkers(uint32_t markerType)
     GetEditor().Broadcast(std::make_shared<BufferMessage>(this, BufferMessageType::MarkersChanged, Begin(), End()));
 }
 
-void ZepBuffer::ForEachMarker(uint32_t markerType, SearchDirection dir, const GlyphIterator& begin, const GlyphIterator& end, std::function<bool(const std::shared_ptr<RangeMarker>&)> fnCB) const
+bool OverlapInclusive(ByteRange r1, ByteRange r2)
+{   
+    // -----aaaaa----
+    // ---bbbbbbbbb-------
+    if (r1.first <= r2.second && 
+        r2.first <= r1.second)
+    {
+        return true;
+    }
+    return false;
+}
+
+void ZepBuffer::ForEachMarker(uint32_t markerType, Direction dir, const GlyphIterator& begin, const GlyphIterator& end, std::function<bool(const std::shared_ptr<RangeMarker>&)> fnCB) const
 {
-    //auto itrStart = m_rangeMarkers.lower_bound(begin.Index());
-    //if (itrStart == m_rangeMarkers.end())
-    //    return;
-
-    //auto itrEnd = m_rangeMarkers.upper_bound(end.Index());
-
-    if (dir == SearchDirection::Forward)
+    ByteRange inclusive = ByteRange(begin.Index(), end.Peek(-1).Index());
+    if (dir == Direction::Forward)
     {
         for (auto itr = m_rangeMarkers.begin(); itr != m_rangeMarkers.end(); itr++)
         {
@@ -1253,9 +1284,9 @@ void ZepBuffer::ForEachMarker(uint32_t markerType, SearchDirection dir, const Gl
                     continue;
                 }
 
-                // TODO: This shouldn't be necessary, but the bound above is not working as expected!
-                if (markerItem->range.second < begin.Index() ||
-                    markerItem->range.first >= end.Index())
+                ByteRange markerInclusive = ByteRange(markerItem->range.first, std::max(0l, markerItem->range.second - 1));
+
+                if (!OverlapInclusive(inclusive, markerInclusive))
                 {
                     continue;
                 }
@@ -1291,7 +1322,7 @@ void ZepBuffer::ForEachMarker(uint32_t markerType, SearchDirection dir, const Gl
 
 void ZepBuffer::HideMarkers(uint32_t markerType)
 {
-    ForEachMarker(markerType, SearchDirection::Forward, Begin(), End(), [&](const std::shared_ptr<RangeMarker>& spMarker) {
+    ForEachMarker(markerType, Direction::Forward, Begin(), End(), [&](const std::shared_ptr<RangeMarker>& spMarker) {
         if ((spMarker->markerType & markerType) != 0)
         {
             spMarker->displayType = RangeMarkerDisplayType::Hidden;
@@ -1302,7 +1333,7 @@ void ZepBuffer::HideMarkers(uint32_t markerType)
 
 void ZepBuffer::ShowMarkers(uint32_t markerType, uint32_t displayType)
 {
-    ForEachMarker(markerType, SearchDirection::Forward, Begin(), End(), [&](const std::shared_ptr<RangeMarker>& spMarker) {
+    ForEachMarker(markerType, Direction::Forward, Begin(), End(), [&](const std::shared_ptr<RangeMarker>& spMarker) {
         if ((spMarker->markerType & markerType) != 0)
         {
             spMarker->displayType = displayType;
@@ -1314,7 +1345,7 @@ void ZepBuffer::ShowMarkers(uint32_t markerType, uint32_t displayType)
 tRangeMarkers ZepBuffer::GetRangeMarkers(uint32_t markerType) const
 {
     tRangeMarkers markers;
-    ForEachMarker(markerType, SearchDirection::Forward, Begin(), End(), [&](const std::shared_ptr<RangeMarker>& spMarker) {
+    ForEachMarker(markerType, Direction::Forward, Begin(), End(), [&](const std::shared_ptr<RangeMarker>& spMarker) {
         if ((spMarker->markerType & markerType) != 0)
         {
             markers[spMarker->range.first].insert(spMarker);
@@ -1324,14 +1355,14 @@ tRangeMarkers ZepBuffer::GetRangeMarkers(uint32_t markerType) const
     return markers;
 }
 
-std::shared_ptr<RangeMarker> ZepBuffer::FindNextMarker(GlyphIterator start, SearchDirection dir, uint32_t markerType)
+std::shared_ptr<RangeMarker> ZepBuffer::FindNextMarker(GlyphIterator start, Direction dir, uint32_t markerType)
 {
     start.Clamp();
 
     std::shared_ptr<RangeMarker> spFound;
     auto search = [&]() {
         ForEachMarker(markerType, dir, Begin(), End(), [&](const std::shared_ptr<RangeMarker>& marker) {
-            if (dir == SearchDirection::Forward)
+            if (dir == Direction::Forward)
             {
                 if (marker->range.first <= start.Index())
                 {
@@ -1355,7 +1386,7 @@ std::shared_ptr<RangeMarker> ZepBuffer::FindNextMarker(GlyphIterator start, Sear
     if (spFound == nullptr)
     {
         // Wrap
-        start = (dir == SearchDirection::Forward ? Begin() : End());
+        start = (dir == Direction::Forward ? Begin() : End());
         search();
     }
     return spFound;
@@ -1406,7 +1437,7 @@ tRangeMarkers ZepBuffer::GetRangeMarkersOnLine(long line) const
 
     tRangeMarkers rangeMarkers;
     ForEachMarker(RangeMarkerType::All,
-        Zep::SearchDirection::Forward,
+        Zep::Direction::Forward,
         GlyphIterator(this, range.first), GlyphIterator(this, range.second),
         [&](const std::shared_ptr<RangeMarker>& marker) {
             rangeMarkers[marker->range.first].insert(marker);

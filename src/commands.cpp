@@ -29,6 +29,7 @@ void ZepCommand_DeleteRange::Redo()
     {
         m_changeRecord.Clear();
         m_buffer.Delete(m_startIndex, m_endIndex, m_changeRecord);
+        m_buffer.MoveMarkers(m_changeRecord, Direction::Forward);
     }
 }
 
@@ -36,7 +37,10 @@ void ZepCommand_DeleteRange::Undo()
 {
     if (m_changeRecord.strDeleted.empty())
         return;
-    m_buffer.Insert(m_startIndex, m_changeRecord.strDeleted, m_changeRecord);
+
+    ChangeRecord tempRecord;
+    m_buffer.Insert(m_startIndex, m_changeRecord.strDeleted, tempRecord);
+    m_buffer.MoveMarkers(m_changeRecord, Direction::Backward);
 }
 
 // Insert a string
@@ -61,13 +65,16 @@ void ZepCommand_Insert::Redo()
     {
         m_endIndexInserted.Invalidate();
     }
+    m_buffer.MoveMarkers(m_changeRecord, Direction::Forward);
 }
 
 void ZepCommand_Insert::Undo()
 {
     if (m_endIndexInserted.Valid())
     {
-        m_buffer.Delete(m_startIndex, m_endIndexInserted, m_changeRecord);
+        ChangeRecord tempRecord;
+        m_buffer.Delete(m_startIndex, m_endIndexInserted, tempRecord);
+        m_buffer.MoveMarkers(m_changeRecord, Direction::Backward);
     }
 }
 
@@ -88,6 +95,7 @@ void ZepCommand_ReplaceRange::Redo()
     {
         m_changeRecord.Clear();
         m_buffer.Replace(m_startIndex, m_endIndex, m_strReplace, m_mode, m_changeRecord);
+        m_buffer.MoveMarkers(m_changeRecord, Direction::Forward);
     }
 }
 
@@ -96,7 +104,9 @@ void ZepCommand_ReplaceRange::Undo()
     if (m_startIndex != m_endIndex)
     {
         // Replace the range we replaced previously with the old thing
-        m_buffer.Replace(m_startIndex, m_mode == ReplaceRangeMode::Fill ? m_endIndex : m_startIndex.PeekByteOffset((long)m_strReplace.length()), m_changeRecord.strDeleted, ReplaceRangeMode::Replace, m_changeRecord);
+        ChangeRecord temp;
+        m_buffer.Replace(m_startIndex, m_mode == ReplaceRangeMode::Fill ? m_endIndex : m_startIndex.PeekByteOffset((long)m_strReplace.length()), m_changeRecord.strDeleted, ReplaceRangeMode::Replace, temp);
+        m_buffer.MoveMarkers(m_changeRecord, Direction::Backward);
     }
 }
 

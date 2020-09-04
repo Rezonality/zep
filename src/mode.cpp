@@ -736,7 +736,7 @@ bool ZepMode::GetCommand(CommandContext& context)
     // Control
     else if (mappedCommand == id_MotionNextMarker)
     {
-        auto pFound = buffer.FindNextMarker(GetCurrentWindow()->GetBufferCursor(), SearchDirection::Forward, RangeMarkerType::Message);
+        auto pFound = buffer.FindNextMarker(GetCurrentWindow()->GetBufferCursor(), Direction::Forward, RangeMarkerType::Message);
         if (pFound)
         {
             GetCurrentWindow()->SetBufferCursor(GlyphIterator(&context.buffer, pFound->range.first));
@@ -745,7 +745,7 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_MotionPreviousMarker)
     {
-        auto pFound = buffer.FindNextMarker(GetCurrentWindow()->GetBufferCursor(), SearchDirection::Backward, RangeMarkerType::Message);
+        auto pFound = buffer.FindNextMarker(GetCurrentWindow()->GetBufferCursor(), Direction::Backward, RangeMarkerType::Message);
         if (pFound)
         {
             GetCurrentWindow()->SetBufferCursor(GlyphIterator(&context.buffer, pFound->range.first));
@@ -763,7 +763,7 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_MotionPreviousSearch)
     {
-        auto pFound = buffer.FindNextMarker(GetCurrentWindow()->GetBufferCursor(), m_lastSearchDirection == SearchDirection::Forward ? SearchDirection::Backward : SearchDirection::Forward, RangeMarkerType::Search);
+        auto pFound = buffer.FindNextMarker(GetCurrentWindow()->GetBufferCursor(), m_lastSearchDirection == Direction::Forward ? Direction::Backward : Direction::Forward, RangeMarkerType::Search);
         if (pFound)
         {
             GetCurrentWindow()->SetBufferCursor(GlyphIterator(&context.buffer, pFound->range.first));
@@ -1013,13 +1013,13 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_MotionStandardRightWord)
     {
-        auto target = buffer.StandardCtrlMotion(bufferCursor, SearchDirection::Forward);
+        auto target = buffer.StandardCtrlMotion(bufferCursor, Direction::Forward);
         GetCurrentWindow()->SetBufferCursor(target.second);
         return true;
     }
     else if (mappedCommand == id_MotionStandardLeftWord)
     {
-        auto target = buffer.StandardCtrlMotion(bufferCursor, SearchDirection::Backward);
+        auto target = buffer.StandardCtrlMotion(bufferCursor, Direction::Backward);
         GetCurrentWindow()->SetBufferCursor(target.second);
         return true;
     }
@@ -1030,7 +1030,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         {
             m_visualBegin = GetCurrentWindow()->GetBufferCursor();
         }
-        auto target = buffer.StandardCtrlMotion(bufferCursor, SearchDirection::Forward);
+        auto target = buffer.StandardCtrlMotion(bufferCursor, Direction::Forward);
         GetCurrentWindow()->SetBufferCursor(target.second);
         UpdateVisualSelection();
         return true;
@@ -1042,7 +1042,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         {
             m_visualBegin = GetCurrentWindow()->GetBufferCursor();
         }
-        auto target = buffer.StandardCtrlMotion(bufferCursor, SearchDirection::Backward);
+        auto target = buffer.StandardCtrlMotion(bufferCursor, Direction::Backward);
         GetCurrentWindow()->SetBufferCursor(target.second);
         UpdateVisualSelection();
         return true;
@@ -1109,49 +1109,49 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_MotionWord)
     {
-        auto target = context.buffer.WordMotion(context.bufferCursor, SearchType::Word, SearchDirection::Forward);
+        auto target = context.buffer.WordMotion(context.bufferCursor, SearchType::Word, Direction::Forward);
         GetCurrentWindow()->SetBufferCursor(target);
         return true;
     }
     else if (mappedCommand == id_MotionWORD)
     {
-        auto target = context.buffer.WordMotion(context.bufferCursor, SearchType::WORD, SearchDirection::Forward);
+        auto target = context.buffer.WordMotion(context.bufferCursor, SearchType::WORD, Direction::Forward);
         GetCurrentWindow()->SetBufferCursor(target);
         return true;
     }
     else if (mappedCommand == id_MotionBackWord)
     {
-        auto target = context.buffer.WordMotion(context.bufferCursor, SearchType::Word, SearchDirection::Backward);
+        auto target = context.buffer.WordMotion(context.bufferCursor, SearchType::Word, Direction::Backward);
         GetCurrentWindow()->SetBufferCursor(target);
         return true;
     }
     else if (mappedCommand == id_MotionBackWORD)
     {
-        auto target = context.buffer.WordMotion(context.bufferCursor, SearchType::WORD, SearchDirection::Backward);
+        auto target = context.buffer.WordMotion(context.bufferCursor, SearchType::WORD, Direction::Backward);
         GetCurrentWindow()->SetBufferCursor(target);
         return true;
     }
     else if (mappedCommand == id_MotionEndWord)
     {
-        auto target = context.buffer.EndWordMotion(context.bufferCursor, SearchType::Word, SearchDirection::Forward);
+        auto target = context.buffer.EndWordMotion(context.bufferCursor, SearchType::Word, Direction::Forward);
         GetCurrentWindow()->SetBufferCursor(target);
         return true;
     }
     else if (mappedCommand == id_MotionEndWORD)
     {
-        auto target = context.buffer.EndWordMotion(context.bufferCursor, SearchType::WORD, SearchDirection::Forward);
+        auto target = context.buffer.EndWordMotion(context.bufferCursor, SearchType::WORD, Direction::Forward);
         GetCurrentWindow()->SetBufferCursor(target);
         return true;
     }
     else if (mappedCommand == id_MotionBackEndWord)
     {
-        auto target = context.buffer.EndWordMotion(context.bufferCursor, SearchType::Word, SearchDirection::Backward);
+        auto target = context.buffer.EndWordMotion(context.bufferCursor, SearchType::Word, Direction::Backward);
         GetCurrentWindow()->SetBufferCursor(target);
         return true;
     }
     else if (mappedCommand == id_MotionBackEndWORD)
     {
-        auto target = context.buffer.EndWordMotion(context.bufferCursor, SearchType::WORD, SearchDirection::Backward);
+        auto target = context.buffer.EndWordMotion(context.bufferCursor, SearchType::WORD, Direction::Backward);
         GetCurrentWindow()->SetBufferCursor(target);
         return true;
     }
@@ -1627,9 +1627,9 @@ bool ZepMode::GetCommand(CommandContext& context)
     {
         if (!context.keymap.captureChars.empty())
         {
-            GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (const uint8_t*)&context.keymap.captureChars[0], SearchDirection::Forward));
+            GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (const uint8_t*)&context.keymap.captureChars[0], Direction::Forward));
             m_lastFind = context.keymap.captureChars[0];
-            m_lastFindDirection = SearchDirection::Forward;
+            m_lastFindDirection = Direction::Forward;
         }
         return true;
     }
@@ -1637,9 +1637,9 @@ bool ZepMode::GetCommand(CommandContext& context)
     {
         if (!context.keymap.captureChars.empty())
         {
-            GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (const uint8_t*)&context.keymap.captureChars[0], SearchDirection::Backward));
+            GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (const uint8_t*)&context.keymap.captureChars[0], Direction::Backward));
             m_lastFind = context.keymap.captureChars[0];
-            m_lastFindDirection = SearchDirection::Backward;
+            m_lastFindDirection = Direction::Backward;
         }
         return true;
     }
@@ -1708,7 +1708,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         if (!context.keymap.captureChars.empty())
         {
             context.beginRange = bufferCursor;
-            context.endRange = buffer.FindOnLineMotion(bufferCursor, (const uint8_t*)&context.keymap.captureChars[0], SearchDirection::Forward);
+            context.endRange = buffer.FindOnLineMotion(bufferCursor, (const uint8_t*)&context.keymap.captureChars[0], Direction::Forward);
             context.op = CommandOperation::Delete;
             context.commandResult.modeSwitch = EditorMode::Insert;
         }
@@ -1718,7 +1718,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         if (!context.keymap.captureChars.empty())
         {
             context.beginRange = bufferCursor;
-            context.endRange = buffer.FindOnLineMotion(bufferCursor, (const uint8_t*)&context.keymap.captureChars[0], SearchDirection::Forward);
+            context.endRange = buffer.FindOnLineMotion(bufferCursor, (const uint8_t*)&context.keymap.captureChars[0], Direction::Forward);
             context.op = CommandOperation::Delete;
         }
     }
@@ -1838,23 +1838,23 @@ bool ZepMode::GetOperationRange(const std::string& op, EditorMode currentMode, G
     else if (op == "w")
     {
         beginRange = bufferCursor;
-        endRange = buffer.WordMotion(bufferCursor, SearchType::Word, SearchDirection::Forward);
+        endRange = buffer.WordMotion(bufferCursor, SearchType::Word, Direction::Forward);
     }
     else if (op == "cw")
     {
         // Change word doesn't extend over the next space
         beginRange = bufferCursor;
-        endRange = buffer.ChangeWordMotion(bufferCursor, SearchType::Word, SearchDirection::Forward);
+        endRange = buffer.ChangeWordMotion(bufferCursor, SearchType::Word, Direction::Forward);
     }
     else if (op == "cW")
     {
         beginRange = bufferCursor;
-        endRange = buffer.ChangeWordMotion(bufferCursor, SearchType::WORD, SearchDirection::Forward);
+        endRange = buffer.ChangeWordMotion(bufferCursor, SearchType::WORD, Direction::Forward);
     }
     else if (op == "W")
     {
         beginRange = bufferCursor;
-        endRange = buffer.WordMotion(bufferCursor, SearchType::WORD, SearchDirection::Forward);
+        endRange = buffer.WordMotion(bufferCursor, SearchType::WORD, Direction::Forward);
     }
     else if (op == "aw")
     {
@@ -2162,9 +2162,10 @@ bool ZepMode::HandleExCommand(std::string strCommand)
 
             if (GetCurrentWindow()->GetBuffer().HasSelection())
             {
-                auto range = GetCurrentWindow()->GetBuffer().GetSelection();
+                // Markers are exclusive
+                auto range = GetCurrentWindow()->GetBuffer().GetInclusiveSelection();
                 start = range.first;
-                end = range.second;
+                end = range.second.Peek(1);
             }
             else
             {
@@ -2374,12 +2375,12 @@ bool ZepMode::HandleExCommand(std::string strCommand)
                 }
             }
 
-            SearchDirection dir = (m_currentCommand[0] == '/') ? SearchDirection::Forward : SearchDirection::Backward;
+            Direction dir = (m_currentCommand[0] == '/') ? Direction::Forward : Direction::Backward;
             m_lastSearchDirection = dir;
 
             // Find the one on or in front of the cursor, in either direction.
             auto startLocation = m_exCommandStartLocation;
-            if (dir == SearchDirection::Forward)
+            if (dir == Direction::Forward)
                 startLocation--;
             else
                 startLocation++;

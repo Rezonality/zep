@@ -226,8 +226,8 @@ protected:
     KeyMap m_visualMap;
     KeyMap m_insertMap;
     
-    SearchDirection m_lastFindDirection = SearchDirection::Forward;
-    SearchDirection m_lastSearchDirection = SearchDirection::Forward;
+    Direction m_lastFindDirection = Direction::Forward;
+    Direction m_lastSearchDirection = Direction::Forward;
 
     std::string m_currentCommand;
     std::string m_lastInsertString;

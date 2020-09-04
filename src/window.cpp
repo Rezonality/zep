@@ -780,7 +780,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
             display.SetClipRect(m_indicatorRegion->rect);
 
             // Show any markers in the left indicator region
-            m_pBuffer->ForEachMarker(RangeMarkerType::Message, SearchDirection::Forward, GlyphIterator(m_pBuffer, lineInfo.lineByteRange.first), GlyphIterator(m_pBuffer, lineInfo.lineByteRange.second), [&](const std::shared_ptr<RangeMarker>& marker) {
+            m_pBuffer->ForEachMarker(RangeMarkerType::Message, Direction::Forward, GlyphIterator(m_pBuffer, lineInfo.lineByteRange.first), GlyphIterator(m_pBuffer, lineInfo.lineByteRange.second), [&](const std::shared_ptr<RangeMarker>& marker) {
                 // >|< Text.  This is the bit between the arrows <-.  A vertical bar in the 'margin'
                 if (marker->displayType & RangeMarkerDisplayType::Indicator)
                 {
@@ -855,7 +855,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
             }
 
             // Show any markers
-            m_pBuffer->ForEachMarker(RangeMarkerType::All, SearchDirection::Forward, GlyphIterator(m_pBuffer, lineInfo.lineByteRange.first), GlyphIterator(m_pBuffer, lineInfo.lineByteRange.second), [&](const std::shared_ptr<RangeMarker>& marker) {
+            m_pBuffer->ForEachMarker(RangeMarkerType::All, Direction::Forward, GlyphIterator(m_pBuffer, lineInfo.lineByteRange.first), GlyphIterator(m_pBuffer, lineInfo.lineByteRange.second), [&](const std::shared_ptr<RangeMarker>& marker) {
                 // Don't show hidden markers
                 if (marker->displayType == RangeMarkerDisplayType::Hidden)
                 {
@@ -914,7 +914,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
             {
                 if (GetBuffer().HasSelection())
                 {
-                    auto sel = m_pBuffer->GetSelection();
+                    auto sel = m_pBuffer->GetInclusiveSelection();
 
                     // Visual selection is 'inclusive' - it starts/ends on the cursor
                     if (sel.ContainsInclusiveLocation(cp.iterator))
@@ -1487,7 +1487,7 @@ void ZepWindow::Display()
             return ret;
         };
 
-        m_pBuffer->ForEachMarker(RangeMarkerType::All, SearchDirection::Forward, GlyphIterator(m_pBuffer, cursorLine.lineByteRange.first), GlyphIterator(m_pBuffer, cursorLine.lineByteRange.second), [&](const std::shared_ptr<RangeMarker>& marker) {
+        m_pBuffer->ForEachMarker(RangeMarkerType::All, Direction::Forward, GlyphIterator(m_pBuffer, cursorLine.lineByteRange.first), GlyphIterator(m_pBuffer, cursorLine.lineByteRange.second), [&](const std::shared_ptr<RangeMarker>& marker) {
             if (marker->displayType == RangeMarkerDisplayType::Hidden)
             {
                 return true;
