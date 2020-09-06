@@ -1436,13 +1436,13 @@ void ZepBuffer::SetMode(std::shared_ptr<ZepMode> spMode)
     m_spMode = spMode;
 }
 
-tRangeMarkers ZepBuffer::GetRangeMarkersOnLine(long line) const
+tRangeMarkers ZepBuffer::GetRangeMarkersOnLine(uint32_t markerTypes, long line) const
 {
     ByteRange range;
     GetLineOffsets(line, range);
 
     tRangeMarkers rangeMarkers;
-    ForEachMarker(RangeMarkerType::All,
+    ForEachMarker(markerTypes,
         Zep::Direction::Forward,
         GlyphIterator(this, range.first), GlyphIterator(this, range.second),
         [&](const std::shared_ptr<RangeMarker>& marker) {

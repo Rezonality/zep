@@ -34,6 +34,7 @@ struct SpanInfo
     int spanLineIndex = 0;                         // The index of this line in spans; might be more than buffer index
     NVec2f padding = NVec2f(1.0f, 1.0f);           // Padding above and below the line
     bool isSplitContinuation = false;
+    NVec2f lineWidgetHeights;
 
     float FullLineHeightPx() const
     {
@@ -200,7 +201,7 @@ private:
 
     void DrawLineWidgets(SpanInfo& lineInfo);
 
-    float GetLineWidgetHeight(long line);
+    float GetLineWidgetHeight(const tRangeMarkers& markers);
     
     bool IsActiveWindow() const;
 

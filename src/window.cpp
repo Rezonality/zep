@@ -339,18 +339,20 @@ void ZepWindow::GetCharPointer(GlyphIterator loc, const uint8_t*& pBegin, const 
     pEnd = pBegin + utf8_codepoint_length(*pBegin);
 }
 
-float ZepWindow::GetLineWidgetHeight(long line)
+float ZepWindow::GetLineWidgetHeight(const tRangeMarkers& markers)
 {
-    float height = 0.0f;// DPI_Y((float)GetEditor().GetConfig().lineMargins.x);
-    auto markers = m_pBuffer->GetRangeMarkersOnLine(line);
+    float height = 0.0f;
     for (auto& [index, markerSet] : markers)
     {
         for (auto& spMarker : markerSet)
         {
-            if (spMarker->spLineWidget == nullptr)
+            if (spMarker->spWidget == nullptr)
                 continue;
 
-            auto size = DPI_VEC2(spMarker->spLineWidget->GetSize());
+            if (spMarker->markerType != RangeMarkerType::LineWidget)
+                continue;
+
+            auto size = DPI_VEC2(spMarker->spWidget->GetSize());
             auto margins = DPI_VEC2(GetEditor().GetConfig().widgetMargins);
 
             // Each widget has a margin then its height then the bottom
@@ -408,14 +410,17 @@ void ZepWindow::UpdateLineSpans()
         // Padding at the top of the line 
         NVec2f topPadding = NVec2f(DPI_Y((float)GetEditor().GetConfig().lineMargins.x), DPI_Y((float)GetEditor().GetConfig().lineMargins.y));
        
+        auto lineWidgetHeight = GetLineWidgetHeight(m_pBuffer->GetRangeMarkersOnLine(RangeMarkerType::LineWidget, bufferLine));
+
         // Move the line down by the height of the widget
-        bufferPosYPx += GetLineWidgetHeight(bufferLine);
+        bufferPosYPx += lineWidgetHeight;
 
         // text line height is top/bottom pad
         float fullLineHeight = textHeight + topPadding.x + topPadding.y;
 
         // Start a new line
         SpanInfo* lineInfo = new SpanInfo();
+        lineInfo->lineWidgetHeights = NVec2f(lineWidgetHeight, 0.0f);
         lineInfo->bufferLineNumber = bufferLine;
         lineInfo->spanLineIndex = spanLine;
         lineInfo->lineByteRange.first = lineByteRange.first;
@@ -647,7 +652,7 @@ void ZepWindow::DrawLineWidgets(SpanInfo& lineInfo)
     if (lineInfo.isSplitContinuation)
         return;
 
-    auto markers = m_pBuffer->GetRangeMarkersOnLine(lineInfo.bufferLineNumber);
+    auto markers = m_pBuffer->GetRangeMarkersOnLine(RangeMarkerType::LineWidget, lineInfo.bufferLineNumber);
     if (markers.empty())
     {
         return;
@@ -656,7 +661,7 @@ void ZepWindow::DrawLineWidgets(SpanInfo& lineInfo)
     auto lineMargins = DPI_VEC2(GetEditor().GetConfig().lineMargins);
     auto widgetMargins = DPI_VEC2(GetEditor().GetConfig().widgetMargins);
 
-    float widgetHeight = GetLineWidgetHeight(lineInfo.bufferLineNumber);
+    float widgetHeight = lineInfo.lineWidgetHeights.x;
     NVec2f linePx = GetSpanPixelRange(lineInfo);
     float currentY = 0.0f;// lineMargins.x;
 
@@ -664,15 +669,15 @@ void ZepWindow::DrawLineWidgets(SpanInfo& lineInfo)
     {
         for (auto& spMarker : markerSet)
         {
-            if (spMarker->spLineWidget == nullptr)
+            if (spMarker->spWidget == nullptr)
             {
                 continue;
             }
 
-            auto widgetSize = DPI_VEC2(spMarker->spLineWidget->GetSize());
+            auto widgetSize = DPI_VEC2(spMarker->spWidget->GetSize());
 
             currentY += widgetMargins.x;
-            spMarker->spLineWidget->Draw(*m_pBuffer, NVec2f(linePx.x, ToWindowY(currentY + lineInfo.yOffsetPx - widgetHeight)));
+            spMarker->spWidget->Draw(*m_pBuffer, NVec2f(linePx.x, ToWindowY(currentY + lineInfo.yOffsetPx - widgetHeight)));
             currentY += widgetSize.y;
             currentY += widgetMargins.y;
         }
@@ -865,14 +870,22 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                 auto sel = marker->range;
                 if (marker->ContainsLocation(cp.iterator))
                 {
-                    if (marker->displayType & RangeMarkerDisplayType::Underline)
+                    if (marker->markerType == RangeMarkerType::Message ||
+                        marker->markerType == RangeMarkerType::Search)
                     {
-                        display.DrawRectFilled(NRectf(NVec2f(screenPosX, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx()) - 1), NVec2f(screenPosX + cp.size.x, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx()))), m_pBuffer->GetTheme().GetColor(marker->highlightColor));
-                    }
+                        if (marker->displayType & RangeMarkerDisplayType::Underline)
+                        {
+                            display.DrawRectFilled(NRectf(NVec2f(screenPosX, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx()) - 1), NVec2f(screenPosX + cp.size.x, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx()))), m_pBuffer->GetTheme().GetColor(marker->highlightColor));
+                        }
 
-                    if (marker->displayType & RangeMarkerDisplayType::Background)
+                        if (marker->displayType & RangeMarkerDisplayType::Background)
+                        {
+                            display.DrawRectFilled(charRect, m_pBuffer->GetTheme().GetColor(marker->backgroundColor));
+                        }
+                    }
+                    else if (marker->markerType & RangeMarkerType::Widget)
                     {
-                        display.DrawRectFilled(charRect, m_pBuffer->GetTheme().GetColor(marker->backgroundColor));
+                        marker->spWidget->DrawInline(*m_pBuffer, charRect);
                     }
 
                     // If this marker has an associated tooltip, pop it up after a time delay
