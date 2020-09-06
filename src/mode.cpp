@@ -2136,7 +2136,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             spMarker->range = ByteRange(bufferCursor.Index(), bufferCursor.Peek(1).Index());
             spMarker->spWidget = pPicker;
             spMarker->markerType = RangeMarkerType::Widget;
-            spMarker->displayType = RangeMarkerDisplayType::Hidden;
+            spMarker->displayType = RangeMarkerDisplayType::Background;
             buffer.AddRangeMarker(spMarker);
         }
         else if (strCommand.find(":ZTestFlash") == 0)

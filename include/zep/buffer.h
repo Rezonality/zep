@@ -139,6 +139,7 @@ struct RangeMarker
     std::string description;
     ToolTipPos tipPos = ToolTipPos::AboveLine;
     std::shared_ptr<IWidget> spWidget;
+    NVec2f inlineSize;
 
     bool ContainsLocation(GlyphIterator loc) const
     {
