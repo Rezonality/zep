@@ -25,6 +25,12 @@ void ZepDisplay::BuildCharCache()
         m_charCacheASCII[i] = GetTextSize(&ch, &ch + 1);
     }
     m_charCacheDirty = false;
+    
+    m_dotSize = m_defaultCharSize / 8.0f;
+    m_dotSize.x = std::min(m_dotSize.x, m_dotSize.y);
+    m_dotSize.y = std::min(m_dotSize.x, m_dotSize.y);
+    m_dotSize.x = std::max(1.0f, m_dotSize.x);
+    m_dotSize.y = std::max(1.0f, m_dotSize.y);
 }
 
 const NVec2f& ZepDisplay::GetDefaultCharSize()
@@ -33,7 +39,13 @@ const NVec2f& ZepDisplay::GetDefaultCharSize()
     {
         BuildCharCache();
     }
+    
     return m_defaultCharSize;
+}
+
+const NVec2f& ZepDisplay::GetDotSize()
+{
+    return m_dotSize;
 }
 
 uint32_t ZepDisplay::GetCodePointCount(const uint8_t* pCh, const uint8_t* pEnd) const

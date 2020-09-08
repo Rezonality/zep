@@ -40,6 +40,7 @@ public:
     virtual uint32_t GetCodePointCount(const uint8_t* pCh, const uint8_t* pEnd) const;
     virtual NVec2f GetCharSize(const uint8_t* pChar);
     virtual const NVec2f& GetDefaultCharSize();
+    virtual const NVec2f& GetDotSize();
     virtual void InvalidateCharCache();
     virtual void DrawRect(const NRectf& rc, const NVec4f& col = NVec4f(1.0f)) const;
 
@@ -52,6 +53,7 @@ protected:
     NVec2f m_charCacheASCII[256];
 
     NVec2f m_defaultCharSize;
+    NVec2f m_dotSize;
 };
 
 // A NULL renderer, used for testing

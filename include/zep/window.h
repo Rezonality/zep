@@ -172,7 +172,7 @@ private:
     NVec2i BufferToDisplay(const GlyphIterator& location);
 
     void ScrollToCursor();
-    bool IsInsideTextRegion(NVec2i pos) const;
+    bool IsInsideVisibleText(NVec2i pos) const;
 
     enum class SpecialChar
     {
