@@ -135,6 +135,7 @@ struct RangeMarker
     ThemeColor highlightColor = ThemeColor::Background;
     uint32_t displayType = RangeMarkerDisplayType::All;
     uint32_t markerType = RangeMarkerType::Message;
+    uint32_t displayRow = 0;
     std::string name;
     std::string description;
     ToolTipPos tipPos = ToolTipPos::AboveLine;

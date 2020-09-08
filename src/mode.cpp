@@ -2168,6 +2168,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
         }
         else if (strCommand.find(":ZTestMarkers") == 0)
         {
+            static uint32_t unique = 0;
             int markerSelection = 0;
             auto strTok = string_split(strCommand, " ");
             if (strTok.size() > 1)
@@ -2214,7 +2215,8 @@ bool ZepMode::HandleExCommand(std::string strCommand)
                 spMarker->textColor = ThemeColor::Text;
                 spMarker->name = "Underline Marker";
                 spMarker->description = "This is an example tooltip\nThey can be added to any range of characters";
-                spMarker->displayType = RangeMarkerDisplayType::Tooltip | RangeMarkerDisplayType::Underline | RangeMarkerDisplayType::Indicator;
+                spMarker->highlightColor = GetEditor().GetTheme().GetUniqueColor(unique++);
+                spMarker->displayType = RangeMarkerDisplayType::Tooltip | RangeMarkerDisplayType::Underline | RangeMarkerDisplayType::CursorTip;
                 break;
             case 2:
                 spMarker->highlightColor = ThemeColor::Warning;

@@ -18,6 +18,7 @@ struct Region;
 
 struct LineCharInfo
 {
+    NVec2f pos;
     NVec2f size;
     GlyphIterator iterator;
 };
@@ -189,8 +190,10 @@ private:
     // Display
     void DisplayToolTip(const NVec2f& pos, const RangeMarker& marker) const;
     bool DisplayLine(SpanInfo& lineInfo, int displayPass);
+    void DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax);
     void DisplayScrollers();
     void DisplayGridMarkers();
+    void DisplayLineNumbers();
 
     void DisableToolTipTillMove();
 
@@ -201,7 +204,7 @@ private:
 
     void DrawLineWidgets(SpanInfo& lineInfo);
 
-    float GetLineWidgetHeight(const tRangeMarkers& markers);
+    NVec2f ArrangeLineMarkers(tRangeMarkers& markers);
     
     bool IsActiveWindow() const;
 
