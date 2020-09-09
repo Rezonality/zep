@@ -1,3 +1,4 @@
+IF (BUILD_EXTENSIONS)
 project(ZepExtensions
     VERSION 0.1.0.0)
 
@@ -72,3 +73,5 @@ install(DIRECTORY ${ZEP_ROOT}/extensions/orca
 )
 install(DIRECTORY ${ZEP_ROOT}/extensions/repl
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/zep/extensions)
+
+endif()
