@@ -202,7 +202,7 @@ private:
 
     void PlaceToolTip(const NVec2f& pos, ToolTipPos location, uint32_t lineGap, const std::shared_ptr<RangeMarker> spMarker);
 
-    void DrawLineWidgets(SpanInfo& lineInfo);
+    void DrawAboveLineWidgets(SpanInfo& lineInfo);
 
     NVec2f ArrangeLineMarkers(tRangeMarkers& markers);
     

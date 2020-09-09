@@ -707,7 +707,7 @@ NVec4f ZepWindow::GetBlendedColor(ThemeColor color) const
     return col;
 }
 
-void ZepWindow::DrawLineWidgets(SpanInfo& lineInfo)
+void ZepWindow::DrawAboveLineWidgets(SpanInfo& lineInfo)
 {
     if (lineInfo.isSplitContinuation)
         return;
@@ -766,7 +766,8 @@ void ZepWindow::DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax)
 
     NVec2f linePx = GetSpanPixelRange(lineInfo);
 
-    if (lineInfo.lineByteRange.ContainsLocation(GetBufferCursor().Index()))
+    if (lineInfo.lineByteRange.ContainsLocation(GetBufferCursor().Index()) &&
+        IsActiveWindow())
     {
         // Note; We fill below the line for underlines for now, to make them standout in minimal mode
         display.DrawRectFilled(
@@ -1009,32 +1010,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
     if (displayPass == WindowPass::Background)
     {
         display.SetClipRect(m_textRegion->rect);
-
         DisplayLineBackground(lineInfo, pSyntax);
-
-        /*
-        // Here we tell the syntax coloring about the active line
-        if (pSyntax)
-        {
-            pSyntax->SetActiveLine(ByteRange(0, 0));
-            if (lineInfo.BufferCursorInside(m_bufferCursor))
-            {
-                if (IsActiveWindow())
-                {
-                    // Don't draw over the visual region
-                    if (GetBuffer().GetMode()->GetEditorMode() != EditorMode::Visual)
-                    {
-
-                        if (IsInsideTextRegion(cursorCL))
-                        {
-                            auto& cursorLine = GetCursorLineInfo(cursorCL.y);
-                            pSyntax->SetActiveLine(cursorLine.lineByteRange);
-                        }
-                    }
-                }
-            }
-        }
-        */
     }
 
     display.SetClipRect(m_textRegion->rect);
@@ -1122,7 +1098,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
         {
             if (lineStart)
             {
-                DrawLineWidgets(lineInfo);
+                DrawAboveLineWidgets(lineInfo);
             }
 
             if ((special != SpecialChar::Hidden) || (GetWindowFlags() & WindowFlags::ShowCR))
