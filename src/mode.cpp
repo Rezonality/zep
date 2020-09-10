@@ -1733,7 +1733,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         // If not a single char, then we are trying to input a special, which isn't allowed
         // TOOD: Cleaner detection of this?
         // Special case for 'j + another character' which is an insert
-        if (true)//context.keymap.commandWithoutGroups.size() == 1 || ((context.keymap.commandWithoutGroups.size() == 2) && context.keymap.commandWithoutGroups[0] == 'j'))
+        if (true) //context.keymap.commandWithoutGroups.size() == 1 || ((context.keymap.commandWithoutGroups.size() == 2) && context.keymap.commandWithoutGroups[0] == 'j'))
         {
             context.beginRange = context.bufferCursor;
             context.tempReg.text = context.keymap.commandWithoutGroups;
@@ -1764,7 +1764,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             context.buffer,
             context.beginRange,
             context.endRange,
-            context.bufferCursor, 
+            context.bufferCursor,
             context.cursorAfterOverride);
         context.commandResult.spCommand = std::static_pointer_cast<ZepCommand>(cmd);
         context.commandResult.flags = ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup);
@@ -2115,6 +2115,19 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             {
                 GetEditor().GetActiveTabWindow()->CloseActiveWindow();
             }
+        }
+        else if (strCommand.find(":ZConfigPath") == 0)
+        {
+            GetEditor().SetCommandText(GetEditor().GetFileSystem().GetConfigPath().string());
+        }
+        else if (strCommand.find(":ZConfig") == 0)
+        {
+            auto pBuffer = GetEditor().GetFileBuffer(GetEditor().GetFileSystem().GetConfigPath() / "zep.cfg");
+            GetCurrentWindow()->SetBuffer(pBuffer);
+        }
+        else if (strCommand.find(":cd") == 0)
+        {
+            GetEditor().SetCommandText(GetEditor().GetFileSystem().GetWorkingDirectory().string());
         }
         else if (strCommand.find(":ZTestFloatSlider") == 0)
         {

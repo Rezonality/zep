@@ -1,13 +1,13 @@
 #include "zep/editor.h"
 #include "zep/filesystem.h"
+#include "zep/indexer.h"
 #include "zep/mode_search.h"
 #include "zep/mode_standard.h"
 #include "zep/mode_tree.h"
 #include "zep/regress.h"
-#include "zep/syntax_providers.h"
 #include "zep/syntax.h"
+#include "zep/syntax_providers.h"
 #include "zep/tab_window.h"
-#include "zep/indexer.h"
 
 #include "config_app.h"
 
@@ -21,7 +21,7 @@ Zep::ZLogger logger = { true, Zep::ZLT::DBG };
 Zep::ZLogger logger = { false, Zep::ZLT::INFO };
 #endif
 bool Zep::ZLog::disabled = false;
-}
+} // namespace Zep
 
 namespace Zep
 {
@@ -37,17 +37,16 @@ ZepComponent::~ZepComponent()
     m_editor.UnRegisterCallback(this);
 }
 
-ZepEditor::ZepEditor(ZepDisplay* pDisplay, const ZepPath& root, uint32_t flags, IZepFileSystem* pFileSystem)
+ZepEditor::ZepEditor(ZepDisplay* pDisplay, const ZepPath& configRoot, uint32_t flags, IZepFileSystem* pFileSystem)
     : m_pDisplay(pDisplay)
     , m_pFileSystem(pFileSystem)
     , m_flags(flags)
-    , m_rootPath(root)
 {
 
 #if defined(ZEP_FEATURE_CPP_FILE_SYSTEM)
     if (m_pFileSystem == nullptr)
     {
-        m_pFileSystem = new ZepFileSystemCPP();
+        m_pFileSystem = new ZepFileSystemCPP(configRoot);
     }
 #else
     if (m_pFileSystem == nullptr)
@@ -66,7 +65,7 @@ ZepEditor::ZepEditor(ZepDisplay* pDisplay, const ZepPath& root, uint32_t flags, 
         m_threadPool = std::make_unique<ThreadPool>();
     }
 
-    LoadConfig(root / "zep.cfg");
+    LoadConfig(m_pFileSystem->GetConfigPath() / "zep.cfg");
 
     m_spTheme = std::make_shared<ZepTheme>();
 
@@ -405,19 +404,30 @@ ZepBuffer* ZepEditor::InitWithFileOrDir(const std::string& str)
 {
     ZepPath startPath(str);
 
-    if (GetFileSystem().Exists(startPath))
+    auto& fs = GetFileSystem();
+    if (fs.Exists(startPath))
     {
-        startPath = GetFileSystem().Canonical(startPath);
+        startPath = fs.Canonical(startPath);
+
+        // If a directory, just return the default already created buffer.
+        if (fs.IsDirectory(startPath))
+        {
+            // Remember the working directory 
+            fs.SetWorkingDirectory(startPath);
+            return &GetActiveTabWindow()->GetActiveWindow()->GetBuffer();
+        }
+        else
+        {
+            // Try to get the working directory from the parent path of the passed file
+            auto parentDir = startPath.parent_path();
+            if (fs.Exists(parentDir) && fs.IsDirectory(parentDir))
+            {
+                fs.SetWorkingDirectory(startPath.parent_path());
+            }
+        }
     }
 
-    // If a directory, just return the default already created buffer.
-    if (GetFileSystem().IsDirectory(startPath))
-    {
-        GetFileSystem().SetWorkingDirectory(startPath);
-        return &GetActiveTabWindow()->GetActiveWindow()->GetBuffer();
-    }
-
-    // Get a buffer for the start file
+    // Get a buffer for the start file; even if the path is not valid; it can be created but not saved
     auto pFileBuffer = GetFileBuffer(startPath);
     auto pTab = EnsureTab();
     pTab->AddWindow(pFileBuffer, nullptr, RegionLayoutType::HBox);
@@ -1256,7 +1266,7 @@ void ZepEditor::SetFlags(uint32_t flags)
         RequestRefresh();
     }
 }
-    
+
 std::vector<const KeyMap*> ZepEditor::GetGlobalKeyMaps(ZepMode& mode)
 {
     std::vector<const KeyMap*> maps;

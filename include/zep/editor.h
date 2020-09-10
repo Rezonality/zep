@@ -268,6 +268,7 @@ public:
     ZepExCommand* FindExCommand(const StringId& strName);
     void SetGlobalMode(const std::string& currentMode);
     ZepMode* GetSecondaryMode() const;
+    const ZepPath& GetConfigRoot() const;
 
     std::vector<const KeyMap*> GetGlobalKeyMaps(ZepMode& mode);
 
@@ -440,7 +441,6 @@ private:
 
     NVec2f m_mousePos = NVec2f(0.0f);
     NVec2f m_pixelScale = NVec2f(1.0f);
-    ZepPath m_rootPath;
 
     // Config
     EditorConfig m_config;

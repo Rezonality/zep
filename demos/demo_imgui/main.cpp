@@ -52,6 +52,7 @@
 #include "zep/tab_window.h"
 #include "zep/theme.h"
 #include "zep/window.h"
+#include "zep/filesystem.h"
 
 #include "orca/mode_orca.h"
 #include "repl/mode_repl.h"
@@ -154,22 +155,9 @@ bool ReadCommandLine(int argc, char** argv, int& exitCode)
 // A helper struct to init the editor and handle callbacks
 struct ZepContainer : public IZepComponent, public IZepReplProvider
 {
-    ZepContainer(const std::string& startupFilePath)
-        : spEditor(std::make_unique<ZepEditor_ImGui>(ZEP_ROOT))
+    ZepContainer(const std::string& startupFilePath, const std::string& configPath)
+        : spEditor(std::make_unique<ZepEditor_ImGui>(configPath))
     {
-
-        // File watcher not used on apple yet ; needs investigating as to why it doesn't compile/run
-#ifndef __APPLE__
-        MUtils::Watcher::Instance().AddWatch(
-            ZEP_ROOT, [&](const ZepPath& path) {
-                if (spEditor)
-                {
-                    spEditor->OnFileChanged(ZepPath(ZEP_ROOT) / path);
-                }
-            },
-            false);
-#endif
-
         chibi_init(scheme, SDL_GetBasePath());
 
         spEditor->RegisterCallback(this);
@@ -193,6 +181,21 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         {
             spEditor->InitWithText("Shader.vert", shader);
         }
+        
+        // File watcher not used on apple yet ; needs investigating as to why it doesn't compile/run
+        // The watcher is being used currently to update the config path, but clients may want to do more interesting things
+        // by setting up watches for the current dir, etc.
+#ifndef __APPLE__
+        MUtils::Watcher::Instance().AddWatch(
+            spEditor->GetFileSystem().GetConfigPath(), [&](const ZepPath& path) {
+                if (spEditor)
+                {
+                    ZLOG(DBG, "Config File Change: " << path.string());
+                    spEditor->OnFileChanged(spEditor->GetFileSystem().GetConfigPath() / path);
+                }
+            },
+            false);
+#endif
     }
 
     ZepContainer()
@@ -462,7 +465,7 @@ int main(int argc, char** argv)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // ** Zep specific code
-    ZepContainer zep(startupFile);
+    ZepContainer zep(startupFile, SDL_GetBasePath());
 
     MUtils::TimeProvider::Instance().StartThread();
 

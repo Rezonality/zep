@@ -12,7 +12,8 @@ if (NOT ICON_NAME)
 endif()
 
 set(RESOURCE_DEPLOY_FILES 
-    ${MUTILS_INCLUDE_DIR}/chibi/init-7.scm)
+    ${MUTILS_INCLUDE_DIR}/chibi/init-7.scm
+    ${ZEP_ROOT}/zep.cfg)
 
 if (APPLE)
     set(ICON_FILE ${RESOURCE_FOLDER}/${ICON_NAME}.icns)

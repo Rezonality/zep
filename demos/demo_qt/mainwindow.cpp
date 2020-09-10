@@ -71,7 +71,7 @@ MainWindow::MainWindow()
 
     chibi_init(scheme, qApp->applicationDirPath().toStdString());
 
-    auto* pWidget = new ZepWidget_Qt(this, ZEP_ROOT, DemoFontPtSize);
+    auto* pWidget = new ZepWidget_Qt(this, qApp->applicationDirPath().toStdString(), DemoFontPtSize);
 
     // Register our extensions
     ZepMode_Orca::Register(pWidget->GetEditor());

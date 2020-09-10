@@ -21,9 +21,21 @@ namespace cpp_fs = std::filesystem;
 
 namespace Zep
 {
-ZepFileSystemCPP::ZepFileSystemCPP()
+ZepFileSystemCPP::ZepFileSystemCPP(const ZepPath& configPath)
 {
+    // Use the config path
+    m_configPath = configPath;
+
     m_workingDirectory = ZepPath(cpp_fs::current_path().string());
+
+    // Didn't find the config path, try the working directory
+    if (!Exists(m_configPath))
+    {
+        m_configPath = m_workingDirectory;
+    }
+    
+    ZLOG(INFO, "Config Dir: " << m_configPath.c_str());
+    ZLOG(INFO, "Working Dir: " << m_workingDirectory.c_str());
 }
 
 ZepFileSystemCPP::~ZepFileSystemCPP()
@@ -39,6 +51,11 @@ const ZepPath& ZepFileSystemCPP::GetWorkingDirectory() const
 {
     return m_workingDirectory;
 }
+
+ZepPath ZepFileSystemCPP::GetConfigPath() const
+{
+    return m_configPath;
+}
     
 bool ZepFileSystemCPP::MakeDirectories(const ZepPath& path)
 {
@@ -47,6 +64,10 @@ bool ZepFileSystemCPP::MakeDirectories(const ZepPath& path)
 
 bool ZepFileSystemCPP::IsDirectory(const ZepPath& path) const
 {
+    if (!Exists(path))
+    {
+        return false;
+    }
     return cpp_fs::is_directory(path.string());
 }
 
