@@ -69,4 +69,6 @@ after_build:
   - cd C:\projects\zep\build\demos
   - 7z a -tzip -mx9 "zep-imgui-%configuration%-%APPVEYOR_BUILD_VERSION%.zip" demo_imgui\%configuration%
   - appveyor PushArtifact "zep-imgui-%configuration%-%APPVEYOR_BUILD_VERSION%.zip"
+  - 7z a -tzip -mx9 "zep-qt-%configuration%-%APPVEYOR_BUILD_VERSION%.zip" demo_qt\%configuration%
+  - appveyor PushArtifact "zep-qt-%configuration%-%APPVEYOR_BUILD_VERSION%.zip"
 
