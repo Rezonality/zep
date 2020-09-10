@@ -46,9 +46,12 @@ build_script:
   - cd.. 
   - mkdir build
   - cd build
+  - set QT_INSTALL_LOCATION=C:\Qt\5.15.0\msvc2019_64
   - >
     cmake %APPVEYOR_BUILD_FOLDER%
-    -G "%generator%" 
+    -G "%generator%"
+    -DBUILD_QT=YES
+    -DBUILD_IMGUI=YES
     -DCMAKE_INSTALL_PREFIX=./zep
   - cmake --build . --target ALL_BUILD --config %configuration% -- /nologo /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 
