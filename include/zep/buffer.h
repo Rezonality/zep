@@ -98,7 +98,8 @@ enum
     Message = (1 << 0),
     Search = (1 << 1),
     Widget = (1 << 2),
-    All = (Message | Search | Widget)
+    LineWidget = (1 << 3),
+    All = (Message | Search | LineWidget | Widget)
 };
 };
 
@@ -134,10 +135,12 @@ struct RangeMarker
     ThemeColor highlightColor = ThemeColor::Background;
     uint32_t displayType = RangeMarkerDisplayType::All;
     uint32_t markerType = RangeMarkerType::Message;
+    uint32_t displayRow = 0;
     std::string name;
     std::string description;
     ToolTipPos tipPos = ToolTipPos::AboveLine;
-    std::shared_ptr<ILineWidget> spLineWidget;
+    std::shared_ptr<IWidget> spWidget;
+    NVec2f inlineSize;
 
     bool ContainsLocation(GlyphIterator loc) const
     {
@@ -313,7 +316,7 @@ public:
     void ClearRangeMarkers(const std::set<std::shared_ptr<RangeMarker>>& markers);
     void ClearRangeMarkers(uint32_t types);
     tRangeMarkers GetRangeMarkers(uint32_t types) const;
-    tRangeMarkers GetRangeMarkersOnLine(long line) const;
+    tRangeMarkers GetRangeMarkersOnLine(uint32_t types, long line) const;
     void HideMarkers(uint32_t markerType);
     void ShowMarkers(uint32_t markerType, uint32_t displayType);
 

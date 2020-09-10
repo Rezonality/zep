@@ -18,6 +18,7 @@ struct Region;
 
 struct LineCharInfo
 {
+    NVec2f pos;
     NVec2f size;
     GlyphIterator iterator;
 };
@@ -34,6 +35,7 @@ struct SpanInfo
     int spanLineIndex = 0;                         // The index of this line in spans; might be more than buffer index
     NVec2f padding = NVec2f(1.0f, 1.0f);           // Padding above and below the line
     bool isSplitContinuation = false;
+    NVec2f lineWidgetHeights;
 
     float FullLineHeightPx() const
     {
@@ -170,7 +172,7 @@ private:
     NVec2i BufferToDisplay(const GlyphIterator& location);
 
     void ScrollToCursor();
-    bool IsInsideTextRegion(NVec2i pos) const;
+    bool IsInsideVisibleText(NVec2i pos) const;
 
     enum class SpecialChar
     {
@@ -188,8 +190,10 @@ private:
     // Display
     void DisplayToolTip(const NVec2f& pos, const RangeMarker& marker) const;
     bool DisplayLine(SpanInfo& lineInfo, int displayPass);
+    void DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax);
     void DisplayScrollers();
     void DisplayGridMarkers();
+    void DisplayLineNumbers();
 
     void DisableToolTipTillMove();
 
@@ -198,9 +202,9 @@ private:
 
     void PlaceToolTip(const NVec2f& pos, ToolTipPos location, uint32_t lineGap, const std::shared_ptr<RangeMarker> spMarker);
 
-    void DrawLineWidgets(SpanInfo& lineInfo);
+    void DrawAboveLineWidgets(SpanInfo& lineInfo);
 
-    float GetLineWidgetHeight(long line);
+    NVec2f ArrangeLineMarkers(tRangeMarkers& markers);
     
     bool IsActiveWindow() const;
 

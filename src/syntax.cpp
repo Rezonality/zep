@@ -59,14 +59,6 @@ SyntaxResult ZepSyntax::GetSyntaxAt(const GlyphIterator& offset) const
         }
     }
 
-    if (!(m_flags & ZepSyntaxFlags::IgnoreLineHighlight))
-    {
-        if (offset.Index() >= m_activeLineRange.first && offset.Index() < (m_activeLineRange.second - 1))
-        {
-            result.background = ThemeColor::CursorLineBackground;
-        }
-    }
-
     if (m_flashRange.x != m_flashRange.y && m_flashRange.x <= offset.Index() && m_flashRange.y > offset.Index())
     {
         auto elapsed = timer_get_elapsed_seconds(m_flashTimer);

@@ -80,7 +80,6 @@ public:
     const NVec4f& ToBackgroundColor(const SyntaxResult& res) const;
     const NVec4f& ToForegroundColor(const SyntaxResult& res) const;
 
-    virtual void SetActiveLine(const ByteRange& range) { m_activeLineRange = range; }
     virtual void IgnoreLineHighlight() { m_flags |= ZepSyntaxFlags::IgnoreLineHighlight; }
 
 private:

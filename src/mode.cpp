@@ -2136,9 +2136,20 @@ bool ZepMode::HandleExCommand(std::string strCommand)
 
             auto spMarker = std::make_shared<RangeMarker>();
             spMarker->range = ByteRange(bufferCursor.Index(), bufferCursor.Peek(1).Index());
-            spMarker->spLineWidget = pSlider;
-            spMarker->markerType = RangeMarkerType::Widget;
+            spMarker->spWidget = pSlider;
+            spMarker->markerType = RangeMarkerType::LineWidget;
             spMarker->displayType = RangeMarkerDisplayType::Hidden;
+            buffer.AddRangeMarker(spMarker);
+        }
+        else if (strCommand.find(":ZTestColorPicker") == 0)
+        {
+            //auto line = buffer.GetBufferLine(bufferCursor);
+            auto pPicker = std::make_shared<ColorPicker>(GetEditor());
+            auto spMarker = std::make_shared<RangeMarker>();
+            spMarker->range = ByteRange(bufferCursor.Index(), bufferCursor.Peek(1).Index());
+            spMarker->spWidget = pPicker;
+            spMarker->markerType = RangeMarkerType::Widget;
+            spMarker->displayType = RangeMarkerDisplayType::Background;
             buffer.AddRangeMarker(spMarker);
         }
         else if (strCommand.find(":ZTestFlash") == 0)
@@ -2170,11 +2181,12 @@ bool ZepMode::HandleExCommand(std::string strCommand)
         }
         else if (strCommand.find(":ZTestMarkers") == 0)
         {
-            int markerType = 0;
+            static uint32_t unique = 0;
+            int markerSelection = 0;
             auto strTok = string_split(strCommand, " ");
             if (strTok.size() > 1)
             {
-                markerType = std::stoi(strTok[1]);
+                markerSelection = std::stoi(strTok[1]);
             }
             auto spMarker = std::make_shared<RangeMarker>();
             GlyphIterator start;
@@ -2193,7 +2205,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
                 end = buffer.GetLinePos(bufferCursor, LineLocation::LineLastGraphChar) + 1;
             }
             spMarker->range = ByteRange(start.Index(), end.Index());
-            switch (markerType)
+            switch (markerSelection)
             {
             case 5:
                 spMarker->highlightColor = ThemeColor::Error;
@@ -2216,7 +2228,8 @@ bool ZepMode::HandleExCommand(std::string strCommand)
                 spMarker->textColor = ThemeColor::Text;
                 spMarker->name = "Underline Marker";
                 spMarker->description = "This is an example tooltip\nThey can be added to any range of characters";
-                spMarker->displayType = RangeMarkerDisplayType::Tooltip | RangeMarkerDisplayType::Underline | RangeMarkerDisplayType::Indicator;
+                spMarker->highlightColor = GetEditor().GetTheme().GetUniqueColor(unique++);
+                spMarker->displayType = RangeMarkerDisplayType::Tooltip | RangeMarkerDisplayType::Underline | RangeMarkerDisplayType::CursorTip;
                 break;
             case 2:
                 spMarker->highlightColor = ThemeColor::Warning;
