@@ -7,10 +7,6 @@ init:
   - git config --global core.autocrlf input
   - cmake --version
 
-branches:
-  only:
-  - master
-
 clone_depth: 5
 
 version: '{build}'
