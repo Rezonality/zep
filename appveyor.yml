@@ -72,3 +72,16 @@ after_build:
   - 7z a -tzip -mx9 "zep-qt-%configuration%-%APPVEYOR_BUILD_VERSION%.zip" demo_qt\%configuration%
   - appveyor PushArtifact "zep-qt-%configuration%-%APPVEYOR_BUILD_VERSION%.zip"
 
+deploy:
+    release: zep-v$(APPVEYOR_BUILD_VERSION)
+    description: 'Zep Release'
+    provider: GitHub
+    auth_token:
+        secure: gMvgHqsZgPbxCc91J0lU8FbV85i6qQBLUEhbXq7Nn0uD2Fk09lr6j44T2R0j5FrK
+    artifact: C:\projects\zep\build\demos\*.zip
+    draft: false
+    prerelease: true
+    on:
+      branch: master
+      APPVEYOR_REPO_TAG: true
+
