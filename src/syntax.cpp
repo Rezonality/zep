@@ -59,7 +59,7 @@ SyntaxResult ZepSyntax::GetSyntaxAt(const GlyphIterator& offset) const
         }
     }
 
-    if (m_flashRange.x != m_flashRange.y && m_flashRange.x <= offset.Index() && m_flashRange.y > offset.Index())
+    if (m_flashRange.first != m_flashRange.second && m_flashRange.first <= offset.Index() && m_flashRange.second > offset.Index())
     {
         auto elapsed = timer_get_elapsed_seconds(m_flashTimer);
         if (elapsed < m_flashDuration)
@@ -102,7 +102,7 @@ SyntaxResult ZepSyntax::GetSyntaxAt(const GlyphIterator& offset) const
                     return std::exp((-((x - b) * (x - b)) / 2) * (c * c));
                 };
 
-                auto range = m_flashRange.y - m_flashRange.x;
+                auto range = m_flashRange.second - m_flashRange.first;
                 auto center = range * t;
 
                 // Sample a bell curve about the current point, but don't draw the head
@@ -393,20 +393,20 @@ void ZepSyntax::UpdateSyntax()
 
 void ZepSyntax::EndFlash() const
 {
-    m_flashRange = NVec2<ByteIndex>(0, 0);
+    m_flashRange = ByteRange();
     GetEditor().SetFlags(ZClearFlags(GetEditor().GetFlags(), ZepEditorFlags::FastUpdate));
 }
 
-void ZepSyntax::BeginFlash(float seconds, SyntaxFlashType flashType, const NVec2i& range)
+void ZepSyntax::BeginFlash(float seconds, SyntaxFlashType flashType, const ByteRange& range)
 {
     m_flashRange = range;
     m_flashDuration = seconds;
     m_flashType = flashType;
     timer_restart(m_flashTimer);
 
-    if (range == NVec2i(0))
+    if (range.first == range.second)
     {
-        m_flashRange = NVec2i(long(0), long(m_syntax.size()));
+        m_flashRange = ByteRange(long(0), long(m_syntax.size()));
     }
     GetEditor().SetFlags(ZSetFlags(GetEditor().GetFlags(), ZepEditorFlags::FastUpdate));
 }

@@ -350,7 +350,7 @@ public:
     void ClearFileFlags(uint32_t flags);
     void ToggleFileFlag(uint32_t flags);
 
-    NVec2i GetExpression(ExpressionType type, const GlyphIterator location, const std::vector<char>& beginExpression, const std::vector<char>& endExpression) const;
+    ByteRange GetExpression(ExpressionType type, const GlyphIterator location, const std::vector<char>& beginExpression, const std::vector<char>& endExpression) const;
     std::string GetBufferText(const GlyphIterator& start, const GlyphIterator& end) const;
 
     void SetPostKeyNotifier(fnKeyNotifier notifier);

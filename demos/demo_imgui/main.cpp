@@ -213,7 +213,7 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         ZEP_UNUSED(cursorOffset);
         ZEP_UNUSED(type);
 
-        Zep::NVec2i range;
+        ByteRange range;
         if (type == ReplParseType::OuterExpression)
         {
             range = buffer.GetExpression(ExpressionType::Outer, cursorOffset, { '(' }, { ')' });
@@ -224,14 +224,14 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         }
         else
         {
-            range = Zep::NVec2i(0, buffer.End().Index());
+            range = ByteRange(0, buffer.End().Index());
         }
 
-        if (range.x >= range.y)
+        if (range.first >= range.second)
             return "<No Expression>";
 
         const auto& text = buffer.GetGapBuffer();
-        auto eval = std::string(text.begin() + range.x, text.begin() + range.y);
+        auto eval = std::string(text.begin() + range.first, text.begin() + range.second);
 
         // Flash the evaluated expression
         SyntaxFlashType flashType = SyntaxFlashType::Flash;

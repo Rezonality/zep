@@ -1478,7 +1478,7 @@ void ZepBuffer::ToggleFileFlag(uint32_t flags)
     m_fileFlags = ZSetFlags(m_fileFlags, flags, !ZTestFlags(m_fileFlags, flags));
 }
 
-NVec2i ZepBuffer::GetExpression(ExpressionType type, const GlyphIterator location, const std::vector<char>& beginExpression, const std::vector<char>& endExpression) const
+ByteRange ZepBuffer::GetExpression(ExpressionType type, const GlyphIterator location, const std::vector<char>& beginExpression, const std::vector<char>& endExpression) const
 {
     GlyphIterator itr = Begin();
     GlyphIterator itrEnd = End();
@@ -1487,7 +1487,7 @@ NVec2i ZepBuffer::GetExpression(ExpressionType type, const GlyphIterator locatio
     struct Expression
     {
         int depth = 0;
-        NVec2i range = NVec2i(0);
+        ByteRange range;
         std::vector<std::shared_ptr<Expression>> children;
         Expression* pParent = nullptr;
     };
@@ -1517,7 +1517,7 @@ NVec2i ZepBuffer::GetExpression(ExpressionType type, const GlyphIterator locatio
                     topLevel.push_back(spChild);
                 }
                 pCurrent = spChild.get();
-                pCurrent->range.x = itr.Index();
+                pCurrent->range.first = itr.Index();
             }
         }
 
@@ -1527,10 +1527,10 @@ NVec2i ZepBuffer::GetExpression(ExpressionType type, const GlyphIterator locatio
             {
                 if (pCurrent)
                 {
-                    pCurrent->range.y = itr.Index() + 1;
+                    pCurrent->range.second = itr.Index() + 1;
 
                     // Check the sub exp
-                    if ((pCurrent->range.x <= location.Index()) && (pCurrent->range.y > location.Index()))
+                    if ((pCurrent->range.first <= location.Index()) && (pCurrent->range.second > location.Index()))
                     {
                         if (pCurrent->depth > maxDepth)
                         {
@@ -1552,7 +1552,7 @@ NVec2i ZepBuffer::GetExpression(ExpressionType type, const GlyphIterator locatio
         {
             return pInner->range;
         }
-        return NVec2i(0, 0);
+        return ByteRange();
     }
 
     Expression* pBest = nullptr;
@@ -1560,14 +1560,14 @@ NVec2i ZepBuffer::GetExpression(ExpressionType type, const GlyphIterator locatio
 
     for (auto& outer : topLevel)
     {
-        if (location.Index() >= outer->range.x && location.Index() < outer->range.y)
+        if (location.Index() >= outer->range.first && location.Index() < outer->range.second)
         {
             return outer->range;
         }
         else
         {
-            auto leftDist = std::abs(outer->range.x - location.Index());
-            auto rightDist = std::abs(location.Index() - outer->range.y);
+            auto leftDist = std::abs(outer->range.first - location.Index());
+            auto rightDist = std::abs(location.Index() - outer->range.second);
             if (leftDist < dist)
             {
                 pBest = outer.get();
@@ -1586,7 +1586,7 @@ NVec2i ZepBuffer::GetExpression(ExpressionType type, const GlyphIterator locatio
         return pBest->range;
     }
 
-    return NVec2i(0, 0);
+    return ByteRange();
 }
 
 GlyphIterator ZepBuffer::End() const

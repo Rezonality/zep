@@ -12,6 +12,7 @@ enum class ReplParseType
 {
     SubExpression,
     OuterExpression,
+    Line,
     All
 };
 

@@ -74,7 +74,7 @@ public:
     }
     virtual void Notify(std::shared_ptr<ZepMessage> payload) override;
 
-    virtual void BeginFlash(float seconds, SyntaxFlashType type = SyntaxFlashType::Cylon, const NVec2i& range = NVec2i(0));
+    virtual void BeginFlash(float seconds, SyntaxFlashType type = SyntaxFlashType::Cylon, const ByteRange& range = ByteRange(0));
     virtual void EndFlash() const;
 
     const NVec4f& ToBackgroundColor(const SyntaxResult& res) const;
@@ -100,7 +100,7 @@ protected:
     std::vector<std::shared_ptr<ZepSyntaxAdorn>> m_adornments;
     uint32_t m_flags;
 
-    mutable NVec2<ByteIndex> m_flashRange;
+    mutable ByteRange m_flashRange;
     float m_flashDuration = 1.0f;
     timer m_flashTimer;
     SyntaxFlashType m_flashType = SyntaxFlashType::Cylon;
