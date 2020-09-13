@@ -1,10 +1,10 @@
-[Zep](https://github.com/cmaughan/zep) - A Mini Editor
+[Zep](https://github.com/Rezonality/zep) - A Mini Editor
 ===================================================================================================
 
-[![Build Status](https://travis-ci.org/cmaughan/zep.svg?branch=master)](https://travis-ci.org/cmaughan/zep)
-[![Build status](https://ci.appveyor.com/api/projects/status/k45pdrrxkdmtm1qf/branch/master?svg=true)](https://ci.appveyor.com/project/cmaughan/zep/branch/master)
-[![codecov](https://codecov.io/gh/cmaughan/zep/branch/master/graph/badge.svg)](https://codecov.io/gh/cmaughan/zep)
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/cmaughan/zep/blob/master/LICENSE) 
+[![Build Status](https://travis-ci.org/Rezonality/zep.svg?branch=master)](https://travis-ci.org/Rezonality/zep)
+[![Build status](https://ci.appveyor.com/api/projects/status/k45pdrrxkdmtm1qf/branch/master?svg=true)](https://ci.appveyor.com/project/Rezonality/zep/branch/master)
+[![codecov](https://codecov.io/gh/Rezonality/zep/branch/master/graph/badge.svg)](https://codecov.io/gh/Rezonality/zep)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Resonality/zep/blob/master/LICENSE) 
 [![Gitter](https://badges.gitter.im/Rezonality/Zep.svg)](https://gitter.im/Rezonality/Zep?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 Zep is a simple embeddable editor, with a rendering agnostic design and optional Vim mode.  It is built as a shared modern-cmake library.  The core library is dependency-free (the demo application requires an installed package), and it is possible just to copy the files into your project and build it.  Out of the box Zep can draw to a Qt Widget or an an ImGui window - useful for embedding in a game engine.  A simple syntax highlighting engine is provided, and can easily be extended. Basic theming support is included, and window tabs and vertical/horizontal splits are also available.  Zep is 'opinionated' in how it does things, but is easy to modify and supports many common features.  It is heavliy influenced by Vim, but has a good notepad-style editing mode too.  A simple search feature (Ctrl+P) is a powerful way to find things, and a Repl mode is useful for implementing a console for game scripting.  Intended to eventually sit inside a live-coding environment, Zep also has a minimal mode and several configuration options which can be set in a simple toml-format file.
@@ -94,13 +94,13 @@ display layer to draw the text.  This makes it simple to draw the editor using d
 ### Vim & Standard Modes
 Mode plugins provide the editing facility - currently that is Vim & Standard and extension modes for the Repl and the Search panels.
 The Vim mode has most of the usual word motions, visual mode, etc.  The standard mode has the usual shift, select, cut/copy/paste, etc.
-See [Vim Mode](https://github.com/cmaughan/zep/wiki/Vim-Mode), or the top of the mode_vim.cpp file for a list of supported operations in Vim
+See [Vim Mode](https://github.com/Rezonality/zep/wiki/Vim-Mode), or the top of the mode_vim.cpp file for a list of supported operations in Vim
 
 # Building
 You can follow the build buttons above to see the build process or look in the travis or appveyor scripts.
 
 ## 1. Get the Source
-git clone https://github.com/cmaughan/zep zep  
+git clone https://github.com/Rezonality/zep zep  
 cd zep  
 
 ## 2. Add extra packages
@@ -138,20 +138,20 @@ target_link_libraries(MYPROJECT PRIVATE Zep::Zep)
 ```
 
 # 4. Building the Demo
-The Zep demo now requires my external MUtils library in order to run.  To make the demo, hop over to https://github.com/cmaughan/MUtils and build/install it.
+The Zep demo now requires my external MUtils library in order to run.  To make the demo, hop over to https://github.com/Rezonality/MUtils and build/install it.
 Here's an example script for the complete process to build the support library and all of the zep demos.
 
 # Windows
 ```
 # MUtils
-git clone https://github.com/cmaughan/MUtils
+git clone https://github.com/Rezonality/MUtils
 cd MUtils
 prebuild.bat
 config.bat
 build_all.bat
 
 # Zep
-git clone https://github.com/cmaughan/zep
+git clone https://github.com/Rezonality/zep
 cd zep
 set QT_INSTALL_LOCATION=C:\Qt\5.10.0\msvc2017_64 (for example - required for building QT)
 config_all.bat OR config.bat (for no Qt)
@@ -161,7 +161,7 @@ build_all.bat
 # Linux
 ``` 
 # MUtils
-git clone https://github.com/cmaughan/MUtils
+git clone https://github.com/Rezonality/MUtils
 cd MUtils
 chmod +x prebuild.bat
 chmod +x m3rdparty/packages/install.sh
@@ -175,7 +175,7 @@ sudo apt install qt-default (for Qt/Demo support)
 set QT_INSTALL_LOCATION=C:\Qt\5.10.0\msvc2017_64 (example)
 
 # Zep
-git clone https://github.com/cmaughan/zep
+git clone https://github.com/Rezonality/zep
 cd zep
 ./config_all.sh OR ./config.sh (for no Qt)
 ./build_all.sh
