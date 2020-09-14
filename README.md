@@ -2,7 +2,7 @@
 ===================================================================================================
 
 [![Build Status](https://travis-ci.org/Rezonality/zep.svg?branch=master)](https://travis-ci.org/Rezonality/zep)
-[![Build status](https://ci.appveyor.com/api/projects/status/k45pdrrxkdmtm1qf/branch/master?svg=true)](https://ci.appveyor.com/project/Rezonality/zep/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/glbxh1586fomxssx?svg=true)](https://ci.appveyor.com/project/cmaughan/zep)
 [![codecov](https://codecov.io/gh/Rezonality/zep/branch/master/graph/badge.svg)](https://codecov.io/gh/Rezonality/zep)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Resonality/zep/blob/master/LICENSE) 
 [![Gitter](https://badges.gitter.im/Rezonality/Zep.svg)](https://gitter.im/Rezonality/Zep?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)

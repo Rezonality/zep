@@ -39,6 +39,7 @@ build_script:
   - ./prebuild.bat
   - config_all.bat
   - build_all.bat
+  - cd %APPVEYOR_BUILD_FOLDER%
   - mkdir build
   - cd build
   - set QT_INSTALL_LOCATION=C:\Qt\5.15.0\msvc2019_64
