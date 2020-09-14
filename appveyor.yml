@@ -39,7 +39,6 @@ build_script:
   - ./prebuild.bat
   - config_all.bat
   - build_all.bat
-  - cd.. 
   - mkdir build
   - cd build
   - set QT_INSTALL_LOCATION=C:\Qt\5.15.0\msvc2019_64
@@ -53,7 +52,7 @@ build_script:
 
 test_script:
     - ps: |
-        cd %APPVEYOR_BUILD_FOLDER%\build\tests\$env:CONFIGURATION
+      cd $env:APPVEYOR_BUILD_FOLDER\build\tests\$env:CONFIGURATION
         .\unittests.exe --gtest_output=xml:unit_tests_report.xml
         $wc = New-Object 'System.Net.WebClient'
         $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path unit_tests_report.xml))
