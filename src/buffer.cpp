@@ -1609,4 +1609,24 @@ fnKeyNotifier ZepBuffer::GetPostKeyNotifier() const
     return m_postKeyNotifier;
 }
 
+void ZepBuffer::EndFlash() const
+{
+    m_flashRange = ByteRange();
+    GetEditor().SetFlags(ZClearFlags(GetEditor().GetFlags(), ZepEditorFlags::FastUpdate));
+}
+
+void ZepBuffer::BeginFlash(float seconds, FlashType flashType, const ByteRange& range)
+{
+    m_flashRange = range;
+    m_flashDuration = seconds;
+    m_flashType = flashType;
+    timer_restart(m_flashTimer);
+
+    if (range.first == range.second)
+    {
+        m_flashRange = ByteRange(long(0), End().Index());
+    }
+    GetEditor().SetFlags(ZSetFlags(GetEditor().GetFlags(), ZepEditorFlags::FastUpdate));
+}
+
 } // namespace Zep

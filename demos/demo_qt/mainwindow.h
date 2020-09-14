@@ -19,7 +19,7 @@ public:
     MainWindow();
     ~MainWindow();
 
-    virtual std::string ReplParse(const Zep::ZepBuffer& buffer, const Zep::GlyphIterator& cursorOffset, Zep::ReplParseType type) override;
+    virtual std::string ReplParse(Zep::ZepBuffer& buffer, const Zep::GlyphIterator& cursorOffset, Zep::ReplParseType type) override;
     virtual std::string ReplParse(const std::string& text) override;
     virtual bool ReplIsFormComplete(const std::string& str, int& indent) override;
 

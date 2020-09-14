@@ -47,12 +47,6 @@ struct SyntaxResult : SyntaxData
     NVec4f customForegroundColor;
 };
 
-enum class SyntaxFlashType
-{
-    Flash,
-    Cylon
-};
-
 class ZepSyntaxAdorn;
 class ZepSyntax : public ZepComponent
 {
@@ -73,9 +67,6 @@ public:
         return m_processedChar;
     }
     virtual void Notify(std::shared_ptr<ZepMessage> payload) override;
-
-    virtual void BeginFlash(float seconds, SyntaxFlashType type = SyntaxFlashType::Cylon, const ByteRange& range = ByteRange(0));
-    virtual void EndFlash() const;
 
     const NVec4f& ToBackgroundColor(const SyntaxResult& res) const;
     const NVec4f& ToForegroundColor(const SyntaxResult& res) const;
@@ -100,10 +91,6 @@ protected:
     std::vector<std::shared_ptr<ZepSyntaxAdorn>> m_adornments;
     uint32_t m_flags;
 
-    mutable ByteRange m_flashRange;
-    float m_flashDuration = 1.0f;
-    timer m_flashTimer;
-    SyntaxFlashType m_flashType = SyntaxFlashType::Cylon;
     ByteRange m_activeLineRange = { 0, 0 };
 };
 

@@ -2156,14 +2156,14 @@ bool ZepMode::HandleExCommand(std::string strCommand)
         {
             if (buffer.GetSyntax())
             {
-                SyntaxFlashType flashType = SyntaxFlashType::Cylon;
+                FlashType flashType = FlashType::Cylon;
                 float time = 1.0f;
                 auto strTok = string_split(strCommand, " ");
                 if (strTok.size() > 1)
                 {
                     if (std::stoi(strTok[1]) > 0)
                     {
-                        flashType = SyntaxFlashType::Flash;
+                        flashType = FlashType::Flash;
                     }
                 }
                 if (strTok.size() > 2)
@@ -2176,7 +2176,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
                     {
                     }
                 }
-                buffer.GetSyntax()->BeginFlash(time, flashType);
+                buffer.BeginFlash(time, flashType, ByteRange(0, buffer.End().Index()));
             }
         }
         else if (strCommand.find(":ZTestMarkers") == 0)

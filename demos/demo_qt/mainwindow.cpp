@@ -162,7 +162,7 @@ std::string MainWindow::ReplParse(const std::string& str)
     return ret;
 }
 
-std::string MainWindow::ReplParse(const ZepBuffer& buffer, const GlyphIterator& cursorOffset, ReplParseType type)
+std::string MainWindow::ReplParse(ZepBuffer& buffer, const GlyphIterator& cursorOffset, ReplParseType type)
 {
     ZEP_UNUSED(cursorOffset);
     ZEP_UNUSED(type);

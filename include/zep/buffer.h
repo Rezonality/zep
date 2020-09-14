@@ -204,6 +204,12 @@ struct ChangeRecord
     }
 };
 
+enum class FlashType
+{
+    Flash,
+    Cylon
+};
+
 using fnKeyNotifier = std::function<bool(uint32_t key, uint32_t modifier)>;
 class ZepBuffer : public ZepComponent
 {
@@ -356,6 +362,15 @@ public:
     void SetPostKeyNotifier(fnKeyNotifier notifier);
     fnKeyNotifier GetPostKeyNotifier() const;
 
+    // TODO: Add this to marker abilities
+    void EndFlash() const;
+    void BeginFlash(float seconds, FlashType flashType, const ByteRange& range);
+
+    ByteRange GetFlashRange() const { return m_flashRange; }
+    float GetFlashDuration() const { return m_flashDuration; }
+    const timer& GetFlashTimer() const { return m_flashTimer; }
+    FlashType GetFlashType() const { return m_flashType; }
+
 private:
     void ClearRangeMarker(std::shared_ptr<RangeMarker> spMarker);
 
@@ -382,6 +397,12 @@ private:
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::shared_ptr<ZepTheme> m_spOverrideTheme;
     SyntaxProvider m_syntaxProvider;
+
+    // Flash
+    mutable ByteRange m_flashRange;
+    float m_flashDuration = 1.0f;
+    timer m_flashTimer;
+    FlashType m_flashType = FlashType::Cylon;
 
     // Selections
     GlyphRange m_selection;

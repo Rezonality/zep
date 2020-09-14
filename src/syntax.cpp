@@ -59,65 +59,6 @@ SyntaxResult ZepSyntax::GetSyntaxAt(const GlyphIterator& offset) const
         }
     }
 
-    if (m_flashRange.first != m_flashRange.second && m_flashRange.first <= offset.Index() && m_flashRange.second > offset.Index())
-    {
-        auto elapsed = timer_get_elapsed_seconds(m_flashTimer);
-        if (elapsed < m_flashDuration)
-        {
-            // first get the preferred back color
-            NVec4f backColor;
-            if (result.background != ThemeColor::None)
-            {
-                backColor = GetEditor().GetTheme().GetColor(result.background);
-            }
-            else
-            {
-                backColor = GetEditor().GetTheme().GetColor(ThemeColor::Background);
-            }
-
-            // Swap it out for our custom flash color
-            float time = float(elapsed) / m_flashDuration;
-
-            result.background = ThemeColor::Custom;
-            result.customBackgroundColor = NVec4f(GetEditor().GetTheme().GetColor(ThemeColor::FlashColor));
-
-            if (m_flashType == SyntaxFlashType::Flash)
-            {
-                result.customBackgroundColor = Mix(backColor, result.customBackgroundColor, sin(time * ZPI));
-            }
-            else
-            {
-                float t = std::abs(sin(time * ZPI * .5f)) * 2.0f + .5f;
-                if (t > 1.0f)
-                {
-                    t = 1.0f - (t - 1.0f);
-                }
-
-                // https://codegolf.stackexchange.com/a/22629
-                // Light up the characters with a bright spot in the center, and a
-                // ten character fall off; walk through the text and return
-                auto bellCurve = [](float x) {
-                    float b = 0.0f;
-                    float c = 6.0f;
-                    return std::exp((-((x - b) * (x - b)) / 2) * (c * c));
-                };
-
-                auto range = m_flashRange.second - m_flashRange.first;
-                auto center = range * t;
-
-                // Sample a bell curve about the current point, but don't draw the head
-                auto distance = bellCurve(((offset.Index() - center) / range));
-
-                distance = std::min(1.0f, distance);
-                distance = std::max(0.0f, distance);
-                result.customBackgroundColor = Mix(backColor, result.customBackgroundColor, float(distance));
-            }
-        }
-        else
-        {
-            EndFlash();
-        }
-    }
     return result;
 }
 
@@ -389,26 +330,6 @@ void ZepSyntax::UpdateSyntax()
     // Reset the target to the beginning
     m_targetChar = long(0);
     m_processedChar = long(buffer.size() - 1);
-}
-
-void ZepSyntax::EndFlash() const
-{
-    m_flashRange = ByteRange();
-    GetEditor().SetFlags(ZClearFlags(GetEditor().GetFlags(), ZepEditorFlags::FastUpdate));
-}
-
-void ZepSyntax::BeginFlash(float seconds, SyntaxFlashType flashType, const ByteRange& range)
-{
-    m_flashRange = range;
-    m_flashDuration = seconds;
-    m_flashType = flashType;
-    timer_restart(m_flashTimer);
-
-    if (range.first == range.second)
-    {
-        m_flashRange = ByteRange(long(0), long(m_syntax.size()));
-    }
-    GetEditor().SetFlags(ZSetFlags(GetEditor().GetFlags(), ZepEditorFlags::FastUpdate));
 }
 
 const NVec4f& ZepSyntax::ToBackgroundColor(const SyntaxResult& res) const

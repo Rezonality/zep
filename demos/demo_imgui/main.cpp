@@ -208,7 +208,7 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         spEditor.reset();
     }
 
-    virtual std::string ReplParse(const ZepBuffer& buffer, const GlyphIterator& cursorOffset, ReplParseType type) override
+    virtual std::string ReplParse(ZepBuffer& buffer, const GlyphIterator& cursorOffset, ReplParseType type) override
     {
         ZEP_UNUSED(cursorOffset);
         ZEP_UNUSED(type);
@@ -234,9 +234,9 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         auto eval = std::string(text.begin() + range.first, text.begin() + range.second);
 
         // Flash the evaluated expression
-        SyntaxFlashType flashType = SyntaxFlashType::Flash;
+        FlashType flashType = FlashType::Flash;
         float time = 1.0f;
-        buffer.GetSyntax()->BeginFlash(time, flashType, range);
+        buffer.BeginFlash(time, flashType, range);
 
         auto ret = chibi_repl(scheme, NULL, eval);
         ret = RTrim(ret);

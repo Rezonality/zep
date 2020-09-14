@@ -766,24 +766,30 @@ void ZepWindow::DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax)
 
     NVec2f linePx = GetSpanPixelRange(lineInfo);
 
+    NVec4f backColor;
+    // Fill entire line background
     if (lineInfo.lineByteRange.ContainsLocation(GetBufferCursor().Index()) &&
         IsActiveWindow())
     {
+        backColor = GetBlendedColor(ThemeColor::CursorLineBackground);
+
         // Note; We fill below the line for underlines for now, to make them standout in minimal mode
         display.DrawRectFilled(
             NRectf(
                 NVec2f(linePx.x, ToWindowY(lineInfo.yOffsetPx)),
                 NVec2f(linePx.y, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx() + lineInfo.lineWidgetHeights.y))),
-            GetBlendedColor(ThemeColor::CursorLineBackground));
+            backColor);
     }
     else
     {
+        backColor = GetBlendedColor(ThemeColor::Background);
+
         // Fill the background of the line
         display.DrawRectFilled(
             NRectf(
                 NVec2f(linePx.x, ToWindowY(lineInfo.yOffsetPx)),
                 NVec2f(linePx.y, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx() + lineInfo.lineWidgetHeights.y))),
-            GetBlendedColor(ThemeColor::Background));
+            backColor);
     }
 
     // Walk from the start of the line to the end of the line (in buffer chars)
@@ -797,8 +803,8 @@ void ZepWindow::DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax)
             auto syntaxResult = pSyntax->GetSyntaxAt(cp.iterator);
             if (syntaxResult.background != ThemeColor::None)
             {
-                auto themeCol = pSyntax->ToBackgroundColor(syntaxResult);
-                display.DrawRectFilled(charRect, themeCol);
+                auto syntaxColor = pSyntax->ToBackgroundColor(syntaxResult);
+                display.DrawRectFilled(charRect, syntaxColor);
             }
         }
 
@@ -828,6 +834,7 @@ void ZepWindow::DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax)
                             display.DrawRectFilled(inlineRect, themeCol);
                         }
                     }
+
 
                     // Draw the inline marker and advance the text position
                     inlineRect.Adjust(inlineMargins.x, inlineMargins.y, -inlineMargins.x, -inlineMargins.y);
@@ -906,6 +913,61 @@ void ZepWindow::DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax)
             }
             return true;
         });
+       
+        // Draw the flash: TODO: Move to marker
+        auto flashRange = m_pBuffer->GetFlashRange();
+        auto& flashTimer = m_pBuffer->GetFlashTimer();
+        auto flashDuration = m_pBuffer->GetFlashDuration();
+        auto flashType = m_pBuffer->GetFlashType();
+
+        if (flashRange.first != flashRange.second && flashRange.first <= cp.iterator.Index() && flashRange.second > cp.iterator.Index())
+        {
+            auto elapsed = timer_get_elapsed_seconds(flashTimer);
+            if (elapsed < flashDuration)
+            {
+                // Swap it out for our custom flash color
+                float time = float(elapsed) / flashDuration;
+
+                auto flashColor = NVec4f(GetEditor().GetTheme().GetColor(ThemeColor::FlashColor));
+
+                if (flashType == FlashType::Flash)
+                {
+                    flashColor = Mix(backColor, flashColor, sin(time * ZPI));
+                }
+                else
+                {
+                    float t = std::abs(sin(time * ZPI * .5f)) * 2.0f + .5f;
+                    if (t > 1.0f)
+                    {
+                        t = 1.0f - (t - 1.0f);
+                    }
+
+                    // https://codegolf.stackexchange.com/a/22629
+                    // Light up the characters with a bright spot in the center, and a
+                    // ten character fall off; walk through the text and return
+                    auto bellCurve = [](float x) {
+                        float b = 0.0f;
+                        float c = 6.0f;
+                        return std::exp((-((x - b) * (x - b)) / 2) * (c * c));
+                    };
+
+                    auto range = flashRange.second - flashRange.first;
+                    auto center = range * t;
+
+                    // Sample a bell curve about the current point, but don't draw the head
+                    auto distance = bellCurve(((cp.iterator.Index() - center) / range));
+
+                    distance = std::min(1.0f, distance);
+                    distance = std::max(0.0f, distance);
+                    flashColor = Mix(backColor, flashColor, float(distance));
+                }
+                display.DrawRectFilled(charRect, flashColor);
+            }
+            else
+            {
+                m_pBuffer->EndFlash();
+            }
+        }
         screenPosX += cp.size.x + m_xPad;
     }
 }
