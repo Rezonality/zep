@@ -996,7 +996,7 @@ void ZepBuffer::UpdateForInsert(const GlyphIterator& startItr, const GlyphIterat
         {
             return true;
         }
-        else 
+        else
         {
             //auto distance = std::min(endItr.Index(), marker->range.first) - startItr.Index();
             auto distance = endItr.Index() - startItr.Index();
@@ -1265,11 +1265,10 @@ void ZepBuffer::ClearRangeMarkers(uint32_t markerType)
 }
 
 bool OverlapInclusive(ByteRange r1, ByteRange r2)
-{   
+{
     // -----aaaaa----
     // ---bbbbbbbbb-------
-    if (r1.first <= r2.second && 
-        r2.first <= r1.second)
+    if (r1.first <= r2.second && r2.first <= r1.second)
     {
         return true;
     }
@@ -1283,23 +1282,38 @@ void ZepBuffer::ForEachMarker(uint32_t markerType, Direction dir, const GlyphIte
     {
         for (auto itr = m_rangeMarkers.begin(); itr != m_rangeMarkers.end(); itr++)
         {
-            for (auto& markerItem : itr->second)
+            for (int pass = 0; pass < 2; pass++)
             {
-                if ((markerItem->markerType & markerType) == 0)
+                for (auto& markerItem : itr->second)
                 {
-                    continue;
-                }
+                    if ((markerItem->markerType & markerType) == 0)
+                    {
+                        continue;
+                    }
 
-                ByteRange markerInclusive = ByteRange(markerItem->range.first, std::max(0l, markerItem->range.second - 1));
+                    // Enumerate timed markers after all others, because these are effects that should happen last
+                    if (pass == 0)
+                    {
+                        if (markerItem->displayType & RangeMarkerDisplayType::Timed)
+                            continue;
+                    }
+                    else
+                    {
+                        if (!(markerItem->displayType & RangeMarkerDisplayType::Timed))
+                            continue;
+                    }
 
-                if (!OverlapInclusive(inclusive, markerInclusive))
-                {
-                    continue;
-                }
+                    ByteRange markerInclusive = ByteRange(markerItem->range.first, std::max(0l, markerItem->range.second - 1));
 
-                if (!fnCB(markerItem))
-                {
-                    return;
+                    if (!OverlapInclusive(inclusive, markerInclusive))
+                    {
+                        continue;
+                    }
+
+                    if (!fnCB(markerItem))
+                    {
+                        return;
+                    }
                 }
             }
         }
@@ -1611,22 +1625,30 @@ fnKeyNotifier ZepBuffer::GetPostKeyNotifier() const
 
 void ZepBuffer::EndFlash() const
 {
-    m_flashRange = ByteRange();
     GetEditor().SetFlags(ZClearFlags(GetEditor().GetFlags(), ZepEditorFlags::FastUpdate));
 }
 
 void ZepBuffer::BeginFlash(float seconds, FlashType flashType, const ByteRange& range)
 {
-    m_flashRange = range;
-    m_flashDuration = seconds;
-    m_flashType = flashType;
-    timer_restart(m_flashTimer);
-
     if (range.first == range.second)
     {
-        m_flashRange = ByteRange(long(0), End().Index());
+        return;
     }
+    
+    auto spMarker = std::make_shared<RangeMarker>();
+    spMarker->range = range;
+    spMarker->highlightColor = ThemeColor::FlashColor;
+    spMarker->backgroundColor = ThemeColor::FlashColor;
+    spMarker->textColor = ThemeColor::FlashColor;
+    spMarker->displayType = RangeMarkerDisplayType::Timed |RangeMarkerDisplayType::Background;
+    spMarker->markerType = RangeMarkerType::Message;
+    spMarker->duration = seconds;
+    spMarker->flashType = flashType;
+    timer_restart(spMarker->timer);
+
     GetEditor().SetFlags(ZSetFlags(GetEditor().GetFlags(), ZepEditorFlags::FastUpdate));
+    
+    AddRangeMarker(spMarker);
 }
 
 } // namespace Zep

@@ -158,10 +158,10 @@ public:
     virtual void SetBuffer(ZepBuffer* pBuffer);
 
     ZepTabWindow& GetTabWindow() const;
-
     NVec4f FilterActiveColor(const NVec4f& col, float atten = 1.0f);
-private:
 
+private:
+    void UpdateMarkers();
     void UpdateLayout(bool force = false);
     void UpdateAirline();
     void UpdateScrollers();

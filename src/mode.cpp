@@ -2156,7 +2156,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
         {
             if (buffer.GetSyntax())
             {
-                FlashType flashType = FlashType::Cylon;
+                FlashType flashType = FlashType::Flash;
                 float time = 1.0f;
                 auto strTok = string_split(strCommand, " ");
                 if (strTok.size() > 1)

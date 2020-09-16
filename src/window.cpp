@@ -752,6 +752,40 @@ NRectf SquareRect(const NRectf& rc)
     return NRectf(rc.topLeftPx + NVec2f(xMargin, yMargin), rc.bottomRightPx - NVec2f(xMargin, yMargin));
 }
 
+void ZepWindow::UpdateMarkers()
+{
+    bool foundFlash = false;
+    m_pBuffer->ForEachMarker(RangeMarkerType::All, Direction::Forward, GlyphIterator(m_pBuffer, 0), GlyphIterator(m_pBuffer, m_pBuffer->End().Index()), [&](const std::shared_ptr<RangeMarker>& marker) {
+        // Don't show hidden markers
+        if (!(marker->displayType & RangeMarkerDisplayType::Timed))
+        {
+            return true;
+        }
+
+        auto elapsed = timer_get_elapsed_seconds(marker->timer);
+        if (elapsed < marker->duration)
+        {
+            // Swap it out for our custom flash color
+            float time = float(elapsed) / marker->duration;
+            marker->alpha = sin(time * ZPI);
+
+            foundFlash = true;
+            marker->displayType &= ~RangeMarkerDisplayType::Hidden;
+        }
+        else
+        {
+            marker->alpha = 0.0f;
+            marker->displayType |= RangeMarkerDisplayType::Hidden;
+        }
+        return true;
+    });
+
+    if (!foundFlash)
+    {
+        GetEditor().SetFlags(ZClearFlags(GetEditor().GetFlags(), ZepEditorFlags::FastUpdate));
+    }
+}
+
 void ZepWindow::DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax)
 {
     auto& display = GetEditor().GetDisplay();
@@ -768,8 +802,7 @@ void ZepWindow::DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax)
 
     NVec4f backColor;
     // Fill entire line background
-    if (lineInfo.lineByteRange.ContainsLocation(GetBufferCursor().Index()) &&
-        IsActiveWindow())
+    if (lineInfo.lineByteRange.ContainsLocation(GetBufferCursor().Index()) && IsActiveWindow())
     {
         backColor = GetBlendedColor(ThemeColor::CursorLineBackground);
 
@@ -835,7 +868,6 @@ void ZepWindow::DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax)
                         }
                     }
 
-
                     // Draw the inline marker and advance the text position
                     inlineRect.Adjust(inlineMargins.x, inlineMargins.y, -inlineMargins.x, -inlineMargins.y);
                     inlineRect = SquareRect(inlineRect);
@@ -849,9 +881,13 @@ void ZepWindow::DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax)
         cp.pos = NVec2f(screenPosX, ToWindowY(lineInfo.yOffsetPx));
 
         // Background and underlines
+        // Track the background color for multiple overlapping markers and blend the alpha correctly by 
+        // doing a mix between the previous color and the new one.
+        NVec4f backgroundColor = NVec4f(0.0f, 0.0f, 0.0f, 1.0f);
+
         m_pBuffer->ForEachMarker(RangeMarkerType::All, Direction::Forward, GlyphIterator(m_pBuffer, lineInfo.lineByteRange.first), GlyphIterator(m_pBuffer, lineInfo.lineByteRange.second), [&](const std::shared_ptr<RangeMarker>& marker) {
             // Don't show hidden markers
-            if (marker->displayType == RangeMarkerDisplayType::Hidden)
+            if (marker->displayType & RangeMarkerDisplayType::Hidden)
             {
                 return true;
             }
@@ -866,7 +902,6 @@ void ZepWindow::DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax)
                     {
                         float offset = lineInfo.yOffsetPx + lineInfo.FullLineHeightPx();
                         offset += marker->displayRow * (DPI_Y(UnderlineMargin * 2) + underlineHeight) + 1.0f; // Margins & an extra line to seperate from background highlight
-                        
                         display.DrawRectFilled(
                             NRectf(NVec2f(screenPosX, ToWindowY(offset)),
                                 NVec2f(screenPosX + cp.size.x, ToWindowY(offset + underlineHeight))),
@@ -876,7 +911,8 @@ void ZepWindow::DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax)
                     // Fill the background of the text with the marker color
                     if (marker->displayType & RangeMarkerDisplayType::Background)
                     {
-                        display.DrawRectFilled(charRect, m_pBuffer->GetTheme().GetColor(marker->backgroundColor));
+                        backgroundColor = Mix(backgroundColor, m_pBuffer->GetTheme().GetColor(marker->backgroundColor), marker->alpha);
+                        display.DrawRectFilled(charRect, backgroundColor);
                     }
                 }
 
@@ -913,61 +949,7 @@ void ZepWindow::DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax)
             }
             return true;
         });
-       
-        // Draw the flash: TODO: Move to marker
-        auto flashRange = m_pBuffer->GetFlashRange();
-        auto& flashTimer = m_pBuffer->GetFlashTimer();
-        auto flashDuration = m_pBuffer->GetFlashDuration();
-        auto flashType = m_pBuffer->GetFlashType();
 
-        if (flashRange.first != flashRange.second && flashRange.first <= cp.iterator.Index() && flashRange.second > cp.iterator.Index())
-        {
-            auto elapsed = timer_get_elapsed_seconds(flashTimer);
-            if (elapsed < flashDuration)
-            {
-                // Swap it out for our custom flash color
-                float time = float(elapsed) / flashDuration;
-
-                auto flashColor = NVec4f(GetEditor().GetTheme().GetColor(ThemeColor::FlashColor));
-
-                if (flashType == FlashType::Flash)
-                {
-                    flashColor = Mix(backColor, flashColor, sin(time * ZPI));
-                }
-                else
-                {
-                    float t = std::abs(sin(time * ZPI * .5f)) * 2.0f + .5f;
-                    if (t > 1.0f)
-                    {
-                        t = 1.0f - (t - 1.0f);
-                    }
-
-                    // https://codegolf.stackexchange.com/a/22629
-                    // Light up the characters with a bright spot in the center, and a
-                    // ten character fall off; walk through the text and return
-                    auto bellCurve = [](float x) {
-                        float b = 0.0f;
-                        float c = 6.0f;
-                        return std::exp((-((x - b) * (x - b)) / 2) * (c * c));
-                    };
-
-                    auto range = flashRange.second - flashRange.first;
-                    auto center = range * t;
-
-                    // Sample a bell curve about the current point, but don't draw the head
-                    auto distance = bellCurve(((cp.iterator.Index() - center) / range));
-
-                    distance = std::min(1.0f, distance);
-                    distance = std::max(0.0f, distance);
-                    flashColor = Mix(backColor, flashColor, float(distance));
-                }
-                display.DrawRectFilled(charRect, flashColor);
-            }
-            else
-            {
-                m_pBuffer->EndFlash();
-            }
-        }
         screenPosX += cp.size.x + m_xPad;
     }
 }
@@ -1041,7 +1023,6 @@ void ZepWindow::DisplayLineNumbers()
         }
     }
 }
-
 
 // TODO: This function draws one char at a time.  It could be more optimal at the expense of some
 // complexity.  Basically, I don't like the current implementation, but it works for now.
@@ -1581,6 +1562,7 @@ void ZepWindow::Display()
     UpdateLayout();
     ScrollToCursor();
     UpdateScrollers();
+    UpdateMarkers();
 
     // Second pass if the scroller visibility changed, since this can change the whole layout!
     if (m_scrollVisibilityChanged)
