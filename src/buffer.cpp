@@ -1492,7 +1492,7 @@ void ZepBuffer::ToggleFileFlag(uint32_t flags)
     m_fileFlags = ZSetFlags(m_fileFlags, flags, !ZTestFlags(m_fileFlags, flags));
 }
 
-ByteRange ZepBuffer::GetExpression(ExpressionType type, const GlyphIterator location, const std::vector<char>& beginExpression, const std::vector<char>& endExpression) const
+GlyphRange ZepBuffer::GetExpression(ExpressionType type, const GlyphIterator location, const std::vector<char>& beginExpression, const std::vector<char>& endExpression) const
 {
     GlyphIterator itr = Begin();
     GlyphIterator itrEnd = End();
@@ -1501,7 +1501,7 @@ ByteRange ZepBuffer::GetExpression(ExpressionType type, const GlyphIterator loca
     struct Expression
     {
         int depth = 0;
-        ByteRange range;
+        GlyphRange range;
         std::vector<std::shared_ptr<Expression>> children;
         Expression* pParent = nullptr;
     };
@@ -1531,7 +1531,7 @@ ByteRange ZepBuffer::GetExpression(ExpressionType type, const GlyphIterator loca
                     topLevel.push_back(spChild);
                 }
                 pCurrent = spChild.get();
-                pCurrent->range.first = itr.Index();
+                pCurrent->range.first = itr;
             }
         }
 
@@ -1541,10 +1541,10 @@ ByteRange ZepBuffer::GetExpression(ExpressionType type, const GlyphIterator loca
             {
                 if (pCurrent)
                 {
-                    pCurrent->range.second = itr.Index() + 1;
+                    pCurrent->range.second = itr.Peek(1);
 
                     // Check the sub exp
-                    if ((pCurrent->range.first <= location.Index()) && (pCurrent->range.second > location.Index()))
+                    if ((pCurrent->range.first <= location) && (pCurrent->range.second > location))
                     {
                         if (pCurrent->depth > maxDepth)
                         {
@@ -1566,7 +1566,7 @@ ByteRange ZepBuffer::GetExpression(ExpressionType type, const GlyphIterator loca
         {
             return pInner->range;
         }
-        return ByteRange();
+        return GlyphRange(Begin(), Begin());
     }
 
     Expression* pBest = nullptr;
@@ -1574,14 +1574,14 @@ ByteRange ZepBuffer::GetExpression(ExpressionType type, const GlyphIterator loca
 
     for (auto& outer : topLevel)
     {
-        if (location.Index() >= outer->range.first && location.Index() < outer->range.second)
+        if (location >= outer->range.first && location < outer->range.second)
         {
             return outer->range;
         }
         else
         {
-            auto leftDist = std::abs(outer->range.first - location.Index());
-            auto rightDist = std::abs(location.Index() - outer->range.second);
+            auto leftDist = std::abs(outer->range.first.Index() - location.Index());
+            auto rightDist = std::abs(location.Index() - outer->range.second.Index());
             if (leftDist < dist)
             {
                 pBest = outer.get();
@@ -1600,7 +1600,7 @@ ByteRange ZepBuffer::GetExpression(ExpressionType type, const GlyphIterator loca
         return pBest->range;
     }
 
-    return ByteRange();
+    return GlyphRange(Begin(), Begin());
 }
 
 GlyphIterator ZepBuffer::End() const
@@ -1628,7 +1628,7 @@ void ZepBuffer::EndFlash() const
     GetEditor().SetFlags(ZClearFlags(GetEditor().GetFlags(), ZepEditorFlags::FastUpdate));
 }
 
-void ZepBuffer::BeginFlash(float seconds, FlashType flashType, const ByteRange& range)
+void ZepBuffer::BeginFlash(float seconds, FlashType flashType, const GlyphRange& range)
 {
     if (range.first == range.second)
     {
@@ -1636,12 +1636,10 @@ void ZepBuffer::BeginFlash(float seconds, FlashType flashType, const ByteRange& 
     }
     
     auto spMarker = std::make_shared<RangeMarker>();
-    spMarker->range = range;
-    spMarker->highlightColor = ThemeColor::FlashColor;
-    spMarker->backgroundColor = ThemeColor::FlashColor;
-    spMarker->textColor = ThemeColor::FlashColor;
+    spMarker->range = ByteRange(range.first.Index(), range.second.Index());
+    spMarker->SetBackgroundColor(ThemeColor::FlashColor);
     spMarker->displayType = RangeMarkerDisplayType::Timed |RangeMarkerDisplayType::Background;
-    spMarker->markerType = RangeMarkerType::Message;
+    spMarker->markerType = RangeMarkerType::Mark;
     spMarker->duration = seconds;
     spMarker->flashType = flashType;
     timer_restart(spMarker->timer);

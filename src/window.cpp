@@ -682,14 +682,14 @@ void ZepWindow::DisplayToolTip(const NVec2f& pos, const RangeMarker& marker) con
 
     // Draw a lighter inner and a border the same color as the marker theme
     tipBox.Adjust(boxShadowWidth, boxShadowWidth, -boxShadowWidth, -boxShadowWidth);
-    display.DrawRectFilled(tipBox, m_pBuffer->GetTheme().GetColor(marker.backgroundColor));
-    display.DrawLine(tipBox.topLeftPx, tipBox.TopRight(), m_pBuffer->GetTheme().GetColor(marker.highlightColor));
-    display.DrawLine(tipBox.BottomLeft(), tipBox.bottomRightPx, m_pBuffer->GetTheme().GetColor(marker.highlightColor));
-    display.DrawLine(tipBox.topLeftPx, tipBox.BottomLeft(), m_pBuffer->GetTheme().GetColor(marker.highlightColor));
-    display.DrawLine(tipBox.TopRight(), tipBox.bottomRightPx, m_pBuffer->GetTheme().GetColor(marker.highlightColor));
+    display.DrawRectFilled(tipBox, m_pBuffer->GetTheme().GetColor(marker.GetBackgroundColor()));
+    display.DrawLine(tipBox.topLeftPx, tipBox.TopRight(), m_pBuffer->GetTheme().GetColor(marker.GetHighlightColor()));
+    display.DrawLine(tipBox.BottomLeft(), tipBox.bottomRightPx, m_pBuffer->GetTheme().GetColor(marker.GetHighlightColor()));
+    display.DrawLine(tipBox.topLeftPx, tipBox.BottomLeft(), m_pBuffer->GetTheme().GetColor(marker.GetHighlightColor()));
+    display.DrawLine(tipBox.TopRight(), tipBox.bottomRightPx, m_pBuffer->GetTheme().GetColor(marker.GetHighlightColor()));
 
     // Draw the text in the box
-    display.DrawChars(tipBox.topLeftPx + NVec2f(textBorder, textBorder), m_pBuffer->GetTheme().GetColor(marker.textColor), (const uint8_t*)marker.description.c_str());
+    display.DrawChars(tipBox.topLeftPx + NVec2f(textBorder, textBorder), m_pBuffer->GetTheme().GetColor(marker.GetTextColor()), (const uint8_t*)marker.description.c_str());
 }
 
 NVec4f ZepWindow::GetBlendedColor(ThemeColor color) const
@@ -895,7 +895,7 @@ void ZepWindow::DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax)
             auto sel = marker->range;
             if (marker->ContainsLocation(cp.iterator))
             {
-                if (marker->markerType == RangeMarkerType::Message || marker->markerType == RangeMarkerType::Search)
+                if (marker->markerType == RangeMarkerType::Mark || marker->markerType == RangeMarkerType::Search)
                 {
                     // Draw lines under the text
                     if (marker->displayType & RangeMarkerDisplayType::Underline)
@@ -905,13 +905,13 @@ void ZepWindow::DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax)
                         display.DrawRectFilled(
                             NRectf(NVec2f(screenPosX, ToWindowY(offset)),
                                 NVec2f(screenPosX + cp.size.x, ToWindowY(offset + underlineHeight))),
-                            m_pBuffer->GetTheme().GetColor(marker->highlightColor));
+                            m_pBuffer->GetTheme().GetColor(marker->GetHighlightColor()));
                     }
 
                     // Fill the background of the text with the marker color
                     if (marker->displayType & RangeMarkerDisplayType::Background)
                     {
-                        backgroundColor = Mix(backgroundColor, m_pBuffer->GetTheme().GetColor(marker->backgroundColor), marker->alpha);
+                        backgroundColor = Mix(backgroundColor, m_pBuffer->GetTheme().GetColor(marker->GetBackgroundColor()), marker->alpha);
                         display.DrawRectFilled(charRect, backgroundColor);
                     }
                 }
@@ -999,7 +999,7 @@ void ZepWindow::DisplayLineNumbers()
             if (m_indicatorRegion->rect.Width() > 0)
             {
                 // Show any markers in the left indicator region
-                m_pBuffer->ForEachMarker(RangeMarkerType::Message, Direction::Forward, GlyphIterator(m_pBuffer, lineInfo.lineByteRange.first), GlyphIterator(m_pBuffer, lineInfo.lineByteRange.second), [&](const std::shared_ptr<RangeMarker>& marker) {
+                m_pBuffer->ForEachMarker(RangeMarkerType::Mark, Direction::Forward, GlyphIterator(m_pBuffer, lineInfo.lineByteRange.first), GlyphIterator(m_pBuffer, lineInfo.lineByteRange.second), [&](const std::shared_ptr<RangeMarker>& marker) {
                     // >|< Text.  This is the bit between the arrows <-.  A vertical bar in the 'margin'
                     if (marker->displayType & RangeMarkerDisplayType::Indicator)
                     {
@@ -1014,7 +1014,7 @@ void ZepWindow::DisplayLineNumbers()
                                     NVec2f(
                                         m_indicatorRegion->rect.Center().x + m_indicatorRegion->rect.Width() / 4,
                                         ToWindowY(lineInfo.yOffsetPx + lineInfo.padding.x) + display.GetFontHeightPixels())),
-                                m_pBuffer->GetTheme().GetColor(marker->highlightColor));
+                                m_pBuffer->GetTheme().GetColor(marker->GetHighlightColor()));
                         }
                     }
                     return true;
@@ -1684,7 +1684,7 @@ void ZepWindow::Display()
     else
     {
         // No hanging tooltips if the markers on the page have gone
-        if (m_pBuffer->GetRangeMarkers(RangeMarkerType::Message).empty())
+        if (m_pBuffer->GetRangeMarkers(RangeMarkerType::Mark).empty())
         {
             m_toolTips.clear();
         }

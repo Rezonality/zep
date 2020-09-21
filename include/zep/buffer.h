@@ -4,7 +4,6 @@
 #include <set>
 
 #include "zep/mcommon/file/path.h"
-#include "zep/mcommon/utf8/unchecked.h"
 #include "zep/mcommon/string/stringutils.h"
 #include "zep/mcommon/logger.h"
 
@@ -12,7 +11,7 @@
 
 #include "zep/editor.h"
 #include "zep/line_widgets.h"
-#include "zep/theme.h"
+#include "zep/range_markers.h"
 
 namespace Zep
 {
@@ -75,94 +74,6 @@ enum class BufferType
     DataGrid,
     Tree
 };
-
-using ByteIndex = long;
-struct ByteRange
-{
-    ByteRange(ByteIndex a = 0, ByteIndex b = 0)
-        : first(a),
-        second(b)
-    { }
-    ByteIndex first;
-    ByteIndex second;
-    bool ContainsLocation(ByteIndex loc) const
-    {
-        return loc >= first && loc < second;
-    }
-};
-
-namespace RangeMarkerType
-{
-enum
-{
-    Message = (1 << 0),
-    Search = (1 << 1),
-    Widget = (1 << 2),
-    LineWidget = (1 << 3),
-    All = (Message | Search | LineWidget | Widget)
-};
-};
-
-enum class FlashType
-{
-    Flash
-};
-
-namespace RangeMarkerDisplayType
-{
-enum
-{
-    Hidden = 0,
-    Underline = (1 << 0), // Underline the range
-    Background = (1 << 1), // Add a background to the range
-    Tooltip = (1 << 2), // Show a tooltip using the name/description
-    TooltipAtLine = (1 << 3), // Tooltip shown if the user hovers the line
-    CursorTip = (1 << 4), // Tooltip shown if the user cursor is on the Mark
-    CursorTipAtLine = (1 << 5), // Tooltip shown if the user cursor is on the Mark line
-    Indicator = (1 << 6), // Show an indicator on the left side
-    Timed = (1 << 7),
-    All = Underline | Tooltip | TooltipAtLine | CursorTip | CursorTipAtLine | Indicator | Background
-};
-};
-
-enum class ToolTipPos
-{
-    AboveLine = 0,
-    BelowLine = 1,
-    RightLine = 2,
-    Count = 3
-};
-
-struct RangeMarker
-{
-    ByteRange range;
-    ThemeColor textColor = ThemeColor::Text;
-    ThemeColor backgroundColor = ThemeColor::Background;
-    ThemeColor highlightColor = ThemeColor::Background;
-    uint32_t displayType = RangeMarkerDisplayType::All;
-    uint32_t markerType = RangeMarkerType::Message;
-    uint32_t displayRow = 0;
-    std::string name;
-    std::string description;
-    ToolTipPos tipPos = ToolTipPos::AboveLine;
-    std::shared_ptr<IWidget> spWidget;
-    NVec2f inlineSize;
-    float duration = 1.0f;
-    float alpha = 1.0f;
-    timer timer;
-    FlashType flashType = FlashType::Flash;
-
-    bool ContainsLocation(GlyphIterator loc) const
-    {
-        return range.ContainsLocation(loc.Index());
-    }
-    bool IntersectsRange(const ByteRange& i) const
-    {
-        return i.first < range.second && i.second > range.first;
-    }
-};
-
-using tRangeMarkers = std::map<ByteIndex, std::set<std::shared_ptr<RangeMarker>>>;
 
 // A really big cursor move; which will likely clamp
 //static const iterator MaxCursorMove = iterator(0xFFFFFFF);
@@ -360,14 +271,14 @@ public:
     void ClearFileFlags(uint32_t flags);
     void ToggleFileFlag(uint32_t flags);
 
-    ByteRange GetExpression(ExpressionType type, const GlyphIterator location, const std::vector<char>& beginExpression, const std::vector<char>& endExpression) const;
+    GlyphRange GetExpression(ExpressionType type, const GlyphIterator location, const std::vector<char>& beginExpression, const std::vector<char>& endExpression) const;
     std::string GetBufferText(const GlyphIterator& start, const GlyphIterator& end) const;
 
     void SetPostKeyNotifier(fnKeyNotifier notifier);
     fnKeyNotifier GetPostKeyNotifier() const;
 
     void EndFlash() const;
-    void BeginFlash(float seconds, FlashType flashType, const ByteRange& range);
+    void BeginFlash(float seconds, FlashType flashType, const GlyphRange& range);
 
 private:
     void ClearRangeMarker(std::shared_ptr<RangeMarker> spMarker);

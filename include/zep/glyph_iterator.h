@@ -1,11 +1,28 @@
 #pragma once
 
+#include "zep/mcommon/utf8/unchecked.h"
 #include "gap_buffer.h"
 
 namespace Zep
 {
 
 class ZepBuffer;
+
+using ByteIndex = long;
+struct ByteRange
+{
+    ByteRange(ByteIndex a = 0, ByteIndex b = 0)
+        : first(a),
+        second(b)
+    { }
+    ByteIndex first;
+    ByteIndex second;
+    bool ContainsLocation(ByteIndex loc) const
+    {
+        return loc >= first && loc < second;
+    }
+};
+
 enum class LineLocation
 {
     None, // Not any specific location

@@ -742,7 +742,7 @@ bool ZepMode::GetCommand(CommandContext& context)
     // Control
     else if (mappedCommand == id_MotionNextMarker)
     {
-        auto pFound = buffer.FindNextMarker(GetCurrentWindow()->GetBufferCursor(), Direction::Forward, RangeMarkerType::Message);
+        auto pFound = buffer.FindNextMarker(GetCurrentWindow()->GetBufferCursor(), Direction::Forward, RangeMarkerType::Mark);
         if (pFound)
         {
             GetCurrentWindow()->SetBufferCursor(GlyphIterator(&context.buffer, pFound->range.first));
@@ -751,7 +751,7 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_MotionPreviousMarker)
     {
-        auto pFound = buffer.FindNextMarker(GetCurrentWindow()->GetBufferCursor(), Direction::Backward, RangeMarkerType::Message);
+        auto pFound = buffer.FindNextMarker(GetCurrentWindow()->GetBufferCursor(), Direction::Backward, RangeMarkerType::Mark);
         if (pFound)
         {
             GetCurrentWindow()->SetBufferCursor(GlyphIterator(&context.buffer, pFound->range.first));
@@ -2176,7 +2176,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
                     {
                     }
                 }
-                buffer.BeginFlash(time, flashType, ByteRange(0, buffer.End().Index()));
+                buffer.BeginFlash(time, flashType, GlyphRange(buffer.Begin(), buffer.End()));
             }
         }
         else if (strCommand.find(":ZTestMarkers") == 0)
@@ -2208,46 +2208,37 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             switch (markerSelection)
             {
             case 5:
-                spMarker->highlightColor = ThemeColor::Error;
-                spMarker->backgroundColor = ThemeColor::Error;
-                spMarker->textColor = ThemeColor::Text;
+                spMarker->SetColors(ThemeColor::Error, ThemeColor::Text, ThemeColor::Error);
                 spMarker->name = "All Marker";
                 spMarker->description = "This is an example tooltip\nThey can be added to any range of characters";
                 spMarker->displayType = RangeMarkerDisplayType::All;
                 break;
             case 4:
-                spMarker->highlightColor = ThemeColor::Error;
-                spMarker->backgroundColor = ThemeColor::Error;
-                spMarker->textColor = ThemeColor::Text;
+                spMarker->SetColors(ThemeColor::Error, ThemeColor::Text, ThemeColor::Error);
                 spMarker->name = "Filled Marker";
                 spMarker->description = "This is an example tooltip\nThey can be added to any range of characters";
                 spMarker->displayType = RangeMarkerDisplayType::Tooltip | RangeMarkerDisplayType::Underline | RangeMarkerDisplayType::Indicator | RangeMarkerDisplayType::Background;
                 break;
             case 3:
-                spMarker->highlightColor = ThemeColor::TabActive;
-                spMarker->textColor = ThemeColor::Text;
+                spMarker->SetColors(ThemeColor::Background, ThemeColor::Text, GetEditor().GetTheme().GetUniqueColor(unique++));
                 spMarker->name = "Underline Marker";
                 spMarker->description = "This is an example tooltip\nThey can be added to any range of characters";
-                spMarker->highlightColor = GetEditor().GetTheme().GetUniqueColor(unique++);
                 spMarker->displayType = RangeMarkerDisplayType::Tooltip | RangeMarkerDisplayType::Underline | RangeMarkerDisplayType::CursorTip;
                 break;
             case 2:
-                spMarker->highlightColor = ThemeColor::Warning;
-                spMarker->textColor = ThemeColor::Text;
+                spMarker->SetColors(ThemeColor::Background, ThemeColor::Text, ThemeColor::Warning);
                 spMarker->name = "Tooltip";
                 spMarker->description = "This is an example tooltip\nThey can be added to any range of characters";
                 spMarker->displayType = RangeMarkerDisplayType::Tooltip;
                 break;
             case 1:
-                spMarker->highlightColor = ThemeColor::Warning;
-                spMarker->textColor = ThemeColor::Text;
+                spMarker->SetColors(ThemeColor::Background, ThemeColor::Text, ThemeColor::Warning);
                 spMarker->name = "Warning";
                 spMarker->description = "This is an example warning mark";
                 break;
             case 0:
             default:
-                spMarker->highlightColor = ThemeColor::Error;
-                spMarker->textColor = ThemeColor::Text;
+                spMarker->SetColors(ThemeColor::Background, ThemeColor::Text, ThemeColor::Error);
                 spMarker->name = "Error";
                 spMarker->description = "This is an example error mark";
             }
@@ -2397,8 +2388,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
                     start = found + 1;
 
                     auto spMarker = std::make_shared<RangeMarker>();
-                    spMarker->backgroundColor = ThemeColor::VisualSelectBackground;
-                    spMarker->textColor = ThemeColor::Text;
+                    spMarker->SetColors(ThemeColor::VisualSelectBackground, ThemeColor::Text);
                     spMarker->range = ByteRange(found.Index(), found.PeekByteOffset(long(searchString.size())).Index());
                     spMarker->displayType = RangeMarkerDisplayType::Background;
                     spMarker->markerType = RangeMarkerType::Search;
@@ -2422,7 +2412,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             if (pMark)
             {
                 pWindow->SetBufferCursor(GlyphIterator(&buffer, pMark->range.first));
-                pMark->backgroundColor = ThemeColor::Info;
+                pMark->SetBackgroundColor(ThemeColor::Info);
             }
             else
             {

@@ -213,7 +213,7 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         ZEP_UNUSED(cursorOffset);
         ZEP_UNUSED(type);
 
-        ByteRange range;
+        GlyphRange range;
         if (type == ReplParseType::OuterExpression)
         {
             range = buffer.GetExpression(ExpressionType::Outer, cursorOffset, { '(' }, { ')' });
@@ -224,14 +224,14 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         }
         else
         {
-            range = ByteRange(0, buffer.End().Index());
+            range = GlyphRange(buffer.Begin(), buffer.End());
         }
 
         if (range.first >= range.second)
             return "<No Expression>";
 
         const auto& text = buffer.GetGapBuffer();
-        auto eval = std::string(text.begin() + range.first, text.begin() + range.second);
+        auto eval = std::string(text.begin() + range.first.Index(), text.begin() + range.second.Index());
 
         // Flash the evaluated expression
         FlashType flashType = FlashType::Flash;
@@ -325,8 +325,8 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
                     {
                         auto spMarker = std::make_shared<RangeMarker>();
                         spMarker->description = "This is an identifier";
-                        spMarker->highlightColor = ThemeColor::Identifier;
-                        spMarker->textColor = ThemeColor::Text;
+                        spMarker->SetHighlightColor(ThemeColor::Identifier);
+                        spMarker->SetTextColor(ThemeColor::Text);
                         spTipMsg->spMarker = spMarker;
                         spTipMsg->handled = true;
                     }
@@ -334,8 +334,8 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
                     {
                         auto spMarker = std::make_shared<RangeMarker>();
                         spMarker->description = "This is a keyword";
-                        spMarker->highlightColor = ThemeColor::Keyword;
-                        spMarker->textColor = ThemeColor::Text;
+                        spMarker->SetHighlightColor(ThemeColor::Keyword);
+                        spMarker->SetTextColor(ThemeColor::Text);
                         spTipMsg->spMarker = spMarker;
                         spTipMsg->handled = true;
                     }

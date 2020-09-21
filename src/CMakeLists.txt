@@ -2,6 +2,7 @@ SET(ZEP_ROOT ${CMAKE_CURRENT_LIST_DIR}/..)
 
 SET(ZEP_SOURCE
 ${ZEP_ROOT}/include/zep/buffer.h
+${ZEP_ROOT}/include/zep/range_markers.h
 ${ZEP_ROOT}/include/zep/glyph_iterator.h
 ${ZEP_ROOT}/include/zep/commands.h
 ${ZEP_ROOT}/include/zep/display.h
@@ -33,6 +34,7 @@ ${ZEP_ROOT}/include/zep/theme.h
 ${ZEP_ROOT}/include/zep/window.h
 ${ZEP_ROOT}/src/CMakeLists.txt
 ${ZEP_ROOT}/src/buffer.cpp
+${ZEP_ROOT}/src/range_markers.cpp
 ${ZEP_ROOT}/src/glyph_iterator.cpp
 ${ZEP_ROOT}/src/commands.cpp
 ${ZEP_ROOT}/src/display.cpp
