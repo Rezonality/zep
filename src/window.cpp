@@ -755,6 +755,8 @@ NRectf SquareRect(const NRectf& rc)
 void ZepWindow::UpdateMarkers()
 {
     bool foundFlash = false;
+
+    std::vector<std::shared_ptr<RangeMarker>> victims;
     m_pBuffer->ForEachMarker(RangeMarkerType::All, Direction::Forward, GlyphIterator(m_pBuffer, 0), GlyphIterator(m_pBuffer, m_pBuffer->End().Index()), [&](const std::shared_ptr<RangeMarker>& marker) {
         // Don't show hidden markers
         if (!(marker->displayType & RangeMarkerDisplayType::Timed))
@@ -776,9 +778,15 @@ void ZepWindow::UpdateMarkers()
         {
             marker->alpha = 0.0f;
             marker->displayType |= RangeMarkerDisplayType::Hidden;
+            victims.push_back(marker);
         }
         return true;
     });
+
+    for (auto& pVictim : victims)
+    {
+        m_pBuffer->RemoveRangeMarker(pVictim);
+    }
 
     if (!foundFlash)
     {

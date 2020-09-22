@@ -247,6 +247,11 @@ GlyphRange::GlyphRange(GlyphIterator a, GlyphIterator b)
     , second(b)
 {
 }
+    
+GlyphRange::GlyphRange(const ZepBuffer* pBuffer, ByteRange range)
+    : first(pBuffer, range.first), second(pBuffer, range.second)
+{
+}
 
 GlyphRange::GlyphRange()
 {

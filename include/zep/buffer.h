@@ -234,6 +234,7 @@ public:
     void ClearSelection();
 
     void AddRangeMarker(std::shared_ptr<RangeMarker> spMarker);
+    void RemoveRangeMarker(std::shared_ptr<RangeMarker> spMarker);
     void ClearRangeMarkers(const std::set<std::shared_ptr<RangeMarker>>& markers);
     void ClearRangeMarkers(uint32_t types);
     tRangeMarkers GetRangeMarkers(uint32_t types) const;

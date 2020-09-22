@@ -101,6 +101,7 @@ struct GlyphRange
     GlyphIterator second;
 
     GlyphRange(GlyphIterator a, GlyphIterator b);
+    GlyphRange(const ZepBuffer* buffer, ByteRange range);
     GlyphRange();
     bool ContainsLocation(long loc) const;
     bool ContainsLocation(GlyphIterator loc) const;
