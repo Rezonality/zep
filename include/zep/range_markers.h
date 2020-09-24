@@ -46,7 +46,9 @@ enum
     CursorTipAtLine = (1 << 5), // Tooltip shown if the user cursor is on the Mark line
     Indicator = (1 << 6), // Show an indicator on the left side
     Timed = (1 << 7),
-    All = Underline | Tooltip | TooltipAtLine | CursorTip | CursorTipAtLine | Indicator | Background
+    All = Underline | Tooltip | TooltipAtLine | CursorTip | CursorTipAtLine | Indicator | Background,
+    CompileError = Tooltip | CursorTip | Indicator | Background,
+    BackgroundMark = Background
 };
 };
 
@@ -76,6 +78,7 @@ struct RangeMarker : std::enable_shared_from_this<RangeMarker>
     void SetHighlightColor(ThemeColor color);
     void SetColors(ThemeColor back = ThemeColor::None, ThemeColor text = ThemeColor::Text, ThemeColor highlight = ThemeColor::Text);
     void SetAlpha(float a);
+    ZepBuffer& GetBuffer();
 
 public:
     uint32_t displayType = RangeMarkerDisplayType::All;

@@ -83,5 +83,10 @@ const ByteRange& RangeMarker::GetRange() const
 {
     return m_range;
 }
+    
+ZepBuffer& RangeMarker::GetBuffer()
+{
+    return m_buffer;
+}
 
 }; // namespace Zep
