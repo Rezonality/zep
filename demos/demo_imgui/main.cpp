@@ -323,7 +323,7 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
                 {
                     if (pSyntax->GetSyntaxAt(spTipMsg->location).foreground == ThemeColor::Identifier)
                     {
-                        auto spMarker = std::make_shared<RangeMarker>();
+                        auto spMarker = std::make_shared<RangeMarker>(*spTipMsg->pBuffer);
                         spMarker->description = "This is an identifier";
                         spMarker->SetHighlightColor(ThemeColor::Identifier);
                         spMarker->SetTextColor(ThemeColor::Text);
@@ -332,7 +332,7 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
                     }
                     else if (pSyntax->GetSyntaxAt(spTipMsg->location).foreground == ThemeColor::Keyword)
                     {
-                        auto spMarker = std::make_shared<RangeMarker>();
+                        auto spMarker = std::make_shared<RangeMarker>(*spTipMsg->pBuffer);
                         spMarker->description = "This is a keyword";
                         spMarker->SetHighlightColor(ThemeColor::Keyword);
                         spMarker->SetTextColor(ThemeColor::Text);

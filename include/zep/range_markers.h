@@ -14,6 +14,7 @@
 namespace Zep
 {
 struct IWidget;
+class ZepBuffer;
 
 namespace RangeMarkerType
 {
@@ -57,14 +58,19 @@ enum class ToolTipPos
     Count = 3
 };
 
-struct RangeMarker
+struct RangeMarker : std::enable_shared_from_this<RangeMarker>
 {
+    RangeMarker(ZepBuffer& buffer);
+
     bool ContainsLocation(GlyphIterator loc) const;
     bool IntersectsRange(const ByteRange& i) const;
     virtual ThemeColor GetBackgroundColor(const GlyphIterator& itr = GlyphIterator()) const;
     virtual ThemeColor GetTextColor(const GlyphIterator& itr = GlyphIterator()) const;
     virtual ThemeColor GetHighlightColor(const GlyphIterator& itr = GlyphIterator()) const;
     virtual float GetAlpha(GlyphIterator) const;
+
+    void SetRange(ByteRange range);
+    const ByteRange& GetRange() const;
     void SetBackgroundColor(ThemeColor color);
     void SetTextColor(ThemeColor color);
     void SetHighlightColor(ThemeColor color);
@@ -72,7 +78,6 @@ struct RangeMarker
     void SetAlpha(float a);
 
 public:
-    ByteRange range;
     uint32_t displayType = RangeMarkerDisplayType::All;
     uint32_t markerType = RangeMarkerType::Mark;
     uint32_t displayRow = 0;
@@ -87,9 +92,11 @@ public:
     FlashType flashType = FlashType::Flash;
 
 private:
-    ThemeColor textColor = ThemeColor::Text;
-    ThemeColor backgroundColor = ThemeColor::Background;
-    ThemeColor highlightColor = ThemeColor::Background; // Used for lines around tip box, underline, etc.
+    ZepBuffer& m_buffer;
+    ByteRange m_range;
+    ThemeColor m_textColor = ThemeColor::Text;
+    ThemeColor m_backgroundColor = ThemeColor::Background;
+    ThemeColor m_highlightColor = ThemeColor::Background; // Used for lines around tip box, underline, etc.
 };
 
 using tRangeMarkers = std::map<ByteIndex, std::set<std::shared_ptr<RangeMarker>>>;

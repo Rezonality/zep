@@ -1280,5 +1280,17 @@ std::vector<const KeyMap*> ZepEditor::GetGlobalKeyMaps(ZepMode& mode)
     }
     return maps;
 }
+    
+ZepBuffer* ZepEditor::GetBufferFromHandle(uint64_t handle)
+{
+    for (auto& buffer : m_buffers)
+    {
+        if (uint64_t(buffer.get()) == handle)
+        {
+            return buffer.get();
+        }
+    }
+    return nullptr;
+}
 
 } // namespace Zep

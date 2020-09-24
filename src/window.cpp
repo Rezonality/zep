@@ -373,9 +373,9 @@ NVec2f ZepWindow::ArrangeLineMarkers(tRangeMarkers& markers)
                 bool found = false;
                 for (auto& stack : markerStack)
                 {
-                    if (stack <= spMarker->range.first)
+                    if (stack <= spMarker->GetRange().first)
                     {
-                        stack = spMarker->range.second;
+                        stack = spMarker->GetRange().second;
                         found = true;
                         break;
                     }
@@ -384,7 +384,7 @@ NVec2f ZepWindow::ArrangeLineMarkers(tRangeMarkers& markers)
 
                 if (!found)
                 {
-                    markerStack.push_back(spMarker->range.second);
+                    markerStack.push_back(spMarker->GetRange().second);
                     row = uint32_t(markerStack.size()) - 1;
 
                     // Make the height bigger due to new row depth
@@ -785,7 +785,7 @@ void ZepWindow::UpdateMarkers()
 
     for (auto& pVictim : victims)
     {
-        m_pBuffer->RemoveRangeMarker(pVictim);
+        m_pBuffer->ClearRangeMarker(pVictim);
     }
 
     if (!foundFlash)
@@ -900,7 +900,7 @@ void ZepWindow::DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax)
                 return true;
             }
 
-            auto sel = marker->range;
+            auto sel = marker->GetRange();
             if (marker->ContainsLocation(cp.iterator))
             {
                 if (marker->markerType == RangeMarkerType::Mark || marker->markerType == RangeMarkerType::Search)
@@ -1670,7 +1670,7 @@ void ZepWindow::Display()
                 return true;
             }
 
-            auto sel = marker->range;
+            auto sel = marker->GetRange();
             if (marker->displayType & RangeMarkerDisplayType::CursorTip)
             {
                 if (m_bufferCursor.Index() >= sel.first && m_bufferCursor.Index() < sel.second)

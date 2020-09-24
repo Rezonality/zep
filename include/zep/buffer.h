@@ -234,7 +234,7 @@ public:
     void ClearSelection();
 
     void AddRangeMarker(std::shared_ptr<RangeMarker> spMarker);
-    void RemoveRangeMarker(std::shared_ptr<RangeMarker> spMarker);
+    void ClearRangeMarker(std::shared_ptr<RangeMarker> spMarker);
     void ClearRangeMarkers(const std::set<std::shared_ptr<RangeMarker>>& markers);
     void ClearRangeMarkers(uint32_t types);
     tRangeMarkers GetRangeMarkers(uint32_t types) const;
@@ -281,9 +281,10 @@ public:
     void EndFlash() const;
     void BeginFlash(float seconds, FlashType flashType, const GlyphRange& range);
 
-private:
-    void ClearRangeMarker(std::shared_ptr<RangeMarker> spMarker);
+    uint64_t ToHandle() const;
+    static ZepBuffer* FromHandle(ZepEditor& editor, uint64_t handle);
 
+private:
     void MarkUpdate();
 
     void UpdateForInsert(const GlyphIterator& startOffset, const GlyphIterator& endOffset, ChangeRecord& changeRecord);

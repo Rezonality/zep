@@ -386,6 +386,8 @@ public:
     // Used to inform when a file changes - called from outside zep by the platform specific code, if possible
     virtual void OnFileChanged(const ZepPath& path);
 
+    ZepBuffer* GetBufferFromHandle(uint64_t handle);
+
 private:
     // Call GetBuffer publicly, to stop creation of duplicate buffers refering to the same file
     ZepBuffer* CreateNewBuffer(const std::string& bufferName);
