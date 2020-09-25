@@ -930,8 +930,21 @@ GlyphIterator ZepBuffer::GetLinePos(GlyphIterator bufferLocation, LineLocation l
     }
 }
 
-void ZepBuffer::MoveMarkers(ChangeRecord& record, Direction direction)
+void ZepBuffer::ApplyMarkerChanges(ChangeRecord& record, Direction direction)
 {
+    for (auto& r : record.markerDeletes)
+    {
+        if (direction == Direction::Forward)
+        {
+            ClearRangeMarker(r);
+        }
+        else
+        {
+            // Reset the range will set it in the buffer
+            r->SetRange(r->GetRange());
+        }
+    }
+
     for (auto& r : record.markerMoves)
     {
         auto from = r.from;
@@ -962,6 +975,7 @@ void ZepBuffer::MoveMarkers(ChangeRecord& record, Direction direction)
 
 void ZepBuffer::UpdateForDelete(const GlyphIterator& startItr, const GlyphIterator& endItr, ChangeRecord& changeRecord)
 {
+    assert(startItr < endItr);
     changeRecord.strDeleted = std::string(m_gapBuffer.begin() + startItr.Index(), m_gapBuffer.begin() + endItr.Index());
 
     ForEachMarker(RangeMarkerType::All, Zep::Direction::Forward, startItr, End(), [&](const std::shared_ptr<RangeMarker>& marker) {
@@ -972,11 +986,20 @@ void ZepBuffer::UpdateForDelete(const GlyphIterator& startItr, const GlyphIterat
         else
         {
             ZLOG(INFO, "Range: " << startItr.Index() << ", " << endItr.Index() << " : mark: " << marker->GetRange().first);
-            auto distance = std::min(endItr.Index(), marker->GetRange().first) - startItr.Index();
-            changeRecord.markerMoves.push_back(
-                MarkerMove(marker->GetRange().first,
-                    marker->GetRange().first - distance,
-                    marker));
+
+            // It's OK to move on the first char; since that is like a shove
+            if (endItr.Index() <= (marker->GetRange().first + 1))
+            {
+                auto distance = std::min(endItr.Index(), marker->GetRange().first) - startItr.Index();
+                changeRecord.markerMoves.push_back(
+                    MarkerMove(marker->GetRange().first,
+                        marker->GetRange().first - distance,
+                        marker));
+            }
+            else
+            {
+                changeRecord.markerDeletes.push_back(marker);
+            }
         }
         return true;
     });
@@ -997,12 +1020,19 @@ void ZepBuffer::UpdateForInsert(const GlyphIterator& startItr, const GlyphIterat
         }
         else
         {
-            //auto distance = std::min(endItr.Index(), marker->range.first) - startItr.Index();
-            auto distance = endItr.Index() - startItr.Index();
-            changeRecord.markerMoves.push_back(
-                MarkerMove(marker->GetRange().first,
-                    marker->GetRange().first + distance,
-                    marker));
+            if (endItr.Index() <= (marker->GetRange().first + 1))
+            {
+                //auto distance = std::min(endItr.Index(), marker->range.first) - startItr.Index();
+                auto distance = endItr.Index() - startItr.Index();
+                changeRecord.markerMoves.push_back(
+                    MarkerMove(marker->GetRange().first,
+                        marker->GetRange().first + distance,
+                        marker));
+            }
+            else
+            {
+                changeRecord.markerDeletes.push_back(marker);
+            }
         }
         return true;
     });

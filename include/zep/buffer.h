@@ -108,11 +108,13 @@ struct MarkerMove
 };
 
 using tMarkerMoves = std::vector<MarkerMove>;
+using tMarkers = std::vector<std::shared_ptr<RangeMarker>>;
 struct ChangeRecord
 {
     std::string strDeleted;
     std::string strInserted;
     tMarkerMoves markerMoves;
+    tMarkers markerDeletes;
     GlyphIterator itrStart;
     GlyphIterator itrEnd;
 
@@ -120,6 +122,7 @@ struct ChangeRecord
     {
         strDeleted.clear();
         markerMoves.clear();
+        markerDeletes.clear();
         itrStart.Invalidate();
         itrEnd.Invalidate();
     }
@@ -244,7 +247,7 @@ public:
 
     void ForEachMarker(uint32_t types, Direction dir, const GlyphIterator& begin, const GlyphIterator& end, std::function<bool(const std::shared_ptr<RangeMarker>&)> fnCB) const;
     std::shared_ptr<RangeMarker> FindNextMarker(GlyphIterator start, Direction dir, uint32_t markerType);
-    void MoveMarkers(ChangeRecord& record, Direction direction);
+    void ApplyMarkerChanges(ChangeRecord& record, Direction direction);
 
     void SetBufferType(BufferType type);
     BufferType GetBufferType() const;
