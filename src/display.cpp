@@ -10,42 +10,50 @@
 namespace Zep
 {
 
-void ZepDisplay::InvalidateCharCache()
+void ZepDisplay::InvalidateCharCache(ZepFontType type)
 {
-    m_charCacheDirty = true;
+    GetFontCache(type).charCacheDirty = true;
 }
 
-void ZepDisplay::BuildCharCache()
+ZepDisplay::FontTypeCache& ZepDisplay::GetFontCache(ZepFontType type)
 {
+    return m_fontCache[int(type)];
+}
+
+void ZepDisplay::BuildCharCache(ZepFontType type)
+{
+    auto& fontCache = GetFontCache(type);
+
     const char chA = 'A';
-    m_defaultCharSize = GetTextSize((const uint8_t*)&chA, (const uint8_t*)&chA + 1);
+    fontCache.defaultCharSize = GetTextSize(type, (const uint8_t*)&chA, (const uint8_t*)&chA + 1);
     for (int i = 0; i < 256; i++)
     {
         uint8_t ch = (uint8_t)i;
-        m_charCacheASCII[i] = GetTextSize(&ch, &ch + 1);
+        fontCache.charCacheASCII[i] = GetTextSize(type, &ch, &ch + 1);
     }
-    m_charCacheDirty = false;
+    fontCache.charCacheDirty = false;
     
-    m_dotSize = m_defaultCharSize / 8.0f;
-    m_dotSize.x = std::min(m_dotSize.x, m_dotSize.y);
-    m_dotSize.y = std::min(m_dotSize.x, m_dotSize.y);
-    m_dotSize.x = std::max(1.0f, m_dotSize.x);
-    m_dotSize.y = std::max(1.0f, m_dotSize.y);
+    fontCache.dotSize = fontCache.defaultCharSize / 8.0f;
+    fontCache.dotSize.x = std::min(fontCache.dotSize.x, fontCache.dotSize.y);
+    fontCache.dotSize.y = std::min(fontCache.dotSize.x, fontCache.dotSize.y);
+    fontCache.dotSize.x = std::max(1.0f, fontCache.dotSize.x);
+    fontCache.dotSize.y = std::max(1.0f, fontCache.dotSize.y);
 }
 
-const NVec2f& ZepDisplay::GetDefaultCharSize()
+const NVec2f& ZepDisplay::GetDefaultCharSize(ZepFontType type)
 {
-    if (m_charCacheDirty)
+    auto& fontCache = GetFontCache(type);
+    if (fontCache.charCacheDirty)
     {
-        BuildCharCache();
+        BuildCharCache(type);
     }
     
-    return m_defaultCharSize;
+    return fontCache.defaultCharSize;
 }
 
-const NVec2f& ZepDisplay::GetDotSize()
+const NVec2f& ZepDisplay::GetDotSize(ZepFontType type)
 {
-    return m_dotSize;
+    return GetFontCache(type).dotSize;
 }
 
 uint32_t ZepDisplay::GetCodePointCount(const uint8_t* pCh, const uint8_t* pEnd) const
@@ -59,28 +67,29 @@ uint32_t ZepDisplay::GetCodePointCount(const uint8_t* pCh, const uint8_t* pEnd) 
     return count;
 }
 
-NVec2f ZepDisplay::GetCharSize(const uint8_t* pCh)
+NVec2f ZepDisplay::GetCharSize(ZepFontType type, const uint8_t* pCh)
 {
-    if (m_charCacheDirty)
+    auto& fontCache = GetFontCache(type);
+    if (fontCache.charCacheDirty)
     {
-        BuildCharCache();
+        BuildCharCache(type);
     }
 
     if (utf8_codepoint_length(*pCh) == 1)
     {
-        return m_charCacheASCII[*pCh];
+        return fontCache.charCacheASCII[*pCh];
     }
  
     auto ch32 = utf8::unchecked::next(pCh);
 
-    auto itr = m_charCache.find((uint32_t)ch32);
-    if (itr != m_charCache.end())
+    auto itr = fontCache.charCache.find((uint32_t)ch32);
+    if (itr != fontCache.charCache.end())
     {
         return itr->second;
     }
      
-    auto sz = GetTextSize(pCh, pCh + utf8_codepoint_length(*pCh));
-    m_charCache[(uint32_t)ch32] = sz;
+    auto sz = GetTextSize(type, pCh, pCh + utf8_codepoint_length(*pCh));
+    fontCache.charCache[(uint32_t)ch32] = sz;
 
     return sz;
 }

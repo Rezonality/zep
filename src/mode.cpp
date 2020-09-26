@@ -854,12 +854,12 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_FontBigger)
     {
-        GetEditor().GetDisplay().SetFontPointSize(std::min(GetEditor().GetDisplay().GetFontPointSize() + 1.0f, 200.0f));
+        GetEditor().GetDisplay().SetFontPointSize(ZepFontType::Text, std::min(GetEditor().GetDisplay().GetFontPointSize(ZepFontType::Text) + 1.0f, 200.0f));
         return true;
     }
     else if (mappedCommand == id_FontSmaller)
     {
-        GetEditor().GetDisplay().SetFontPointSize(std::max(10.0f, GetEditor().GetDisplay().GetFontPointSize() - 1.0f));
+        GetEditor().GetDisplay().SetFontPointSize(ZepFontType::Text, std::max(10.0f, GetEditor().GetDisplay().GetFontPointSize(ZepFontType::Text) - 1.0f));
         return true;
     }
     // Moving between splits

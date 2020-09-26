@@ -46,8 +46,9 @@ public:
     {
     }
 
-    void SetFontPointSize(float fVal)
+    void SetFontPointSize(ZepFontType type, float fVal)
     {
+        ZEP_UNUSED(type);
         #ifdef __APPLE__
         QFont font("Menlo");
         // On mac passing point size ends up with a too small font.
@@ -68,21 +69,24 @@ public:
         QFontMetrics met(qApp->font());
         m_fontOffset = met.ascent();
         m_fontHeight = (float)met.height();
-        InvalidateCharCache();
+        InvalidateCharCache(type);
     }
 
-    float GetFontPointSize() const
+    float GetFontPointSize(ZepFontType type) const
     {
+        ZEP_UNUSED(type);
         return DPI::GetFontPointSize();
     }
 
-    float GetFontHeightPixels() const
+    float GetFontHeightPixels(ZepFontType type) const
     {
+        ZEP_UNUSED(type);
         return m_fontHeight;
     }
 
-    NVec2f GetTextSize(const uint8_t* pBegin, const uint8_t* pEnd) const
+    NVec2f GetTextSize(ZepFontType type, const uint8_t* pBegin, const uint8_t* pEnd) const
     {
+        ZEP_UNUSED(type);
         QFontMetrics met(qApp->font());
         if (pEnd == nullptr)
         {
@@ -106,8 +110,9 @@ public:
         return NVec2f(rc.width(), rc.height());
     }
 
-    void DrawChars(const NVec2f& pos, const NVec4f& col, const uint8_t* text_begin, const uint8_t* text_end) const
+    void DrawChars(ZepFontType type, const NVec2f& pos, const NVec4f& col, const uint8_t* text_begin, const uint8_t* text_end) const
     {
+        ZEP_UNUSED(type)
         if (text_end == nullptr)
         {
             text_end = text_begin + strlen((const char*)text_begin);

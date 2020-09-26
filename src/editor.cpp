@@ -594,7 +594,7 @@ void ZepEditor::UpdateTabs()
                 tabColor = tabColor * .55f;
                 tabColor.w = 1.0f;
             }
-            auto tabLength = m_pDisplay->GetTextSize((const uint8_t*)name.c_str()).x + DPI_X(textBorder) * 2;
+            auto tabLength = m_pDisplay->GetTextSize(ZepFontType::Text, (const uint8_t*)name.c_str()).x + DPI_X(textBorder) * 2;
 
             auto spTabRegionTab = std::make_shared<TabRegionTab>();
             spTabRegionTab->color = tabColor;
@@ -1058,7 +1058,7 @@ void ZepEditor::SetDisplayRegion(const NVec2f& topLeft, const NVec2f& bottomRigh
 void ZepEditor::UpdateSize()
 {
     auto commandCount = GetCommandLines().size();
-    const float commandSize = m_pDisplay->GetFontHeightPixels() * commandCount + DPI_X(textBorder) * 2.0f;
+    const float commandSize = m_pDisplay->GetFontHeightPixels(ZepFontType::UI) * commandCount + DPI_X(textBorder) * 2.0f;
     auto displaySize = m_editorRegion->rect.Size();
 
     // Regions
@@ -1068,7 +1068,7 @@ void ZepEditor::UpdateSize()
     // Add tabs for extra windows
     if (GetTabWindows().size() > 1)
     {
-        m_tabRegion->fixed_size = NVec2f(0.0f, m_pDisplay->GetFontHeightPixels() + DPI_X(textBorder) * 2);
+        m_tabRegion->fixed_size = NVec2f(0.0f, m_pDisplay->GetFontHeightPixels(ZepFontType::UI) + DPI_X(textBorder) * 2);
         m_tabRegion->flags = RegionFlags::Fixed;
     }
     else
@@ -1101,7 +1101,7 @@ void ZepEditor::Display()
     auto& commandLines = GetCommandLines();
 
     long commandCount = long(commandLines.size());
-    const float commandSize = m_pDisplay->GetFontHeightPixels() * commandCount + DPI_X(textBorder) * 2.0f;
+    const float commandSize = m_pDisplay->GetFontHeightPixels(ZepFontType::UI) * commandCount + DPI_X(textBorder) * 2.0f;
 
     auto displaySize = m_editorRegion->rect.Size();
 
@@ -1126,11 +1126,11 @@ void ZepEditor::Display()
     {
         if (!commandLines[i].empty())
         {
-            auto textSize = m_pDisplay->GetTextSize((const uint8_t*)commandLines[i].c_str(), (const uint8_t*)commandLines[i].c_str() + commandLines[i].size());
-            m_pDisplay->DrawChars(screenPosYPx, GetTheme().GetColor(ThemeColor::Text), (const uint8_t*)commandLines[i].c_str());
+            auto textSize = m_pDisplay->GetTextSize(ZepFontType::UI, (const uint8_t*)commandLines[i].c_str(), (const uint8_t*)commandLines[i].c_str() + commandLines[i].size());
+            m_pDisplay->DrawChars(ZepFontType::UI, screenPosYPx, GetTheme().GetColor(ThemeColor::Text), (const uint8_t*)commandLines[i].c_str());
         }
 
-        screenPosYPx.y += m_pDisplay->GetFontHeightPixels();
+        screenPosYPx.y += m_pDisplay->GetFontHeightPixels(ZepFontType::UI);
         screenPosYPx.x = m_commandRegion->rect.topLeftPx.x;
     }
 
@@ -1199,7 +1199,7 @@ void ZepEditor::Display()
         }
 
         // Tab text
-        m_pDisplay->DrawChars(rc.topLeftPx + DPI_VEC2(NVec2f(textBorder, 0.0f)), textCol, (const uint8_t*)spTabRegionTab->name.c_str());
+        m_pDisplay->DrawChars(ZepFontType::UI, rc.topLeftPx + DPI_VEC2(NVec2f(textBorder, 0.0f)), textCol, (const uint8_t*)spTabRegionTab->name.c_str());
     }
 
     // Display the tab

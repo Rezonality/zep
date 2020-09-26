@@ -39,7 +39,7 @@ public:
         m_spEditor->SetPixelScale(NVec2f(qRound(qApp->primaryScreen()->logicalDotsPerInchX() / 96.0f), qRound(qApp->primaryScreen()->logicalDotsPerInchY() / 96.0f)));
 #endif
         // 14pt is about 5mm on the display
-        m_spEditor->GetDisplay().SetFontPointSize(fontSize);
+        m_spEditor->GetDisplay().SetFontPointSize(ZepFontType::Text, fontSize);
 
         setFocusPolicy(Qt::FocusPolicy::StrongFocus);
         setMouseTracking(true);

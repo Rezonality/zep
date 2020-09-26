@@ -169,7 +169,7 @@ void ZepWindow::UpdateAirline()
     auto extra = GetBuffer().GetMode()->GetAirlines(*this);
 
     auto lastSize = m_airlineRegion->fixed_size;
-    m_airlineRegion->fixed_size = NVec2f(0.0f, GetEditor().GetDisplay().GetFontHeightPixels() * (1 + extra.size()));
+    m_airlineRegion->fixed_size = NVec2f(0.0f, GetEditor().GetDisplay().GetFontHeightPixels(ZepFontType::UI) * (1 + extra.size()));
     if (m_airlineRegion->fixed_size != lastSize)
     {
         m_layoutDirty = true;
@@ -246,9 +246,9 @@ void ZepWindow::SetDisplayRegion(const NRectf& region)
     m_layoutDirty = true;
     m_bufferRegion->rect = region;
 
-    m_airlineRegion->fixed_size = NVec2f(0.0f, GetEditor().GetDisplay().GetFontHeightPixels());
+    m_airlineRegion->fixed_size = NVec2f(0.0f, GetEditor().GetDisplay().GetFontHeightPixels(ZepFontType::UI));
 
-    m_defaultLineSize = GetEditor().GetDisplay().GetFontHeightPixels();
+    m_defaultLineSize = GetEditor().GetDisplay().GetFontHeightPixels(ZepFontType::Text);
 }
 
 void ZepWindow::EnsureCursorVisible()
@@ -283,7 +283,7 @@ void ZepWindow::ScrollToCursor()
 
     auto lineMargins = DPI_VEC2(GetEditor().GetConfig().lineMargins);
     auto old_offset = m_textOffsetPx;
-    auto two_lines = (GetEditor().GetDisplay().GetFontHeightPixels() * 2); // +(lineMargins.x + lineMargins.y) * 2;
+    auto two_lines = (GetEditor().GetDisplay().GetFontHeightPixels(ZepFontType::Text) * 2); // +(lineMargins.x + lineMargins.y) * 2;
     auto& cursorLine = GetCursorLineInfo(BufferToDisplay().y);
 
     // If the buffer is beyond two lines above the cursor position, move it back by the difference
@@ -434,7 +434,7 @@ void ZepWindow::UpdateLineSpans()
 
     auto& display = GetEditor().GetDisplay();
 
-    float textHeight = GetEditor().GetDisplay().GetFontHeightPixels();
+    float textHeight = GetEditor().GetDisplay().GetFontHeightPixels(ZepFontType::Text);
 
     auto widgetMarkers = m_pBuffer->GetRangeMarkers(RangeMarkerType::Widget);
     auto itrWidgetMarkers = widgetMarkers.begin();
@@ -483,7 +483,7 @@ void ZepWindow::UpdateLineSpans()
         for (auto ch = lineByteRange.first; ch < lineByteRange.second; ch += utf8_codepoint_length(textBuffer[ch]))
         {
             const uint8_t* pCh = &textBuffer[ch];
-            const auto textSize = display.GetCharSize(pCh);
+            const auto textSize = display.GetCharSize(ZepFontType::Text, pCh);
 
             // Skip to current marker
             while (itrWidgetMarkers != widgetMarkers.end() && itrWidgetMarkers->first < ch)
@@ -600,7 +600,7 @@ void ZepWindow::UpdateLineSpans()
             // The gap buffer will get in the way; so need to be careful to use [] or an iterator
             // GetCharSize is cached for speed on debug builds.
             info.iterator = GlyphIterator(m_pBuffer, ch);
-            info.size = display.GetCharSize(&textBuffer[ch]);
+            info.size = display.GetCharSize(ZepFontType::Text, &textBuffer[ch]);
             line->lineCodePoints.push_back(info);
             ch += utf8_codepoint_length(textBuffer[ch]);
             points++;
@@ -637,7 +637,7 @@ void ZepWindow::UpdateVisibleLineRange()
         m_visibleLineIndices.y = long(line);
     }
 
-    m_textSizePx.y = m_windowLines[m_windowLines.size() - 1]->yOffsetPx + GetEditor().GetDisplay().GetFontHeightPixels() + DPI_Y(GetEditor().GetConfig().lineMargins.y) + DPI_Y(GetEditor().GetConfig().lineMargins.x);
+    m_textSizePx.y = m_windowLines[m_windowLines.size() - 1]->yOffsetPx + GetEditor().GetDisplay().GetFontHeightPixels(ZepFontType::Text) + DPI_Y(GetEditor().GetConfig().lineMargins.y) + DPI_Y(GetEditor().GetConfig().lineMargins.x);
 
     m_visibleLineIndices.y++;
     UpdateScrollers();
@@ -664,7 +664,7 @@ float ZepWindow::TipBoxShadowWidth() const
 
 void ZepWindow::DisplayToolTip(const NVec2f& pos, const RangeMarker& marker) const
 {
-    auto textSize = GetEditor().GetDisplay().GetTextSize((const uint8_t*)marker.description.c_str(), (const uint8_t*)(marker.description.c_str() + marker.description.size()));
+    auto textSize = GetEditor().GetDisplay().GetTextSize(ZepFontType::Text, (const uint8_t*)marker.description.c_str(), (const uint8_t*)(marker.description.c_str() + marker.description.size()));
 
     auto boxShadowWidth = TipBoxShadowWidth();
 
@@ -689,7 +689,7 @@ void ZepWindow::DisplayToolTip(const NVec2f& pos, const RangeMarker& marker) con
     display.DrawLine(tipBox.TopRight(), tipBox.bottomRightPx, m_pBuffer->GetTheme().GetColor(marker.GetHighlightColor()));
 
     // Draw the text in the box
-    display.DrawChars(tipBox.topLeftPx + NVec2f(textBorder, textBorder), m_pBuffer->GetTheme().GetColor(marker.GetTextColor()), (const uint8_t*)marker.description.c_str());
+    display.DrawChars(ZepFontType::Text, tipBox.topLeftPx + NVec2f(textBorder, textBorder), m_pBuffer->GetTheme().GetColor(marker.GetTextColor()), (const uint8_t*)marker.description.c_str());
 }
 
 NVec4f ZepWindow::GetBlendedColor(ThemeColor color) const
@@ -989,7 +989,7 @@ void ZepWindow::DisplayLineNumbers()
                 strNum = std::to_string(lineInfo.bufferLineNumber);
             }
 
-            auto textSize = display.GetTextSize((const uint8_t*)strNum.c_str(), (const uint8_t*)(strNum.c_str() + strNum.size()));
+            auto textSize = display.GetTextSize(ZepFontType::Text, (const uint8_t*)strNum.c_str(), (const uint8_t*)(strNum.c_str() + strNum.size()));
 
             auto digitCol = m_pBuffer->GetTheme().GetColor(ThemeColor::LineNumber);
             if (lineInfo.BufferCursorInside(m_bufferCursor))
@@ -1001,7 +1001,7 @@ void ZepWindow::DisplayLineNumbers()
             {
                 // Numbers
                 display.SetClipRect(m_numberRegion->rect);
-                display.DrawChars(NVec2f(m_numberRegion->rect.bottomRightPx.x - textSize.x, ToWindowY(lineInfo.yOffsetPx + lineInfo.padding.x)), digitCol, (const uint8_t*)strNum.c_str(), (const uint8_t*)(strNum.c_str() + strNum.size()));
+                display.DrawChars(ZepFontType::Text, NVec2f(m_numberRegion->rect.bottomRightPx.x - textSize.x, ToWindowY(lineInfo.yOffsetPx + lineInfo.padding.x)), digitCol, (const uint8_t*)strNum.c_str(), (const uint8_t*)(strNum.c_str() + strNum.size()));
             }
 
             if (m_indicatorRegion->rect.Width() > 0)
@@ -1021,7 +1021,7 @@ void ZepWindow::DisplayLineNumbers()
                                         ToWindowY(lineInfo.yOffsetPx + lineInfo.padding.x)),
                                     NVec2f(
                                         m_indicatorRegion->rect.Center().x + m_indicatorRegion->rect.Width() / 4,
-                                        ToWindowY(lineInfo.yOffsetPx + lineInfo.padding.x) + display.GetFontHeightPixels())),
+                                        ToWindowY(lineInfo.yOffsetPx + lineInfo.padding.x) + display.GetFontHeightPixels(ZepFontType::Text))),
                                 m_pBuffer->GetTheme().GetColor(marker->GetHighlightColor()));
                         }
                     }
@@ -1052,8 +1052,8 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
     auto pSyntax = m_pBuffer->GetSyntax();
     auto cursorBlink = GetEditor().GetCursorBlinkState();
     auto cursorType = GetBuffer().GetMode()->GetCursorType();
-    auto defaultCharSize = display.GetDefaultCharSize();
-    auto dotSize = display.GetDotSize();
+    auto defaultCharSize = display.GetDefaultCharSize(ZepFontType::Text);
+    auto dotSize = display.GetDotSize(ZepFontType::Text);
     auto whiteSpaceCol = m_pBuffer->GetTheme().GetColor(ThemeColor::Whitespace);
     auto widgetMargins = DPI_VEC2(GetEditor().GetConfig().widgetMargins);
 
@@ -1191,7 +1191,7 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
 
                 if (special == SpecialChar::None || special == SpecialChar::Hidden)
                 {
-                    display.DrawChars(NVec2f(cp.pos.x, ToWindowY(lineInfo.yOffsetPx + lineInfo.padding.x)), col, pCh, pEnd);
+                    display.DrawChars(ZepFontType::Text, NVec2f(cp.pos.x, ToWindowY(lineInfo.yOffsetPx + lineInfo.padding.x)), col, pCh, pEnd);
                 }
                 else if (special == SpecialChar::Tab)
                 {
@@ -1364,7 +1364,7 @@ void ZepWindow::UpdateLayout(bool force)
         // Border, and move the text across a bit
         if (ZTestFlags(GetWindowFlags(), WindowFlags::ShowLineNumbers) && GetEditor().GetConfig().showLineNumbers)
         {
-            m_numberRegion->fixed_size = NVec2f(float(leftBorderChars) * GetEditor().GetDisplay().GetDefaultCharSize().x, 0.0f);
+            m_numberRegion->fixed_size = NVec2f(float(leftBorderChars) * GetEditor().GetDisplay().GetDefaultCharSize(ZepFontType::Text).x, 0.0f);
         }
         else
         {
@@ -1373,7 +1373,7 @@ void ZepWindow::UpdateLayout(bool force)
 
         if (ZTestFlags(GetWindowFlags(), WindowFlags::ShowIndicators) && GetEditor().GetConfig().showIndicatorRegion)
         {
-            m_indicatorRegion->fixed_size = NVec2f(GetEditor().GetDisplay().GetDefaultCharSize().x * 1.5f, 0.0f);
+            m_indicatorRegion->fixed_size = NVec2f(GetEditor().GetDisplay().GetDefaultCharSize(ZepFontType::Text).x * 1.5f, 0.0f);
         }
         else
         {
@@ -1451,11 +1451,11 @@ void ZepWindow::GetCursorInfo(NVec2f& pos, NVec2f& size)
     // If it's a tab, we show a cursor of standard width at the beginning of it
     if (GetBufferCursor().Char() == '\t')
     {
-        cursorSize = GetEditor().GetDisplay().GetDefaultCharSize();
+        cursorSize = GetEditor().GetDisplay().GetDefaultCharSize(ZepFontType::Text);
     }
     else if (!found)
     {
-        cursorSize = GetEditor().GetDisplay().GetDefaultCharSize();
+        cursorSize = GetEditor().GetDisplay().GetDefaultCharSize(ZepFontType::Text);
         xPos += cursorSize.x;
     }
 
@@ -1466,7 +1466,7 @@ void ZepWindow::GetCursorInfo(NVec2f& pos, NVec2f& size)
 
 void ZepWindow::PlaceToolTip(const NVec2f& pos, ToolTipPos location, uint32_t lineGap, const std::shared_ptr<RangeMarker> spMarker)
 {
-    auto textSize = GetEditor().GetDisplay().GetTextSize((const uint8_t*)spMarker->description.c_str(), (const uint8_t*)(spMarker->description.c_str() + spMarker->description.size()));
+    auto textSize = GetEditor().GetDisplay().GetTextSize(ZepFontType::Text, (const uint8_t*)spMarker->description.c_str(), (const uint8_t*)(spMarker->description.c_str() + spMarker->description.size()));
     float boxShadowWidth = TipBoxShadowWidth();
 
     NRectf tipBox;
@@ -1479,7 +1479,7 @@ void ZepWindow::PlaceToolTip(const NVec2f& pos, ToolTipPos location, uint32_t li
             tipBox = NRectf(pos.x, pos.y, textSize.x, textSize.y);
             tipBox.Adjust(textBorder + boxShadowWidth, textBorder + boxShadowWidth, textBorder + boxShadowWidth, textBorder + boxShadowWidth);
 
-            float dist = currentLineGap * (GetEditor().GetDisplay().GetFontHeightPixels() + textBorder * 2);
+            float dist = currentLineGap * (GetEditor().GetDisplay().GetFontHeightPixels(ZepFontType::Text) + textBorder * 2);
             if (location == ToolTipPos::AboveLine)
             {
                 dist += textSize.y;
@@ -1724,7 +1724,7 @@ void ZepWindow::Display()
         // Airline and underline
         display.DrawRectFilled(m_airlineRegion->rect, GetBlendedColor(ThemeColor::AirlineBackground));
 
-        auto airHeight = GetEditor().GetDisplay().GetFontHeightPixels();
+        auto airHeight = GetEditor().GetDisplay().GetFontHeightPixels(ZepFontType::UI);
         auto border = 12.0f;
 
         NVec2f screenPosYPx = m_airlineRegion->rect.topLeftPx;
@@ -1734,14 +1734,14 @@ void ZepWindow::Display()
             for (int i = 0; i < (int)airline.leftBoxes.size(); i++)
             {
                 auto pText = (const uint8_t*)airline.leftBoxes[i].text.c_str();
-                auto textSize = display.GetTextSize(pText, pText + airline.leftBoxes[i].text.size());
+                auto textSize = display.GetTextSize(ZepFontType::Text, pText, pText + airline.leftBoxes[i].text.size());
                 textSize.x += border * 2;
 
                 auto col = airline.leftBoxes[i].background;
                 display.DrawRectFilled(NRectf(screenPosYPx, NVec2f(textSize.x + screenPosYPx.x, screenPosYPx.y + airHeight)), col);
 
                 NVec4f textCol = m_pBuffer->GetTheme().GetComplement(airline.leftBoxes[i].background, IsActiveWindow() ? NVec4f(0.0f) : NVec4f(.5f, .5f, .5f, 0.0f));
-                display.DrawChars(screenPosYPx + NVec2f(border, 0.0f), textCol, (const uint8_t*)(airline.leftBoxes[i].text.c_str()));
+                display.DrawChars(ZepFontType::Text, screenPosYPx + NVec2f(border, 0.0f), textCol, (const uint8_t*)(airline.leftBoxes[i].text.c_str()));
                 screenPosYPx.x += textSize.x;
             }
 
@@ -1755,21 +1755,21 @@ void ZepWindow::Display()
                 for (int i = 0; i < (int)airline.rightBoxes.size(); i++)
                 {
                     auto pText = (const uint8_t*)airline.rightBoxes[i].text.c_str();
-                    totalRightSize += display.GetTextSize(pText, pText + airline.rightBoxes[i].text.size()).x + border * 2;
+                    totalRightSize += display.GetTextSize(ZepFontType::UI, pText, pText + airline.rightBoxes[i].text.size()).x + border * 2;
                 }
 
                 screenPosYPx.x = m_airlineRegion->rect.Right() - totalRightSize;
                 for (int i = 0; i < (int)airline.rightBoxes.size(); i++)
                 {
                     auto pText = (const uint8_t*)airline.rightBoxes[i].text.c_str();
-                    auto textSize = display.GetTextSize(pText, pText + airline.rightBoxes[i].text.size());
+                    auto textSize = display.GetTextSize(ZepFontType::UI, pText, pText + airline.rightBoxes[i].text.size());
                     textSize.x += border * 2;
 
                     auto col = airline.rightBoxes[i].background;
                     display.DrawRectFilled(NRectf(screenPosYPx, NVec2f(textSize.x + screenPosYPx.x, screenPosYPx.y + airHeight)), col);
 
                     NVec4f textCol = m_pBuffer->GetTheme().GetComplement(airline.rightBoxes[i].background, IsActiveWindow() ? NVec4f(0.0f) : NVec4f(.5f, .5f, .5f, 0.0f));
-                    display.DrawChars(screenPosYPx + NVec2f(border, 0.0f), textCol, (const uint8_t*)(airline.rightBoxes[i].text.c_str()));
+                    display.DrawChars(ZepFontType::UI, screenPosYPx + NVec2f(border, 0.0f), textCol, (const uint8_t*)(airline.rightBoxes[i].text.c_str()));
                     screenPosYPx.x += textSize.x;
                 }
             }
