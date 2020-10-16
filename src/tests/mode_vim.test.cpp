@@ -24,7 +24,7 @@ public:
     {
         // Disable threads for consistent tests, at the expense of not catching thread errors!
         // TODO : Fix/understand test failures with threading
-        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZEP_ROOT, ZepEditorFlags::DisableThreads);
+        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(NVec2f(1.0f, 1.0f)), ZEP_ROOT, ZepEditorFlags::DisableThreads);
         spMode = std::make_shared<ZepMode_Vim>(*spEditor);
         spMode->Init();
 
@@ -45,7 +45,7 @@ public:
         /*pBuffer->SetText("one\n\nthree");
         spEditor->Display(*spDisplay);
         spMode->AddCommandText("jciwtwo");               
-        assert(pBuffer->GetGapBuffer().string() == "abc two three");
+        assert(pBuffer->GetWorkingBuffer().string() == "abc two three");
         */
     }
 
@@ -100,7 +100,7 @@ public:
     {                                                                   \
         pBuffer->SetText(source);                                       \
         spMode->AddCommandText(command);                                \
-        ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), target); \
+        ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), target); \
     };
 
 #define COMMAND_TEST_RET(name, source, command, target)                 \
@@ -109,7 +109,7 @@ public:
         pBuffer->SetText(source);                                       \
         spMode->AddCommandText(command);                                \
         spMode->AddKeyPress(ExtKeys::RETURN);                           \
-        ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), target); \
+        ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), target); \
     };
 
 TEST_F(VimTest, CheckDisplaySucceeds)
@@ -134,12 +134,12 @@ TEST_F(VimTest, UndoRedo)
     spMode->Undo();
     spMode->Redo();
     spMode->Undo();
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "Hello");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "Hello");
 
     spMode->AddCommandText("iYo, jk");
     spMode->Undo();
     spMode->Redo();
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "Yo, Hello");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "Yo, Hello");
 }
 
 TEST_F(VimTest, DELETE)
@@ -147,11 +147,11 @@ TEST_F(VimTest, DELETE)
     pBuffer->SetText("Hello");
     spMode->AddKeyPress(ExtKeys::DEL);
     spMode->AddKeyPress(ExtKeys::DEL);
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "llo");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "llo");
 
     spMode->AddCommandText("vll");
     spMode->AddKeyPress(ExtKeys::DEL);
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "");
 
     pBuffer->SetText("H");
     spMode->AddKeyPress(ExtKeys::DEL);
@@ -164,7 +164,7 @@ TEST_F(VimTest, ESCAPE)
     spMode->AddCommandText("iHi, ");
     spMode->AddKeyPress(ExtKeys::ESCAPE);
     spMode->Undo();
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "Hello");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "Hello");
 }
 
 TEST_F(VimTest, RETURN)
@@ -175,7 +175,7 @@ TEST_F(VimTest, RETURN)
 
     spMode->AddCommandText("li");
     spMode->AddKeyPress(ExtKeys::RETURN);
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "Õne\nt\nwo");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "Õne\nt\nwo");
 }
 
 TEST_F(VimTest, TAB)
@@ -183,7 +183,7 @@ TEST_F(VimTest, TAB)
     pBuffer->SetText("HellÕ");
     spMode->AddCommandText("llllllllli");
     spMode->AddKeyPress(ExtKeys::TAB);
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "Hell    Õ");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "Hell    Õ");
 }
 
 TEST_F(VimTest, BACKSPACE)
@@ -192,12 +192,12 @@ TEST_F(VimTest, BACKSPACE)
     spMode->AddCommandText("ll");
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "Hello");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "Hello");
     ASSERT_EQ(pWindow->GetBufferCursor().Index(), 0);
 
     spMode->AddCommandText("lli");
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "Hllo");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "Hllo");
 
     // Check that appending on the line then hitting backspace removes the last char
     // A bug that showed up at some point
@@ -205,7 +205,7 @@ TEST_F(VimTest, BACKSPACE)
     spMode->AddKeyPress(ExtKeys::ESCAPE);
     spMode->AddCommandText("AC");
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "AB");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "AB");
 }
 
 // The various rules of vim keystrokes are hard to consolidate.

@@ -10,50 +10,78 @@
 namespace Zep
 {
 
-void ZepDisplay::InvalidateCharCache(ZepFontType type)
+void ZepFont::InvalidateCharCache()
 {
-    GetFontCache(type).charCacheDirty = true;
+    m_display.SetLayoutDirty();
+    m_charCacheDirty = true;
 }
 
-ZepDisplay::FontTypeCache& ZepDisplay::GetFontCache(ZepFontType type)
+void ZepFont::BuildCharCache()
 {
-    return m_fontCache[int(type)];
-}
-
-void ZepDisplay::BuildCharCache(ZepFontType type)
-{
-    auto& fontCache = GetFontCache(type);
-
     const char chA = 'A';
-    fontCache.defaultCharSize = GetTextSize(type, (const uint8_t*)&chA, (const uint8_t*)&chA + 1);
+    m_defaultCharSize = GetTextSize((const uint8_t*)&chA, (const uint8_t*)&chA + 1);
     for (int i = 0; i < 256; i++)
     {
         uint8_t ch = (uint8_t)i;
-        fontCache.charCacheASCII[i] = GetTextSize(type, &ch, &ch + 1);
+        m_charCacheASCII[i] = GetTextSize(&ch, &ch + 1);
     }
-    fontCache.charCacheDirty = false;
-    
-    fontCache.dotSize = fontCache.defaultCharSize / 8.0f;
-    fontCache.dotSize.x = std::min(fontCache.dotSize.x, fontCache.dotSize.y);
-    fontCache.dotSize.y = std::min(fontCache.dotSize.x, fontCache.dotSize.y);
-    fontCache.dotSize.x = std::max(1.0f, fontCache.dotSize.x);
-    fontCache.dotSize.y = std::max(1.0f, fontCache.dotSize.y);
+    m_charCacheDirty = false;
+
+    m_dotSize = m_defaultCharSize / 8.0f;
+    m_dotSize.x = std::min(m_dotSize.x, m_dotSize.y);
+    m_dotSize.y = std::min(m_dotSize.x, m_dotSize.y);
+    m_dotSize.x = std::max(1.0f, m_dotSize.x);
+    m_dotSize.y = std::max(1.0f, m_dotSize.y);
 }
 
-const NVec2f& ZepDisplay::GetDefaultCharSize(ZepFontType type)
+const NVec2f& ZepFont::GetDefaultCharSize()
 {
-    auto& fontCache = GetFontCache(type);
-    if (fontCache.charCacheDirty)
+    if (m_charCacheDirty)
     {
-        BuildCharCache(type);
+        BuildCharCache();
     }
-    
-    return fontCache.defaultCharSize;
+
+    return m_defaultCharSize;
 }
 
-const NVec2f& ZepDisplay::GetDotSize(ZepFontType type)
+const NVec2f& ZepFont::GetDotSize()
 {
-    return GetFontCache(type).dotSize;
+    return m_dotSize;
+}
+
+NVec2f ZepFont::GetCharSize(const uint8_t* pCh)
+{
+    if (m_charCacheDirty)
+    {
+        BuildCharCache();
+    }
+
+    if (utf8_codepoint_length(*pCh) == 1)
+    {
+        return m_charCacheASCII[*pCh];
+    }
+
+    auto ch32 = utf8::unchecked::next(pCh);
+
+    auto itr = m_charCache.find((uint32_t)ch32);
+    if (itr != m_charCache.end())
+    {
+        return itr->second;
+    }
+
+    auto sz = GetTextSize(pCh, pCh + utf8_codepoint_length(*pCh));
+    m_charCache[(uint32_t)ch32] = sz;
+
+    return sz;
+}
+
+ZepDisplay::ZepDisplay(const NVec2f& pixelScale)
+    : m_pixelScale(pixelScale)
+{
+    for (size_t i = 0; i < m_fonts.size(); i++)
+    {
+        m_fonts[i] = nullptr;
+    }
 }
 
 uint32_t ZepDisplay::GetCodePointCount(const uint8_t* pCh, const uint8_t* pEnd) const
@@ -67,33 +95,6 @@ uint32_t ZepDisplay::GetCodePointCount(const uint8_t* pCh, const uint8_t* pEnd) 
     return count;
 }
 
-NVec2f ZepDisplay::GetCharSize(ZepFontType type, const uint8_t* pCh)
-{
-    auto& fontCache = GetFontCache(type);
-    if (fontCache.charCacheDirty)
-    {
-        BuildCharCache(type);
-    }
-
-    if (utf8_codepoint_length(*pCh) == 1)
-    {
-        return fontCache.charCacheASCII[*pCh];
-    }
- 
-    auto ch32 = utf8::unchecked::next(pCh);
-
-    auto itr = fontCache.charCache.find((uint32_t)ch32);
-    if (itr != fontCache.charCache.end())
-    {
-        return itr->second;
-    }
-     
-    auto sz = GetTextSize(type, pCh, pCh + utf8_codepoint_length(*pCh));
-    fontCache.charCache[(uint32_t)ch32] = sz;
-
-    return sz;
-}
-    
 void ZepDisplay::DrawRect(const NRectf& rc, const NVec4f& col) const
 {
     DrawLine(rc.topLeftPx, rc.BottomLeft(), col);
@@ -102,4 +103,70 @@ void ZepDisplay::DrawRect(const NRectf& rc, const NVec4f& col) const
     DrawLine(rc.BottomLeft(), rc.bottomRightPx, col);
 }
 
+bool ZepDisplay::LayoutDirty() const
+{
+    return m_bRebuildLayout;
 }
+
+void ZepDisplay::SetLayoutDirty(bool dirty)
+{
+    m_bRebuildLayout = dirty;
+}
+
+void ZepDisplay::SetFont(ZepTextType type, std::shared_ptr<ZepFont> spFont)
+{
+    m_fonts[(int)type] = spFont;
+}
+
+const NVec2f& ZepDisplay::GetPixelScale() const
+{
+    return m_pixelScale;
+}
+
+void ZepDisplay::Bigger()
+{
+    for (int i = 0; i < (int)m_fonts.size(); i++)
+    {
+        if (m_fonts[i] != nullptr)
+        {
+            switch ((ZepTextType)i)
+            {
+            case ZepTextType::Text:
+            case ZepTextType::Heading1:
+            case ZepTextType::Heading2:
+            case ZepTextType::Heading3:
+            {
+                auto& textFont = GetFont(ZepTextType(i));
+                textFont.SetPixelHeight((int)std::min((float)ceil(textFont.GetPixelHeight() * 1.05), 800.0f));
+            }
+            default:
+            break;
+            }
+        }
+    }
+}
+
+void ZepDisplay::Smaller()
+{
+    for (int i = 0; i < (int)m_fonts.size(); i++)
+    {
+        if (m_fonts[i] != nullptr)
+        {
+            switch ((ZepTextType)i)
+            {
+            case ZepTextType::Text:
+            case ZepTextType::Heading1:
+            case ZepTextType::Heading2:
+            case ZepTextType::Heading3:
+            {
+                auto& textFont = GetFont(ZepTextType(i));
+                textFont.SetPixelHeight((int)std::max(4.0f, (float)floor(textFont.GetPixelHeight() *.95f)));
+            }
+            default:
+            break;
+            }
+        }
+    }
+}
+
+} // namespace Zep

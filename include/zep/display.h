@@ -20,7 +20,7 @@ struct SelectRegion
 
 using ZepFontHandle = uint32_t;
 
-enum class ZepFontType
+enum class ZepTextType
 {
     UI,
     Text,
@@ -30,46 +30,91 @@ enum class ZepFontType
     Count
 };
 
+class ZepFont
+{
+public:
+    ZepFont(ZepDisplay& display)
+        : m_display(display)
+    {
+    }
+   
+    // Implemented in API specific ways
+    virtual void SetPixelHeight(int height) = 0;
+    virtual NVec2f GetTextSize(const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const = 0;
+
+    virtual int GetPixelHeight() const
+    {
+        return m_pixelHeight;
+    }
+
+    virtual const NVec2f& GetDefaultCharSize();
+    virtual const NVec2f& GetDotSize();
+    virtual void BuildCharCache();
+    virtual void InvalidateCharCache();
+    virtual NVec2f GetCharSize(const uint8_t* pChar);
+
+protected:
+    int m_pixelHeight;
+    std::string m_filePath;
+    bool m_charCacheDirty = true;
+    std::unordered_map<uint32_t, NVec2f> m_charCache;
+    NVec2f m_charCacheASCII[256];
+    NVec2f m_dotSize;
+    NVec2f m_defaultCharSize;
+    ZepDisplay& m_display;
+};
+
 // Display interface
 class ZepDisplay
 {
 public:
     virtual ~ZepDisplay(){};
+    ZepDisplay(const NVec2f& pixelScale);
 
     // Renderer specific overrides
     // Implement these to draw the buffer using whichever system you prefer
-    virtual NVec2f GetTextSize(ZepFontType type, const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const = 0;
-    virtual float GetFontPointSize(ZepFontType type) const = 0;
-    virtual float GetFontHeightPixels(ZepFontType type) const = 0;
-    virtual void SetFontPointSize(ZepFontType, float) { };
-
     virtual void DrawLine(const NVec2f& start, const NVec2f& end, const NVec4f& color = NVec4f(1.0f), float width = 1.0f) const = 0;
-    virtual void DrawChars(ZepFontType type, const NVec2f& pos, const NVec4f& col, const uint8_t* text_begin, const uint8_t* text_end = nullptr) const = 0;
+    virtual void DrawChars(ZepFont& font, const NVec2f& pos, const NVec4f& col, const uint8_t* text_begin, const uint8_t* text_end = nullptr) const = 0;
     virtual void DrawRectFilled(const NRectf& rc, const NVec4f& col = NVec4f(1.0f)) const = 0;
     virtual void SetClipRect(const NRectf& rc) = 0;
 
     virtual uint32_t GetCodePointCount(const uint8_t* pCh, const uint8_t* pEnd) const;
-    virtual NVec2f GetCharSize(ZepFontType type, const uint8_t* pChar);
-    virtual const NVec2f& GetDefaultCharSize(ZepFontType type);
-    virtual const NVec2f& GetDotSize(ZepFontType type);
-    virtual void InvalidateCharCache(ZepFontType type);
     virtual void DrawRect(const NRectf& rc, const NVec4f& col = NVec4f(1.0f)) const;
+    virtual bool LayoutDirty() const;
+    virtual void SetLayoutDirty(bool changed = true);
+
+    virtual void SetFont(ZepTextType type, std::shared_ptr<ZepFont> spFont);
+    virtual ZepFont& GetFont(ZepTextType type) = 0;
+    const NVec2f& GetPixelScale() const;
+
+    void Bigger();
+    void Smaller();
 
 protected:
-    void BuildCharCache(ZepFontType type);
+    bool m_bRebuildLayout = false;
+    std::array<std::shared_ptr<ZepFont>, (int)ZepTextType::Count> m_fonts;
+    std::shared_ptr<ZepFont> m_spDefaultFont;
+    NVec2f m_pixelScale;
+};
 
-protected:
-    struct FontTypeCache
+class ZepFontNull : public ZepFont
+{
+public:
+    ZepFontNull(ZepDisplay& display)
+        : ZepFont(display)
     {
-        bool charCacheDirty = true;
-        std::unordered_map<uint32_t, NVec2f> charCache;
-        NVec2f charCacheASCII[256];
-        NVec2f dotSize;
-        NVec2f defaultCharSize;
-    };
-    std::array<FontTypeCache, size_t(ZepFontType::Count)> m_fontCache;
     
-    FontTypeCache& GetFontCache(ZepFontType fontType);
+    }
+
+    virtual void SetPixelHeight(int val)
+    {
+        ZEP_UNUSED(val);
+    }
+
+    virtual NVec2f GetTextSize(const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const override
+    {
+        return NVec2f(float(pEnd - pBegin), 10.0f);
+    }
 };
 
 // A NULL renderer, used for testing
@@ -78,18 +123,12 @@ protected:
 class ZepDisplayNull : public ZepDisplay
 {
 public:
-    virtual NVec2f GetTextSize(ZepFontType, const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const override
+    ZepDisplayNull(const NVec2f& pixelScale)
+        : ZepDisplay(pixelScale)
     {
-        return NVec2f(float(pEnd - pBegin), 10.0f);
+    
     }
-    virtual float GetFontPointSize(ZepFontType) const override
-    {
-        return 10;
-    }
-    virtual float GetFontHeightPixels(ZepFontType) const override
-    {
-        return 10;
-    }
+
     virtual void DrawLine(const NVec2f& start, const NVec2f& end, const NVec4f& color = NVec4f(1.0f), float width = 1.0f) const override
     {
         (void)start;
@@ -97,7 +136,7 @@ public:
         (void)color;
         (void)width;
     };
-    virtual void DrawChars(ZepFontType, const NVec2f& pos, const NVec4f& col, const uint8_t* text_begin, const uint8_t* text_end = nullptr) const override
+    virtual void DrawChars(ZepFont&, const NVec2f& pos, const NVec4f& col, const uint8_t* text_begin, const uint8_t* text_end = nullptr) const override
     {
         (void)pos;
         (void)col;
@@ -113,6 +152,20 @@ public:
     {
         (void)rc;
     }
+    
+    virtual ZepFont& GetFont(ZepTextType type) override
+    {
+        if (m_fonts[(int)type] == nullptr)
+        {
+            if (m_spDefaultFont == nullptr)
+            {
+                m_spDefaultFont = std::make_shared<ZepFontNull>(*this);
+            }
+            return *m_spDefaultFont;
+        }
+        return *m_fonts[(int)type];
+    }
+
 };
 
 } // namespace Zep

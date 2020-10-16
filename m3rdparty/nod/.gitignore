@@ -1,0 +1,46 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Visual studio
+*.ilk
+*.pdb
+*.tlog
+*.idb
+*.lastbuildstate
+*.vcxproj.user
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.sdf
+*.opensdf
+*.log
+*.suo
+*.unsuccessfulbuild
+*.sublime-project
+*.sublime-workspace

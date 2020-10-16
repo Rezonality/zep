@@ -18,7 +18,7 @@ public:
     {
         // Disable threads for consistent tests, at the expense of not catching thread errors!
         // TODO : Fix/understand test failures with threading
-        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZEP_ROOT, ZepEditorFlags::DisableThreads);
+        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(NVec2f(1.0f, 1.0f)), ZEP_ROOT, ZepEditorFlags::DisableThreads);
         pBuffer = spEditor->InitWithText("Test Buffer", "");
 
         pTabWindow = spEditor->GetActiveTabWindow();
@@ -126,7 +126,7 @@ TEST_F(StandardTest, CheckDisplaySucceeds)
     {                                                                   \
         pBuffer->SetText(source);                                       \
         PARSE_COMMAND(command)                                          \
-        ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), target); \
+        ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), target); \
     };
 
 #define CURSOR_TEST(name, source, command, xcoord, ycoord) \
@@ -155,12 +155,12 @@ TEST_F(StandardTest, UndoRedo)
     spMode->Undo();
     spMode->Redo();
     spMode->Undo();
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "Hello");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "Hello");
 
     spMode->AddCommandText("iYo, ");
     spMode->Undo();
     spMode->Redo();
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "iYo, Hello");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "iYo, Hello");
 }
 
 TEST_F(StandardTest, copy_pasteover_paste)
@@ -175,12 +175,12 @@ TEST_F(StandardTest, copy_pasteover_paste)
     spMode->AddKeyPress('c', ModifierKey::Ctrl);
 
     spMode->AddKeyPress('v', ModifierKey::Ctrl);
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "Hello Goodbye");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "Hello Goodbye");
 
     // Note this is incorrect for what we expect, but a side effect of the test: Fix it.
     // The actual behavior in the editor is correct!
     spMode->AddKeyPress('v', ModifierKey::Ctrl);
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "HelloHello Goodbye");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "HelloHello Goodbye");
 
     ASSERT_EQ(pWindow->GetBufferCursor().Index(), 10);
 }
@@ -204,7 +204,7 @@ TEST_F(StandardTest, down_a_shorter_line)
     spMode->AddKeyPress(ExtKeys::RIGHT);
     spMode->AddKeyPress(ExtKeys::DOWN);
     spMode->AddKeyPress('o');
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "Hello Goodbye\nFo");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "Hello Goodbye\nFo");
 }
 
 TEST_F(StandardTest, DELETE)
@@ -212,21 +212,21 @@ TEST_F(StandardTest, DELETE)
     pBuffer->SetText("Hello");
     spMode->AddKeyPress(ExtKeys::DEL);
     spMode->AddKeyPress(ExtKeys::DEL);
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "llo");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "llo");
 
     spMode->AddCommandText("vll");
     spMode->AddKeyPress(ExtKeys::DEL);
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "vlllo");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "vlllo");
 
     // Doesn't delete H because the cursor was previously at the end?
     // Is this a behavior expectation or a bug?  Should the cursor clamp to the previously
     // set text end, or reset to 0??
     pBuffer->SetText("H");
     spMode->AddKeyPress(ExtKeys::DEL);
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "H");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "H");
 
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "");
 }
 
 TEST_F(StandardTest, BACKSPACE)
@@ -235,12 +235,12 @@ TEST_F(StandardTest, BACKSPACE)
     spMode->AddCommandText("ll");
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "Hello");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "Hello");
     ASSERT_EQ(pWindow->GetBufferCursor().Index(), 0);
 
     spMode->AddCommandText("lli");
     spMode->AddKeyPress(ExtKeys::BACKSPACE);
-    ASSERT_STREQ(pBuffer->GetGapBuffer().string().c_str(), "llHello");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "llHello");
 }
 
 CURSOR_TEST(motion_right, "one two", "%r", 1, 0);

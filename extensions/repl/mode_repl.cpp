@@ -147,7 +147,7 @@ bool ZepReplExCommand::AddKeyPress(uint32_t key, uint32_t modifiers)
     {
         ChangeRecord record;
         auto& buffer = m_pReplWindow->GetBuffer();
-        std::string str = std::string(buffer.GetGapBuffer().begin() + m_startLocation.Index(), buffer.GetGapBuffer().end());
+        std::string str = std::string(buffer.GetWorkingBuffer().begin() + m_startLocation.Index(), buffer.GetWorkingBuffer().end());
         if (str.size() <= 1)
         {
             MoveToEnd();

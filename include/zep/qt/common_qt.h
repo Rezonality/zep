@@ -48,10 +48,4 @@ inline QSize ScalePixels(int w, int h)
     return ScalePixels(QSize(w, h));
 }
 
-inline float GetFontPointSize()
-{
-    const QFont font = qApp->font();
-    return font.pointSizeF();
-}
-
 } // namespace DPI

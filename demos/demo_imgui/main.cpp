@@ -101,12 +101,16 @@ void main()
 
 std::string startupFile;
 
-Zep::NVec2f GetDisplayScale()
+Zep::NVec2f GetPixelScale()
 {
     float ddpi = 0.0f;
     float hdpi = 0.0f;
     float vdpi = 0.0f;
-    auto res = SDL_GetDisplayDPI(0, &ddpi, &hdpi, &vdpi);
+
+    auto window = SDL_GL_GetCurrentWindow();
+    auto index = window ? SDL_GetWindowDisplayIndex(window) : 0;
+
+    auto res = SDL_GetDisplayDPI(index, &ddpi, &hdpi, &vdpi);
     if (res == 0 && hdpi != 0)
     {
         return Zep::NVec2f(hdpi, vdpi) / 96.0f;
@@ -153,15 +157,44 @@ bool ReadCommandLine(int argc, char** argv, int& exitCode)
 }
 
 // A helper struct to init the editor and handle callbacks
-struct ZepContainer : public IZepComponent, public IZepReplProvider
+struct ZepContainerImGui : public IZepComponent, public IZepReplProvider
 {
-    ZepContainer(const std::string& startupFilePath, const std::string& configPath)
-        : spEditor(std::make_unique<ZepEditor_ImGui>(configPath))
+    ZepContainerImGui(const std::string& startupFilePath, const std::string& configPath)
+        : spEditor(std::make_unique<ZepEditor_ImGui>(configPath, GetPixelScale()))
     {
         chibi_init(scheme, SDL_GetBasePath());
 
+        // ZepEditor_ImGui will have created the fonts for us; but we need to build
+        // the font atlas
+        auto fontPath = std::string(SDL_GetBasePath()) + "Cousine-Regular.ttf";
+        auto& display = static_cast<ZepDisplay_ImGui&>(spEditor->GetDisplay());
+
+        int fontPixelHeight = (int)dpi_pixel_height_from_point_size(DemoFontPtSize, GetPixelScale().y);
+
+        auto& io = ImGui::GetIO();
+        ImVector<ImWchar> ranges;
+        ImFontGlyphRangesBuilder builder;
+        builder.AddRanges(io.Fonts->GetGlyphRangesDefault()); // Add one of the default ranges
+        builder.AddRanges(io.Fonts->GetGlyphRangesCyrillic()); // Add one of the default ranges
+        builder.AddRanges(greek_range);
+        builder.BuildRanges(&ranges); // Build the final result (ordered ranges with all the unique characters submitted)
+    
+        ImFontConfig cfg;
+        cfg.OversampleH = 4;
+        cfg.OversampleV = 4;
+
+        auto pImFont = ImGui::GetIO().Fonts->AddFontFromFileTTF(fontPath.c_str(), float(fontPixelHeight), &cfg, ranges.Data);
+
+        display.SetFont(ZepTextType::UI, std::make_shared<ZepFont_ImGui>(display, pImFont, fontPixelHeight));
+        display.SetFont(ZepTextType::Text, std::make_shared<ZepFont_ImGui>(display, pImFont, fontPixelHeight));
+        display.SetFont(ZepTextType::Heading1, std::make_shared<ZepFont_ImGui>(display, pImFont, int(fontPixelHeight * 1.75)));
+        display.SetFont(ZepTextType::Heading2, std::make_shared<ZepFont_ImGui>(display, pImFont, int(fontPixelHeight * 1.5)));
+        display.SetFont(ZepTextType::Heading3, std::make_shared<ZepFont_ImGui>(display, pImFont, int(fontPixelHeight * 1.25)));
+
+        unsigned int flags = 0; // ImGuiFreeType::NoHinting;
+        ImGuiFreeType::BuildFontAtlas(ImGui::GetIO().Fonts, flags);
+
         spEditor->RegisterCallback(this);
-        spEditor->SetPixelScale(GetDisplayScale());
 
         ZepMode_Orca::Register(*spEditor);
 
@@ -198,7 +231,7 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
 #endif
     }
 
-    ZepContainer()
+    ZepContainerImGui()
     {
         spEditor->UnRegisterCallback(this);
     }
@@ -230,7 +263,7 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
         if (range.first >= range.second)
             return "<No Expression>";
 
-        const auto& text = buffer.GetGapBuffer();
+        const auto& text = buffer.GetWorkingBuffer();
         auto eval = std::string(text.begin() + range.first.Index(), text.begin() + range.second.Index());
 
         // Flash the evaluated expression
@@ -324,7 +357,7 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
                     if (pSyntax->GetSyntaxAt(spTipMsg->location).foreground == ThemeColor::Identifier)
                     {
                         auto spMarker = std::make_shared<RangeMarker>(*spTipMsg->pBuffer);
-                        spMarker->description = "This is an identifier";
+                        spMarker->SetDescription("This is an identifier");
                         spMarker->SetHighlightColor(ThemeColor::Identifier);
                         spMarker->SetTextColor(ThemeColor::Text);
                         spTipMsg->spMarker = spMarker;
@@ -333,7 +366,7 @@ struct ZepContainer : public IZepComponent, public IZepReplProvider
                     else if (pSyntax->GetSyntaxAt(spTipMsg->location).foreground == ThemeColor::Keyword)
                     {
                         auto spMarker = std::make_shared<RangeMarker>(*spTipMsg->pBuffer);
-                        spMarker->description = "This is a keyword";
+                        spMarker->SetDescription("This is a keyword");
                         spMarker->SetHighlightColor(ThemeColor::Keyword);
                         spMarker->SetTextColor(ThemeColor::Text);
                         spTipMsg->spMarker = spMarker;
@@ -436,36 +469,16 @@ int main(int argc, char** argv)
     ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
+    // ** Zep specific code, before Initializing font map
+    ZepContainerImGui zep(startupFile, SDL_GetBasePath());
+
     // Setup style
     ImGui::StyleColorsDark();
 
-    ImVector<ImWchar> ranges;
-    ImFontGlyphRangesBuilder builder;
-    builder.AddRanges(io.Fonts->GetGlyphRangesDefault()); // Add one of the default ranges
-    builder.AddRanges(io.Fonts->GetGlyphRangesCyrillic()); // Add one of the default ranges
-    //builder.AddRanges(io.Fonts->GetGlyphRangesThai()); // Add one of the default ranges
-    ImWchar greek_range[] = { 0x300, 0x52F, 0x1f00, 0x1fff, 0, 0 };
-    builder.AddRanges(greek_range);
-    builder.BuildRanges(&ranges); // Build the final result (ordered ranges with all the unique characters submitted)
-
-    ImFontConfig cfg;
-    cfg.OversampleH = 4;
-    cfg.OversampleV = 4;
-
-    float fontPixelHeight = dpi_pixel_height_from_point_size(DemoFontPtSize, GetDisplayScale().y);
-    io.Fonts->AddFontFromFileTTF((std::string(SDL_GetBasePath()) + "Cousine-Regular.ttf").c_str(), fontPixelHeight, &cfg, ranges.Data);
-
-    ZLOG(INFO, "DPI Scale: " << MUtils::NVec2f(GetDisplayScale().x, GetDisplayScale().y));
-    ZLOG(INFO, "Font Pixel Size: " << fontPixelHeight);
-
-    unsigned int flags = 0; // ImGuiFreeType::NoHinting;
-    ImGuiFreeType::BuildFontAtlas(io.Fonts, flags);
+    ZLOG(INFO, "DPI Scale: " << MUtils::NVec2f(GetPixelScale().x, GetPixelScale().y));
 
     bool show_demo_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-    // ** Zep specific code
-    ZepContainer zep(startupFile, SDL_GetBasePath());
 
     MUtils::TimeProvider::Instance().StartThread();
 

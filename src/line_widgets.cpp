@@ -7,7 +7,7 @@ namespace Zep
 NVec2f FloatSlider::GetSize() const
 {
     // Make the slider as high as the font, but return non-dpi scale
-    return NVec2f((60.0f * m_dimension) + (m_sliderGap * (m_dimension - 1)), m_editor.GetDisplay().GetFontHeightPixels(ZepFontType::Text) / m_editor.GetPixelScale().y);
+    return NVec2f((60.0f * m_dimension) + (m_sliderGap * (m_dimension - 1)), m_editor.GetDisplay().GetFont(ZepTextType::Text).GetPixelHeight() / m_editor.GetDisplay().GetPixelScale().y);
 }
 
 void FloatSlider::MouseDown(const NVec2f& pos, ZepMouseButton button)
@@ -43,7 +43,7 @@ void FloatSlider::Draw(const ZepBuffer& buffer, const NVec2f& loc)
     {
         // Convert to low DPI, then double up on submit
         // We should do it this way more.
-        auto location = loc / m_editor.GetPixelScale().x;
+        auto location = loc / m_editor.GetDisplay().GetPixelScale().x;
         location = NVec2f(location.x + (slider * (60.0f + m_sliderGap)), location.y);
 
         NVec2f size = GetSize();

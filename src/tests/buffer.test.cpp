@@ -14,7 +14,7 @@ public:
     {
         // Disable threads for consistent tests, at the expense of not catching thread errors!
         // TODO : Fix/understand test failures with threading
-        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZEP_ROOT, ZepEditorFlags::DisableThreads);
+        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(NVec2f(1.0f, 1.0f)), ZEP_ROOT, ZepEditorFlags::DisableThreads);
         pBuffer = spEditor->InitWithText("", "");
     }
 
@@ -29,13 +29,13 @@ public:
 
 TEST_F(BufferTest, CreatedProperly)
 {
-    ASSERT_TRUE(pBuffer->GetGapBuffer().size() == 1);
+    ASSERT_TRUE(pBuffer->GetWorkingBuffer().size() == 1);
 }
 
 TEST_F(BufferTest, DefaultConstructedWith0)
 {
     auto pNew = std::make_shared<ZepBuffer>(*spEditor, std::string("empty"));
-    ASSERT_TRUE(pNew->GetGapBuffer().size() == 1);
+    ASSERT_TRUE(pNew->GetWorkingBuffer().size() == 1);
 }
 
 // TODO

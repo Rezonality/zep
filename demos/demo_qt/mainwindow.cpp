@@ -167,7 +167,7 @@ std::string MainWindow::ReplParse(ZepBuffer& buffer, const GlyphIterator& cursor
     ZEP_UNUSED(cursorOffset);
     ZEP_UNUSED(type);
 
-    auto ret = chibi_repl(scheme, NULL, buffer.GetGapBuffer().string());
+    auto ret = chibi_repl(scheme, NULL, buffer.GetWorkingBuffer().string());
     ret = RTrim(ret);
     return ret;
 }

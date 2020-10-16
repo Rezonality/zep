@@ -49,8 +49,8 @@ class ZepTabWindow;
 class ZepEditor_ImGui : public ZepEditor
 {
 public:
-    ZepEditor_ImGui(const ZepPath& root, uint32_t flags = 0, IZepFileSystem* pFileSystem = nullptr)
-        : ZepEditor(new ZepDisplay_ImGui(), root, flags, pFileSystem)
+    ZepEditor_ImGui(const ZepPath& root, const NVec2f& pixelScale, uint32_t flags = 0, IZepFileSystem* pFileSystem = nullptr)
+        : ZepEditor(new ZepDisplay_ImGui(pixelScale), root, flags, pFileSystem)
     {
     }
 

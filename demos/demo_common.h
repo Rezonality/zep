@@ -2,7 +2,7 @@
 
 namespace Zep
 {
-const float DemoFontPtSize = 11.0f;
+const float DemoFontPtSize = 14.0f;
 } // Zep
 
 

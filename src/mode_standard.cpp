@@ -291,7 +291,7 @@ void ZepMode_Standard::Begin(ZepWindow* pWindow)
     if (copyRegion || op == CommandOperation::Copy)
     {
         // Grab it
-        std::string str = std::string(buffer.GetGapBuffer().begin() + startOffset, buffer.GetGapBuffer().begin() + endOffset);
+        std::string str = std::string(buffer.GetWorkingBuffer().begin() + startOffset, buffer.GetWorkingBuffer().begin() + endOffset);
         GetEditor().GetRegister('"').text = str;
         GetEditor().GetRegister('"').lineWise = lineWise;
         GetEditor().GetRegister('0').text = str;

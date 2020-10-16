@@ -2,6 +2,7 @@
 #include "zep/editor.h"
 #include "zep/syntax.h"
 #include "zep/syntax_tree.h"
+#include "zep/syntax_markdown.h"
 
 namespace Zep
 {
@@ -134,6 +135,8 @@ static std::unordered_set<std::string> janet_identifiers = {
 
 static std::unordered_set<std::string> tree_keywords = {};
 static std::unordered_set<std::string> tree_identifiers = {};
+static std::unordered_set<std::string> markdown_keywords = {};
+static std::unordered_set<std::string> markdown_identifiers = {};
 
 void RegisterSyntaxProviders(ZepEditor& editor)
 {
@@ -177,6 +180,11 @@ void RegisterSyntaxProviders(ZepEditor& editor)
                            return std::make_shared<ZepSyntax_Tree>(*pBuffer, tree_keywords, tree_identifiers, ZepSyntaxFlags::CaseInsensitive);
                        }) });
 
+    editor.RegisterSyntaxFactory(
+        { ".md", ".markdown" },
+        SyntaxProvider{ "markdown", tSyntaxFactory([](ZepBuffer* pBuffer) {
+                           return std::make_shared<ZepSyntax_Markdown>(*pBuffer, markdown_keywords, markdown_identifiers, ZepSyntaxFlags::CaseInsensitive);
+                       }) });
 }
 
 } // namespace Zep

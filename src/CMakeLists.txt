@@ -29,6 +29,7 @@ ${ZEP_ROOT}/include/zep/syntax.h
 ${ZEP_ROOT}/include/zep/syntax_providers.h
 ${ZEP_ROOT}/include/zep/syntax_rainbow_brackets.h
 ${ZEP_ROOT}/include/zep/syntax_tree.h
+${ZEP_ROOT}/include/zep/syntax_markdown.h
 ${ZEP_ROOT}/include/zep/tab_window.h
 ${ZEP_ROOT}/include/zep/theme.h
 ${ZEP_ROOT}/include/zep/window.h
@@ -58,6 +59,7 @@ ${ZEP_ROOT}/src/syntax.cpp
 ${ZEP_ROOT}/src/syntax_providers.cpp
 ${ZEP_ROOT}/src/syntax_rainbow_brackets.cpp
 ${ZEP_ROOT}/src/syntax_tree.cpp
+${ZEP_ROOT}/src/syntax_markdown.cpp
 ${ZEP_ROOT}/src/tab_window.cpp
 ${ZEP_ROOT}/src/theme.cpp
 ${ZEP_ROOT}/src/window.cpp

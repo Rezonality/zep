@@ -1,8 +1,8 @@
 #pragma once
-#include <string>
-#include <imgui/imgui.h>
 #include "../display.h"
 #include "../syntax.h"
+#include <imgui/imgui.h>
+#include <string>
 
 // Can't include this publicly
 //#include "zep/mcommon/logger.h"
@@ -19,74 +19,61 @@ inline ImVec2 toImVec2(const NVec2f& im)
     return ImVec2(im.x, im.y);
 }
 
-class ZepDisplay_ImGui : public ZepDisplay
+static ImWchar greek_range[] = { 0x300, 0x52F, 0x1f00, 0x1fff, 0, 0 };
+
+class ZepFont_ImGui : public ZepFont
 {
 public:
-    // ImGui specific display methods
-    float GetFontPointSize(ZepFontType type) const
+    ZepFont_ImGui(ZepDisplay& display, ImFont* pFont, int pixelHeight)
+        : ZepFont(display)
+        , m_pFont(pFont)
     {
-        ZEP_UNUSED(type);
-        return ImGui::GetFontSize() * ImGui::GetIO().FontGlobalScale;
+        SetPixelHeight(pixelHeight);
     }
 
-    /*void AddFont(const std::string& fontName, float pointSize)
-    ImVector<ImWchar> ranges;
-    ImFontGlyphRangesBuilder builder;
-    builder.AddRanges(io.Fonts->GetGlyphRangesDefault()); // Add one of the default ranges
-    builder.AddRanges(io.Fonts->GetGlyphRangesCyrillic()); // Add one of the default ranges
-    //builder.AddRanges(io.Fonts->GetGlyphRangesThai()); // Add one of the default ranges
-    ImWchar greek_range[] = { 0x300, 0x52F, 0x1f00, 0x1fff, 0, 0 };
-    builder.AddRanges(greek_range);
-    builder.BuildRanges(&ranges); // Build the final result (ordered ranges with all the unique characters submitted)
-
-    ImFontConfig cfg;
-    cfg.OversampleH = 4;
-    cfg.OversampleV = 4;
-
-    float fontPixelHeight = dpi_pixel_height_from_point_size(DemoFontPtSize, GetDisplayScale().y);
-    io.Fonts->AddFontFromFileTTF((std::string(SDL_GetBasePath()) + "Cousine-Regular.ttf").c_str(), fontPixelHeight, &cfg, ranges.Data);
-    */
-
-    void SetFontPointSize(ZepFontType type, float size)
+    virtual void SetPixelHeight(int pixelHeight) override
     {
-        ZEP_UNUSED(type);
-        // A crude scaling in ImGui for now...
-        // We use global font scale instead of doing it 'properly'
-        // See the Qt demo for better scaling, because that's built into Qt.
-        GetFontCache(type).charCacheDirty = true;
-        ImGui::GetIO().FontGlobalScale = size / ImGui::GetFontSize();
+        InvalidateCharCache();
+        m_pixelHeight = pixelHeight;
     }
 
-    float GetFontHeightPixels(ZepFontType type) const
+    virtual NVec2f GetTextSize(const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const override
     {
-        ZEP_UNUSED(type);
-        return ImGui::GetFontSize();
-        // So Qt claims to return the below; but I've been unable to get similar fonts to match.
-        // There is much more padding in Qt than in ImGui, even though the actual font sizes are the same!
-        //return (ImGui::GetFont()->Descent + ImGui::GetFont()->Ascent + 1) * 2.0f;
-    }
-
-    NVec2f GetTextSize(ZepFontType type, const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const
-    {
-        ZEP_UNUSED(type);
         // This is the code from ImGui internals; we can't call GetTextSize, because it doesn't return the correct 'advance' formula, which we
         // need as we draw one character at a time...
-        ImFont* font = ImGui::GetFont();
-        const float font_size = ImGui::GetFontSize();
-        ImVec2 text_size = font->CalcTextSizeA(font_size, FLT_MAX, FLT_MAX, (const char*)pBegin, (const char*)pEnd, NULL);
+        const float font_size = m_pFont->FontSize;
+        ImVec2 text_size = m_pFont->CalcTextSizeA(float(GetPixelHeight()), FLT_MAX, FLT_MAX, (const char*)pBegin, (const char*)pEnd, NULL);
         if (text_size.x == 0.0)
         {
             // Make invalid characters a default fixed_size
             const char chDefault = 'A';
-            text_size = font->CalcTextSizeA(font_size, FLT_MAX, FLT_MAX, &chDefault, (&chDefault + 1), NULL);
+            text_size = m_pFont->CalcTextSizeA(float(GetPixelHeight()), FLT_MAX, FLT_MAX, &chDefault, (&chDefault + 1), NULL);
         }
 
         return toNVec2f(text_size);
     }
 
-    void DrawChars(ZepFontType type, const NVec2f& pos, const NVec4f& col, const uint8_t* text_begin, const uint8_t* text_end) const
+    ImFont* GetImFont()
     {
-        ZEP_UNUSED(type);
+        return m_pFont;
+    }
+
+private:
+    ImFont* m_pFont;
+    float m_fontScale = 1.0f;
+};
+
+class ZepDisplay_ImGui : public ZepDisplay
+{
+public:
+    ZepDisplay_ImGui(const NVec2f& pixelScale)
+        : ZepDisplay(pixelScale)
+    {
+    }
+
+    void DrawChars(ZepFont& font, const NVec2f& pos, const NVec4f& col, const uint8_t* text_begin, const uint8_t* text_end) const
+    {
+        auto imFont = static_cast<ZepFont_ImGui&>(font).GetImFont();
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         if (text_end == nullptr)
         {
@@ -94,12 +81,12 @@ public:
         }
         if (m_clipRect.Width() == 0)
         {
-            drawList->AddText(toImVec2(pos), ToPackedABGR(col), (const char*)text_begin, (const char*)text_end);
+            drawList->AddText(imFont, float(font.GetPixelHeight()), toImVec2(pos), ToPackedABGR(col), (const char*)text_begin, (const char*)text_end);
         }
         else
         {
             drawList->PushClipRect(toImVec2(m_clipRect.topLeftPx), toImVec2(m_clipRect.bottomRightPx));
-            drawList->AddText(toImVec2(pos), ToPackedABGR(col), (const char*)text_begin, (const char*)text_end);
+            drawList->AddText(imFont, float(font.GetPixelHeight()), toImVec2(pos), ToPackedABGR(col), (const char*)text_begin, (const char*)text_end);
             drawList->PopClipRect();
         }
     }
@@ -136,14 +123,23 @@ public:
         }
     }
 
-    void SetClipRect(const NRectf& rc)
+    virtual void SetClipRect(const NRectf& rc) override
     {
         m_clipRect = rc;
     }
 
+    virtual ZepFont& GetFont(ZepTextType type) override
+    {
+        if (m_fonts[(int)type] == nullptr)
+        {
+            m_fonts[(int)type] = std::make_shared<ZepFont_ImGui>(*this, ImGui::GetFont(), int(16.0f * GetPixelScale().y));
+        }
+        return *m_fonts[(int)type];
+    }
+
+
 private:
     NRectf m_clipRect;
-    float m_fontScale = 1.0f;
-};
+}; // namespace Zep
 
 } // namespace Zep

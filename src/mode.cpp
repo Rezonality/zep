@@ -60,7 +60,7 @@ void CommandContext::UpdateRegisters()
         }
 
         // TODO: Make a helper for this
-        std::string str = std::string(buffer.GetGapBuffer().begin() + beginRange.Index(), buffer.GetGapBuffer().begin() + endRange.Index());
+        std::string str = std::string(buffer.GetWorkingBuffer().begin() + beginRange.Index(), buffer.GetWorkingBuffer().begin() + endRange.Index());
 
         // Delete commands fill up 1-9 registers
         if (keymap.commandWithoutGroups[0] == 'd' || keymap.commandWithoutGroups[0] == 'D')
@@ -88,7 +88,7 @@ void CommandContext::UpdateRegisters()
             std::swap(beginRange, endRange);
         }
 
-        std::string str = std::string(buffer.GetGapBuffer().begin() + beginRange.Index(), buffer.GetGapBuffer().begin() + endRange.Index());
+        std::string str = std::string(buffer.GetWorkingBuffer().begin() + beginRange.Index(), buffer.GetWorkingBuffer().begin() + endRange.Index());
         while (!registers.empty())
         {
             auto& ed = owner.GetEditor();
@@ -190,6 +190,7 @@ void ZepMode::ClampCursorForMode()
     }
 
     // Normal mode cursor is never on a CR/0
+    // This stops an edit, such as an undo from leaving the cursor on the CR.
     if (m_currentMode == EditorMode::Normal)
     {
         GetCurrentWindow()->SetBufferCursor(GetCurrentWindow()->GetBuffer().ClampToVisibleLine(GetCurrentWindow()->GetBufferCursor()));
@@ -854,12 +855,12 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_FontBigger)
     {
-        GetEditor().GetDisplay().SetFontPointSize(ZepFontType::Text, std::min(GetEditor().GetDisplay().GetFontPointSize(ZepFontType::Text) + 1.0f, 200.0f));
+        GetEditor().GetDisplay().Bigger();
         return true;
     }
     else if (mappedCommand == id_FontSmaller)
     {
-        GetEditor().GetDisplay().SetFontPointSize(ZepFontType::Text, std::max(10.0f, GetEditor().GetDisplay().GetFontPointSize(ZepFontType::Text) - 1.0f));
+        GetEditor().GetDisplay().Smaller();
         return true;
     }
     // Moving between splits
@@ -2207,38 +2208,38 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             {
             case 5:
                 spMarker->SetColors(ThemeColor::Error, ThemeColor::Text, ThemeColor::Error);
-                spMarker->name = "All Marker";
-                spMarker->description = "This is an example tooltip\nThey can be added to any range of characters";
+                spMarker->SetName("All Marker");
+                spMarker->SetDescription("This is an example tooltip\nThey can be added to any range of characters");
                 spMarker->displayType = RangeMarkerDisplayType::All;
                 break;
             case 4:
                 spMarker->SetColors(ThemeColor::Error, ThemeColor::Text, ThemeColor::Error);
-                spMarker->name = "Filled Marker";
-                spMarker->description = "This is an example tooltip\nThey can be added to any range of characters";
+                spMarker->SetName("Filled Marker");
+                spMarker->SetDescription("This is an example tooltip\nThey can be added to any range of characters");
                 spMarker->displayType = RangeMarkerDisplayType::Tooltip | RangeMarkerDisplayType::Underline | RangeMarkerDisplayType::Indicator | RangeMarkerDisplayType::Background;
                 break;
             case 3:
                 spMarker->SetColors(ThemeColor::Background, ThemeColor::Text, GetEditor().GetTheme().GetUniqueColor(unique++));
-                spMarker->name = "Underline Marker";
-                spMarker->description = "This is an example tooltip\nThey can be added to any range of characters";
+                spMarker->SetName("Underline Marker");
+                spMarker->SetDescription("This is an example tooltip\nThey can be added to any range of characters");
                 spMarker->displayType = RangeMarkerDisplayType::Tooltip | RangeMarkerDisplayType::Underline | RangeMarkerDisplayType::CursorTip;
                 break;
             case 2:
                 spMarker->SetColors(ThemeColor::Background, ThemeColor::Text, ThemeColor::Warning);
-                spMarker->name = "Tooltip";
-                spMarker->description = "This is an example tooltip\nThey can be added to any range of characters";
+                spMarker->SetName("Tooltip");
+                spMarker->SetDescription("This is an example tooltip\nThey can be added to any range of characters");
                 spMarker->displayType = RangeMarkerDisplayType::Tooltip;
                 break;
             case 1:
                 spMarker->SetColors(ThemeColor::Background, ThemeColor::Text, ThemeColor::Warning);
-                spMarker->name = "Warning";
-                spMarker->description = "This is an example warning mark";
+                spMarker->SetName("Warning");
+                spMarker->SetDescription("This is an example warning mark");
                 break;
             case 0:
             default:
                 spMarker->SetColors(ThemeColor::Background, ThemeColor::Text, ThemeColor::Error);
-                spMarker->name = "Error";
-                spMarker->description = "This is an example error mark";
+                spMarker->SetName("Error");
+                spMarker->SetDescription("This is an example error mark");
             }
             SwitchMode(DefaultMode());
         }

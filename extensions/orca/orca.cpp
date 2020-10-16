@@ -101,7 +101,7 @@ void Orca::ReadFromBuffer(ZepBuffer* pBuffer)
     m_size = NVec2i(m_field.width, m_field.height);
 
     // Copy the buffer into the field
-    auto& text = pBuffer->GetGapBuffer();
+    auto& text = pBuffer->GetWorkingBuffer();
     auto sz = text.size();
     for (int y = 0; y < m_field.height; y++)
     {
@@ -138,7 +138,7 @@ void Orca::WriteToBuffer(ZepBuffer* pBuffer, ZepWindow& window)
     m_lastCursorPos = window.BufferToDisplay();
 
     // Copy the calculated buffer data from the orca buffer
-    auto& text = pBuffer->GetMutableText();
+    auto& text = pBuffer->GetMutableWorkingBuffer();
     for (int y = 0; y < m_field.height; y++)
     {
         for (int x = 0; x < m_field.width; x++)

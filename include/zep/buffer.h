@@ -6,6 +6,7 @@
 #include "zep/mcommon/file/path.h"
 #include "zep/mcommon/string/stringutils.h"
 #include "zep/mcommon/logger.h"
+#include "zep/mcommon/signals.h"
 
 #include "zep/glyph_iterator.h"
 
@@ -92,37 +93,16 @@ enum class ReplaceRangeMode
     Replace,
 };
 
-struct MarkerMove
-{
-    MarkerMove(ByteIndex markerFrom, ByteIndex markerTo, const std::shared_ptr<RangeMarker> spMarker)
-        : from(markerFrom),
-        to(markerTo),
-        marker(spMarker)
-    {
-
-    }
-
-    ByteIndex from;
-    ByteIndex to;
-    std::shared_ptr<RangeMarker> marker;
-};
-
-using tMarkerMoves = std::vector<MarkerMove>;
-using tMarkers = std::vector<std::shared_ptr<RangeMarker>>;
 struct ChangeRecord
 {
     std::string strDeleted;
     std::string strInserted;
-    tMarkerMoves markerMoves;
-    tMarkers markerDeletes;
     GlyphIterator itrStart;
     GlyphIterator itrEnd;
 
     void Clear()
     {
         strDeleted.clear();
-        markerMoves.clear();
-        markerDeletes.clear();
         itrStart.Invalidate();
         itrEnd.Invalidate();
     }
@@ -180,14 +160,16 @@ public:
     GlyphIterator End() const;
     GlyphIterator Begin() const;
 
-    const GapBuffer<uint8_t>& GetGapBuffer() const
+    const GapBuffer<uint8_t>& GetWorkingBuffer() const
     {
-        return m_gapBuffer;
+        return m_workingBuffer;
     }
-    GapBuffer<uint8_t>& GetMutableText()
+
+    GapBuffer<uint8_t>& GetMutableWorkingBuffer()
     {
-        return m_gapBuffer;
+        return m_workingBuffer;
     }
+
     const std::vector<ByteIndex> GetLineEnds() const
     {
         return m_lineEnds;
@@ -247,7 +229,6 @@ public:
 
     void ForEachMarker(uint32_t types, Direction dir, const GlyphIterator& begin, const GlyphIterator& end, std::function<bool(const std::shared_ptr<RangeMarker>&)> fnCB) const;
     std::shared_ptr<RangeMarker> FindNextMarker(GlyphIterator start, Direction dir, uint32_t markerType);
-    void ApplyMarkerChanges(ChangeRecord& record, Direction direction);
 
     void SetBufferType(BufferType type);
     BufferType GetBufferType() const;
@@ -287,15 +268,16 @@ public:
     uint64_t ToHandle() const;
     static ZepBuffer* FromHandle(ZepEditor& editor, uint64_t handle);
 
+    Zep::signal<void(ZepBuffer& buffer, const GlyphIterator&, const std::string&)> sigPreInsert;
+    Zep::signal<void(ZepBuffer& buffer, const GlyphIterator&, const GlyphIterator&)> sigPreDelete;
+
 private:
     void MarkUpdate();
 
-    void UpdateForInsert(const GlyphIterator& startOffset, const GlyphIterator& endOffset, ChangeRecord& changeRecord);
-    void UpdateForDelete(const GlyphIterator& startOffset, const GlyphIterator& endOffset, ChangeRecord& changeRecord);
-
 private:
     // Buffer & record of the line end locations
-    GapBuffer<uint8_t> m_gapBuffer;
+    GapBuffer<uint8_t> m_workingBuffer;
+
     std::vector<ByteIndex> m_lineEnds;
 
     // File and modification info

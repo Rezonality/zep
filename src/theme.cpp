@@ -42,7 +42,7 @@ void ZepTheme::SetDarkTheme()
 {
     m_colors[ThemeColor::Text] = NVec4f(1.0f);
     m_colors[ThemeColor::TextDim] = NVec4f(.45f, .45f, .45f, 1.0f);
-    m_colors[ThemeColor::Background] = NVec4f(0.13f, 0.13f, 0.13f, 1.0f);
+    m_colors[ThemeColor::Background] = NVec4f(0.11f, 0.11f, 0.11f, 1.0f);
     m_colors[ThemeColor::HiddenText] = NVec4f(.9f, .1f, .1f, 1.0f);
     m_colors[ThemeColor::TabBorder] = NVec4f(.55f, .55f, .55f, 1.0f);
     m_colors[ThemeColor::TabInactive] = NVec4f(.4f, .4f, .4f, .55f);

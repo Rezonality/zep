@@ -190,10 +190,10 @@ const float textBorder = 2.0f;
 const float tabSpacing = 1.0f;
 const float leftBorderChars = 3;
 
-#define DPI_VEC2(value) (value * GetEditor().GetPixelScale())
-#define DPI_Y(value) (GetEditor().GetPixelScale().y * value)
-#define DPI_X(value) (GetEditor().GetPixelScale().x * value)
-#define DPI_RECT(value) (value * GetEditor().GetPixelScale())
+#define DPI_VEC2(value) (value * GetEditor().GetDisplay().GetPixelScale())
+#define DPI_Y(value) (GetEditor().GetDisplay().GetPixelScale().y * value)
+#define DPI_X(value) (GetEditor().GetDisplay().GetPixelScale().x * value)
+#define DPI_RECT(value) (value * GetEditor().GetDisplay().GetPixelScale())
 
 inline float FontHeightPixelsFromPointSize(float pointSize, float pixelScaleY)
 {
@@ -246,6 +246,7 @@ struct TabRegionTab : public Region
     std::string name;
     ZepTabWindow* pTabWindow = nullptr;
 };
+
 
 class ZepEditor
 {
@@ -366,9 +367,6 @@ public:
     bool OnMouseDown(const NVec2f& mousePos, ZepMouseButton button);
     bool OnMouseUp(const NVec2f& mousePos, ZepMouseButton button);
     const NVec2f GetMousePos() const;
-
-    void SetPixelScale(const NVec2f& scale);
-    NVec2f GetPixelScale() const;
 
     void SetBufferSyntax(ZepBuffer& buffer) const;
     void SetBufferMode(ZepBuffer& buffer) const;

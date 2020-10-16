@@ -1,4 +1,4 @@
-#include "zep/syntax_tree.h"
+#include "zep/syntax_markdown.h"
 #include "zep/editor.h"
 #include "zep/theme.h"
 
@@ -11,7 +11,7 @@
 namespace Zep
 {
 
-ZepSyntax_Tree::ZepSyntax_Tree(ZepBuffer& buffer,
+ZepSyntax_Markdown::ZepSyntax_Markdown(ZepBuffer& buffer,
     const std::unordered_set<std::string>& keywords,
     const std::unordered_set<std::string>& identifiers,
     uint32_t flags)
@@ -21,7 +21,7 @@ ZepSyntax_Tree::ZepSyntax_Tree(ZepBuffer& buffer,
     m_adornments.clear();
 }
 
-void ZepSyntax_Tree::UpdateSyntax()
+void ZepSyntax_Markdown::UpdateSyntax()
 {
     auto& buffer = m_buffer.GetWorkingBuffer();
     auto itrCurrent = buffer.begin();
@@ -40,6 +40,8 @@ void ZepSyntax_Tree::UpdateSyntax()
         (m_syntax.begin() + (itrA - buffer.begin()))->background = background;
     };
 
+    bool lineBegin = true;
+
     // Walk backwards to previous delimiter
     while (itrCurrent != itrEnd)
     {
@@ -51,18 +53,48 @@ void ZepSyntax_Tree::UpdateSyntax()
         // Update start location
         m_processedChar = long(itrCurrent - buffer.begin());
 
-        if (*itrCurrent == '~' || *itrCurrent == '+')
+        if (*itrCurrent == '#' && lineBegin)
         {
-            mark(itrCurrent, itrCurrent + 1, ThemeColor::CursorNormal, ThemeColor::None);
-            itrCurrent++;
-            auto itrNext = itrCurrent;
-            while (itrNext != itrEnd &&
-                *itrNext != '\n')
+            lineBegin = false;
+            auto itrStart = itrCurrent;
+            while (itrCurrent != itrEnd &&
+                *itrCurrent != '\n' &&
+                *itrCurrent != 0)
             {
-                itrNext++;
+                itrCurrent++;
             }
-            mark(itrCurrent, itrNext, ThemeColor::Comment, ThemeColor::None);
-            itrCurrent = itrNext;
+            mark(itrStart, itrCurrent, ThemeColor::Identifier, ThemeColor::None);
+
+        }
+        else
+        {
+            if (*itrCurrent == '[')
+            {
+                int inCount = 0;
+                auto itrStart = itrCurrent;
+                while (itrCurrent != itrEnd &&
+                    *itrCurrent != '\n' &&
+                    *itrCurrent != 0)
+                {
+                    if (*itrCurrent == '[')
+                    {
+                        inCount++;
+                    }
+                    else if (*itrCurrent == ']')
+                    {
+                        inCount--;
+                    }
+                    itrCurrent++;
+                    if (inCount == 0)
+                        break;
+                }
+                mark(itrStart, itrCurrent, ThemeColor::Keyword, ThemeColor::None);
+            }
+        }
+
+        if (*itrCurrent == '\n')
+        {
+            lineBegin = true;
         }
 
         itrCurrent++;

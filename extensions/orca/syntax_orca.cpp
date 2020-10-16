@@ -49,7 +49,7 @@ SyntaxResult ZepSyntax_Orca::GetSyntaxAt(const GlyphIterator& itr) const
 
 void ZepSyntax_Orca::UpdateSyntax()
 {
-    auto& buffer = m_buffer.GetGapBuffer();
+    auto& buffer = m_buffer.GetWorkingBuffer();
 
     // We don't do anything in orca mode, we get dynamically because Orca tells us the colors
     m_targetChar = long(0);

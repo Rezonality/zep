@@ -31,7 +31,7 @@ bool GlyphIterator::Valid() const
         return false;
     }
 
-    if (m_index < 0 || m_index >= m_pBuffer->GetGapBuffer().size())
+    if (m_index < 0 || m_index >= m_pBuffer->GetWorkingBuffer().size())
     {
         return false;
     }
@@ -84,7 +84,7 @@ uint8_t GlyphIterator::Char() const
     {
         return 0;
     }
-    return m_pBuffer->GetGapBuffer()[m_index];
+    return m_pBuffer->GetWorkingBuffer()[m_index];
 }
 
 uint8_t GlyphIterator::operator*() const
@@ -93,7 +93,7 @@ uint8_t GlyphIterator::operator*() const
     {
         return 0;
     }
-    return m_pBuffer->GetGapBuffer()[m_index];
+    return m_pBuffer->GetWorkingBuffer()[m_index];
 }
 
 GlyphIterator& GlyphIterator::MoveClamped(long count, LineLocation clamp)
@@ -102,7 +102,7 @@ GlyphIterator& GlyphIterator::MoveClamped(long count, LineLocation clamp)
     {
         return *this;
     }
-    auto& gapBuffer = m_pBuffer->GetGapBuffer();
+    auto& gapBuffer = m_pBuffer->GetWorkingBuffer();
 
     if (count >= 0)
     {
@@ -136,7 +136,7 @@ GlyphIterator& GlyphIterator::Move(long count)
     {
         return *this;
     }
-    auto& gapBuffer = m_pBuffer->GetGapBuffer();
+    auto& gapBuffer = m_pBuffer->GetWorkingBuffer();
 
     if (count >= 0)
     {
@@ -173,7 +173,7 @@ GlyphIterator& GlyphIterator::Clamp()
 
     // Clamp to the 0 on the end of the buffer 
     // Since indices are usually exclusive, this allows selection of everything but the 0
-    m_index = std::min(m_index, long(m_pBuffer->GetGapBuffer().size()) - 1);
+    m_index = std::min(m_index, long(m_pBuffer->GetWorkingBuffer().size()) - 1);
     m_index = std::max(m_index, 0l);
     return *this;
 }

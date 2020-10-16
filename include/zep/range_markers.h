@@ -4,9 +4,11 @@
 #include <map>
 
 #include "zep/mcommon/animation/timer.h"
+#include "zep/mcommon/signals.h"
 
 #include "zep/glyph_iterator.h"
 #include "zep/theme.h"
+
 
 // Range Markers are adornments over the text; they represent any additional marks over the existing text buffer.
 // For example, tooltips, underlines, inline widgets, etc.
@@ -67,39 +69,56 @@ struct RangeMarker : std::enable_shared_from_this<RangeMarker>
     bool ContainsLocation(GlyphIterator loc) const;
     bool IntersectsRange(const ByteRange& i) const;
     virtual ThemeColor GetBackgroundColor(const GlyphIterator& itr = GlyphIterator()) const;
-    virtual ThemeColor GetTextColor(const GlyphIterator& itr = GlyphIterator()) const;
+    virtual ThemeColor GetTextColor(const GlyphIterator& itr = GlyphIterator()) const ;
     virtual ThemeColor GetHighlightColor(const GlyphIterator& itr = GlyphIterator()) const;
-    virtual float GetAlpha(GlyphIterator) const;
+    virtual float GetAlpha(const GlyphIterator& itr = GlyphIterator()) const;
+    virtual const std::string& GetName() const;
+    virtual const std::string& GetDescription() const;
+    virtual const NVec2f& GetInlineSize() const;
 
-    void SetRange(ByteRange range);
-    const ByteRange& GetRange() const;
-    void SetBackgroundColor(ThemeColor color);
-    void SetTextColor(ThemeColor color);
-    void SetHighlightColor(ThemeColor color);
-    void SetColors(ThemeColor back = ThemeColor::None, ThemeColor text = ThemeColor::Text, ThemeColor highlight = ThemeColor::Text);
-    void SetAlpha(float a);
+    virtual void SetRange(ByteRange range);
+    virtual const ByteRange& GetRange() const;
+    virtual void SetBackgroundColor(ThemeColor color);
+    virtual void SetTextColor(ThemeColor color);
+    virtual void SetHighlightColor(ThemeColor color);
+    virtual void SetColors(ThemeColor back = ThemeColor::None, ThemeColor text = ThemeColor::Text, ThemeColor highlight = ThemeColor::Text);
+    virtual void SetAlpha(float a);
+    virtual void SetName(const std::string& name);
+    virtual void SetDescription(const std::string& desc);
+    virtual void SetEnabled(bool enabled);
+    virtual void SetInlineSize(const NVec2f& size);
+
+    void HandleBufferInsert(ZepBuffer& buffer, const GlyphIterator& itrStart, const std::string& str);
+    void HandleBufferDelete(ZepBuffer& buffer, const GlyphIterator& itr, const GlyphIterator& itrEnd);
+
     ZepBuffer& GetBuffer();
 
 public:
+    // TODO: Move to accessors.
     uint32_t displayType = RangeMarkerDisplayType::All;
     uint32_t markerType = RangeMarkerType::Mark;
     uint32_t displayRow = 0;
-    std::string name;
-    std::string description;
     ToolTipPos tipPos = ToolTipPos::AboveLine;
     std::shared_ptr<IWidget> spWidget;
-    NVec2f inlineSize;
     float duration = 1.0f;
-    float alpha = 1.0f;
     Zep::timer timer;
     FlashType flashType = FlashType::Flash;
 
-private:
+protected:
     ZepBuffer& m_buffer;
     ByteRange m_range;
-    ThemeColor m_textColor = ThemeColor::Text;
-    ThemeColor m_backgroundColor = ThemeColor::Background;
-    ThemeColor m_highlightColor = ThemeColor::Background; // Used for lines around tip box, underline, etc.
+    mutable float alpha = 1.0f;
+    std::string m_name;
+    std::string m_description;
+    bool m_enabled = true;
+    NVec2f m_inlineSize;
+
+    Zep::scoped_connection onPreBufferInsert;
+    Zep::scoped_connection onPreBufferDelete;
+
+    mutable ThemeColor m_textColor = ThemeColor::Text;
+    mutable ThemeColor m_backgroundColor = ThemeColor::Background;
+    mutable ThemeColor m_highlightColor = ThemeColor::Background; // Used for lines around tip box, underline, etc.
 };
 
 using tRangeMarkers = std::map<ByteIndex, std::set<std::shared_ptr<RangeMarker>>>;

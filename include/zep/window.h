@@ -23,6 +23,7 @@ struct LineCharInfo
     GlyphIterator iterator;
 };
 
+class ZepFont;
 // Line information, calculated during display update.
 // A collection of spans that show split lines on the display
 struct SpanInfo
@@ -31,15 +32,16 @@ struct SpanInfo
     std::vector<LineCharInfo> lineCodePoints;      // Codepoints
     long bufferLineNumber = 0;                     // Line in the original buffer, not the screen line
     float yOffsetPx = 0.0f;                        // Position in the buffer in pixels, if the screen was as big as the buffer.
-    NVec2f textSizePx = NVec2f(0.0f);              // Pixel size of the text 
+    NVec2f lineTextSizePx = NVec2f(0.0f);          // Pixel size of the text 
     int spanLineIndex = 0;                         // The index of this line in spans; might be more than buffer index
     NVec2f padding = NVec2f(1.0f, 1.0f);           // Padding above and below the line
     bool isSplitContinuation = false;
     NVec2f lineWidgetHeights;
+    ZepFont* pFont = nullptr;
 
     float FullLineHeightPx() const
     {
-        return padding.x + padding.y + textSizePx.y;
+        return padding.x + padding.y + lineTextSizePx.y;
     }
 
     // The byte length, not code point length
@@ -160,9 +162,11 @@ public:
     ZepTabWindow& GetTabWindow() const;
     NVec4f FilterActiveColor(const NVec4f& col, float atten = 1.0f);
 
+    void DirtyLayout();
+
 private:
-    void UpdateMarkers();
     void UpdateLayout(bool force = false);
+    void UpdateMarkers();
     void UpdateAirline();
     void UpdateScrollers();
     void UpdateLineSpans();
@@ -254,7 +258,7 @@ private:
     NVec2f m_textSizePx;                    // The calculated size of the buffer text, containing just the text
     NVec2i m_visibleLineIndices = {0, 0};   // Index of the line spans that are visible 
     long m_maxDisplayLines = 0;
-    float m_defaultLineSize = 0;
+    int m_defaultLineSize = 0;
     float m_xPad = 0.0f;
 
     // Tooltips
