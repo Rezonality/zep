@@ -3,8 +3,8 @@ language: cpp
 before_script:
   # Make mutils first and install it
   - cd ..
-  - git clone https://github.com/cmaughan/MUtils
-  - cd MUtils
+  - git clone https://github.com/Rezonality/mutils
+  - cd mutils
   - chmod +x prebuild.sh
   - sudo ./prebuild.sh
   - mkdir build
