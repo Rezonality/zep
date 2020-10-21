@@ -1,12 +1,23 @@
 IF (BUILD_EXTENSIONS)
+
 project(ZepExtensions
     VERSION 0.1.0.0)
 
-#add_compile_options("$<$<CONFIG:DEBUG>:-DTRACY_ENABLE=1>")
-add_compile_options("$<$<CONFIG:RELWITHDEBINFO>:-DTRACY_ENABLE=1>")
-
 find_package(SDL2 REQUIRED)
+find_package(imgui REQUIRED)
+find_package(gsl-lite REQUIRED)
+find_package(SDL2 REQUIRED)
+find_package(fmt REQUIRED)
+find_package(gl3w REQUIRED)
+find_package(freetype CONFIG REQUIRED)
+find_package(unofficial-concurrentqueue REQUIRED)
+find_package(tinyfiledialogs REQUIRED)
+
+include(CMakePackageConfigHelpers)
 find_package(MUtils REQUIRED)
+
+add_compile_options("$<$<CONFIG:RELWITHDEBINFO>:-DTRACY_ENABLE=1>")
+add_compile_options("$<$<CONFIG:DEBUG>:-DTRACY_ENABLE=1>")
 
 SET(EXTENSION_ROOT ${CMAKE_CURRENT_LIST_DIR})
 

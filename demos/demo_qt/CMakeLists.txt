@@ -9,8 +9,13 @@ set(CMAKE_PREFIX_PATH $ENV{QT_INSTALL_LOCATION})
 
 # Note: The SDL2 package is required by the MUtils dependency; it isn't really used for the Qt demo
 find_package(SDL2 REQUIRED)
+
+# Used Packages
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 find_package(MUtils REQUIRED)
 find_package(Qt5 COMPONENTS Core Widgets Gui REQUIRED)
+
 set_property(GLOBAL PROPERTY AUTOMOC_FOLDER Automoc)
 set_property(GLOBAL PROPERTY AUTOGEN_TARGETS_FOLDER Automoc)
 
@@ -60,12 +65,13 @@ target_include_directories(${DEMO_NAME}
         ${ZEP_ROOT}/include)
 
 target_link_libraries(${DEMO_NAME} PRIVATE 
+    MUtils::MUtils 
     Qt5::Core
     Qt5::Gui
     Qt5::Widgets
     Zep
     ZepExtensions
-    MUtils::MUtils 
+    #efsw::efsw 
     ${PLATFORM_LINKLIBS})
 
 target_compile_options(${DEMO_NAME} PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W3>) # Workaround Qt + MSVC 19 compile issue in release build.

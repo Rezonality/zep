@@ -1,7 +1,7 @@
 #pragma once
 #include "../display.h"
 #include "../syntax.h"
-#include <imgui/imgui.h>
+#include <imgui.h>
 #include <string>
 
 // Can't include this publicly

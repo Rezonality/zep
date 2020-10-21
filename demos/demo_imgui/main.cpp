@@ -3,30 +3,27 @@
 // (SDL is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan graphics context creation, etc.)
 // (GL3W is a helper library to access OpenGL functions since there is no standard header to access modern OpenGL functions easily. Alternatives are GLEW, Glad, etc.)
 
-#define NOMINMAX
-
 #include <SDL.h>
 #include <stdio.h>
 #include <thread>
 
-#include <imgui/imgui.h>
+#include <imgui.h>
 
-#include <imgui/examples/imgui_impl_opengl3.h>
-#include <imgui/examples/imgui_impl_sdl.h>
-#include <imgui/misc/freetype/imgui_freetype.h>
+#include <imgui_freetype.h>
+#include <imgui_impl_opengl3.h>
+#include <imgui_impl_sdl.h>
 
 #include <clip/clip.h>
 #include <mutils/time/time_provider.h>
 
-#include <zep/mcommon/animation/timer.h>
+#include <clipp.h>
 #include <mutils/chibi/chibi.h>
 #include <mutils/file/file.h>
 #include <mutils/profile/profile.h>
 #include <mutils/ui/dpi.h>
-#include <tclap/CmdLine.h>
+#include <zep/mcommon/animation/timer.h>
 
 #include "config_app.h"
-
 
 // About OpenGL function loaders: modern OpenGL doesn't have a standard header file and requires individual function pointers to be loaded manually.
 // Helper libraries are often used for this purpose! Here we are supporting a few common ones: gl3w, glew, glad.
@@ -45,6 +42,7 @@
 
 #undef max
 
+#include "zep/filesystem.h"
 #include "zep/imgui/display_imgui.h"
 #include "zep/imgui/editor_imgui.h"
 #include "zep/mode_standard.h"
@@ -52,16 +50,17 @@
 #include "zep/tab_window.h"
 #include "zep/theme.h"
 #include "zep/window.h"
-#include "zep/filesystem.h"
 
 #include "orca/mode_orca.h"
 #include "repl/mode_repl.h"
 
 #include "zep/regress.h"
 
-#include <tfd/tinyfiledialogs.h>
-
+#include <tinyfiledialogs/tinyfiledialogs.h>
 #ifndef __APPLE__
+//#define WATCHER 1
+#endif
+#ifdef WATCHER
 #include <FileWatcher/watcher.h>
 #endif
 #define _MATH_DEFINES_DEFINED
@@ -120,38 +119,16 @@ Zep::NVec2f GetPixelScale()
 
 } // namespace
 
-bool ReadCommandLine(int argc, char** argv, int& exitCode)
-{
-    try
-    {
-        TCLAP::CmdLine cmd("Zep", ' ', "0.1");
-        TCLAP::UnlabeledValueArg<std::string> fileArg("file", "filename", false, "", "string");
-        cmd.setExceptionHandling(false);
-        cmd.ignoreUnmatched(false);
+using namespace clipp;
 
-        cmd.add(fileArg);
-        if (argc != 0)
-        {
-            cmd.parse(argc, argv);
-            startupFile = fileArg.getValue();
-        }
-        exitCode = 0;
-    }
-    catch (TCLAP::ArgException& e) // catch any exceptions
+bool ReadCommandLine(int argc, char* argv[], int& exitCode)
+{
+    startupFile = "";
+    auto cli = group(opt_value("input file", startupFile));
+    if (!parse(argc, argv, cli))
     {
-        // Report argument exceptions to the message box
-        std::ostringstream strError;
-        strError << e.argId() << " : " << e.error();
-        //UIManager::Instance().AddMessage(MessageType::Error | MessageType::System, strError.str());
-        exitCode = 1;
+        ZLOG(INFO, "Failed parse: " << make_man_page(cli, argv[0]));
         return false;
-    }
-    catch (TCLAP::ExitException& e)
-    {
-        // Allow PC app to continue, and ignore exit due to help/version
-        // This avoids the danger that the user passed --help on the command line and wondered why the app just exited
-        exitCode = e.getExitStatus();
-        return true;
     }
     return true;
 }
@@ -161,6 +138,7 @@ struct ZepContainerImGui : public IZepComponent, public IZepReplProvider
 {
     ZepContainerImGui(const std::string& startupFilePath, const std::string& configPath)
         : spEditor(std::make_unique<ZepEditor_ImGui>(configPath, GetPixelScale()))
+        //, fileWatcher(spEditor->GetFileSystem().GetConfigPath(), std::chrono::seconds(2))
     {
         chibi_init(scheme, SDL_GetBasePath());
 
@@ -178,7 +156,7 @@ struct ZepContainerImGui : public IZepComponent, public IZepReplProvider
         builder.AddRanges(io.Fonts->GetGlyphRangesCyrillic()); // Add one of the default ranges
         builder.AddRanges(greek_range);
         builder.BuildRanges(&ranges); // Build the final result (ordered ranges with all the unique characters submitted)
-    
+
         ImFontConfig cfg;
         cfg.OversampleH = 4;
         cfg.OversampleV = 4;
@@ -214,30 +192,26 @@ struct ZepContainerImGui : public IZepComponent, public IZepReplProvider
         {
             spEditor->InitWithText("Shader.vert", shader);
         }
-        
+
         // File watcher not used on apple yet ; needs investigating as to why it doesn't compile/run
         // The watcher is being used currently to update the config path, but clients may want to do more interesting things
         // by setting up watches for the current dir, etc.
-#ifndef __APPLE__
-        MUtils::Watcher::Instance().AddWatch(
-            spEditor->GetFileSystem().GetConfigPath(), [&](const ZepPath& path) {
-                if (spEditor)
-                {
-                    ZLOG(DBG, "Config File Change: " << path.string());
-                    spEditor->OnFileChanged(spEditor->GetFileSystem().GetConfigPath() / path);
-                }
-            },
-            false);
-#endif
+        /*fileWatcher.start([=](std::string path, FileStatus status) {
+            if (spEditor)
+            {
+                ZLOG(DBG, "Config File Change: " << path);
+                spEditor->OnFileChanged(spEditor->GetFileSystem().GetConfigPath() / path);
+            }
+        });*/
     }
 
-    ZepContainerImGui()
+    ~ZepContainerImGui()
     {
-        spEditor->UnRegisterCallback(this);
     }
 
     void Destroy()
     {
+        spEditor->UnRegisterCallback(this);
         spEditor.reset();
     }
 
@@ -326,13 +300,7 @@ struct ZepContainerImGui : public IZepComponent, public IZepReplProvider
     // Inherited via IZepComponent
     virtual void Notify(std::shared_ptr<ZepMessage> message) override
     {
-        if (message->messageId == Msg::Tick)
-        {
-#ifndef __APPLE__
-            MUtils::Watcher::Instance().Update();
-#endif
-        }
-        else if (message->messageId == Msg::GetClipBoard)
+        if (message->messageId == Msg::GetClipBoard)
         {
             clip::get_text(message->str);
             message->handled = true;
@@ -384,16 +352,18 @@ struct ZepContainerImGui : public IZepComponent, public IZepReplProvider
 
     bool quit = false;
     std::unique_ptr<ZepEditor_ImGui> spEditor;
-    //malEnvPtr spEnv;
+    //FileWatcher fileWatcher;
 };
 
-int main(int argc, char** argv)
+int main(int argc, char* argv[])
 {
     //::AllocConsole();
-    int code;
-    ReadCommandLine(argc, argv, code);
-    if (code != 0)
-        return code;
+    int code = 0;
+    if (!ReadCommandLine(argc, argv, code))
+    {
+        if (code != 0)
+            return code;
+    }
 
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
@@ -441,7 +411,7 @@ int main(int argc, char** argv)
     MUtils::NVec2i targetSize;
     SDL_GetWindowSize(window, &winSize.x, &winSize.y);
     SDL_GL_GetDrawableSize(window, &targetSize.x, &targetSize.y);
-    
+
     ZLOG(INFO, "Screen Window Size: " << winSize);
     ZLOG(INFO, "Drawable Size: " << targetSize);
 
@@ -672,7 +642,7 @@ int main(int argc, char** argv)
 
     zep.Destroy();
     chibi_destroy(scheme);
-    
+
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();

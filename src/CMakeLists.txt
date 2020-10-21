@@ -1,3 +1,4 @@
+
 SET(ZEP_ROOT ${CMAKE_CURRENT_LIST_DIR}/..)
 
 SET(ZEP_SOURCE
@@ -83,6 +84,13 @@ target_include_directories(Zep
     PUBLIC
         $<INSTALL_INTERFACE:include>
     ) 
+
+if (TARGET_LINUX)
+target_link_libraries(Zep
+	PUBLIC
+	stdc++fs
+)
+endif()
 
 # Set locations for components
 set_target_properties(Zep PROPERTIES

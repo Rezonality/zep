@@ -1,4 +1,3 @@
-#define NOMINMAX
 #include <mutils/chibi/chibi.h>
 #include <mutils/time/time_provider.h>
 #define _MATH_DEFINES_DEFINED

@@ -23,9 +23,9 @@ endif()
 
 if (NOT IS_QT)
     set(RESOURCE_DEPLOY_FILES ${RESOURCE_DEPLOY_FILES}
-        ${MUTILS_INCLUDE_DIR}/imgui/misc/fonts/Cousine-Regular.ttf
-        ${MUTILS_INCLUDE_DIR}/imgui/misc/fonts/DroidSans.ttf
-        ${MUTILS_INCLUDE_DIR}/imgui/misc/fonts/Roboto-Medium.ttf)
+        ${DEMO_ROOT}/demo_imgui/res/Cousine-Regular.ttf
+        ${DEMO_ROOT}/demo_imgui/res/DroidSans.ttf
+        ${DEMO_ROOT}/demo_imgui/res/Roboto-Medium.ttf)
 endif()
 
 if (WIN32)

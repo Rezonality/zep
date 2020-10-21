@@ -5,6 +5,7 @@ add_definitions(-DZEP_USE_SDL)
 
 set(DEMO_ROOT ${ZEP_ROOT}/demos)
 set(DEMO_NAME ZepDemo)
+
 project(ZepDemo
     VERSION 0.1.0.0)
 
@@ -16,11 +17,11 @@ endif()
 add_project_meta(META_FILES_TO_INCLUDE IS_IMGUI)
 
 find_package(SDL2 REQUIRED)
-find_package(MUtils REQUIRED)
+find_package(clipp REQUIRED)
 
-if (NOT WIN32)
-    find_package(Freetype REQUIRED)
-endif()
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+find_package(MUtils REQUIRED)
 
 set(DEMO_SOURCE_IMGUI
     ${DEMO_ROOT}/demo_imgui/main.cpp
@@ -55,16 +56,11 @@ target_link_libraries (${DEMO_NAME}
     ZepExtensions
     MUtils::MUtils
     SDL2::SDL2-static
-    SDL2::SDL2main
+    clipp::clipp
     ${PLATFORM_LINKLIBS}
     )
 
 if (WIN32)
-    # No longer needed?
-    #target_link_libraries (${DEMO_NAME} 
-    #    PRIVATE
-    # ${MUTILS_LIB_DIR}/freetype2/lib/freetype$<$<CONFIG:DEBUG>:d>.lib
-    #    )
     copy_existing_files(${PROJECT_NAME} "${RESOURCE_DEPLOY_FILES}" ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
 else()
     target_link_libraries (${DEMO_NAME} 
@@ -74,7 +70,7 @@ else()
 endif()
 
 # Install the font
-install(FILES ${MUTILS_INCLUDE_DIR}/imgui/misc/fonts/Cousine-Regular.ttf
+install(FILES ${DEMO_ROOT}/demo_imgui/res/Cousine-Regular.ttf
     COMPONENT binaries
     DESTINATION ${CMAKE_INSTALL_BINDIR}/imgui
     )

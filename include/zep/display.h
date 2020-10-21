@@ -106,7 +106,7 @@ public:
     
     }
 
-    virtual void SetPixelHeight(int val)
+    virtual void SetPixelHeight(int val) override
     {
         ZEP_UNUSED(val);
     }

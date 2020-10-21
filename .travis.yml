@@ -2,18 +2,17 @@ language: cpp
 
 before_script:
   # Make mutils first and install it
+  - cd ..
   - git clone https://github.com/cmaughan/MUtils
   - cd MUtils
   - chmod +x prebuild.sh
-  - chmod +x m3rdparty/packages/install.sh
   - sudo ./prebuild.sh
   - mkdir build
   - cd build
   - cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..
   - make
   - sudo make install
-  - cd ..
-  - cd ..
+  - cd $TRAVIS_BUILD_DIR
   - mkdir build
   - cd build
 

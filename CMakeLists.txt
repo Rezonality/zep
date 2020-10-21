@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.2)
 
 message(STATUS "CMakeLists: Zep")
-message(STATUS "Build Type: " ${CMAKE_BUILD_TYPE})
-
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
 # Global Options
 option(BUILD_QT "Make Qt Library" OFF)
@@ -25,14 +22,19 @@ set(gtest_force_shared_crt ON CACHE BOOL "Always use msvcrt.dll" FORCE)
 set(CMAKE_DEBUG_POSTFIX "-debug")
 set(CMAKE_RELWITHDEBINFO_POSTFIX "-reldbg")
 
+if (BUILD_DEMOS OR BUILD_EXTENSIONS)
+if (WIN32)
+set(VCPKG_TARGET_TRIPLET x64-windows-static)
+endif()
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../vcpkg/scripts/buildsystems/vcpkg.cmake CACHE STRING "Vcpkg toolchain file")
+endif()
+
 project(Zep
     LANGUAGES CXX C
     VERSION 0.5.0
 )
 
-# Used Packages
-include(GNUInstallDirs)
-include(CMakePackageConfigHelpers)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
 # Can I remove these now?
 if (ZEP_FEATURE_CPP_FILE_SYSTEM)
@@ -51,6 +53,8 @@ set (M3RDPARTY_DIR ${CMAKE_CURRENT_LIST_DIR}/m3rdparty)
 
 configure_file(${ZEP_ROOT}/cmake/config_app.h.cmake ${CMAKE_BINARY_DIR}/config_app.h)
 
+include(GNUInstallDirs)
+
 # Set all compiler flags 
 include(cmake/all.cmake)
 
@@ -58,8 +62,8 @@ include(cmake/all.cmake)
 include(m3rdparty/cmake/copy_files.cmake)
 
 # The main library
-add_subdirectory(extensions)
 add_subdirectory(src)
+add_subdirectory(extensions)
 add_subdirectory(tests)
 add_subdirectory(demos)
 

@@ -32,7 +32,7 @@ install:
 build_script:
   # generate build script
   - cd %APPVEYOR_BUILD_FOLDER%
-  - dir
+  - cd ..
   # create folder for an out-of-source-tree build: "c:\projects\build"
   - git clone https://github.com/cmaughan/MUtils
   - cd MUtils
