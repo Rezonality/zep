@@ -16,8 +16,10 @@ find_package(tinyfiledialogs REQUIRED)
 include(CMakePackageConfigHelpers)
 find_package(MUtils REQUIRED)
 
+if (WIN32)
 add_compile_options("$<$<CONFIG:RELWITHDEBINFO>:-DTRACY_ENABLE=1>")
 add_compile_options("$<$<CONFIG:DEBUG>:-DTRACY_ENABLE=1>")
+endif()
 
 SET(EXTENSION_ROOT ${CMAKE_CURRENT_LIST_DIR})
 

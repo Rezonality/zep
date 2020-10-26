@@ -127,7 +127,7 @@ bool ReadCommandLine(int argc, char* argv[], int& exitCode)
     auto cli = group(opt_value("input file", startupFile));
     if (!parse(argc, argv, cli))
     {
-        ZLOG(INFO, "Failed parse: " << make_man_page(cli, argv[0]));
+        //ZLOG(INFO, "Failed parse: " << make_man_page(cli, argv[0]));
         return false;
     }
     return true;

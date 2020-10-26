@@ -114,7 +114,7 @@ public:
         m_pPainter = pPainter;
     }
 
-    void DrawChars(ZepFont& font, const NVec2f& pos, const NVec4f& col, const uint8_t* text_begin, const uint8_t* text_end) const
+    void DrawChars(ZepFont& font, const NVec2f& pos, const NVec4f& col, const uint8_t* text_begin, const uint8_t* text_end) const override
     {
         if (text_end == nullptr)
         {
@@ -131,7 +131,7 @@ public:
         m_pPainter->drawText(p0.x(), p0.y() - qtFont.Descent() + GetPixelScale().y * 1, m_pPainter->viewport().width() - p0.x(), m_pPainter->viewport().height() - p0.y(), Qt::TextLongestVariant, QString::fromUtf8((char*)text_begin, text_end - text_begin));
     }
 
-    void DrawLine(const NVec2f& start, const NVec2f& end, const NVec4f& color, float width) const
+    void DrawLine(const NVec2f& start, const NVec2f& end, const NVec4f& color, float width) const override
     {
         QPoint p0 = toQPoint(start);
         QPoint p1 = toQPoint(end);
@@ -139,7 +139,7 @@ public:
         m_pPainter->drawLine(p0, p1);
     }
 
-    void DrawRectFilled(const NRectf& a, const NVec4f& color) const
+    void DrawRectFilled(const NRectf& a, const NVec4f& color) const override
     {
         QPoint start = toQPoint(a.topLeftPx);
         QPoint end = toQPoint(a.bottomRightPx);

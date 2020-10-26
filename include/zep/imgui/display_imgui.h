@@ -71,7 +71,7 @@ public:
     {
     }
 
-    void DrawChars(ZepFont& font, const NVec2f& pos, const NVec4f& col, const uint8_t* text_begin, const uint8_t* text_end) const
+    void DrawChars(ZepFont& font, const NVec2f& pos, const NVec4f& col, const uint8_t* text_begin, const uint8_t* text_end) const override
     {
         auto imFont = static_cast<ZepFont_ImGui&>(font).GetImFont();
         ImDrawList* drawList = ImGui::GetWindowDrawList();
@@ -91,7 +91,7 @@ public:
         }
     }
 
-    void DrawLine(const NVec2f& start, const NVec2f& end, const NVec4f& color, float width) const
+    void DrawLine(const NVec2f& start, const NVec2f& end, const NVec4f& color, float width) const override
     {
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         // Background rect for numbers
@@ -107,7 +107,7 @@ public:
         }
     }
 
-    void DrawRectFilled(const NRectf& rc, const NVec4f& color) const
+    void DrawRectFilled(const NRectf& rc, const NVec4f& color) const override
     {
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         // Background rect for numbers
