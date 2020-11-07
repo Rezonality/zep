@@ -46,6 +46,10 @@ public:
 
     const std::map<ZepBuffer*, std::shared_ptr<Orca>>& GetOrcaBuffers() const { return m_mapOrca; }
 
+    // Signals
+    signal<void(Orca*)> sigAddOrca;
+    signal<void(Orca*)> sigRemoveOrca;
+
 private:
     ZepWindow* m_pCurrentWindow;
     std::map<ZepBuffer*, std::shared_ptr<Orca>> m_mapOrca;

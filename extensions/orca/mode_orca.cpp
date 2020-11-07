@@ -41,6 +41,7 @@ ZepMode_Orca::~ZepMode_Orca()
     for(auto itrPair : m_mapOrca) 
     {
         itrPair.second->Quit();
+        sigRemoveOrca(itrPair.second.get());
     }
     m_mapOrca.clear();
 }
@@ -197,6 +198,7 @@ void ZepMode_Orca::Begin(ZepWindow* pWindow)
     pOrca->Init(GetEditor());
     pOrca->ReadFromBuffer(pBuffer);
     pOrca->Enable(true);
+    sigAddOrca(pOrca.get());
 }
 
 std::vector<Airline> ZepMode_Orca::GetAirlines(ZepWindow& win) const

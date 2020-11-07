@@ -6,7 +6,7 @@
 #include "orca.h"
 #include "syntax_orca.h"
 
-#include <mutils/profile/profile.h>
+#include <mutils/time/profiler.h>
 
 using namespace MUtils;
 using namespace std::chrono;
@@ -387,14 +387,7 @@ void Orca::Tick()
                 auto time = TimeProvider::Instance().Now() + nanoseconds(i) + tp.GetTimePerBeat() * 4;
 
                 // Submit event
-                auto pEvent = m_timeline.GetEventPool().Alloc();
-                pEvent->SetTime(time, duration_cast<milliseconds>(duration));
-                pEvent->velocity = float(velocity);
-                pEvent->midiNote = note;
-                pEvent->pressed = true;
-                pEvent->channelId = note;
-
-                m_timeline.StoreTimeEvent(pEvent);
+                sigPlayNote(std::chrono::duration_cast<std::chrono::milliseconds>(duration), float(velocity), note);
             }
         }
 
