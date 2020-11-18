@@ -131,7 +131,7 @@ void Orca::WriteToBuffer(ZepBuffer* pBuffer, ZepWindow& window)
         return;
     }
 
-    MUtilsZoneScoped;
+    PROFILE_SCOPE(Orca_WriteToBuffer);
 
     std::unique_lock<std::mutex> lock(m_mutex);
 
@@ -168,7 +168,7 @@ void Orca::WriteToBuffer(ZepBuffer* pBuffer, ZepWindow& window)
 // Generate the syntax information for the whole buffer
 void Orca::BuildSyntax()
 {
-    MUtilsZoneScoped;
+    PROFILE_SCOPE(Orca_BuildSyntax);
 
     m_syntax.resize((m_field.width + 1) * m_field.height);
 
@@ -345,7 +345,7 @@ void Orca::Tick()
         return;
     }
 
-    MUtilsZoneScopedN("Orca Engine");
+    PROFILE_SCOPE(Orca_Tick);
 
     auto& tp = TimeProvider::Instance();
 

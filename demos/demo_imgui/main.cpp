@@ -456,6 +456,8 @@ int main(int argc, char* argv[])
     bool done = false;
     while (!done && !zep.quit)
     {
+        Profiler::NewFrame();
+
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
         // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
@@ -633,8 +635,6 @@ int main(int argc, char* argv[])
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(window);
-
-        MUtilsFrameMark;
     }
 
     // Quit the ticker
