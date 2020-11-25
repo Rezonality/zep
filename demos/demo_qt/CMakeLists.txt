@@ -11,8 +11,8 @@ set(CMAKE_PREFIX_PATH $ENV{QT_INSTALL_LOCATION})
 find_package(SDL2 REQUIRED)
 
 # Used Packages
-include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
+
 find_package(MUtils REQUIRED)
 find_package(Qt5 COMPONENTS Core Widgets Gui REQUIRED)
 

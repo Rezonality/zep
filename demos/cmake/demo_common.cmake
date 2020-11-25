@@ -1,3 +1,6 @@
+# If building Rezonality, the mutils project will be in the vcpkg
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_LIST_DIR}/../../vcpkg/packages/mutils_x64-windows-static-md/lib/cmake/mutils)
+
 find_package(SDL2 REQUIRED)
 find_package(MUtils REQUIRED)
 

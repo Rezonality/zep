@@ -18,10 +18,9 @@ add_project_meta(META_FILES_TO_INCLUDE IS_IMGUI)
 
 find_package(SDL2 REQUIRED)
 find_package(clipp REQUIRED)
-
-include(GNUInstallDirs)
-include(CMakePackageConfigHelpers)
 find_package(MUtils REQUIRED)
+
+include(CMakePackageConfigHelpers)
 
 set(DEMO_SOURCE_IMGUI
     ${DEMO_ROOT}/demo_imgui/main.cpp
