@@ -61,6 +61,8 @@ include(cmake/all.cmake)
 # Functions for file copying
 include(m3rdparty/cmake/copy_files.cmake)
 
+enable_testing()
+
 # The main library
 add_subdirectory(src)
 add_subdirectory(extensions)
