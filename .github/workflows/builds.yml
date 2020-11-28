@@ -100,9 +100,8 @@ jobs:
       with:
           name: Archive_${{matrix.title}}_${{matrix.build_type}}
           path: | 
-            ${{github.workspace}}/build/**/*.ttf
-            ${{github.workspace}}/build/**/*.pdb
-            ${{github.workspace}}/build/**/*.scm
             ${{github.workspace}}/build/**/Zep*
+            !${{github.workspace}}/build/**/*.dir
+            !${{github.workspace}}/build/**/*autogen
             ${{github.workspace}}/build/**/unittests
 
