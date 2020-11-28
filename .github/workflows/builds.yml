@@ -100,8 +100,9 @@ jobs:
       with:
           name: Archive_${{matrix.title}}_${{matrix.build_type}}
           path: | 
-            ${{github.workspace}}/build/**/Zep*
-            !${{github.workspace}}/build/**/*.dir
-            !${{github.workspace}}/build/**/*autogen
+            ${{github.workspace}}/build/**/*.exe
+            ${{github.workspace}}/build/**/*.app
+            ${{github.workspace}}/build/**/ZepDemo
+            ${{github.workspace}}/build/**/ZepDemo-qt
             ${{github.workspace}}/build/**/unittests
 
