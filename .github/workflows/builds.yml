@@ -1,0 +1,108 @@
+name: Builds
+
+on: [push]
+
+jobs:
+  build:
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    name: "${{matrix.title}} (${{matrix.cc}}, ${{matrix.arch}}, ${{matrix.build_type}})"
+    runs-on: ${{matrix.os}}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { title: "Linux", os: "ubuntu-latest", cc: "clang", arch: "x64", build_type: "Release", package_type: "x64-linux", script: "sh" }
+          - { title: "Linux", os: "ubuntu-latest", cc: "clang", arch: "x64", build_type: "Debug", package_type: "x64-linux", script: "sh" }
+          - { title: "Linux", os: "ubuntu-latest", cc: "gcc", arch: "x64", build_type: "Release", package_type: "x64-linux", script: "sh" }
+          - { title: "Linux", os: "ubuntu-latest", cc: "gcc", arch: "x64", build_type: "Debug", package_type: "x64-linux", script: "sh" }
+          - { title: "Windows", os: "windows-latest", cc: "vs2019", arch: "x64", build_type: "Release", package_type: "x64-windows-static-md", script: "bat" }
+          - { title: "Windows", os: "windows-latest", cc: "vs2019", arch: "x64", build_type: "Debug", package_type: "x64-windows-static-md", script: "bat" }
+          - { title: "Mac", os: "macos-latest", cc: "clang", arch: "x64", build_type: "Release", package_type: "x64-osx", script: "sh" }
+          - { title: "Mac", os: "macos-latest", cc: "clang", arch: "x64", build_type: "Debug", package_type: "x64-osx", script: "sh" }
+          - { title: "Coverage", os: "ubuntu-latest", cc: "clang", arch: "x64", build_type: "Coverage", package_type: "x64-linux", script: "sh" }
+
+    steps:
+
+    - uses: actions/checkout@v2
+    
+    - name: Install GL
+      env:
+        CC: ${{ matrix.cc}}
+      run: |
+        sudo apt-get install freeglut3-dev
+        sudo apt-get install lcov
+      if: matrix.os == 'ubuntu-latest'
+
+    - name: Build MUtils
+      working-directory: ${{runner.workspace}}
+      shell: bash
+      run: |
+        git clone https://github.com/Rezonality/mutils
+        cd mutils
+        ./prebuild.${{matrix.script}}
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        cmake --build . --config ${{ matrix.build_type }}
+        cmake --install . --config ${{ matrix.build_type }} --prefix ../../vcpkg/packages/mutils_${{matrix.package_type}}
+    
+    - name: Build
+      working-directory: ${{github.workspace}}
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        cmake --build . --config ${{ matrix.build_type }}
+      if: matrix.build_type != 'Coverage'
+
+    - name: Build (Coverage)
+      working-directory: ${{github.workspace}}
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DENABLE_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug
+        cmake --build . --config Debug
+      if: matrix.build_type == 'Coverage'
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      shell: bash
+      run: ctest -C ${{ matrix.build_type }}
+
+    - name: Coverage
+      working-directory: ${{github.workspace}}/build
+      shell: bash
+      if: matrix.build_type == 'Coverage'
+      env:
+        CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
+      run: |
+        bash <(curl -s https://codecov.io/bash)
+        find .. -name *.gcno | xargs gcov
+        lcov -c -d .. -o coverage.info
+        lcov --remove coverage.info '/usr/local/include/*' '/usr/include/*' 'build' 'm3rdparty' 'cmake' 'scripts' -o coverage.info
+        genhtml coverage.info
+        bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.info
+                    
+    - name: Archive Coverage HTML
+      uses: actions/upload-artifact@v2
+      if: matrix.build_type == 'Coverage'
+      with:
+          name: Coverag_Report
+          path: |
+            ${{github.workspace}}/build/**/*.html
+            ${{github.workspace}}/build/**/*.css
+
+    - name: Archive Binary
+      uses: actions/upload-artifact@v2
+      with:
+          name: Archive_${{matrix.title}}_${{matrix.build_type}}
+          path: | 
+            ${{github.workspace}}/build/**/*.ttf
+            ${{github.workspace}}/build/**/*.pdb
+            ${{github.workspace}}/build/**/*.scm
+            ${{github.workspace}}/build/**/Zep*
+            ${{github.workspace}}/build/**/unittests
+
