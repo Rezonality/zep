@@ -99,7 +99,8 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
           name: Archive_${{matrix.title}}_${{matrix.build_type}}
-          path: | 
+          path: |
+            !${{github.workspace}}/**/CMakeFiles/**
             ${{github.workspace}}/build/**/*.exe
             ${{github.workspace}}/build/**/*.app
             ${{github.workspace}}/build/**/ZepDemo
