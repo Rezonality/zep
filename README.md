@@ -138,14 +138,14 @@ target_link_libraries(MYPROJECT PRIVATE Zep::Zep)
 ```
 
 # 4. Building the Demo
-The Zep demo now requires my external MUtils library in order to run.  To make the demo, hop over to https://github.com/Rezonality/MUtils and build/install it.
+The Zep demo now requires my external MUtils library in order to run.  To make the demo, hop over to https://github.com/Rezonality/mutils and build/install it.
 Here's an example script for the complete process to build the support library and all of the zep demos.
 
 # Windows
 ```
 # MUtils
-git clone https://github.com/Rezonality/MUtils
-cd MUtils
+git clone https://github.com/Rezonality/mutils
+cd mutils
 prebuild.bat
 config.bat
 build_all.bat
@@ -161,8 +161,8 @@ build_all.bat
 # Linux
 ``` 
 # MUtils
-git clone https://github.com/Rezonality/MUtils
-cd MUtils
+git clone https://github.com/Rezonality/mutils
+cd mutils
 chmod +x prebuild.bat
 chmod +x m3rdparty/packages/install.sh
 chmod +x config.sh
