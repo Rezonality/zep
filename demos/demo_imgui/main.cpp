@@ -7,11 +7,11 @@
 #include <stdio.h>
 #include <thread>
 
-#include <imgui.h>
+#include <imgui/imgui.h>
 
-#include <imgui_freetype.h>
-#include <imgui_impl_opengl3.h>
-#include <imgui_impl_sdl.h>
+#include <imgui/imgui_freetype.h>
+#include <imgui/imgui_impl_opengl3.h>
+#include <imgui/imgui_impl_sdl.h>
 
 #include <clip/clip.h>
 #include <mutils/time/time_provider.h>
