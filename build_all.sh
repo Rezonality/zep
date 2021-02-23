@@ -1,14 +1,22 @@
 #!/bin/bash
 
-if [ "$1" != "" ] ; then
-source config_all.sh
+if [ "$1" == "" ] ; then
+CONFIG=Debug
 else
-source config_all.sh $1
+CONFIG=$1
+fi
+
+source config_all.sh $CONFIG
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+PACKAGE_TYPE=osx
+else
+PACKAGE_TYPE=linux
 fi
 
 cd build
-make --debug
-sudo make install
-make
-sudo make install
+cmake --build . --config $CONFIG
+cmake --install . --config $CONFIG --prefix ../../vcpkg/packages/zep_x64-$PACKAGE_TYPE
 cd ..
+
+echo "Built $CONFIG for $PACKAGE_TYPE"
