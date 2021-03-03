@@ -148,14 +148,14 @@ git clone https://github.com/Rezonality/mutils
 cd mutils
 prebuild.bat
 config.bat
-build_all.bat
+build.bat
 
 # Zep
 git clone https://github.com/Rezonality/zep
 cd zep
 set QT_INSTALL_LOCATION=C:\Qt\5.10.0\msvc2017_64 (for example - required for building QT)
-config_all.bat OR config.bat (for no Qt)
-build_all.bat
+config.bat OR config_qt.bat or config_imgui.bat (for qt and imgui respectively)
+build.bat
 ```
 
 # Linux
@@ -166,9 +166,9 @@ cd mutils
 chmod +x prebuild.bat
 chmod +x m3rdparty/packages/install.sh
 chmod +x config.sh
-chmod +x build_all.sh
+chmod +x build.sh
 ./config.sh
-./build_all.sh
+./build.sh
 
 # Qt
 sudo apt install qt-default (for Qt/Demo support)
@@ -177,8 +177,8 @@ set QT_INSTALL_LOCATION=C:\Qt\5.10.0\msvc2017_64 (example)
 # Zep
 git clone https://github.com/Rezonality/zep
 cd zep
-./config_all.sh OR ./config.sh (for no Qt)
-./build_all.sh
+./config.sh OR ./config_qt.sh or ./config_imgui.sh (for qt and imgui respectively)
+./build.sh
 ```
 
 # Mac
