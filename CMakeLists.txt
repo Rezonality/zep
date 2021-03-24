@@ -76,6 +76,8 @@ install(EXPORT zep-targets
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/zep
 )
 
+include(CMakePackageConfigHelpers)
+
 configure_package_config_file(
     ${ZEP_ROOT}/cmake/zep-config.cmake.in
     ${CMAKE_BINARY_DIR}/cmake/zep-config.cmake
