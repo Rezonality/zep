@@ -241,6 +241,8 @@ private:
     // Cursor
     GlyphIterator m_bufferCursor;                   // Location in buffer coordinates.  Each window has a different buffer cursor
     long m_lastCursorColumn = 0;                    // The last cursor column (could be removed and recalculated)
+    NVec2f m_mousePos;                              // Current mouse location
+    GlyphIterator m_mouseIterator;                  // Current iterator for the mouse cursor
 
     // Visual stuff
     std::vector<std::string> m_statusLines; // Status information, shown under the buffer
