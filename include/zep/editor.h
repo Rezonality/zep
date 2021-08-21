@@ -442,7 +442,6 @@ private:
     float m_tabOffsetX = 0.0f;
 
     NVec2f m_mousePos = NVec2f(0.0f);
-    NVec2f m_pixelScale = NVec2f(1.0f);
 
     // Config
     EditorConfig m_config;
