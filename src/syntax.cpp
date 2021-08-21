@@ -6,6 +6,7 @@
 #include "zep/mcommon/logger.h"
 #include "zep/mcommon/string/stringutils.h"
 
+#include <cctype>
 #include <string>
 #include <vector>
 
@@ -103,7 +104,7 @@ void ZepSyntax::QueueUpdateSyntax(GlyphIterator startLocation, GlyphIterator end
     // Have the thread update the syntax in the new region
     // If the pool has no threads, this will end up serial
     //m_syntaxResult = GetEditor().GetThreadPool().enqueue([=]() {
-        UpdateSyntax();
+    UpdateSyntax();
     //});
 }
 
@@ -155,13 +156,15 @@ void ZepSyntax::UpdateSyntax()
     std::string lineEnd("\n");
 
     if (m_flags & ZepSyntaxFlags::LispLike)
-    { 
-        delim = std::string(" \t.\n(){}[]");
+    {
+        delim = std::string(" \t\n(){}[]");
     }
     else
     {
-        delim = std::string(" \t.\n;(){}[]=:");
+        delim = std::string(" \t+-*/&|^!=~%#$<>@,\n;(){}[]=:");
     }
+
+    std::string delimWithDot = delim + ".";
 
     // Walk backwards to previous delimiter
     while (itrCurrent > buffer.begin())
@@ -205,11 +208,11 @@ void ZepSyntax::UpdateSyntax()
         }
 
         // Find a token, skipping delim <itrFirst, itrLast>
-        auto itrFirst = buffer.find_first_not_of(itrCurrent, buffer.end(), delim.begin(), delim.end());
+        auto itrFirst = buffer.find_first_not_of(itrCurrent, buffer.end(), delimWithDot.begin(), delimWithDot.end());
         if (itrFirst == buffer.end())
             break;
 
-        auto itrLast = buffer.find_first_of(itrFirst, buffer.end(), delim.begin(), delim.end());
+        auto itrLast = buffer.find_first_of(itrFirst, buffer.end(), delimWithDot.begin(), delimWithDot.end());
 
         // Ensure we found a token
         assert(itrLast >= itrFirst);
@@ -242,10 +245,6 @@ void ZepSyntax::UpdateSyntax()
         {
             mark(itrFirst, itrLast, ThemeColor::Identifier, ThemeColor::None);
         }
-        else if (token.find_first_not_of("0123456789") == std::string::npos)
-        {
-            mark(itrFirst, itrLast, ThemeColor::Number, ThemeColor::None);
-        }
         else if (token.find_first_not_of("{}()[]") == std::string::npos)
         {
             mark(itrFirst, itrLast, ThemeColor::Parenthesis, ThemeColor::None);
@@ -257,6 +256,127 @@ void ZepSyntax::UpdateSyntax()
         else
         {
             mark(itrFirst, itrLast, ThemeColor::Normal, ThemeColor::None);
+        }
+
+        // Find numbers - very crude, but better than nothing
+        // won't handle exponent numbers, nor C++17's hexadecimal floating points
+        auto maybeParseHexa = [&](decltype(itrFirst) itr, decltype(itrFirst)& last) -> bool {
+            auto first = itr;
+            static const std::string hexa("0123456789abcdefABCDEF");
+            while (itr < buffer.end())
+            {
+                auto ch = *itr;
+                if (delim.find_first_of(ch) != std::string::npos)
+                {
+                    break;
+                }
+                if (hexa.find_first_of(ch) == std::string::npos)
+                {
+                    return false;
+                }
+                itr++;
+            }
+
+            last = itr;
+            return itr != first;
+        };
+        auto maybeParseOctal = [&](decltype(itrFirst) itr, decltype(itrFirst)& last) -> bool {
+            auto first = itr;
+            static const std::string octal("01234567");
+            while (itr < buffer.end())
+            {
+                auto ch = *itr;
+                if (delim.find_first_of(ch) != std::string::npos)
+                {
+                    break;
+                }
+                if (octal.find_first_of(ch) == std::string::npos)
+                {
+                    return false;
+                }
+                itr++;
+            }
+
+            last = itr;
+            return itr != first;
+        };
+        auto maybeParseFloat = [&](decltype(itrFirst) itr, decltype(itrFirst)& last) -> bool {
+            auto first = itr;
+            static const std::string numbers("0123456789");
+            bool gotDot = false;
+            bool gotF = false;
+            bool gotSomething = false;
+            while (itr < buffer.end())
+            {
+                auto ch = *itr;
+                if (delim.find_first_of(ch) != std::string::npos)
+                {
+                    break;
+                }
+                else if (gotF)
+                {
+                    return false;
+                }
+                if (ch == '.')
+                {
+                    if (!gotDot)
+                    {
+                        gotDot = true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else if (ch == 'f' && !gotF)
+                {
+                    gotF = true;
+                }
+                else if (numbers.find_first_of(ch) != std::string::npos)
+                {
+                    gotSomething = true;
+                }
+                else
+                {
+                    return false;
+                }
+                itr++;
+            }
+
+            last = itr;
+            return itr != first && gotSomething;
+        };
+        if (std::isdigit(*itrFirst) || *itrFirst == '.')
+        {
+            auto itrNum = itrFirst;
+            auto last = itrFirst;
+            bool parsed = false;
+            if (*itrFirst == '0')
+            {
+                itrNum++;
+                switch (*itrNum)
+                {
+                case 'x':
+                    parsed = maybeParseHexa(itrFirst + 2, last);
+                    break;
+                case '.':
+                    parsed = maybeParseFloat(itrFirst, last);
+                    break;
+                default:
+                    parsed = maybeParseOctal(itrFirst, last);
+                    break;
+                }
+            }
+            else
+            {
+                parsed = maybeParseFloat(itrFirst, last);
+            }
+
+            if (parsed)
+            {
+                itrLast = last;
+                mark(itrFirst, itrLast, ThemeColor::Number, ThemeColor::None);
+            }
         }
 
         // Find String
