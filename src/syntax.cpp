@@ -153,7 +153,8 @@ void ZepSyntax::UpdateSyntax()
     assert(m_syntax.size() == buffer.size());
 
     std::string delim;
-    std::string lineEnd("\n");
+    static const std::string lineEnd("\n");
+    static const std::string whiteSpace(" \t");
 
     if (m_flags & ZepSyntaxFlags::LispLike)
     {
@@ -166,23 +167,14 @@ void ZepSyntax::UpdateSyntax()
 
     std::string delimWithDot = delim + ".";
 
-    // Walk backwards to previous delimiter
-    while (itrCurrent > buffer.begin())
-    {
-        if (std::find(delim.begin(), delim.end(), *itrCurrent) == delim.end())
-        {
-            itrCurrent--;
-        }
-        else
-        {
-            break;
-        }
-    }
-
     // Back to the previous line
     while (itrCurrent > buffer.begin() && *itrCurrent != '\n')
     {
         itrCurrent--;
+    }
+    if (*itrCurrent == '\n')
+    {
+        itrCurrent++;
     }
     itrEnd = buffer.find_first_of(itrEnd, buffer.end(), lineEnd.begin(), lineEnd.end());
 
@@ -207,28 +199,71 @@ void ZepSyntax::UpdateSyntax()
             return;
         }
 
+        if (lineEnd.find_first_of(*itrCurrent) != std::string::npos)
+        {
+            itrCurrent++;
+            continue;
+        }
+
+        if (whiteSpace.find_first_of(*itrCurrent) != std::string::npos)
+        {
+            mark(itrCurrent, itrCurrent + 1, ThemeColor::Whitespace, ThemeColor::None);
+            itrCurrent++;
+            continue;
+        }
+
+        auto itrFirst = itrCurrent;
+        auto itrLast = buffer.find_first_of(itrFirst, buffer.end(), lineEnd.begin(), lineEnd.end());
+
+        if (m_flags & ZepSyntaxFlags::LispLike)
+        {
+            // Lisp languages use ; or # for comments
+            std::string commentStr = ";#";
+            if (commentStr.find_first_of(*itrCurrent) != std::string::npos)
+            {
+                mark(itrCurrent, itrLast, ThemeColor::Comment, ThemeColor::None);
+                itrCurrent = itrLast;
+                continue;
+            }
+        }
+        else
+        {
+            std::string commentStr = "/#";
+            if (commentStr.find_first_of(*itrCurrent) != std::string::npos)
+            {
+                if (*itrCurrent == '#')
+                {
+                    mark(itrCurrent, itrLast, ThemeColor::Comment, ThemeColor::None);
+                    itrCurrent = itrLast;
+                    continue;
+                }
+                else
+                {
+                    auto itrCommentStart = itrCurrent++;
+                    if (itrCurrent < buffer.end())
+                    {
+                        if (*itrCurrent == '/')
+                        {
+                            itrLast = buffer.find_first_of(itrCommentStart, buffer.end(), lineEnd.begin(), lineEnd.end());
+                            mark(itrCommentStart, itrLast, ThemeColor::Comment, ThemeColor::None);
+                            itrCurrent = itrLast;
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
+
         // Find a token, skipping delim <itrFirst, itrLast>
-        auto itrFirst = buffer.find_first_not_of(itrCurrent, buffer.end(), delimWithDot.begin(), delimWithDot.end());
+
+        itrFirst = buffer.find_first_not_of(itrCurrent, buffer.end(), delimWithDot.begin(), delimWithDot.end());
         if (itrFirst == buffer.end())
             break;
 
-        auto itrLast = buffer.find_first_of(itrFirst, buffer.end(), delimWithDot.begin(), delimWithDot.end());
+        itrLast = buffer.find_first_of(itrFirst, buffer.end(), delimWithDot.begin(), delimWithDot.end());
 
         // Ensure we found a token
         assert(itrLast >= itrFirst);
-
-        // Mark whitespace
-        for (auto& itr = itrCurrent; itr < itrFirst; itr++)
-        {
-            if (*itr == ' ')
-            {
-                mark(itr, itr + 1, ThemeColor::Whitespace, ThemeColor::None);
-            }
-            else if (*itr == '\t')
-            {
-                mark(itr, itr + 1, ThemeColor::Whitespace, ThemeColor::None);
-            }
-        }
 
         // Do I need to make a string here?
         auto token = std::string(itrFirst, itrLast);
@@ -413,35 +448,6 @@ void ZepSyntax::UpdateSyntax()
         };
         findString('\"');
         findString('\'');
-
-        if (m_flags & ZepSyntaxFlags::LispLike)
-        {
-            // Lisp languages use ; or # for comments
-            std::string commentStr = ";#";
-            auto itrComment = buffer.find_first_of(itrFirst, itrLast, commentStr.begin(), commentStr.end());
-            if (itrComment != buffer.end())
-            {
-                itrLast = buffer.find_first_of(itrComment, buffer.end(), lineEnd.begin(), lineEnd.end());
-                mark(itrComment, itrLast, ThemeColor::Comment, ThemeColor::None);
-            }
-        }
-        else
-        {
-            std::string commentStr = "/";
-            auto itrComment = buffer.find_first_of(itrFirst, itrLast, commentStr.begin(), commentStr.end());
-            if (itrComment != buffer.end())
-            {
-                auto itrCommentStart = itrComment++;
-                if (itrComment < buffer.end())
-                {
-                    if (*itrComment == '/')
-                    {
-                        itrLast = buffer.find_first_of(itrCommentStart, buffer.end(), lineEnd.begin(), lineEnd.end());
-                        mark(itrCommentStart, itrLast, ThemeColor::Comment, ThemeColor::None);
-                    }
-                }
-            }
-        }
 
         itrCurrent = itrLast;
     }
