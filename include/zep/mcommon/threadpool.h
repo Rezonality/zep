@@ -86,9 +86,17 @@ public:
     ThreadPool& operator=(ThreadPool&&) = delete;
     // add new work item to the pool
     template<class F, class... Args>
+    #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
+    std::future<typename std::invoke_result<F, Args...>::type> enqueue(F&& f, Args&&... args)
+    #else
     std::future<typename std::result_of<F(Args...)>::type> enqueue(F&& f, Args&&... args)
+    #endif
     {
+        #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
+        using packaged_task_t = std::packaged_task<typename std::invoke_result<F, Args...>::type()>;
+        #else
         using packaged_task_t = std::packaged_task<typename std::result_of<F(Args...)>::type ()>;
+        #endif
 
         std::shared_ptr<packaged_task_t> task(new packaged_task_t(
                 std::bind(std::forward<F>(f), std::forward<Args>(args)...)

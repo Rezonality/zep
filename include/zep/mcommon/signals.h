@@ -293,7 +293,11 @@ class signal_accumulator
 {
 public:
     /// Result type when calling the accumulating function operator.
+    #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
+    using result_type = typename std::invoke_result<F, T, typename S::slot_type::result_type>::type;
+    #else
     using result_type = typename std::result_of<F(T, typename S::slot_type::result_type)>::type;
+    #endif
 
     /// Construct a signal_accumulator as a proxy to a given signal
     //
