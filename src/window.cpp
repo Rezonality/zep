@@ -1024,14 +1024,16 @@ void ZepWindow::DisplayLineNumbers()
             auto cursorBufferLine = GetCursorLineInfo(cursorCL.y).bufferLineNumber;
             std::string strNum;
 
+            auto mode = m_pBuffer->GetMode();
+
             // In Vim mode show relative lines, unless in Ex mode (with hidden cursor)
-            if (m_displayMode == DisplayMode::Vim && m_pBuffer->GetMode()->GetCursorType() != CursorType::None)
+            if (mode->UsesRelativeLines() && mode->GetCursorType() != CursorType::None)
             {
                 strNum = std::to_string(std::abs(lineInfo.bufferLineNumber - cursorBufferLine));
             }
             else
             {
-                strNum = std::to_string(lineInfo.bufferLineNumber);
+                strNum = std::to_string(lineInfo.bufferLineNumber + 1);
             }
 
             auto& numFont = display.GetFont(ZepTextType::UI);

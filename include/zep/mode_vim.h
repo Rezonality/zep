@@ -39,6 +39,7 @@ public:
     virtual void AddOverStrikeMaps();
     virtual void AddCopyMaps();
     virtual void AddPasteMaps();
+    virtual bool UsesRelativeLines() const override { return true; }
 };
 
 } // namespace Zep
