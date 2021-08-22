@@ -75,6 +75,8 @@ void ZepMode_Standard::Init()
     keymap_add({ &m_insertMap, &m_visualMap }, { "<C-v>" }, id_StandardPaste);
     keymap_add({ &m_visualMap }, { "<C-c>" }, id_StandardCopy);
 
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<C-a>" }, id_StandardSelectAll);
+
     keymap_add({ &m_normalMap, &m_visualMap, &m_insertMap }, { "<Escape>" }, id_InsertMode);
     keymap_add({ &m_normalMap }, { "<Backspace>" }, id_MotionStandardLeft);
 }

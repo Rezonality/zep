@@ -974,6 +974,16 @@ bool ZepMode::GetCommand(CommandContext& context)
         GetCurrentWindow()->MoveCursorY(1, LineLocation::LineCRBegin);
         return true;
     }
+    else if (mappedCommand == id_StandardSelectAll)
+    {
+        context.commandResult.modeSwitch = EditorMode::Visual;
+        m_visualBegin = context.buffer.Begin();
+        m_visualEnd = context.buffer.End();
+        auto range = GetInclusiveVisualRange();
+        GetCurrentWindow()->GetBuffer().SetSelection(range);
+        GetCurrentWindow()->SetBufferCursor(range.second);
+        return true;
+    }
     else if (mappedCommand == id_MotionStandardRightSelect)
     {
         context.commandResult.modeSwitch = EditorMode::Visual;
