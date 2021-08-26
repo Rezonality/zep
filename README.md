@@ -124,7 +124,7 @@ brew install git
 
 # 3 Install the Zep library as a package
 Here is a typical build instruction for windows, assuming you have just synced this repo:
-``` 
+```
 mkdir build
 cd build
 cmake -G "Visual Studio 16 2019" -A x64 -DZEP_FEATURE_CPP_FILE_SYSTEM=1 -DBUILD_IMGUI=0 -DBUILD_TESTS=0 -DBUILD_DEMOS=0 ..
@@ -158,26 +158,39 @@ config.bat OR config_qt.bat or config_imgui.bat (for qt and imgui respectively)
 build.bat
 ```
 
-# Linux
-``` 
-# MUtils
+# GNU/Linux
+
+## Install dependencies 
+
+```bash
+sudo apt install cmake git
+```
+
+## MUtils
+```bash
 git clone https://github.com/Rezonality/mutils
 cd mutils
-chmod +x prebuild.bat
-chmod +x m3rdparty/packages/install.sh
+chmod +x prebuild.sh
 chmod +x config.sh
 chmod +x build.sh
 ./config.sh
 ./build.sh
+```
 
-# Qt
-sudo apt install qt-default (for Qt/Demo support)
-set QT_INSTALL_LOCATION=C:\Qt\5.10.0\msvc2017_64 (example)
+## Qt (required is using build_qt.sh)
+```bash
+# for Qt/Demo support
+sudo apt install qt5-default 
+# Adapt to your installation path
+set QT_INSTALL_LOCATION="/usr/include/x86_64-linux-gnu/qt5"
+```
 
-# Zep
+## Zep
+```bash
 git clone https://github.com/Rezonality/zep
 cd zep
-./config.sh OR ./config_qt.sh or ./config_imgui.sh (for qt and imgui respectively)
+# Optional argument are qt and imgui 
+./config.sh ( qt | imgui )
 ./build.sh
 ```
 
@@ -196,4 +209,3 @@ SDL2 is used to get a window on the screen in a cross platform way, and for Open
 
 [ImGui: 2D GUI](https://github.com/ocornut/imgui)  
 ImGui is a great 2D User interface for 3D applications
-
