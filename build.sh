@@ -1,17 +1,25 @@
 #!/bin/bash
 
 if [ "$1" == "" ] ; then
-CONFIG=Debug
+    CONFIG=Debug
 else
-CONFIG=$1
+    CONFIG=$1
 fi
 
-source config_all.sh $CONFIG
+if [ "$1" == "qt" ]; then
+    CONF_SCRIPT="config_qt.sh"
+elif ["$1" == "imgui"];then
+    CONF_SCRIPT="config_imgui.sh"
+else
+    CONF_SCRIPT="config.sh"
+fi
+
+source $CONF_SCRIPT $CONFIG
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
-PACKAGE_TYPE=osx
+    PACKAGE_TYPE=osx
 else
-PACKAGE_TYPE=linux
+    PACKAGE_TYPE=linux
 fi
 
 cd build

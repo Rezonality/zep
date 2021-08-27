@@ -4,7 +4,7 @@ message(STATUS "CMakeLists: Zep")
 
 # Global Options
 option(BUILD_QT "Make Qt Library" OFF)
-option(BUILD_IMGUI "Make Imgui Library" ON)
+option(BUILD_IMGUI "Make Imgui Library" OFF)
 option(BUILD_DEMOS "Make the demo app" ON)
 option(BUILD_TESTS "Make the tests" ON)
 option(BUILD_EXTENSIONS "Make the extension library (required for demo)" OFF)
@@ -13,6 +13,7 @@ option(ZEP_FEATURE_CPP_FILE_SYSTEM "Default File system enabled" ON)
 # Global Settings
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "-lGLEW")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -98,4 +99,3 @@ install(
 )
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/cpack_installer.cmake)
-
