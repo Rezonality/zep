@@ -31,6 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.*/
 #include <climits>
 #include <cstring>
 #include <string>
+#include <limits>
 
 #ifdef _DEBUG
 #define DEBUG_FILL_GAP for (auto* pCh = m_pGapStart; pCh < m_pGapEnd; pCh++) { *pCh = '@'; }
