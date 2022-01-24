@@ -79,14 +79,15 @@ public:
         {
             text_end = text_begin + strlen((const char*)text_begin);
         }
+        auto const modulatedColor = ToPackedABGR(NVec4f(col.x, col.y, col.z, col.w * ImGui::GetStyle().Alpha));
         if (m_clipRect.Width() == 0)
         {
-            drawList->AddText(imFont, float(font.GetPixelHeight()), toImVec2(pos), ToPackedABGR(col), (const char*)text_begin, (const char*)text_end);
+            drawList->AddText(imFont, float(font.GetPixelHeight()), toImVec2(pos), modulatedColor, (const char*)text_begin, (const char*)text_end);
         }
         else
         {
             drawList->PushClipRect(toImVec2(m_clipRect.topLeftPx), toImVec2(m_clipRect.bottomRightPx));
-            drawList->AddText(imFont, float(font.GetPixelHeight()), toImVec2(pos), ToPackedABGR(col), (const char*)text_begin, (const char*)text_end);
+            drawList->AddText(imFont, float(font.GetPixelHeight()), toImVec2(pos), modulatedColor, (const char*)text_begin, (const char*)text_end);
             drawList->PopClipRect();
         }
     }
@@ -94,15 +95,16 @@ public:
     void DrawLine(const NVec2f& start, const NVec2f& end, const NVec4f& color, float width) const override
     {
         ImDrawList* drawList = ImGui::GetWindowDrawList();
+        auto const modulatedColor = ToPackedABGR(NVec4f(color.x, color.y, color.z, color.w * ImGui::GetStyle().Alpha));
         // Background rect for numbers
         if (m_clipRect.Width() == 0)
         {
-            drawList->AddLine(toImVec2(start), toImVec2(end), ToPackedABGR(color), width);
+            drawList->AddLine(toImVec2(start), toImVec2(end), modulatedColor, width);
         }
         else
         {
             drawList->PushClipRect(toImVec2(m_clipRect.topLeftPx), toImVec2(m_clipRect.bottomRightPx));
-            drawList->AddLine(toImVec2(start), toImVec2(end), ToPackedABGR(color), width);
+            drawList->AddLine(toImVec2(start), toImVec2(end), modulatedColor, width);
             drawList->PopClipRect();
         }
     }
@@ -110,15 +112,16 @@ public:
     void DrawRectFilled(const NRectf& rc, const NVec4f& color) const override
     {
         ImDrawList* drawList = ImGui::GetWindowDrawList();
+        auto const modulatedColor = ToPackedABGR(NVec4f(color.x, color.y, color.z, color.w * ImGui::GetStyle().Alpha));
         // Background rect for numbers
         if (m_clipRect.Width() == 0)
         {
-            drawList->AddRectFilled(toImVec2(rc.topLeftPx), toImVec2(rc.bottomRightPx), ToPackedABGR(color));
+            drawList->AddRectFilled(toImVec2(rc.topLeftPx), toImVec2(rc.bottomRightPx), modulatedColor);
         }
         else
         {
             drawList->PushClipRect(toImVec2(m_clipRect.topLeftPx), toImVec2(m_clipRect.bottomRightPx));
-            drawList->AddRectFilled(toImVec2(rc.topLeftPx), toImVec2(rc.bottomRightPx), ToPackedABGR(color));
+            drawList->AddRectFilled(toImVec2(rc.topLeftPx), toImVec2(rc.bottomRightPx), modulatedColor);
             drawList->PopClipRect();
         }
     }
