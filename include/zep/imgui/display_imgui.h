@@ -79,7 +79,7 @@ public:
         {
             text_end = text_begin + strlen((const char*)text_begin);
         }
-        auto const modulatedColor = ToPackedABGR(NVec4f(col.x, col.y, col.z, col.w * ImGui::GetStyle().Alpha));
+        const auto modulatedColor = GetStyleModulatedColor(col);
         if (m_clipRect.Width() == 0)
         {
             drawList->AddText(imFont, float(font.GetPixelHeight()), toImVec2(pos), modulatedColor, (const char*)text_begin, (const char*)text_end);
@@ -95,7 +95,7 @@ public:
     void DrawLine(const NVec2f& start, const NVec2f& end, const NVec4f& color, float width) const override
     {
         ImDrawList* drawList = ImGui::GetWindowDrawList();
-        auto const modulatedColor = ToPackedABGR(NVec4f(color.x, color.y, color.z, color.w * ImGui::GetStyle().Alpha));
+        const auto modulatedColor = GetStyleModulatedColor(color);
         // Background rect for numbers
         if (m_clipRect.Width() == 0)
         {
@@ -112,7 +112,7 @@ public:
     void DrawRectFilled(const NRectf& rc, const NVec4f& color) const override
     {
         ImDrawList* drawList = ImGui::GetWindowDrawList();
-        auto const modulatedColor = ToPackedABGR(NVec4f(color.x, color.y, color.z, color.w * ImGui::GetStyle().Alpha));
+        const auto modulatedColor = GetStyleModulatedColor(color);
         // Background rect for numbers
         if (m_clipRect.Width() == 0)
         {
@@ -142,6 +142,11 @@ public:
 
 
 private:
+    static ImU32 GetStyleModulatedColor(const NVec4f& color)
+    {
+        return ToPackedABGR(NVec4f(color.x, color.y, color.z, color.w * ImGui::GetStyle().Alpha));
+    }
+
     NRectf m_clipRect;
 }; // namespace Zep
 
