@@ -16,18 +16,32 @@ jobs:
         include:
           - { title: "Linux", os: "ubuntu-latest", cc: "clang", arch: "x64", build_type: "Release", package_type: "x64-linux", script: "sh" }
           - { title: "Linux", os: "ubuntu-latest", cc: "clang", arch: "x64", build_type: "Debug", package_type: "x64-linux", script: "sh" }
-          - { title: "Linux", os: "ubuntu-latest", cc: "gcc", arch: "x64", build_type: "Release", package_type: "x64-linux", script: "sh" }
-          - { title: "Linux", os: "ubuntu-latest", cc: "gcc", arch: "x64", build_type: "Debug", package_type: "x64-linux", script: "sh" }
+          - { title: "Linux", os: "ubuntu-latest", cc: "gcc", cxx: "g++", arch: "x64", build_type: "Release", package_type: "x64-linux", script: "sh" }
+          - { title: "Linux", os: "ubuntu-latest", cc: "gcc", cxx: "g++", arch: "x64", build_type: "Debug", package_type: "x64-linux", script: "sh" }
           - { title: "Windows", os: "windows-latest", cc: "vs2019", arch: "x64", build_type: "Release", package_type: "x64-windows-static-md", script: "bat" }
           - { title: "Windows", os: "windows-latest", cc: "vs2019", arch: "x64", build_type: "Debug", package_type: "x64-windows-static-md", script: "bat" }
-          - { title: "Mac", os: "macos-latest", cc: "clang", arch: "x64", build_type: "Release", package_type: "x64-osx", script: "sh" }
-          - { title: "Mac", os: "macos-latest", cc: "clang", arch: "x64", build_type: "Debug", package_type: "x64-osx", script: "sh" }
-          - { title: "Coverage", os: "ubuntu-latest", cc: "clang", arch: "x64", build_type: "Coverage", package_type: "x64-linux", script: "sh" }
+          - { title: "Mac", os: "macos-latest", cc: "clang", cxx: "clang++", arch: "x64", build_type: "Release", package_type: "x64-osx", script: "sh" }
+          - { title: "Mac", os: "macos-latest", cc: "clang", cxx: "clang++", arch: "x64", build_type: "Debug", package_type: "x64-osx", script: "sh" }
+          - { title: "Coverage", os: "ubuntu-latest", cc: "clang", cxx: "clang++", arch: "x64", build_type: "Coverage", package_type: "x64-linux", script: "sh" }
 
     steps:
 
     - uses: actions/checkout@v2
-    
+
+    - name: Install dependencies on ubuntu
+        if: matrix.title == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install cmake
+          cmake --version
+          gcc --version
+
+    - name: Install dependencies on macos
+        if: matrix.title == 'Mac'
+        run: |
+          brew install cmake
+          cmake --version
+
     - name: Install GL
       env:
         CC: ${{ matrix.cc}}
