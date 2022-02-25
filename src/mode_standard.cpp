@@ -58,6 +58,9 @@ void ZepMode_Standard::Init()
     keymap_add({ &m_insertMap, &m_visualMap }, { "<Up>" }, id_MotionStandardUp);
     keymap_add({ &m_insertMap, &m_visualMap }, { "<Down>" }, id_MotionStandardDown);
    
+    keymap_add({ &m_insertMap }, { "<End>" }, id_MotionLineBeyondEnd);
+    keymap_add({ &m_insertMap }, { "<Home>" }, id_MotionLineHomeToggle);
+
     keymap_add({ &m_insertMap }, { "<C-Left>" }, id_MotionStandardLeftWord);
     keymap_add({ &m_insertMap }, { "<C-Right>" }, id_MotionStandardRightWord);
     

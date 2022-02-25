@@ -104,8 +104,10 @@ DECLARE_COMMANDID(MotionNextSearch)
 DECLARE_COMMANDID(MotionPreviousSearch)
 
 DECLARE_COMMANDID(MotionLineEnd)
+DECLARE_COMMANDID(MotionLineBeyondEnd)
 DECLARE_COMMANDID(MotionLineBegin)
 DECLARE_COMMANDID(MotionLineFirstChar)
+DECLARE_COMMANDID(MotionLineHomeToggle)
 
 DECLARE_COMMANDID(MotionRightSplit)
 DECLARE_COMMANDID(MotionLeftSplit)

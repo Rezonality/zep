@@ -907,6 +907,11 @@ bool ZepMode::GetCommand(CommandContext& context)
         GetCurrentWindow()->SetBufferCursor(context.buffer.GetLinePos(bufferCursor, LineLocation::LineLastNonCR));
         return true;
     }
+    else if (mappedCommand == id_MotionLineBeyondEnd)
+    {
+        GetCurrentWindow()->SetBufferCursor(context.buffer.GetLinePos(bufferCursor, LineLocation::LineCRBegin));
+        return true;
+    }
     else if (mappedCommand == id_MotionLineBegin)
     {
         GetCurrentWindow()->SetBufferCursor(context.buffer.GetLinePos(bufferCursor, LineLocation::LineBegin));
@@ -915,6 +920,16 @@ bool ZepMode::GetCommand(CommandContext& context)
     else if (mappedCommand == id_MotionLineFirstChar)
     {
         GetCurrentWindow()->SetBufferCursor(context.buffer.GetLinePos(bufferCursor, LineLocation::LineFirstGraphChar));
+        return true;
+    }
+    else if (mappedCommand == id_MotionLineHomeToggle)
+    {
+        auto newCursorPos = context.buffer.GetLinePos(bufferCursor, LineLocation::LineFirstGraphChar);
+        if (bufferCursor == newCursorPos)
+        {
+            newCursorPos = context.buffer.GetLinePos(bufferCursor, LineLocation::LineBegin);
+        }
+        GetCurrentWindow()->SetBufferCursor(newCursorPos);
         return true;
     }
     // Moving between tabs
@@ -2469,9 +2484,9 @@ void ZepMode::AddNavigationKeyMaps(bool allowInVisualMode)
     AddKeyMapWithCountRegisters(navigationMaps, { "G" }, id_MotionGotoLine);
 
     // Line Motions
-    AddKeyMapWithCountRegisters(navigationMaps, { "$" }, id_MotionLineEnd);
+    AddKeyMapWithCountRegisters(navigationMaps, { "$", "<End>" }, id_MotionLineEnd);
     AddKeyMapWithCountRegisters(navigationMaps, { "^" }, id_MotionLineFirstChar);
-    keymap_add(navigationMaps, { "0" }, id_MotionLineBegin);
+    keymap_add(navigationMaps, { "0", "<Home>" }, id_MotionLineBegin);
 
     // Word motions
     AddKeyMapWithCountRegisters(navigationMaps, { "w" }, id_MotionWord);
@@ -2495,6 +2510,9 @@ void ZepMode::AddNavigationKeyMaps(bool allowInVisualMode)
     keymap_add({ &m_insertMap }, { "<Up>" }, id_MotionUp);
     keymap_add({ &m_insertMap }, { "<Right>" }, id_MotionRight);
     keymap_add({ &m_insertMap }, { "<Left>" }, id_MotionLeft);
+
+    keymap_add({ &m_insertMap }, { "<End>" }, id_MotionLineBeyondEnd);
+    keymap_add({ &m_insertMap }, { "<Home>" }, id_MotionLineBegin);
 }
 
 void ZepMode::AddSearchKeyMaps()
