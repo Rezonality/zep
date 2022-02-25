@@ -108,6 +108,11 @@ install(TARGETS Zep
     INCLUDES DESTINATION ${LIBLEGACY_INCLUDE_DIRS}
 )
 
+# Workaround for if this file is included as part of another project 
+if (NOT DEFINED CMAKE_INSTALL_INCLUDEDIR)
+set (CMAKE_INSTALL_INCLUDEDIR ${ZEP_ROOT}/bin/zep)
+endif()
+
 # Install the include files
 install(DIRECTORY ${ZEP_ROOT}/include/zep
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}

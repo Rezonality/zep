@@ -1,29 +1,36 @@
 #pragma once
 
+//#include "../src/mode_repl.cpp"
+
 #ifdef ZEP_SINGLE_HEADER_BUILD
 #include "../src/buffer.cpp"
 #include "../src/commands.cpp"
+#include "../src/display.cpp"
 #include "../src/editor.cpp"
+#include "../src/filesystem.cpp"
+#include "../src/glyph_iterator.cpp"
+#include "../src/indexer.cpp"
 #include "../src/keymap.cpp"
+#include "../src/line_widgets.cpp"
+#include "../src/mcommon/animation/timer.cpp"
+#include "../src/mcommon/file/path.cpp"
+#include "../src/mcommon/string/stringutils.cpp"
 #include "../src/mode.cpp"
-#include "../src/mode_standard.cpp"
-#include "../src/mode_vim.cpp"
-#include "../src/mode_repl.cpp"
 #include "../src/mode_search.cpp"
+#include "../src/mode_standard.cpp"
+#include "../src/mode_tree.cpp"
+#include "../src/mode_vim.cpp"
+#include "../src/range_markers.cpp"
 #include "../src/scroller.cpp"
 #include "../src/splits.cpp"
 #include "../src/syntax.cpp"
+#include "../src/syntax_markdown.cpp" 
 #include "../src/syntax_providers.cpp"
 #include "../src/syntax_rainbow_brackets.cpp"
+#include "../src/syntax_tree.cpp" 
 #include "../src/tab_window.cpp"
 #include "../src/theme.cpp"
-#include "../src/display.cpp"
 #include "../src/window.cpp"
-#include "../src/filesystem.cpp"
-#include "../src/line_widgets.cpp"
-#include "../src/mcommon/file/path.cpp"
-#include "../src/mcommon/string/stringutils.cpp"
-#include "../src/mcommon/animation/timer.cpp"
 #include "zep/imgui/display_imgui.h"
 #include "zep/imgui/editor_imgui.h"
 #else
@@ -43,7 +50,7 @@
 #else
 #include "zep/imgui/display_imgui.h"
 #include "zep/imgui/editor_imgui.h"
-#include "zep/imgui/console_imgui.h"
+//#include "zep/imgui/console_imgui.h"
 #endif
 #endif
 
