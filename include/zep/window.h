@@ -5,7 +5,6 @@
 #include <unordered_map>
 
 #include "buffer.h"
-#include "zep/mcommon/utf8/unchecked.h"
 
 namespace Zep
 {

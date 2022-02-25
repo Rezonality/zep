@@ -1,6 +1,6 @@
 #pragma once
 
-#include "zep/mcommon/utf8/unchecked.h"
+#include "zep/mcommon/utf8/core.h"
 #include "gap_buffer.h"
 
 namespace Zep
