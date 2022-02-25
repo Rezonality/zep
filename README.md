@@ -27,7 +27,7 @@ Key Features:
 * Qt or ImGui rendering (and extensible) 
 * Terminal-style text wrapping and work in progress non-wrapped mode
 * Splits and tabs
-* A simple syntax highlighting engine, with pluggable secondary highlighters
+* A simple syntax highlighting engine with pluggable secondary highlighters
 * Theme support
 * A Repl for integrating a command/scripting language (the demo project integrates a Scheme interpreter)
 * CTRL+P search for quick searching files with fuzzy matching
