@@ -160,7 +160,7 @@ void ZepDisplay::Smaller()
             case ZepTextType::Heading3:
             {
                 auto& textFont = GetFont(ZepTextType(i));
-                textFont.SetPixelHeight((int)std::max(4.0f, (float)floor(textFont.GetPixelHeight() *.95f)));
+                textFont.SetPixelHeight((int)std::max(4.0f, (float)floor(textFont.GetPixelHeight() / 1.05)));
             }
             default:
             break;
