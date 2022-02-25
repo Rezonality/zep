@@ -2486,8 +2486,7 @@ void ZepMode::AddNavigationKeyMaps(bool allowInVisualMode)
     // Line Motions
     AddKeyMapWithCountRegisters(navigationMaps, { "$", "<End>" }, id_MotionLineEnd);
     AddKeyMapWithCountRegisters(navigationMaps, { "^" }, id_MotionLineFirstChar);
-    keymap_add(navigationMaps, { "0" }, id_MotionLineBegin);
-    keymap_add(navigationMaps, { "<Home>" }, id_MotionLineHomeToggle);
+    keymap_add(navigationMaps, { "0", "<Home>" }, id_MotionLineBegin);
 
     // Word motions
     AddKeyMapWithCountRegisters(navigationMaps, { "w" }, id_MotionWord);
@@ -2513,7 +2512,7 @@ void ZepMode::AddNavigationKeyMaps(bool allowInVisualMode)
     keymap_add({ &m_insertMap }, { "<Left>" }, id_MotionLeft);
 
     keymap_add({ &m_insertMap }, { "<End>" }, id_MotionLineBeyondEnd);
-    keymap_add({ &m_insertMap }, { "<Home>" }, id_MotionLineHomeToggle);
+    keymap_add({ &m_insertMap }, { "<Home>" }, id_MotionLineBegin);
 }
 
 void ZepMode::AddSearchKeyMaps()
