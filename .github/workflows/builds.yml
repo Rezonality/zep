@@ -29,18 +29,18 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Install dependencies on ubuntu
-        if: matrix.title == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install cmake
-          cmake --version
-          gcc --version
+      run: |
+        sudo apt-get update
+        sudo apt-get install cmake
+        cmake --version
+        gcc --version
+      if: matrix.title == 'Linux'
 
     - name: Install dependencies on macos
-        if: matrix.title == 'Mac'
-        run: |
-          brew install cmake
-          cmake --version
+      run: |
+        brew install cmake
+        cmake --version
+      if: matrix.title == 'Mac'
 
     - name: Install GL
       env:
