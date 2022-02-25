@@ -1,6 +1,13 @@
 name: Builds
 
-on: [push]
+on:
+  # Do it on every push or PR on these branches
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  # Do build on demand
+  workflow_dispatch:
 
 jobs:
   build:
