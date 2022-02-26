@@ -13,7 +13,7 @@ class SyntaxTest : public testing::Test
 public:
     SyntaxTest()
     {
-        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(NVec2f(1.0f, 1.0f)), ZEP_ROOT, ZepEditorFlags::DisableThreads);
+        spEditor = std::make_shared<ZepEditor>(new ZepDisplayNull(), ZEP_ROOT, ZepEditorFlags::DisableThreads);
     }
 
     ~SyntaxTest()

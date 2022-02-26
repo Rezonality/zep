@@ -69,7 +69,7 @@ class ZepDisplay
 {
 public:
     virtual ~ZepDisplay(){};
-    ZepDisplay(const NVec2f& pixelScale);
+    ZepDisplay();
 
     // Renderer specific overrides
     // Implement these to draw the buffer using whichever system you prefer
@@ -86,6 +86,7 @@ public:
     virtual void SetFont(ZepTextType type, std::shared_ptr<ZepFont> spFont);
     virtual ZepFont& GetFont(ZepTextType type) = 0;
     const NVec2f& GetPixelScale() const;
+    void SetPixelScale(const NVec2f& scale);
 
     void Bigger();
     void Smaller();
@@ -123,8 +124,8 @@ public:
 class ZepDisplayNull : public ZepDisplay
 {
 public:
-    ZepDisplayNull(const NVec2f& pixelScale)
-        : ZepDisplay(pixelScale)
+    ZepDisplayNull()
+        : ZepDisplay()
     {
     
     }

@@ -162,6 +162,7 @@ public:
     virtual uint32_t ModifyWindowFlags(uint32_t windowFlags) { return windowFlags; }
     virtual EditorMode GetEditorMode() const;
     virtual EditorMode DefaultMode() const = 0;
+    virtual bool UsesRelativeLines() const { return false; }
     
     // About to display this window, which is associated with this mode
     virtual void PreDisplay(ZepWindow&){};

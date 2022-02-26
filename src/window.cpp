@@ -211,6 +211,7 @@ void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
     }
     else if (payload->messageId == Msg::MouseMove)
     {
+        m_mousePos = payload->pos;
         if (!m_toolTips.empty())
         {
             if (ManhattanDistance(m_mouseHoverPos, payload->pos) > 4.0f)
@@ -231,6 +232,13 @@ void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
     else if (payload->messageId == Msg::ConfigChanged)
     {
         m_layoutDirty = true;
+    }
+    else if (payload->messageId == Msg::MouseDown)
+    {
+        if (payload->button == ZepMouseButton::Left && m_textRegion->rect.Contains(m_mousePos) && m_mouseIterator.Valid())
+        {
+            SetBufferCursor(m_mouseIterator);
+        }
     }
 }
 
@@ -1024,14 +1032,16 @@ void ZepWindow::DisplayLineNumbers()
             auto cursorBufferLine = GetCursorLineInfo(cursorCL.y).bufferLineNumber;
             std::string strNum;
 
+            auto mode = m_pBuffer->GetMode();
+
             // In Vim mode show relative lines, unless in Ex mode (with hidden cursor)
-            if (m_displayMode == DisplayMode::Vim && m_pBuffer->GetMode()->GetCursorType() != CursorType::None)
+            if (mode->UsesRelativeLines() && mode->GetCursorType() != CursorType::None)
             {
                 strNum = std::to_string(std::abs(lineInfo.bufferLineNumber - cursorBufferLine));
             }
             else
             {
-                strNum = std::to_string(lineInfo.bufferLineNumber);
+                strNum = std::to_string(lineInfo.bufferLineNumber + 1);
             }
 
             auto& numFont = display.GetFont(ZepTextType::UI);
@@ -1107,30 +1117,44 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
     auto dotSize = display.GetFont(ZepTextType::Text).GetDotSize();
     auto whiteSpaceCol = m_pBuffer->GetTheme().GetColor(ThemeColor::Whitespace);
     auto widgetMargins = DPI_VEC2(GetEditor().GetConfig().widgetMargins);
+    auto height = lineInfo.FullLineHeightPx();
+    bool isLineHovered = false;
 
     // Drawing commands for the whole line
     if (displayPass == WindowPass::Background)
     {
         display.SetClipRect(m_textRegion->rect);
         DisplayLineBackground(lineInfo, pSyntax);
+        NRectf lineRect(NVec2f(m_textRegion->rect.Left(), ToWindowY(lineInfo.yOffsetPx)), NVec2f(m_textRegion->rect.Right(), ToWindowY(lineInfo.yOffsetPx + height)));
+        isLineHovered = lineRect.Contains(m_mousePos);
     }
 
     display.SetClipRect(m_textRegion->rect);
 
     bool lineStart = true;
+    bool hasBeenHovered = false;
 
     // Walk from the start of the line to the end of the line (in buffer chars)
-    for (auto cp : lineInfo.lineCodePoints)
+    for (auto& cp : lineInfo.lineCodePoints)
     {
         const uint8_t* pCh;
         const uint8_t* pEnd;
         SpecialChar special;
         GetCharPointer(cp.iterator, pCh, pEnd, special);
+        bool isHovered = false;
+        bool isLast = &cp == &lineInfo.lineCodePoints.back();
 
         // TODO : Cache this for speed - a little sluggish on debug builds.
         if (displayPass == WindowPass::Background)
         {
-            NRectf charRect(NVec2f(cp.pos.x, ToWindowY(lineInfo.yOffsetPx)), NVec2f(cp.pos.x + cp.size.x, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx())));
+            NRectf charRect(NVec2f(cp.pos.x, ToWindowY(lineInfo.yOffsetPx)), NVec2f(cp.pos.x + cp.size.x, ToWindowY(lineInfo.yOffsetPx + height)));
+            if (charRect.Contains(m_mousePos) || (isLast && !hasBeenHovered && isLineHovered))
+            {
+                m_mouseIterator = cp.iterator;
+                isHovered = true;
+                hasBeenHovered = true;
+            }
+
             if (charRect.Contains(m_mouseHoverPos))
             {
                 // Record the mouse-over buffer location
@@ -1155,7 +1179,6 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
             // If active window and this is the cursor char then display the marker as a priority over what we would have shown
             if (IsActiveWindow() && (cp.iterator == m_bufferCursor) && (!cursorBlink || cursorType == CursorType::LineMarker))
             {
-                auto height = lineInfo.FullLineHeightPx();
                 switch (cursorType)
                 {
                 default:
@@ -1193,6 +1216,13 @@ bool ZepWindow::DisplayLine(SpanInfo& lineInfo, int displayPass)
                 }
                 break;
                 }
+            }
+            else if (isHovered)
+            {
+                GetEditor().GetDisplay().DrawRectFilled(NRectf(
+                                                            NVec2f(cp.pos.x, ToWindowY(lineInfo.yOffsetPx)),
+                                                            NVec2f(cp.pos.x + cp.size.x, ToWindowY(lineInfo.yOffsetPx + height))),
+                    m_pBuffer->GetTheme().GetColor(ThemeColor::AirlineBackground));
             }
         }
         // Second pass, characters

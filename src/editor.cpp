@@ -921,6 +921,7 @@ void ZepEditor::ReadClipboard()
     {
         m_registers["+"] = pMsg->str;
         m_registers["*"] = pMsg->str;
+        m_registers["\""] = pMsg->str;
     }
 }
 

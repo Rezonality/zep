@@ -75,8 +75,8 @@ NVec2f ZepFont::GetCharSize(const uint8_t* pCh)
     return sz;
 }
 
-ZepDisplay::ZepDisplay(const NVec2f& pixelScale)
-    : m_pixelScale(pixelScale)
+ZepDisplay::ZepDisplay()
+    : m_pixelScale(Zep::NVec2f(1.0f))
 {
     for (size_t i = 0; i < m_fonts.size(); i++)
     {
@@ -121,6 +121,15 @@ void ZepDisplay::SetFont(ZepTextType type, std::shared_ptr<ZepFont> spFont)
 const NVec2f& ZepDisplay::GetPixelScale() const
 {
     return m_pixelScale;
+}
+
+void ZepDisplay::SetPixelScale(const NVec2f& scale)
+{
+    m_pixelScale = scale;
+    for (size_t i = 0; i < m_fonts.size(); i++)
+    {
+        m_fonts[i] = nullptr;
+    }
 }
 
 void ZepDisplay::Bigger()

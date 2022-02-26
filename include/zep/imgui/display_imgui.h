@@ -66,8 +66,8 @@ private:
 class ZepDisplay_ImGui : public ZepDisplay
 {
 public:
-    ZepDisplay_ImGui(const NVec2f& pixelScale)
-        : ZepDisplay(pixelScale)
+    ZepDisplay_ImGui()
+        : ZepDisplay()
     {
     }
 
