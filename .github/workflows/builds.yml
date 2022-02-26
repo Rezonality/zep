@@ -25,8 +25,8 @@ jobs:
           - { title: "Linux", os: "ubuntu-latest", cc: "clang", arch: "x64", build_type: "Debug", package_type: "x64-linux", script: "sh" }
           - { title: "Linux", os: "ubuntu-latest", cc: "gcc", cxx: "g++", arch: "x64", build_type: "Release", package_type: "x64-linux", script: "sh" }
           - { title: "Linux", os: "ubuntu-latest", cc: "gcc", cxx: "g++", arch: "x64", build_type: "Debug", package_type: "x64-linux", script: "sh" }
-          - { title: "Windows", os: "windows-latest", cc: "vs2019", arch: "x64", build_type: "Release", package_type: "x64-windows-static-md", script: "bat" }
-          - { title: "Windows", os: "windows-latest", cc: "vs2019", arch: "x64", build_type: "Debug", package_type: "x64-windows-static-md", script: "bat" }
+          - { title: "Windows", os: "windows-latest", cc: "vs2022", arch: "x64", build_type: "Release", package_type: "x64-windows-static-md", script: "bat" }
+          - { title: "Windows", os: "windows-latest", cc: "vs2022", arch: "x64", build_type: "Debug", package_type: "x64-windows-static-md", script: "bat" }
           - { title: "Mac", os: "macos-latest", cc: "clang", cxx: "clang++", arch: "x64", build_type: "Release", package_type: "x64-osx", script: "sh" }
           - { title: "Mac", os: "macos-latest", cc: "clang", cxx: "clang++", arch: "x64", build_type: "Debug", package_type: "x64-osx", script: "sh" }
           #- { title: "Coverage", os: "ubuntu-latest", cc: "clang", cxx: "clang++", arch: "x64", build_type: "Coverage", package_type: "x64-linux", script: "sh" }
