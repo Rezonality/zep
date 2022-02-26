@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QApplication>
-#include <QDesktopWidget>
 #include <QFont>
 #include <QIcon>
 #include <QPainter>

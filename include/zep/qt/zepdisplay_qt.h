@@ -100,8 +100,8 @@ class ZepDisplay_Qt : public ZepDisplay
 public:
     using TParent = ZepDisplay;
 
-    ZepDisplay_Qt(const NVec2f& pixelScale)
-        : ZepDisplay(pixelScale)
+    ZepDisplay_Qt()
+        : ZepDisplay()
     {
     }
 

@@ -6,7 +6,6 @@
 
 #include <QClipboard>
 #include <QDebug>
-#include <QDesktopWidget>
 #include <QKeyEvent>
 
 #include "zep/editor.h"
@@ -36,7 +35,7 @@ public:
         NVec2f pixelScale(NVec2f(qRound(qApp->primaryScreen()->logicalDotsPerInchX() / 96.0f), qRound(qApp->primaryScreen()->logicalDotsPerInchY() / 96.0f)));
 #endif
 
-        m_spEditor = std::make_unique<ZepEditor>(new ZepDisplay_Qt(pixelScale), root);
+        m_spEditor = std::make_unique<ZepEditor>(new ZepDisplay_Qt(), root);
         m_spEditor->RegisterCallback(this);
 
         auto ptToPx = [](float pt, float dpi) {
