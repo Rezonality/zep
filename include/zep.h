@@ -50,7 +50,7 @@
 #else
 #include "zep/imgui/display_imgui.h"
 #include "zep/imgui/editor_imgui.h"
-//#include "zep/imgui/console_imgui.h"
+#include "zep/imgui/console_imgui.h"
 #endif
 #endif
 
