@@ -431,6 +431,9 @@ CURSOR_TEST(motion_W_over_line, "one;\ntwo", "W", 0, 1);
 CURSOR_TEST(motion_w_over_nonascii, "abc£ def", "w", 3, 0);
 CURSOR_TEST(motion_W_over_nonascii, "abc£ def", "W", 3, 0);
 
+CURSOR_TEST(motion_percent_next_bracket, "a ( b \na ) b", "%", 2, 1);
+CURSOR_TEST(motion_percent_next_then_first_bracket, "a ( b \na ) b", "%%", 2, 0);
+CURSOR_TEST(motion_percent_first_bracked_inner, "a ( b \na ) b", "lll%", 2, 0);
 CURSOR_TEST(motion_b, "one! two three", "wwb", 3, 0);
 CURSOR_TEST(motion_b_from_non_word, "one! two three", "wwbb", 0, 0);
 CURSOR_TEST(motion_b_endofword, "one! two three", "llb", 0, 0);

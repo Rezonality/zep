@@ -387,7 +387,10 @@ GlyphIterator ZepBuffer::FindOnLineMotion(GlyphIterator start, const uint8_t* pC
 
     if (dir == Direction::Forward)
     {
+        // Ignore char under cursor, as behavior
         SkipOne(IsMatch, start, dir);
+
+        // Find to the end of the line
         Skip(NotMatchNotEnd, start, dir);
     }
     else
@@ -401,6 +404,29 @@ GlyphIterator ZepBuffer::FindOnLineMotion(GlyphIterator start, const uint8_t* pC
         return start;
     }
     return entry;
+}
+
+// Only works on searches of ascii characters (but navigates unicode buffer); useful for some vim operations
+// Returns the index of the first found char and its location
+GlyphIterator ZepBuffer::FindFirstCharOf(GlyphIterator& start, const std::string& chars, int32_t& found_index, Direction dir) const
+{
+    GlyphIterator itr = start;
+    while (itr != End())
+    {
+        for (int i = 0; i < chars.length(); i++)
+        {
+            if (itr.Char() == chars[i])
+            {
+                found_index = i;
+                return itr;
+            }
+        }
+        dir == Direction::Forward ? itr++ : itr--;
+        if (itr == Begin())
+            break;
+    }
+    found_index = -1;
+    return itr;
 }
 
 GlyphIterator ZepBuffer::WordMotion(GlyphIterator start, uint32_t searchType, Direction dir) const

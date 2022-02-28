@@ -1680,6 +1680,64 @@ bool ZepMode::GetCommand(CommandContext& context)
         GetCurrentWindow()->SetBufferCursor(context.buffer.FindOnLineMotion(bufferCursor, (const uint8_t*)m_lastFind.c_str(), m_lastFindDirection));
         return true;
     }
+    else if (mappedCommand == id_FindNextDelimiter)
+    {
+        // Rules:
+        // 1. Find the first delimeter that matches an 'opening' such as '(', jump to the matching pair ')'
+        // 2. If that fails, look backwards for a closing delimiter, such as ')' and find the opening '('
+        // 3. If that fails, look backwards for an opening and finish
+        // All operations do the first search on the current line, as in vim.
+        int32_t findIndex = 0;
+        for (int pass = 0; pass < 2; pass++)
+        {
+            std::string start_delims;
+            std::string end_delims;
+            Direction dir;
+
+            // Forward or inside
+            if (pass == 0)
+            {
+                dir = Direction::Forward;
+				start_delims = "\n({[";
+				end_delims = ")}]";
+            }
+            else
+            {
+                dir = Direction::Backward;
+                start_delims = "\n)}]";
+                end_delims = "({[";
+            }
+            
+            GlyphIterator loc;
+            loc = bufferCursor; 
+
+            for (int i = 0; i < start_delims.size(); i++)
+            {
+                const auto& start = start_delims[i];
+                const auto& end = end_delims[i];
+                loc = context.buffer.FindFirstCharOf(loc, start_delims, findIndex, dir);
+                if (findIndex > 0)
+                {
+                    std::string find = std::string(1, end_delims[findIndex - 1]);
+                    auto end_loc = context.buffer.FindFirstCharOf(loc, find, findIndex, dir);
+                    if (findIndex == 0)
+                    {
+                        GetCurrentWindow()->SetBufferCursor(end_loc);
+                        return true;
+                    }
+                }
+            }
+
+        }
+		// Situation: In the middle of a pair of delimiters, after all searches have failed.
+		// Bounce back to the beginning one on the line if found
+        auto start_loc = context.buffer.FindFirstCharOf(bufferCursor, "\n({[", findIndex, Direction::Backward);
+		if (findIndex > 0)
+		{
+			GetCurrentWindow()->SetBufferCursor(start_loc);
+		}
+        return false;
+    }
     else if (mappedCommand == id_Append)
     {
         // Cursor append
@@ -2531,6 +2589,7 @@ void ZepMode::AddSearchKeyMaps()
     AddKeyMapWithCountRegisters({ &m_normalMap }, { "f<.>" }, id_Find);
     AddKeyMapWithCountRegisters({ &m_normalMap }, { "F<.>" }, id_FindBackwards);
     AddKeyMapWithCountRegisters({ &m_normalMap }, { ";" }, id_FindNext);
+    AddKeyMapWithCountRegisters({ &m_normalMap }, { "%" }, id_FindNextDelimiter);
     AddKeyMapWithCountRegisters({ &m_normalMap }, { "n" }, id_MotionNextSearch);
     AddKeyMapWithCountRegisters({ &m_normalMap }, { "N" }, id_MotionPreviousSearch);
     keymap_add({ &m_normalMap }, { "<F8>" }, id_MotionNextMarker);
