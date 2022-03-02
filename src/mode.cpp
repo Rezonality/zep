@@ -113,36 +113,36 @@ void CommandContext::GetCommandRegisters()
     // No specified register, so use the default
     if (keymap.RegisterName() == 0)
     {
-        keymap.captureRegisters.push_back('"');
-        keymap.captureRegisters.push_back('*');
-        keymap.captureRegisters.push_back('+');
-    }
-
-    if (keymap.RegisterName() == '_')
-    {
-        std::stack<char> temp;
-        registers.swap(temp);
+        registers.push('*');
+        registers.push('+');
     }
     else
     {
-        registers.push(keymap.RegisterName());
-
-        char reg = keymap.RegisterName();
-
-        // Demote capitals to lower registers when pasting (all both)
-        if (reg >= 'A' && reg <= 'Z')
+        if (keymap.RegisterName() == '_')
         {
-            reg = (char)std::tolower((char)reg);
+            std::stack<char> temp;
+            registers.swap(temp);
         }
-
-        if (owner.GetEditor().GetRegisters().find(std::string({ reg })) != owner.GetEditor().GetRegisters().end())
+        else
         {
-            pRegister = &owner.GetEditor().GetRegister(reg);
+            registers.push(keymap.RegisterName());
+			char reg = keymap.RegisterName();
+
+			// Demote capitals to lower registers when pasting (all both)
+			if (reg >= 'A' && reg <= 'Z')
+			{
+				reg = (char)std::tolower((char)reg);
+			}
+
+			if (owner.GetEditor().GetRegisters().find(std::string({ reg })) != owner.GetEditor().GetRegisters().end())
+			{
+				pRegister = &owner.GetEditor().GetRegister(reg);
+			}
         }
     }
 
     // Default register
-    if (pRegister->text.empty())
+    if (!pRegister || pRegister->text.empty())
     {
         pRegister = &owner.GetEditor().GetRegister('"');
     }

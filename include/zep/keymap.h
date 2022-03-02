@@ -209,7 +209,7 @@ struct KeyMapResult
     {
         if (captureRegisters.empty())
         {
-            return '"';
+            return 0;
         }
         return captureRegisters[0];
     }
