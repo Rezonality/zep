@@ -139,7 +139,20 @@ find_package(Zep REQUIRED)
 target_link_libraries(MYPROJECT PRIVATE Zep::Zep)
 ```
 
-# 4. Building the Demo
+# 4. (Alternative) Use zep as a single header library
+A typical example of including Zep as a single header library (see the sister integration project for an example):
+```
+git submodule add zep https://github.com/Rezonality/zep
+
+In CMakeLists:
+target_include_directories(myapp
+    PRIVATE
+    zep/include
+
+#include "zep\zep.h"
+```
+
+# 5. Building the Demo
 The Zep demo now requires my external MUtils library in order to run.  To make the demo, hop over to https://github.com/Rezonality/mutils and build/install it.
 Here's an example script for the complete process to build the support library and all of the zep demos.
 
