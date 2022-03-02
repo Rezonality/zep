@@ -37,12 +37,10 @@ SyntaxResult ZepSyntax::GetSyntaxAt(const GlyphIterator& offset) const
 {
     Zep::SyntaxResult result;
 
-    Wait();
+    // No wait, either return whatever junk is in the syntax buffer, of the correct thing.
+    // The buffer is always the right size, just not always updated 
 
-    if (m_processedChar < offset.Index() || (long)m_syntax.size() <= offset.Index())
-    {
-        return result;
-    }
+    assert(offset.Index() < (long)m_syntax.size());
 
     result.background = m_syntax[offset.Index()].background;
     result.foreground = m_syntax[offset.Index()].foreground;
@@ -76,7 +74,7 @@ void ZepSyntax::Interrupt()
     m_stop = true;
     if (m_syntaxResult.valid())
     {
-        m_syntaxResult.get();
+        m_syntaxResult.wait();
     }
     m_stop = false;
 }
@@ -102,9 +100,9 @@ void ZepSyntax::QueueUpdateSyntax(GlyphIterator startLocation, GlyphIterator end
 
     // Have the thread update the syntax in the new region
     // If the pool has no threads, this will end up serial
-    //m_syntaxResult = GetEditor().GetThreadPool().enqueue([=]() {
+    m_syntaxResult = GetEditor().GetThreadPool().enqueue([=]() {
         UpdateSyntax();
-    //});
+    });
 }
 
 void ZepSyntax::Notify(std::shared_ptr<ZepMessage> spMsg)
@@ -184,6 +182,7 @@ void ZepSyntax::UpdateSyntax()
     itrEnd = buffer.find_first_of(itrEnd, buffer.end(), lineEnd.begin(), lineEnd.end());
 
     // Mark a region of the syntax buffer with the correct marker
+    // Note: syntax buffer is a byte array gap buffer.
     auto mark = [&](GapBuffer<uint8_t>::const_iterator itrA, GapBuffer<uint8_t>::const_iterator itrB, ThemeColor type, ThemeColor background) {
         std::fill(m_syntax.begin() + (itrA - buffer.begin()), m_syntax.begin() + (itrB - buffer.begin()), SyntaxData{ type, background });
     };
@@ -324,12 +323,12 @@ void ZepSyntax::UpdateSyntax()
         }
 
         itrCurrent = itrLast;
+        m_processedChar = long(itrCurrent - buffer.begin());
     }
 
     // If we got here, we sucessfully completed
     // Reset the target to the beginning
     m_targetChar = long(0);
-    m_processedChar = long(buffer.size() - 1);
 }
 
 const NVec4f& ZepSyntax::ToBackgroundColor(const SyntaxResult& res) const
