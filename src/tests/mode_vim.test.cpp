@@ -433,8 +433,17 @@ CURSOR_TEST(motion_W_over_nonascii, "abc£ def", "W", 3, 0);
 
 CURSOR_TEST(motion_percent_next_bracket, "a ( b \na ) b", "%", 2, 1);
 CURSOR_TEST(motion_percent_next_then_first_bracket, "a ( b \na ) b", "%%", 2, 0);
-CURSOR_TEST(motion_percent_first_bracked_inner, "a ( b \na ) b", "lll%", 2, 0);
+CURSOR_TEST(motion_percent_first_bracket_inner, "a ( b \na ) b", "ll%%", 2, 0);
 CURSOR_TEST(motion_percent_inner_bracket_step, "a ( b () \na ) b", "ll%", 2, 1);
+CURSOR_TEST(motion_percent_previous_line, "a(x,\n y) z\nf()", "j%", 1, 0); // jump back to previous line
+CURSOR_TEST(motion_percent_no_jump, "a(x,\n y) z\nf()", "j3l%", 3, 1); // no jump
+CURSOR_TEST(motion_percent_next_line, "a(x,\n y) z[\nf()]", "j3l%", 3, 2); // jump to next line closing `]`
+CURSOR_TEST(motion_percent_multiple, "vec2(cos(x), sin(y))", "9l%", 8, 0); // fail: jumps to 18
+CURSOR_TEST(motion_percent_multiple_a, "vec2(cos(x), sin(y))", "10l%", 8, 0); // should be same as previous (starting on paren) - fail: jumps to 18
+CURSOR_TEST(motion_percent_multiple_b, "vec2(cos(x), sin(y))", "9l%%", 10, 0); // fail: jumps to 16
+CURSOR_TEST(motion_percent_multiple_c, "vec2(cos(x), sin(y))", "17l%", 16, 0); // fail: jumps back to 8
+CURSOR_TEST(motion_percent_multiple_d, "vec2(cos(x), sin(y))", "17l%%", 18, 0); // fail: jumps to 10
+
 CURSOR_TEST(motion_b, "one! two three", "wwb", 3, 0);
 CURSOR_TEST(motion_b_from_non_word, "one! two three", "wwbb", 0, 0);
 CURSOR_TEST(motion_b_endofword, "one! two three", "llb", 0, 0);

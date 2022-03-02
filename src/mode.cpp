@@ -1682,96 +1682,84 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_FindNextDelimiter)
     {
-        // Rules:
-        // 1. Find the first delimeter that matches an 'opening' such as '(', jump to the matching pair ')'
-        // 2. If that fails, look backwards for a closing delimiter, such as ')' and find the opening '('
-        // 3. If that fails, look backwards for an opening and finish
-        // All operations do the first search on the current line, as in vim.
         int32_t findIndex = 0;
-        for (int pass = 0; pass < 2; pass++)
-        {
-            std::string start_delims;
-            std::string end_delims;
-            Direction dir;
+        std::string delims = "\n(){}[]";
+        Direction dir = Direction::Forward;
 
-            // Forward or inside
-            if (pass == 0)
+        GlyphIterator loc;
+        loc = context.buffer.FindFirstCharOf(bufferCursor, delims, findIndex, dir);
+
+        if (findIndex > 0)
+        {
+            // Make a new end location
+            auto end_loc = loc;
+           
+            std::string closing;
+            std::string opening = std::string(1, delims[findIndex]);
+
+            // opening bracket
+            if (findIndex & 0x1)
             {
-                dir = Direction::Forward;
-				start_delims = "\n({[";
-				end_delims = ")}]";
+                end_loc++;
+                closing = delims[findIndex + 1];
             }
             else
             {
+                end_loc--;
+                closing = delims[findIndex - 1];
                 dir = Direction::Backward;
-                start_delims = "\n)}]";
-                end_delims = "({[";
             }
-            
-            GlyphIterator loc;
-            loc = bufferCursor; 
+            std::string openClose = opening + closing;
 
-            for (int i = 0; i < start_delims.size(); i++)
+            // Track open/close braket pairs
+            int closingCount = 1;
+
+            for (;;)
             {
-                // Find the first delim
-                const auto& start = start_delims[i];
-                const auto& end = end_delims[i];
-                loc = context.buffer.FindFirstCharOf(loc, start_delims, findIndex, dir);
-                if (findIndex > 0)
+                // Find the next open or close of the current delim type
+                int newIndex;
+                end_loc = context.buffer.FindFirstCharOf(end_loc, openClose, newIndex, dir);
+
+                // Fell off, no find
+                if (newIndex < 0)
                 {
-                    // Ignore the first \n in the delim list
-                    findIndex--;
+                    break;
+                }
 
-                    // Make a new end location
-                    auto end_loc = loc;
-
-                    // Track open/close braket pairs
-                    int closingCount = 1;
-                    while (closingCount > 0)
-                    {
-                        // Skip to next
-                        dir == Direction::Forward ? end_loc++ : end_loc--;
-
-                        // Find the next open or close of the current delim type
-                        int newIndex;
-                        std::string find(std::string(1, start_delims[findIndex + 1]) + end_delims[findIndex]);
-                        end_loc = context.buffer.FindFirstCharOf(end_loc, find, newIndex, dir);
-
-                        // Fell off, no find
-                        if (newIndex < 0)
-                        {
-                            break;
-                        }
-
-                        // Found another opener/no good
-                        if (newIndex == 0)
-                        {
-                            closingCount++;
-                        }
-                        // Found a closer
-                        else if (newIndex == 1)
-                        {
-                            closingCount--;
-                        }
-                    }
-
-                    // Matched a pair, jump
+                // Found another opener/no good
+                if (newIndex == 0)
+                {
+                    closingCount++;
+                }
+                // Found a closer
+                else if (newIndex == 1)
+                {
+                    closingCount--;
                     if (closingCount == 0)
                     {
                         GetCurrentWindow()->SetBufferCursor(end_loc);
                         return true;
                     }
                 }
-            }
 
+                if (dir == Direction::Forward)
+                {
+                    if (end_loc == context.buffer.End())
+                    {
+                        break;
+                    }
+                    end_loc++;
+                }
+                else
+                {
+                    if (end_loc == context.buffer.Begin())
+                    {
+                        break;
+                    }
+                    end_loc--;
+                }
+            }
         }
-		// Situation: In the middle of a pair of delimiters, after all searches have failed.
-		// Bounce back to the beginning one on the line if found
-        auto start_loc = context.buffer.FindFirstCharOf(bufferCursor, "\n({[", findIndex, Direction::Backward);
-		if (findIndex > 0)
-		{
-			GetCurrentWindow()->SetBufferCursor(start_loc);
-		}
         return false;
     }
     else if (mappedCommand == id_Append)

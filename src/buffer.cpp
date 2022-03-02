@@ -411,7 +411,7 @@ GlyphIterator ZepBuffer::FindOnLineMotion(GlyphIterator start, const uint8_t* pC
 GlyphIterator ZepBuffer::FindFirstCharOf(GlyphIterator& start, const std::string& chars, int32_t& found_index, Direction dir) const
 {
     GlyphIterator itr = start;
-    while (itr != End())
+    for (;;)
     {
         for (int i = 0; i < chars.length(); i++)
         {
@@ -421,9 +421,23 @@ GlyphIterator ZepBuffer::FindFirstCharOf(GlyphIterator& start, const std::string
                 return itr;
             }
         }
-        dir == Direction::Forward ? itr++ : itr--;
-        if (itr == Begin())
-            break;
+
+        if (dir == Direction::Forward)
+        {
+            if (itr == End())
+            {
+                break;
+            }
+            itr++;
+        }
+        else if (dir == Direction::Backward)
+        {
+            if (itr == Begin())
+            {
+                break; 
+            }
+            itr--;
+        }
     }
     found_index = -1;
     return itr;
