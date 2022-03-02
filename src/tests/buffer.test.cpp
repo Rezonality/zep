@@ -38,4 +38,25 @@ TEST_F(BufferTest, DefaultConstructedWith0)
     ASSERT_TRUE(pNew->GetWorkingBuffer().size() == 1);
 }
 
+TEST_F(BufferTest, FindFirstOf)
+{
+    auto pNew = std::make_shared<ZepBuffer>(*spEditor, std::string("empty"));
+    pNew->SetText("Hello");
+
+    int32_t char_index;
+    auto loc = pNew->FindFirstCharOf(pNew->Begin(), "zo", char_index, Direction::Forward);
+    ASSERT_TRUE(char_index == 1 && loc.Index() == 4);
+
+    loc = pNew->FindFirstCharOf(pNew->Begin(), "H", char_index, Direction::Forward);
+    ASSERT_TRUE(char_index == 0 && loc.Index() == 0);
+
+    loc = pNew->Begin() + 4;
+    loc = pNew->FindFirstCharOf(loc, "o", char_index, Direction::Backward);
+    ASSERT_TRUE(char_index == 0 && loc.Index() == 4);
+    
+    loc = pNew->Begin() + 4;
+    loc = pNew->FindFirstCharOf(loc, "H", char_index, Direction::Backward);
+    ASSERT_TRUE(char_index == 0 && loc.Index() == 0);
+}
+
 // TODO

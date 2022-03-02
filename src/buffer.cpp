@@ -411,6 +411,12 @@ GlyphIterator ZepBuffer::FindOnLineMotion(GlyphIterator start, const uint8_t* pC
 GlyphIterator ZepBuffer::FindFirstCharOf(GlyphIterator& start, const std::string& chars, int32_t& found_index, Direction dir) const
 {
     GlyphIterator itr = start;
+    if (!itr.Valid())
+    {
+        found_index = -1;
+        return itr; 
+    }
+
     for (;;)
     {
         for (int i = 0; i < chars.length(); i++)
