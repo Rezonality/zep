@@ -421,9 +421,10 @@ GlyphIterator ZepBuffer::FindFirstCharOf(GlyphIterator& start, const std::string
                 return itr;
             }
         }
-        dir == Direction::Forward ? itr++ : itr--;
+        
         if (itr == Begin())
             break;
+        dir == Direction::Forward ? itr++ : itr--;
     }
     found_index = -1;
     return itr;
