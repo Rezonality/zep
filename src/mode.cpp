@@ -1713,14 +1713,50 @@ bool ZepMode::GetCommand(CommandContext& context)
 
             for (int i = 0; i < start_delims.size(); i++)
             {
+                // Find the first delim
                 const auto& start = start_delims[i];
                 const auto& end = end_delims[i];
                 loc = context.buffer.FindFirstCharOf(loc, start_delims, findIndex, dir);
                 if (findIndex > 0)
                 {
-                    std::string find = std::string(1, end_delims[findIndex - 1]);
-                    auto end_loc = context.buffer.FindFirstCharOf(loc, find, findIndex, dir);
-                    if (findIndex == 0)
+                    // Ignore the first \n in the delim list
+                    findIndex--;
+
+                    // Make a new end location
+                    auto end_loc = loc;
+
+                    // Track open/close braket pairs
+                    int closingCount = 1;
+                    while (closingCount > 0)
+                    {
+                        // Skip to next
+                        dir == Direction::Forward ? end_loc++ : end_loc--;
+
+                        // Find the next open or close of the current delim type
+                        int newIndex;
+                        std::string find(std::string(1, start_delims[findIndex + 1]) + end_delims[findIndex]);
+                        end_loc = context.buffer.FindFirstCharOf(end_loc, find, newIndex, dir);
+
+                        // Fell off, no find
+                        if (newIndex < 0)
+                        {
+                            break;
+                        }
+
+                        // Found another opener/no good
+                        if (newIndex == 0)
+                        {
+                            closingCount++;
+                        }
+                        // Found a closer
+                        else if (newIndex == 1)
+                        {
+                            closingCount--;
+                        }
+                    }
+
+                    // Matched a pair, jump
+                    if (closingCount == 0)
                     {
                         GetCurrentWindow()->SetBufferCursor(end_loc);
                         return true;
