@@ -126,18 +126,18 @@ void CommandContext::GetCommandRegisters()
         else
         {
             registers.push(keymap.RegisterName());
-			char reg = keymap.RegisterName();
+            char reg = keymap.RegisterName();
 
-			// Demote capitals to lower registers when pasting (all both)
-			if (reg >= 'A' && reg <= 'Z')
-			{
-				reg = (char)std::tolower((char)reg);
-			}
+            // Demote capitals to lower registers when pasting (all both)
+            if (reg >= 'A' && reg <= 'Z')
+            {
+                reg = (char)std::tolower((char)reg);
+            }
 
-			if (owner.GetEditor().GetRegisters().find(std::string({ reg })) != owner.GetEditor().GetRegisters().end())
-			{
-				pRegister = &owner.GetEditor().GetRegister(reg);
-			}
+            if (owner.GetEditor().GetRegisters().find(std::string({ reg })) != owner.GetEditor().GetRegisters().end())
+            {
+                pRegister = &owner.GetEditor().GetRegister(reg);
+            }
         }
     }
 
@@ -691,7 +691,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         // too specialized?
         if (HandleExCommand(context.fullCommand))
         {
-            //buffer.GetMode()->Begin(GetCurrentWindow());
+            // buffer.GetMode()->Begin(GetCurrentWindow());
             SwitchMode(DefaultMode());
             ResetCommand();
             return true;
@@ -1629,6 +1629,54 @@ bool ZepMode::GetCommand(CommandContext& context)
             context.commandResult.modeSwitch = EditorMode::Insert;
         }
     }
+    else if (mappedCommand == id_ChangeIn)
+    {
+        if (!context.keymap.captureChars.empty())
+        {
+            auto range = buffer.FindMatchingPair(bufferCursor, context.keymap.captureChars[0]);
+            if (range.first.Valid() && range.second.Valid())
+            {
+                if ((range.first + 1) == range.second)
+                {
+                    // A closed pair (); so insert between them 
+                    GetCurrentWindow()->SetBufferCursor(range.first + 1);
+                    context.commandResult.modeSwitch = EditorMode::Insert;
+                    return true;
+                }
+                else
+                {
+                    GlyphIterator lineEnd = context.buffer.GetLinePos(range.first, LineLocation::LineCRBegin);
+                    if (lineEnd.Valid() && lineEnd < range.second)
+                    {
+						GlyphIterator lineStart = context.buffer.GetLinePos(range.first, LineLocation::LineBegin);
+                        auto offsetStart = (range.first.Index() - lineStart.Index());
+
+                        // If change in a pair of delimeters that are on seperate lines, then
+                        // we remove everything and replace with 2 CRs and an indent based on the start bracket
+                        // Since Zep doesn't auto indent, this is the best we can do for now.
+					    context.replaceRangeMode = ReplaceRangeMode::Replace;
+						context.op = CommandOperation::Replace;
+                        
+                        auto offsetText = std::string(offsetStart + 4, ' ');
+                        auto offsetBracket = std::string(offsetStart, ' ');
+						context.tempReg.text = std::string("\n") + offsetText + "\n" + offsetBracket;
+						context.pRegister = &context.tempReg;
+						context.beginRange = range.first + 1;
+						context.endRange = range.second;
+                        context.cursorAfterOverride = range.first + (long)offsetText.length() + 2;
+						context.commandResult.modeSwitch = EditorMode::Insert;
+                    }
+                    else
+                    {
+                        context.beginRange = range.first + 1; // returned range is inclusive
+                        context.endRange = range.second;
+                        context.op = CommandOperation::Delete;
+                        context.commandResult.modeSwitch = EditorMode::Insert;
+                    }
+                }
+            }
+        }
+    }
     else if (mappedCommand == id_SubstituteLine)
     {
         // Delete whole line and go to insert mode
@@ -1693,7 +1741,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         {
             // Make a new end location
             auto end_loc = loc;
-           
+
             std::string closing;
             std::string opening = std::string(1, delims[findIndex]);
 
@@ -1841,7 +1889,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         // If not a single char, then we are trying to input a special, which isn't allowed
         // TOOD: Cleaner detection of this?
         // Special case for 'j + another character' which is an insert
-        if (true) //context.keymap.commandWithoutGroups.size() == 1 || ((context.keymap.commandWithoutGroups.size() == 2) && context.keymap.commandWithoutGroups[0] == 'j'))
+        if (true) // context.keymap.commandWithoutGroups.size() == 1 || ((context.keymap.commandWithoutGroups.size() == 2) && context.keymap.commandWithoutGroups[0] == 'j'))
         {
             context.beginRange = context.bufferCursor;
             context.tempReg.text = context.keymap.commandWithoutGroups;
@@ -2239,7 +2287,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
         }
         else if (strCommand.find(":ZTestFloatSlider") == 0)
         {
-            //auto line = buffer.GetBufferLine(bufferCursor);
+            // auto line = buffer.GetBufferLine(bufferCursor);
             auto pSlider = std::make_shared<FloatSlider>(GetEditor(), 4);
 
             auto spMarker = std::make_shared<RangeMarker>(buffer);
@@ -2250,7 +2298,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
         }
         else if (strCommand.find(":ZTestColorPicker") == 0)
         {
-            //auto line = buffer.GetBufferLine(bufferCursor);
+            // auto line = buffer.GetBufferLine(bufferCursor);
             auto pPicker = std::make_shared<ColorPicker>(GetEditor());
             auto spMarker = std::make_shared<RangeMarker>(buffer);
             spMarker->SetRange(ByteRange(bufferCursor.Index(), bufferCursor.Peek(1).Index()));

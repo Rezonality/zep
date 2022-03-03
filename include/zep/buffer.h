@@ -140,6 +140,7 @@ public:
     GlyphIterator Find(GlyphIterator start, const uint8_t* pBegin, const uint8_t* pEnd) const;
     GlyphIterator FindFirstCharOf(GlyphIterator& start, const std::string& chars, int32_t& foundIndex, Direction dir) const;
     GlyphIterator FindOnLineMotion(GlyphIterator start, const uint8_t* pCh, Direction dir) const;
+    std::pair<GlyphIterator, GlyphIterator> FindMatchingPair(GlyphIterator start, const uint8_t ch) const;
     GlyphIterator WordMotion(GlyphIterator start, uint32_t searchType, Direction dir) const;
     GlyphIterator EndWordMotion(GlyphIterator start, uint32_t searchType, Direction dir) const;
     GlyphIterator ChangeWordMotion(GlyphIterator start, uint32_t searchType, Direction dir) const;
