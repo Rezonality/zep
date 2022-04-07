@@ -1093,6 +1093,7 @@ bool ZepEditor::RefreshRequired()
 
 bool ZepEditor::GetCursorBlinkState() const
 {
+    if (!isFocused) return false;
     m_lastCursorBlink = (int(timer_get_elapsed_seconds(m_cursorTimer) * 1.75f) & 1) ? true : false;
     return m_lastCursorBlink;
 }

@@ -406,6 +406,9 @@ private:
     // Ensure there is a valid tab window and return it
     ZepTabWindow* EnsureTab();
 
+public:
+    bool isFocused = true;
+
 private:
     ZepDisplay* m_pDisplay;
     IZepFileSystem* m_pFileSystem;
