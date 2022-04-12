@@ -658,7 +658,7 @@ void ZepMode::Undo()
     };
 }
 
-GlyphRange ZepMode::GetInclusiveVisualRange() const
+GlyphRange ZepMode::GetInclusiveVisualRange(bool mayExcludeLast) const
 {
     // Clamp and orient the correct way around
     auto startOffset = m_visualBegin.Clamped();
@@ -669,7 +669,7 @@ GlyphRange ZepMode::GetInclusiveVisualRange() const
         std::swap(startOffset, endOffset);
     }
 
-    if (DefaultMode() == EditorMode::Insert)
+    if (mayExcludeLast && DefaultMode() == EditorMode::Insert)
     {
         // In standard/insert mode, selections exclude the last character
         endOffset.Move(-1);
@@ -997,7 +997,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         context.commandResult.modeSwitch = EditorMode::Visual;
         m_visualBegin = context.buffer.Begin();
         m_visualEnd = context.buffer.End();
-        auto range = GetInclusiveVisualRange();
+        auto range = GetInclusiveVisualRange(false);
         GetCurrentWindow()->GetBuffer().SetSelection(range);
         GetCurrentWindow()->SetBufferCursor(range.second);
         return true;
