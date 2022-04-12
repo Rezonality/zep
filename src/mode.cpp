@@ -2662,6 +2662,11 @@ void ZepMode::AddGlobalKeyMaps()
     keymap_add({ &m_normalMap }, { "<C-i><C-o>" }, id_SwitchToAlternateFile);
     keymap_add({ &m_normalMap }, { "+" }, id_FontBigger);
     keymap_add({ &m_normalMap }, { "-" }, id_FontSmaller);
+    keymap_add({ &m_normalMap, &m_visualMap, &m_insertMap }, { "<C-=>" }, id_FontBigger);
+    keymap_add({ &m_normalMap, &m_visualMap, &m_insertMap }, { "<C-->" }, id_FontSmaller);
+    keymap_add({ &m_insertMap }, { "<C-v>" }, id_StandardPaste);
+    keymap_add({ &m_normalMap, &m_visualMap }, { "<C-S-c>" }, id_StandardCopy);
+    keymap_add({ &m_normalMap, &m_visualMap, &m_insertMap }, { "<C-S-v>" }, id_StandardPaste);
 }
 
 CursorType ZepMode::GetCursorType() const
