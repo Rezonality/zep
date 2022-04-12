@@ -1000,6 +1000,8 @@ bool ZepMode::GetCommand(CommandContext& context)
         m_visualBegin = context.buffer.Begin();
         m_visualEnd = context.buffer.End();
         auto range = GetInclusiveVisualRange(false);
+        if (range.first == range.second)
+            context.commandResult.modeSwitch = DefaultMode();
         GetCurrentWindow()->GetBuffer().SetSelection(range);
         GetCurrentWindow()->SetBufferCursor(range.second);
         return true;
