@@ -731,6 +731,8 @@ bool ZepMode::GetCommand(CommandContext& context)
         return true;
     }
 
+    auto movementLineEndLocation = context.currentMode == EditorMode::Insert ? LineLocation::LineCRBegin : LineLocation::LineLastNonCR;
+
     if (mappedCommand == id_NormalMode)
     {
         // TODO: I think this should be a 'command' which would get replayed with dot;
@@ -948,19 +950,19 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_MotionDown)
     {
-        GetCurrentWindow()->MoveCursorY(context.keymap.TotalCount());
+        GetCurrentWindow()->MoveCursorY(context.keymap.TotalCount(), movementLineEndLocation);
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
     else if (mappedCommand == id_MotionUp)
     {
-        GetCurrentWindow()->MoveCursorY(-context.keymap.TotalCount());
+        GetCurrentWindow()->MoveCursorY(-context.keymap.TotalCount(), movementLineEndLocation);
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
     else if (mappedCommand == id_MotionRight)
     {
-        GetCurrentWindow()->SetBufferCursor(cursorItr.MoveClamped(context.keymap.TotalCount()));
+        GetCurrentWindow()->SetBufferCursor(cursorItr.MoveClamped(context.keymap.TotalCount(), movementLineEndLocation));
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
