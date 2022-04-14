@@ -259,40 +259,25 @@ void ZepSyntax::UpdateSyntax()
             mark(itrFirst, itrLast, ThemeColor::Normal, ThemeColor::None);
         }
 
-        // Find String
-        auto findString = [&](uint8_t ch) {
+        auto findStringLiteral = [&](uint8_t ch) {
             auto itrString = itrFirst;
-            if (*itrString == ch)
+            if (*itrString != ch) return;
+            itrString++;
+
+            for (; itrString < buffer.end(); itrString++)
             {
-                itrString++;
-
-                while (itrString < buffer.end())
-                {
-                    // handle end of string
-                    if (*itrString == ch)
-                    {
-                        itrString++;
-                        mark(itrFirst, itrString, ThemeColor::String, ThemeColor::None);
-                        itrLast = itrString + 1;
-                        break;
-                    }
-
-                    if (itrString < (buffer.end() - 1))
-                    {
-                        auto itrNext = itrString + 1;
-                        // Ignore quoted
-                        if (*itrString == '\\' && *itrNext == ch)
-                        {
-                            itrString++;
-                        }
-                    }
-
+                if (*itrString == '\\') // ignore escaped characters
                     itrString++;
+                else if (*itrString == ch) // handle end of string
+                {
+                    itrLast = itrString + 1;
+                    mark(itrFirst, itrLast, ThemeColor::String, ThemeColor::None);
+                    break;
                 }
             }
         };
-        findString('\"');
-        findString('\'');
+        findStringLiteral('\"');
+        findStringLiteral('\'');
 
         if (m_flags & ZepSyntaxFlags::LispLike)
         {
