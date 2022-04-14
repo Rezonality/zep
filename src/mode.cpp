@@ -707,7 +707,29 @@ bool ZepMode::GetCommand(CommandContext& context)
 
     auto movementLineEndLocation = context.currentMode == EditorMode::Insert ? LineLocation::LineCRBegin : LineLocation::LineLastNonCR;
 
-    if (mappedCommand == id_NormalMode)
+    if (mappedCommand == 0 && m_currentMode == EditorMode::Insert)
+    {
+        if (context.keymap.commandWithoutGroups.size() == 1)
+        {
+            context.beginRange = context.bufferCursor;
+            context.tempReg.text = context.keymap.commandWithoutGroups;
+            context.pRegister = &context.tempReg;
+            context.op = CommandOperation::Insert;
+            context.commandResult.modeSwitch = EditorMode::Insert;
+            context.commandResult.flags |= CommandResultFlags::HandledCount;
+
+            // Insert grouping command if necessary
+            if (context.fullCommand == " ")
+            {
+                context.commandResult.flags = ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
+            }
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else if (mappedCommand == id_NormalMode)
     {
         // TODO: I think this should be a 'command' which would get replayed with dot;
         // instead of special casing it later, we could just insert it into the stream of commands
@@ -1865,7 +1887,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             context.op = CommandOperation::Delete;
         }
     }
-    else if (m_currentMode == EditorMode::Insert)
+    else if (m_currentMode == EditorMode::Insert) // WARNING: no-"id_command" cases are handled as first branch of this if-else
     {
         // If not a single char, then we are trying to input a special, which isn't allowed
         // TOOD: Cleaner detection of this?
