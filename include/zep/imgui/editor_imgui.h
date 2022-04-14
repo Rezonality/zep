@@ -117,6 +117,15 @@ public:
                 io.MouseClicked[0] = false;
             }
         }
+        if (io.MouseWheel)
+        {
+            if (OnMouseWheel(toNVec2f(io.MousePos), io.MouseWheel))
+            {
+                // Hide the mouse scroll from imgui if we handled it
+                io.MouseWheel = 0;
+            }
+        }
+
 
         if (io.KeyCtrl)
         {

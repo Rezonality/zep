@@ -89,6 +89,7 @@ enum class Msg
     MouseMove,
     MouseDown,
     MouseUp,
+    MouseWheel,
     Buffer,
     ComponentChanged,
     Tick,
@@ -110,6 +111,13 @@ public:
         : messageId(id)
         , pos(p)
         , button(b)
+    {
+    }
+    
+    ZepMessage(Msg id, const NVec2f& p, std::string strIn)
+        : messageId(id)
+        , pos(p)
+        , str(strIn)
     {
     }
 
@@ -375,6 +383,7 @@ public:
     bool OnMouseMove(const NVec2f& mousePos);
     bool OnMouseDown(const NVec2f& mousePos, ZepMouseButton button);
     bool OnMouseUp(const NVec2f& mousePos, ZepMouseButton button);
+    bool OnMouseWheel(const NVec2f& mousePos, float scrollDistance);
     const NVec2f GetMousePos() const;
 
     void SetBufferSyntax(ZepBuffer& buffer) const;

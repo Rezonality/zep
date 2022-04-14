@@ -1317,6 +1317,14 @@ bool ZepEditor::OnMouseUp(const NVec2f& mousePos, ZepMouseButton button)
     return handled;
 }
 
+bool ZepEditor::OnMouseWheel(const NVec2f& mousePos, float scrollDistance)
+{
+    m_mousePos = mousePos;
+    bool handled = Broadcast(std::make_shared<ZepMessage>(Msg::MouseWheel, mousePos, std::to_string(scrollDistance)));
+    m_bPendingRefresh = true;
+    return handled;
+}
+
 const NVec2f ZepEditor::GetMousePos() const
 {
     return m_mousePos;

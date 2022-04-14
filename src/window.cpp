@@ -205,7 +205,6 @@ void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
             auto pScroller = dynamic_cast<Scroller*>(payload->pComponent);
             m_textOffsetPx = pScroller->vScrollPosition * m_textSizePx.y;
             UpdateVisibleLineRange();
-            EnsureCursorVisible();
             DisableToolTipTillMove();
         }
     }
@@ -239,6 +238,12 @@ void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
         {
             SetBufferCursor(m_mouseIterator);
         }
+    }
+    else if (payload->messageId == Msg::MouseWheel)
+    {
+        m_textOffsetPx = std::min(m_textSizePx.y, std::max(0.0f, m_textOffsetPx - 5 * stof(payload->str) * GetEditor().GetDisplay().GetFont(ZepTextType::Text).GetPixelHeight()));
+        UpdateVisibleLineRange();
+        DisableToolTipTillMove();
     }
 }
 
