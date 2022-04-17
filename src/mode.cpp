@@ -1887,6 +1887,10 @@ bool ZepMode::GetCommand(CommandContext& context)
             context.op = CommandOperation::Delete;
         }
     }
+    else if (mappedCommand == id_Save)
+    {
+        GetEditor().SaveBuffer(GetCurrentWindow()->GetBuffer());
+    }
     else if (m_currentMode == EditorMode::Insert) // WARNING: no-"id_command" cases are handled as first branch of this if-else
     {
         // If not a single char, then we are trying to input a special, which isn't allowed

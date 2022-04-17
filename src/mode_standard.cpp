@@ -82,10 +82,11 @@ void ZepMode_Standard::Init()
     keymap_add({ &m_insertMap, &m_visualMap }, { "<C-a>" }, id_StandardSelectAll);
 
     keymap_add({ &m_normalMap, &m_visualMap, &m_insertMap }, { "<Escape>" }, id_InsertMode);
-    keymap_add({ &m_normalMap }, { "<Backspace>" }, id_MotionStandardLeft);
 
-    keymap_add({ &m_normalMap, &m_visualMap, &m_insertMap }, { "<C-=>" }, id_FontBigger);
-    keymap_add({ &m_normalMap, &m_visualMap, &m_insertMap }, { "<C-->" }, id_FontSmaller);
+    keymap_add({ &m_visualMap, &m_insertMap }, { "<C-=>" }, id_FontBigger);
+    keymap_add({ &m_visualMap, &m_insertMap }, { "<C-->" }, id_FontSmaller);
+
+    keymap_add({ &m_visualMap, &m_insertMap }, { "<C-s>" }, id_Save);
 }
 
 void ZepMode_Standard::Begin(ZepWindow* pWindow)
