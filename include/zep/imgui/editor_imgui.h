@@ -127,6 +127,10 @@ public:
         {
             mod |= ModifierKey::Ctrl;
         }
+        if (io.KeyAlt)
+        {
+            mod |= ModifierKey::Alt;
+        }
         if (io.KeyShift)
         {
             mod |= ModifierKey::Shift;

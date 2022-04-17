@@ -281,31 +281,17 @@ void ZepMode::SwitchMode(EditorMode currentMode)
 
 std::string ZepMode::ConvertInputToMapString(uint32_t key, uint32_t modifierKeys)
 {
-    std::ostringstream str;
+    bool brackets = false;
+    std::string str;
     bool closeBracket = false;
     if (modifierKeys & ModifierKey::Ctrl)
-    {
-        str << "<C-";
-        if (modifierKeys & ModifierKey::Shift)
-        {
-            // // Add the S- modifier for shift enabled special keys
-            // // We want to avoid adding S- to capitalized (and already shifted)
-            // // keys
-            // if (key < ' ')
-            // {
-                str << "S-";
-            // }
-        }
-        closeBracket = true;
-    }
-    else if (modifierKeys & ModifierKey::Shift)
-    {
-        if (key < ' ')
-        {
-            str << "<S-";
-            closeBracket = true;
-        }
-    }
+        str += "C-";
+    if (modifierKeys & ModifierKey::Alt)
+        str += "A-";
+    if (modifierKeys & ModifierKey::Shift)
+        if (modifierKeys != ModifierKey::Shift || key < ' ')
+            str += "S-";
+    brackets = !str.empty();
 
     std::string mapped;
 
@@ -341,27 +327,15 @@ std::string ZepMode::ConvertInputToMapString(uint32_t key, uint32_t modifierKeys
 
     if (!mapped.empty())
     {
-        if (!closeBracket)
-        {
-            str << "<" << mapped;
-            closeBracket = true;
-        }
-        else
-        {
-            str << mapped;
-        }
+        brackets = true;
+        str += mapped;
     }
     else
     {
-        str << std::string((const char*)&key);
+        str += std::string((const char*)&key);
     }
 
-    if (closeBracket)
-    {
-        str << ">";
-    }
-
-    return str.str();
+    return brackets ? "<" + str + ">" : str;
 }
 
 // Handle a key press, convert it to an input command and context, and return it.
