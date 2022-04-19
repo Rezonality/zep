@@ -189,7 +189,7 @@ const float bottomBorder = 2.0f;
 const float textBorder = 2.0f;
 const float tabToneLine = 5.0f;
 const float tabSpacing = 1.0f;
-const float leftBorderChars = 3;
+const float leftBorderChars = 4;
 
 #define DPI_VEC2(value) (value * GetEditor().GetDisplay().GetPixelScale())
 #define DPI_Y(value) (GetEditor().GetDisplay().GetPixelScale().y * value)
