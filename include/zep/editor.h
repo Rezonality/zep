@@ -449,6 +449,7 @@ private:
 
     // Config
     EditorConfig m_config;
+    ZepPath m_configRoot;
 
     std::unique_ptr<ThreadPool> m_threadPool;
 

@@ -52,6 +52,10 @@ Indexer::Indexer(ZepEditor& editor)
 void Indexer::GetSearchPaths(ZepEditor& editor, const ZepPath& path, std::vector<std::string>& ignore_patterns, std::vector<std::string>& include_patterns, std::string& errors)
 {
     ZepPath config = path / ".zep" / "project.cfg";
+    if (!editor.GetFileSystem().Exists(config))
+    {
+        config = editor.GetConfigRoot() / "zep.cfg";
+    }
 
     if (editor.GetFileSystem().Exists(config))
     {

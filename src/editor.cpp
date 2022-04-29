@@ -41,6 +41,7 @@ ZepEditor::ZepEditor(ZepDisplay* pDisplay, const ZepPath& configRoot, uint32_t f
     : m_pDisplay(pDisplay)
     , m_pFileSystem(pFileSystem)
     , m_flags(flags)
+    , m_configRoot(configRoot)
 {
 
 #if defined(ZEP_FEATURE_CPP_FILE_SYSTEM)
@@ -1343,6 +1344,11 @@ ZepWindow* ZepEditor::EnsureWindow(ZepBuffer& buffer)
 
     auto pTab = EnsureTab();
     return pTab->AddWindow(&buffer);
+}
+    
+const ZepPath& ZepEditor::GetConfigRoot() const
+{
+    return m_configRoot;
 }
 
 } // namespace Zep
