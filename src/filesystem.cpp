@@ -33,7 +33,7 @@ ZepFileSystemCPP::ZepFileSystemCPP(const ZepPath& configPath)
     {
         m_configPath = m_workingDirectory;
     }
-    
+
     ZLOG(INFO, "Config Dir: " << m_configPath.c_str());
     ZLOG(INFO, "Working Dir: " << m_workingDirectory.c_str());
 }
@@ -56,7 +56,7 @@ ZepPath ZepFileSystemCPP::GetConfigPath() const
 {
     return m_configPath;
 }
-    
+
 bool ZepFileSystemCPP::MakeDirectories(const ZepPath& path)
 {
     return cpp_fs::create_directories(path.c_str());
@@ -225,6 +225,15 @@ ZepPath ZepFileSystemCPP::GetSearchRoot(const ZepPath& start, bool& foundGit) co
                 }
 
                 testPath = testPath.parent_path();
+            }
+
+            // Didn't find a sensible search root, so start at the parent folder of the start path if it is a file
+            if (!IsDirectory(startPath))
+            {
+                if (IsDirectory(startPath.parent_path()))
+                {
+                    return startPath.parent_path();
+                }
             }
         }
         return startPath;

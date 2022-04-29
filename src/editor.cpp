@@ -299,6 +299,19 @@ ZepBuffer* ZepEditor::GetEmptyBuffer(const std::string& name, uint32_t fileFlags
     return pBuffer;
 }
 
+ZepBuffer* ZepEditor::FindFileBuffer(const ZepPath& filePath)
+{
+    auto& buffers = GetBuffers();
+    for (auto& buff : buffers)
+    {
+        if (m_pFileSystem->Equivalent(buff->GetFilePath(), filePath))
+        {
+            return buff.get(); 
+        }
+    }
+    return nullptr;
+}
+
 ZepBuffer* ZepEditor::GetFileBuffer(const ZepPath& filePath, uint32_t fileFlags, bool create)
 {
     auto path = GetFileSystem().Exists(filePath) ? GetFileSystem().Canonical(filePath) : filePath;
@@ -393,10 +406,9 @@ ZepTabWindow* ZepEditor::EnsureTab()
     return m_tabWindows[0];
 }
 
-// Reset editor to start state; with a single tab, a single window and an empty unmodified buffer
+// Nothing here currently; we used to create a default tab, now we don't.  It is up to the client
 void ZepEditor::Reset()
 {
-    EnsureTab();
 }
 
 // TODO fix for directory startup; it won't work
@@ -630,7 +642,7 @@ ZepTabWindow* ZepEditor::AddTabWindow()
     m_tabWindows.push_back(pTabWindow);
     m_pActiveTabWindow = pTabWindow;
 
-    auto pEmpty = GetEmptyBuffer("[No ExCommandName]", FileFlags::DefaultBuffer);
+    auto pEmpty = GetEmptyBuffer("[Default]", FileFlags::DefaultBuffer);
     pTabWindow->AddWindow(pEmpty, nullptr, RegionLayoutType::HBox);
 
     return pTabWindow;
@@ -1298,6 +1310,39 @@ ZepBuffer* ZepEditor::GetBufferFromHandle(uint64_t handle)
         }
     }
     return nullptr;
+}
+   
+ZepWindow* ZepEditor::GetActiveWindow() const
+{
+    auto pTabWindow = GetActiveTabWindow();
+    if (pTabWindow)
+    {
+        return pTabWindow->GetActiveWindow(); 
+    }
+    return nullptr;
+}
+
+ZepBuffer* ZepEditor::GetActiveBuffer() const
+{
+    auto pWindow = GetActiveWindow();
+    if (pWindow)
+    {
+        // A window always has an associated buffer
+        return &pWindow->GetBuffer();
+    }
+    return nullptr;
+}
+
+ZepWindow* ZepEditor::EnsureWindow(ZepBuffer& buffer)
+{
+    auto windows = FindBufferWindows(&buffer);
+    if (!windows.empty())
+    {
+        return windows[0];
+    }
+
+    auto pTab = EnsureTab();
+    return pTab->AddWindow(&buffer);
 }
 
 } // namespace Zep

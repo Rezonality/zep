@@ -390,10 +390,13 @@ void ZepMode::AddKeyPress(uint32_t key, uint32_t modifierKeys)
     // We convert CTRL + f to a string: "<C-f>"
     HandleMappedInput(ConvertInputToMapString(key, modifierKeys));
 
-    auto notifier = m_pCurrentWindow->GetBuffer().GetPostKeyNotifier();
-    if (notifier != nullptr)
+    if (m_pCurrentWindow)
     {
-        notifier(key, modifierKeys);
+        auto notifier = m_pCurrentWindow->GetBuffer().GetPostKeyNotifier();
+        if (notifier != nullptr)
+        {
+            notifier(key, modifierKeys);
+        }
     }
 
     timer_restart(m_lastKeyPressTimer);

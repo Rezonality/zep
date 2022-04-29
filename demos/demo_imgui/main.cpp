@@ -514,19 +514,22 @@ int main(int argc, char* argv[])
                     if (openFileName != nullptr)
                     {
                         auto pBuffer = zep.GetEditor().GetFileBuffer(openFileName);
-                        zep.GetEditor().GetActiveTabWindow()->GetActiveWindow()->SetBuffer(pBuffer);
+                        if (pBuffer)
+                        {
+                            zep.GetEditor().EnsureWindow(*pBuffer);
+                        }
                     }
                 }
                 ImGui::EndMenu();
             }
 
-            const auto& buffer = zep.GetEditor().GetActiveTabWindow()->GetActiveWindow()->GetBuffer();
+            const auto pBuffer = zep.GetEditor().GetActiveBuffer();
 
             if (ImGui::BeginMenu("Settings"))
             {
-                if (ImGui::BeginMenu("Editor Mode"))
+                if (ImGui::BeginMenu("Editor Mode", pBuffer))
                 {
-                    bool enabledVim = strcmp(buffer.GetMode()->Name(), Zep::ZepMode_Vim::StaticName()) == 0;
+                    bool enabledVim = strcmp(pBuffer->GetMode()->Name(), Zep::ZepMode_Vim::StaticName()) == 0;
                     bool enabledNormal = !enabledVim;
                     if (ImGui::MenuItem("Vim", "CTRL+2", &enabledVim))
                     {
@@ -560,13 +563,14 @@ int main(int argc, char* argv[])
             if (ImGui::BeginMenu("Window"))
             {
                 auto pTabWindow = zep.GetEditor().GetActiveTabWindow();
-                if (ImGui::MenuItem("Horizontal Split"))
+                bool selected = false;
+                if (ImGui::MenuItem("Horizontal Split", "", &selected, pBuffer != nullptr))
                 {
-                    pTabWindow->AddWindow(&pTabWindow->GetActiveWindow()->GetBuffer(), pTabWindow->GetActiveWindow(), RegionLayoutType::VBox);
+                    pTabWindow->AddWindow(pBuffer, pTabWindow->GetActiveWindow(), RegionLayoutType::VBox);
                 }
-                else if (ImGui::MenuItem("Vertical Split"))
+                else if (ImGui::MenuItem("Vertical Split", "", &selected, pBuffer != nullptr))
                 {
-                    pTabWindow->AddWindow(&pTabWindow->GetActiveWindow()->GetBuffer(), pTabWindow->GetActiveWindow(), RegionLayoutType::HBox);
+                    pTabWindow->AddWindow(pBuffer, pTabWindow->GetActiveWindow(), RegionLayoutType::HBox);
                 }
                 ImGui::EndMenu();
             }

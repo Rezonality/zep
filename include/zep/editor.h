@@ -297,6 +297,9 @@ public:
     ZepBuffer* GetEmptyBuffer(const std::string& name, uint32_t fileFlags = 0);
     void RemoveBuffer(ZepBuffer* pBuffer);
     std::vector<ZepWindow*> FindBufferWindows(const ZepBuffer* pBuffer) const;
+    ZepBuffer* GetActiveBuffer() const;
+    ZepBuffer* FindFileBuffer(const ZepPath& filePath);
+    ZepWindow* EnsureWindow(ZepBuffer& buffer);
 
     void SetRegister(const std::string& reg, const Register& val);
     void SetRegister(const char reg, const Register& val);
@@ -322,6 +325,7 @@ public:
     ZepTabWindow* AddTabWindow();
     void RemoveTabWindow(ZepTabWindow* pTabWindow);
     const tTabWindows& GetTabWindows() const;
+    ZepWindow* GetActiveWindow() const;
 
     void UpdateTabs();
 

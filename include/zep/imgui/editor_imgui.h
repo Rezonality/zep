@@ -127,157 +127,159 @@ public:
             mod |= ModifierKey::Shift;
         }
 
-        auto pWindow = GetActiveTabWindow()->GetActiveWindow();
-        const auto& buffer = pWindow->GetBuffer();
+        auto pBuffer = GetActiveBuffer();
 
-        // Check USB Keys
-        for (auto& usbKey : MapUSBKeys)
+        if (pBuffer)
         {
-            if (ImGui::IsKeyPressed(usbKey.first))
+            // Check USB Keys
+            for (auto& usbKey : MapUSBKeys)
             {
-                buffer.GetMode()->AddKeyPress(usbKey.second, mod);
+                if (ImGui::IsKeyPressed(usbKey.first))
+                {
+                    pBuffer->GetMode()->AddKeyPress(usbKey.second, mod);
+                    return;
+                }
+            }
+
+            if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Tab)))
+            {
+                pBuffer->GetMode()->AddKeyPress(ExtKeys::TAB, mod);
                 return;
             }
-        }
-
-        if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Tab)))
-        {
-            buffer.GetMode()->AddKeyPress(ExtKeys::TAB, mod);
-            return;
-        }
-        if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape)))
-        {
-            buffer.GetMode()->AddKeyPress(ExtKeys::ESCAPE, mod);
-            return;
-        }
-        else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Enter)))
-        {
-            buffer.GetMode()->AddKeyPress(ExtKeys::RETURN, mod);
-            return;
-        }
-        else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete)))
-        {
-            buffer.GetMode()->AddKeyPress(ExtKeys::DEL, mod);
-            return;
-        }
-        else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Home)))
-        {
-            buffer.GetMode()->AddKeyPress(ExtKeys::HOME, mod);
-            return;
-        }
-        else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_End)))
-        {
-            buffer.GetMode()->AddKeyPress(ExtKeys::END, mod);
-            return;
-        }
-        else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Backspace)))
-        {
-            buffer.GetMode()->AddKeyPress(ExtKeys::BACKSPACE, mod);
-            return;
-        }
-        else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_RightArrow)))
-        {
-            buffer.GetMode()->AddKeyPress(ExtKeys::RIGHT, mod);
-            return;
-        }
-        else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_LeftArrow)))
-        {
-            buffer.GetMode()->AddKeyPress(ExtKeys::LEFT, mod);
-            return;
-        }
-        else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_UpArrow)))
-        {
-            buffer.GetMode()->AddKeyPress(ExtKeys::UP, mod);
-            return;
-        }
-        else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_DownArrow)))
-        {
-            buffer.GetMode()->AddKeyPress(ExtKeys::DOWN, mod);
-            return;
-        }
-        else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_PageDown)))
-        {
-            buffer.GetMode()->AddKeyPress(ExtKeys::PAGEDOWN, mod);
-            return;
-        }
-        else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_PageUp)))
-        {
-            buffer.GetMode()->AddKeyPress(ExtKeys::PAGEUP, mod);
-            return;
-        }
-        else if (io.KeyCtrl)
-        {
-            // SDL Remaps to its own scancodes; and since we can't look them up in the standard IMGui list
-            // without modifying the ImGui base code, we have special handling here for CTRL.
-            // For the Win32 case, we use VK_A (ASCII) is handled below
+            if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape)))
+            {
+                pBuffer->GetMode()->AddKeyPress(ExtKeys::ESCAPE, mod);
+                return;
+            }
+            else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Enter)))
+            {
+                pBuffer->GetMode()->AddKeyPress(ExtKeys::RETURN, mod);
+                return;
+            }
+            else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete)))
+            {
+                pBuffer->GetMode()->AddKeyPress(ExtKeys::DEL, mod);
+                return;
+            }
+            else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Home)))
+            {
+                pBuffer->GetMode()->AddKeyPress(ExtKeys::HOME, mod);
+                return;
+            }
+            else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_End)))
+            {
+                pBuffer->GetMode()->AddKeyPress(ExtKeys::END, mod);
+                return;
+            }
+            else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Backspace)))
+            {
+                pBuffer->GetMode()->AddKeyPress(ExtKeys::BACKSPACE, mod);
+                return;
+            }
+            else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_RightArrow)))
+            {
+                pBuffer->GetMode()->AddKeyPress(ExtKeys::RIGHT, mod);
+                return;
+            }
+            else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_LeftArrow)))
+            {
+                pBuffer->GetMode()->AddKeyPress(ExtKeys::LEFT, mod);
+                return;
+            }
+            else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_UpArrow)))
+            {
+                pBuffer->GetMode()->AddKeyPress(ExtKeys::UP, mod);
+                return;
+            }
+            else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_DownArrow)))
+            {
+                pBuffer->GetMode()->AddKeyPress(ExtKeys::DOWN, mod);
+                return;
+            }
+            else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_PageDown)))
+            {
+                pBuffer->GetMode()->AddKeyPress(ExtKeys::PAGEDOWN, mod);
+                return;
+            }
+            else if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_PageUp)))
+            {
+                pBuffer->GetMode()->AddKeyPress(ExtKeys::PAGEUP, mod);
+                return;
+            }
+            else if (io.KeyCtrl)
+            {
+                // SDL Remaps to its own scancodes; and since we can't look them up in the standard IMGui list
+                // without modifying the ImGui base code, we have special handling here for CTRL.
+                // For the Win32 case, we use VK_A (ASCII) is handled below
 #if defined(_SDL_H) || defined(ZEP_USE_SDL)
-            if (ImGui::IsKeyPressed(ZEP_KEY_1))
-            {
-                SetGlobalMode(ZepMode_Standard::StaticName());
-                handled = true;
-            }
-            else if (ImGui::IsKeyPressed(ZEP_KEY_2))
-            {
-                SetGlobalMode(ZepMode_Vim::StaticName());
-                handled = true;
-            }
-            else
-            {
-                for (int ch = ZEP_KEY_A; ch <= ZEP_KEY_Z; ch++)
+                if (ImGui::IsKeyPressed(ZEP_KEY_1))
                 {
-                    if (ImGui::IsKeyPressed(ch))
+                    SetGlobalMode(ZepMode_Standard::StaticName());
+                    handled = true;
+                }
+                else if (ImGui::IsKeyPressed(ZEP_KEY_2))
+                {
+                    SetGlobalMode(ZepMode_Vim::StaticName());
+                    handled = true;
+                }
+                else
+                {
+                    for (int ch = ZEP_KEY_A; ch <= ZEP_KEY_Z; ch++)
                     {
-                        buffer.GetMode()->AddKeyPress((ch - ZEP_KEY_A) + 'a', mod);
+                        if (ImGui::IsKeyPressed(ch))
+                        {
+                            pBuffer->GetMode()->AddKeyPress((ch - ZEP_KEY_A) + 'a', mod);
+                            handled = true;
+                        }
+                    }
+
+                    if (ImGui::IsKeyPressed(ZEP_KEY_SPACE))
+                    {
+                        pBuffer->GetMode()->AddKeyPress(' ', mod);
                         handled = true;
                     }
                 }
-
-                if (ImGui::IsKeyPressed(ZEP_KEY_SPACE))
-                {
-                    buffer.GetMode()->AddKeyPress(' ', mod);
-                    handled = true;
-                }
-            }
 #else
-            if (ImGui::IsKeyPressed('1'))
-            {
-                SetGlobalMode(ZepMode_Standard::StaticName());
-                handled = true;
-            }
-            else if (ImGui::IsKeyPressed('2'))
-            {
-                SetGlobalMode(ZepMode_Vim::StaticName());
-                handled = true;
-            }
-            else
-            {
-                for (int ch = 'A'; ch <= 'Z'; ch++)
+                if (ImGui::IsKeyPressed('1'))
                 {
-                    if (ImGui::IsKeyPressed(ch))
+                    SetGlobalMode(ZepMode_Standard::StaticName());
+                    handled = true;
+                }
+                else if (ImGui::IsKeyPressed('2'))
+                {
+                    SetGlobalMode(ZepMode_Vim::StaticName());
+                    handled = true;
+                }
+                else
+                {
+                    for (int ch = 'A'; ch <= 'Z'; ch++)
                     {
-                        buffer.GetMode()->AddKeyPress(ch - 'A' + 'a', mod);
+                        if (ImGui::IsKeyPressed(ch))
+                        {
+                            pBuffer->GetMode()->AddKeyPress(ch - 'A' + 'a', mod);
+                            handled = true;
+                        }
+                    }
+
+                    if (ImGui::IsKeyPressed(ZEP_KEY_SPACE))
+                    {
+                        pBuffer->GetMode()->AddKeyPress(' ', mod);
                         handled = true;
                     }
                 }
-
-                if (ImGui::IsKeyPressed(ZEP_KEY_SPACE))
-                {
-                    buffer.GetMode()->AddKeyPress(' ', mod);
-                    handled = true;
-                }
-            }
 #endif
-        }
+            }
 
-        if (!handled)
-        {
-            for (int n = 0; n < io.InputQueueCharacters.Size && io.InputQueueCharacters[n]; n++)
+            if (!handled)
             {
-                // Ignore '\r' - sometimes ImGui generates it!
-                if (io.InputQueueCharacters[n] == '\r')
-                    continue;
+                for (int n = 0; n < io.InputQueueCharacters.Size && io.InputQueueCharacters[n]; n++)
+                {
+                    // Ignore '\r' - sometimes ImGui generates it!
+                    if (io.InputQueueCharacters[n] == '\r')
+                        continue;
 
-                buffer.GetMode()->AddKeyPress(io.InputQueueCharacters[n], mod);
+                    pBuffer->GetMode()->AddKeyPress(io.InputQueueCharacters[n], mod);
+                }
             }
         }
     }
