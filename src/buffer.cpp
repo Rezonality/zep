@@ -1549,11 +1549,13 @@ bool ZepBuffer::IsHidden() const
 void ZepBuffer::SetFileFlags(uint32_t flags, bool set)
 {
     m_fileFlags = ZSetFlags(m_fileFlags, flags, set);
+    GetEditor().UpdateTabs();
 }
 
 void ZepBuffer::ClearFileFlags(uint32_t flags)
 {
-    m_fileFlags = ZSetFlags(m_fileFlags, flags, false);
+    m_fileFlags = ZClearFlags(m_fileFlags, flags);
+    GetEditor().UpdateTabs();
 }
 
 bool ZepBuffer::HasFileFlags(uint32_t flags) const
