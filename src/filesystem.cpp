@@ -1,5 +1,5 @@
 #include "zep/filesystem.h"
-#include "zep/editor.h"
+#include "zep/editor.h" // FOR ZEP_UNUSED
 
 #include <fstream>
 
@@ -198,6 +198,11 @@ ZepPath ZepFileSystemCPP::GetSearchRoot(const ZepPath& start, bool& foundGit) co
                 testPath = testPath.parent_path();
             }
 
+            if (!(m_flags & ZepFileSystemFlags::SearchGitRoot))
+            {
+                return testPath;
+            }
+
             while (!testPath.empty() && IsDirectory(testPath))
             {
                 foundGit = false;
@@ -240,6 +245,7 @@ ZepPath ZepFileSystemCPP::GetSearchRoot(const ZepPath& start, bool& foundGit) co
     };
 
     ZepPath workingDir = GetWorkingDirectory();
+
     auto startPath = findStartPath(start);
     if (startPath.empty())
     {
@@ -257,6 +263,12 @@ ZepPath ZepFileSystemCPP::GetSearchRoot(const ZepPath& start, bool& foundGit) co
     }
     return startPath;
 }
+
+void ZepFileSystemCPP::SetFlags(uint32_t flags)
+{
+    m_flags = flags;
+}
+
 } // namespace Zep
 
 #endif // CPP_FILESYSTEM

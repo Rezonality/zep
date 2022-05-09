@@ -11,6 +11,11 @@
 namespace Zep
 {
 
+enum ZepFileSystemFlags
+{
+    SearchGitRoot = (1 << 0)
+};
+
 // Zep's view of the outside world in terms of files
 // Below there is a version of this that will work on most platforms using std's <filesystem> for file operations
 // If you want to expose your app's view of the world, you need to implement this minimal set of functions
@@ -44,6 +49,7 @@ public:
     // Equivalent means 'the same file'
     virtual bool Equivalent(const ZepPath& path1, const ZepPath& path2) const = 0;
     virtual ZepPath Canonical(const ZepPath& path) const = 0;
+    virtual void SetFlags(uint32_t flags) = 0;
 };
 
 // CPP File system - part of the standard C++ libraries
@@ -70,10 +76,12 @@ public:
     virtual bool Exists(const ZepPath& path) const override;
     virtual bool Equivalent(const ZepPath& path1, const ZepPath& path2) const override;
     virtual ZepPath Canonical(const ZepPath& path) const override;
+    virtual void SetFlags(uint32_t flags) override;
 
 private:
     ZepPath m_workingDirectory;
     ZepPath m_configPath;
+    uint32_t m_flags = ZepFileSystemFlags::SearchGitRoot;
 };
 #endif // CPP File system
 

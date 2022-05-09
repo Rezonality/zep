@@ -175,6 +175,7 @@ void ZepEditor::LoadConfig(std::shared_ptr<cpptoml::table> spConfig)
         m_config.widgetMargins.x = (float)spConfig->get_qualified_as<double>("editor.widget_margin_top").value_or(1);
         m_config.widgetMargins.y = (float)spConfig->get_qualified_as<double>("editor.widget_margin_bottom").value_or(1);
         m_config.shortTabNames = spConfig->get_qualified_as<bool>("editor.short_tab_names").value_or(false);
+        m_config.searchGitRoot = spConfig->get_qualified_as<bool>("search.search_git_root").value_or(true);
         auto styleStr = string_tolower(spConfig->get_qualified_as<std::string>("editor.style").value_or("normal"));
         if (styleStr == "normal")
         {
@@ -184,6 +185,9 @@ void ZepEditor::LoadConfig(std::shared_ptr<cpptoml::table> spConfig)
         {
             m_config.style = EditorStyle::Minimal;
         }
+
+        // Forward settings to file system
+        GetFileSystem().SetFlags(m_config.searchGitRoot ? ZepFileSystemFlags::SearchGitRoot : 0);
     }
     catch (...)
     {
@@ -199,20 +203,20 @@ void ZepEditor::SaveConfig(std::shared_ptr<cpptoml::table> spConfig)
         spConfig->insert("editor", table);
     }
 
-    table->insert("show_normal_mode_keystrokes", m_config.showNormalModeKeyStrokes);
-    table->insert("show_indicator_region", m_config.showIndicatorRegion);
-    table->insert("show_line_numbers", m_config.showLineNumbers);
     table->insert("autohide_command_region", m_config.autoHideCommandRegion);
-    table->insert("cursor_line_solid", m_config.cursorLineSolid);
-    table->insert("short_tab_names", m_config.shortTabNames);
     table->insert("background_fade_time", (double)m_config.backgroundFadeTime);
     table->insert("background_fade_wait", (double)m_config.backgroundFadeWait);
-    table->insert("show_scrollbar", m_config.showScrollBar);
-
-    table->insert("line_margin_top", m_config.lineMargins.x);
+    table->insert("cursor_line_solid", m_config.cursorLineSolid);
     table->insert("line_margin_bottom", m_config.lineMargins.y);
-    table->insert("widget_margin_top", m_config.widgetMargins.x);
+    table->insert("line_margin_top", m_config.lineMargins.x);
+    table->insert("short_tab_names", m_config.shortTabNames);
+    table->insert("search_git_root", m_config.searchGitRoot);
+    table->insert("show_indicator_region", m_config.showIndicatorRegion);
+    table->insert("show_line_numbers", m_config.showLineNumbers);
+    table->insert("show_normal_mode_keystrokes", m_config.showNormalModeKeyStrokes);
+    table->insert("show_scrollbar", m_config.showScrollBar);
     table->insert("widget_margin_bottom", m_config.widgetMargins.y);
+    table->insert("widget_margin_top", m_config.widgetMargins.x);
 
     table->insert("style", m_config.style == EditorStyle::Minimal ? "minimal" : "normal");
 
@@ -380,7 +384,6 @@ ZepWindow* ZepEditor::AddSearch()
     pSearchBuffer->SetSyntax(std::make_shared<ZepSyntax>(*pSearchBuffer, search_keywords, search_identifiers, ZepSyntaxFlags::CaseInsensitive));
 
     auto pActiveWindow = GetActiveTabWindow()->GetActiveWindow();
-
     bool hasGit = false;
     auto searchPath = GetFileSystem().GetSearchRoot(pActiveWindow->GetBuffer().GetFilePath(), hasGit);
 

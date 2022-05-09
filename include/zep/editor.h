@@ -222,6 +222,7 @@ struct EditorConfig
     bool autoHideCommandRegion = true;
     bool cursorLineSolid = false;
     bool showNormalModeKeyStrokes = false;
+    bool searchGitRoot = true;
     float backgroundFadeTime = 60.0f;
     float backgroundFadeWait = 60.0f;
 };

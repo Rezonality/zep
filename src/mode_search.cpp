@@ -217,14 +217,27 @@ void ZepMode_Search::OpenSelection(OpenType type)
         {
             auto path = m_spFilePaths->paths[index.second.index];
             auto full_path = m_spFilePaths->root / path;
+
             auto pBuffer = GetEditor().GetFileBuffer(full_path, 0, true);
             if (pBuffer != nullptr)
             {
                 switch (type)
                 {
                 case OpenType::Replace:
-                    m_launchWindow.SetBuffer(pBuffer);
-                    break;
+                {
+                    auto win = GetEditor().FindBufferWindows(pBuffer);
+                    // If they just hit enter, then jump to existing if possible.
+                    if (!win.empty())
+                    {
+                        GetEditor().SetCurrentTabWindow(&win[0]->GetTabWindow());
+                        win[0]->GetTabWindow().SetActiveWindow(win[0]);
+                    }
+                    else
+                    {
+                        m_launchWindow.SetBuffer(pBuffer);
+                    }
+                }
+                 break;
                 case OpenType::VSplit:
                     GetEditor().GetActiveTabWindow()->AddWindow(pBuffer, &m_launchWindow, RegionLayoutType::HBox);
                     break;
