@@ -142,7 +142,10 @@ GlyphIterator& GlyphIterator::Move(long count)
     {
         for (long c = 0; c < count; c++)
         {
-            m_index += utf8_codepoint_length(gapBuffer[m_index]);
+            if (m_index < gapBuffer.size())
+            {
+                m_index += utf8_codepoint_length(gapBuffer[m_index]);
+            }
         }
     }
     else
