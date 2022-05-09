@@ -564,6 +564,18 @@ void ZepEditor::PreviousTabWindow()
     SetCurrentTabWindow(*itr);
 }
 
+void ZepEditor::SetCurrentWindow(ZepWindow* pWindow)
+{
+    if (!pWindow)
+    {
+        return;
+    }
+    auto& tab = pWindow->GetTabWindow();
+    tab.SetActiveWindow(pWindow);
+    
+    SetCurrentTabWindow(&tab);
+}
+
 void ZepEditor::SetCurrentTabWindow(ZepTabWindow* pTabWindow)
 {
     // Sanity

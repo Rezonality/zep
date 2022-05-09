@@ -322,6 +322,7 @@ public:
     void NextTabWindow();
     void PreviousTabWindow();
     void SetCurrentTabWindow(ZepTabWindow* pTabWindow);
+    void SetCurrentWindow(ZepWindow* pWindow);
     ZepTabWindow* GetActiveTabWindow() const;
     ZepTabWindow* AddTabWindow();
     void RemoveTabWindow(ZepTabWindow* pTabWindow);
