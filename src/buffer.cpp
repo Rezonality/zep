@@ -1326,7 +1326,11 @@ void ZepBuffer::ClearRangeMarkers(uint32_t markerType)
 {
     std::set<std::shared_ptr<RangeMarker>> markers;
     ForEachMarker(markerType, Direction::Forward, Begin(), End(), [&](const std::shared_ptr<RangeMarker>& pMarker) {
-        markers.insert(pMarker);
+        // Timed ones will expire on their own; TODO: Add a cleaner mechanism for selection here
+        if (!(pMarker->displayType & RangeMarkerDisplayType::Timed))
+        {
+            markers.insert(pMarker);
+        }
         return true;
     });
 
