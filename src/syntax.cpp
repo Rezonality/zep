@@ -160,7 +160,7 @@ void ZepSyntax::UpdateSyntax()
     }
     else
     {
-        delim = std::string(" \t.\n;(){}[]=:");
+        delim = std::string(" \t.\n;(){}[]=:,!");
     }
 
     // Walk backwards to previous delimiter

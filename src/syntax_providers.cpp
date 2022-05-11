@@ -62,13 +62,13 @@ static std::unordered_set<std::string> glsl_keywords{
     "sampler1D", "sampler2D", "sampler3D", "samplerCube", "sampler1DShadow", "sampler2DShadow", "samplerCubeShadow", "sampler1DArray", "sampler2DArray", "sampler1DArrayShadow", "sampler2DArrayShadow",
     "isampler1D", "isampler2D", "isampler3D", "isamplerCube", "isampler1DArray", "isampler2DArray", "usampler1D", "usampler2D", "usampler3D", "usamplerCube", "usampler1DArray", "usampler2DArray",
     "sampler2DRect", "sampler2DRectShadow", "isampler2DRect", "usampler2DRect", "samplerBuffer", "isamplerBuffer", "usamplerBuffer", "sampler2DMS", "isampler2DMS", "usampler2DMS",
-    "sampler2DMSArray", "isampler2DMSArray", "usampler2DMSArray", "samplerCubeArray", "samplerCubeArrayShadow", "isamplerCubeArray", "usamplerCubeArray", "struct"
+    "sampler2DMSArray", "isampler2DMSArray", "usampler2DMSArray", "samplerCubeArray", "samplerCubeArrayShadow", "isamplerCubeArray", "usamplerCubeArray", "struct",
+    "gl_Position", "binding", "location", "EmitVertex", "EndPrimitive", "gl_in", "triangles", "line_strip", "max_vertices"
 };
 
 static std::unordered_set<std::string> glsl_identifiers = {
     "abort", "abs", "acos", "asin", "atan", "atexit", "atof", "atoi", "atol", "ceil", "clock", "cosh", "ctime", "div", "exit", "fabs", "floor", "fmod", "getchar", "getenv", "isalnum", "isalpha", "isdigit", "isgraph",
     "ispunct", "isspace", "isupper", "kbhit", "log10", "log2", "log", "memcmp", "modf", "pow", "putchar", "putenv", "puts", "rand", "remove", "rename", "sinh", "sqrt", "srand", "strcat", "strcmp", "strerror", "time", "tolower", "toupper",
-    "gl_Position"
 };
 
 static std::unordered_set<std::string> c_keywords = {
@@ -134,6 +134,14 @@ static std::unordered_set<std::string> janet_identifiers = {
     "%=","*=","++","+=","--","-=","->","->>","-?>","-?>>","/=","and","as->","as?->","case","chr","comment","comptime","cond","coro","def-","default","defer","defmacro","defmacro-","defn","defn-","doc","each","eachk","eachp","edefer","for","generate","if-let","if-not","if-with","import","juxt","label","let","loop","match","or","prompt","protect","seq","short-fn","try","unless","use","var-","varfn","when","when-let","when-with","with","with-dyns","with-syms","with-vars"
 };
 
+static std::unordered_set<std::string> scenegraph_keywords = {
+    "pass", "geometry", "vs", "gs", "fs", "model", "scale", "path"
+};
+
+static std::unordered_set<std::string> scenegraph_identifiers = {
+    ":", "="
+};
+
 static std::unordered_set<std::string> tree_keywords = {};
 static std::unordered_set<std::string> tree_identifiers = {};
 static std::unordered_set<std::string> markdown_keywords = {};
@@ -141,11 +149,14 @@ static std::unordered_set<std::string> markdown_identifiers = {};
 
 void RegisterSyntaxProviders(ZepEditor& editor)
 {
-    editor.RegisterSyntaxFactory({ ".vert", ".frag" }, SyntaxProvider{ "gl_shader", tSyntaxFactory([](ZepBuffer* pBuffer) {
+    editor.RegisterSyntaxFactory({ ".scenegraph" }, SyntaxProvider{ "scenegraph", tSyntaxFactory([](ZepBuffer* pBuffer) {
+                                                                          return std::make_shared<ZepSyntax>(*pBuffer, scenegraph_keywords, scenegraph_identifiers);
+                                                                      }) });
+    editor.RegisterSyntaxFactory({ ".vert", ".frag", ".geom" }, SyntaxProvider{ "gl_shader", tSyntaxFactory([](ZepBuffer* pBuffer) {
                                                                           return std::make_shared<ZepSyntax>(*pBuffer, glsl_keywords, glsl_identifiers);
                                                                       }) });
 
-    editor.RegisterSyntaxFactory({ ".hlsl", ".hlsli", ".vs", ".ps" }, SyntaxProvider{ "hlsl_shader", tSyntaxFactory([](ZepBuffer* pBuffer) {
+    editor.RegisterSyntaxFactory({ ".hlsl", ".hlsli", ".vs", ".ps", ".gs" }, SyntaxProvider{ "hlsl_shader", tSyntaxFactory([](ZepBuffer* pBuffer) {
                                                                                          return std::make_shared<ZepSyntax>(*pBuffer, hlsl_keywords, hlsl_identifiers);
                                                                                      }) });
 
