@@ -135,11 +135,11 @@ static std::unordered_set<std::string> janet_identifiers = {
 };
 
 static std::unordered_set<std::string> scenegraph_keywords = {
-    "pass", "geometry", "vs", "gs", "fs", "model", "scale", "path"
+    "pass", "geometry", "vs", "gs", "fs", "model", "scale", "path", "surface", "size", "format", "targets", "clear"
 };
 
 static std::unordered_set<std::string> scenegraph_identifiers = {
-    ":", "="
+    ":", "=", "default", "default_color", "default_depth", "screen_rect"
 };
 
 static std::unordered_set<std::string> tree_keywords = {};
