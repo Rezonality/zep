@@ -204,10 +204,7 @@ public:
         return m_spSyntax.get();
     }
 
-    const std::string& GetName() const
-    {
-        return m_strName;
-    }
+    const std::string& GetName() const;
 
     std::string GetDisplayName() const;
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
@@ -284,7 +281,7 @@ private:
 
     // File and modification info
     ZepPath m_filePath;
-    std::string m_strName;
+    mutable std::string m_strName;
     uint32_t m_fileFlags = 0;
     BufferType m_bufferType = BufferType::Normal;
     GlyphIterator m_lastEditLocation;// = 0;

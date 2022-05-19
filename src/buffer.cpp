@@ -784,6 +784,12 @@ bool ZepBuffer::Save(int64_t& size)
     if (GetEditor().GetFileSystem().Write(m_filePath, &str[0], (size_t)size))
     {
         m_fileFlags = ZClearFlags(m_fileFlags, FileFlags::Dirty);
+
+        if (GetEditor().GetFileSystem().Exists(m_filePath))
+        {
+            // We wrote succesfully, so make sure our path is canonical
+            m_filePath = GetEditor().GetFileSystem().Canonical(m_filePath);
+        }
         return true;
     }
     return false;
@@ -809,6 +815,21 @@ void ZepBuffer::SetFilePath(const ZepPath& path)
     if (GetEditor().GetFileSystem().Exists(testPath))
     {
         testPath = GetEditor().GetFileSystem().Canonical(testPath);
+    }
+    else
+    {
+        if (!path.is_absolute()) 
+        {
+            auto full = GetEditor().GetFileSystem().GetWorkingDirectory() / path;
+            if (GetEditor().GetFileSystem().Exists(full))
+            {
+                testPath = GetEditor().GetFileSystem().Canonical(full);
+            }
+            else
+            {
+                testPath = full;
+            }
+        }
     }
 
     if (!GetEditor().GetFileSystem().Equivalent(testPath, m_filePath))
@@ -1737,6 +1758,15 @@ uint64_t ZepBuffer::ToHandle() const
 ZepBuffer* ZepBuffer::FromHandle(ZepEditor& editor, uint64_t handle)
 {
     return editor.GetBufferFromHandle(handle);
+}
+
+const std::string& ZepBuffer::GetName() const
+{
+    if (!m_filePath.empty() && m_filePath.has_filename())
+    {
+        m_strName = m_filePath.filename().string();
+    }
+    return m_strName;
 }
 
 } // namespace Zep

@@ -228,6 +228,12 @@ void ZepEditor::SaveConfig(std::shared_ptr<cpptoml::table> spConfig)
     */
 }
 
+void ZepEditor::SaveBufferAs(ZepBuffer& buffer, ZepPath path)
+{
+    buffer.SetFilePath(path);
+    SaveBuffer(buffer);
+}
+
 void ZepEditor::SaveBuffer(ZepBuffer& buffer)
 {
     // TODO:
@@ -605,17 +611,7 @@ void ZepEditor::UpdateTabs()
             if (window->GetActiveWindow() == nullptr)
                 continue;
 
-            // Show active buffer in tab as tab name
             auto& buffer = window->GetActiveWindow()->GetBuffer();
-            std::string name = buffer.GetName();
-            if (m_config.shortTabNames)
-            {
-                auto pos = name.find_last_of('.');
-                if (pos != std::string::npos)
-                {
-                    name = name.substr(0, pos);
-                }
-            }
 
             auto tabColor = GetTheme().GetColor(ThemeColor::TabActive);
             if (buffer.HasFileFlags(FileFlags::HasWarnings))
@@ -635,11 +631,12 @@ void ZepEditor::UpdateTabs()
                 tabColor = tabColor * .55f;
                 tabColor.w = 1.0f;
             }
+            auto name = window->GetName();
             auto tabLength = m_pDisplay->GetFont(ZepTextType::Text).GetTextSize((const uint8_t*)name.c_str()).x + DPI_X(textBorder) * 2;
 
             auto spTabRegionTab = std::make_shared<TabRegionTab>();
             spTabRegionTab->color = tabColor;
-            spTabRegionTab->name = name;
+            spTabRegionTab->debugName = name;
             spTabRegionTab->pTabWindow = window;
             spTabRegionTab->fixed_size = NVec2f(tabLength, 0.0f);
             spTabRegionTab->layoutType = RegionLayoutType::HBox;
@@ -1243,8 +1240,17 @@ void ZepEditor::Display()
             textCol.z = 0.0f;
         }
 
+        // I don't think tab window will ever be NULL!
+        // Adding a check here for the time being
+        std::string text;
+        assert(spTabRegionTab->pTabWindow);
+        if (spTabRegionTab->pTabWindow)
+        {
+            text = spTabRegionTab->pTabWindow->GetName();
+        }
+
         // Tab text
-        m_pDisplay->DrawChars(uiFont, rc.topLeftPx + DPI_VEC2(NVec2f(textBorder, 0.0f)), textCol, (const uint8_t*)spTabRegionTab->name.c_str());
+        m_pDisplay->DrawChars(uiFont, rc.topLeftPx + DPI_VEC2(NVec2f(textBorder, 0.0f)), textCol, (const uint8_t*)text.c_str());
     }
 
     // Display the tab

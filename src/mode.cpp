@@ -2260,9 +2260,12 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             if (strTok.size() > 1)
             {
                 auto fname = strTok[1];
-                GetCurrentWindow()->GetBuffer().SetFilePath(fname);
+                GetEditor().SaveBufferAs(GetCurrentWindow()->GetBuffer(), ZepPath(fname));
             }
-            GetEditor().SaveBuffer(GetCurrentWindow()->GetBuffer());
+            else
+            {
+                GetEditor().SaveBuffer(GetCurrentWindow()->GetBuffer());
+            }
         }
         else if (strCommand == ":close" || strCommand == ":clo")
         {

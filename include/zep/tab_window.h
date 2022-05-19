@@ -38,6 +38,7 @@ public:
         return m_pActiveWindow;
     }
     void CloseActiveWindow();
+    std::string GetName() const;
 
     using tWindows = std::vector<ZepWindow*>;
     using tWindowRegions = std::map<ZepWindow*, std::shared_ptr<Region>>;

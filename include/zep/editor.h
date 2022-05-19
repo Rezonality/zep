@@ -244,7 +244,6 @@ public:
 struct TabRegionTab : public Region
 {
     NVec4f color;
-    std::string name;
     ZepTabWindow* pTabWindow = nullptr;
 };
 
@@ -294,6 +293,7 @@ public:
     const tBuffers& GetBuffers() const;
     ZepBuffer* GetMRUBuffer() const;
     void SaveBuffer(ZepBuffer& buffer);
+    void SaveBufferAs(ZepBuffer& buffer, ZepPath filePath);
     ZepBuffer* GetFileBuffer(const ZepPath& filePath, uint32_t fileFlags = 0, bool create = true);
     ZepBuffer* GetEmptyBuffer(const std::string& name, uint32_t fileFlags = 0);
     void RemoveBuffer(ZepBuffer* pBuffer);

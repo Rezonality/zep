@@ -38,6 +38,12 @@ ZepFileSystemCPP::~ZepFileSystemCPP()
 
 void ZepFileSystemCPP::SetWorkingDirectory(const ZepPath& path)
 {
+    if (!IsDirectory(path))
+    {
+        return;
+    }
+    // Set the file system's current working directory too.
+    cpp_fs::current_path(path.string());
     m_workingDirectory = path;
 }
 
