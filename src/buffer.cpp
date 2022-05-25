@@ -776,11 +776,6 @@ bool ZepBuffer::Save(int64_t& size)
         size--;
     }
 
-    if (size <= 0)
-    {
-        return true;
-    }
-
     if (GetEditor().GetFileSystem().Write(m_filePath, &str[0], (size_t)size))
     {
         m_fileFlags = ZClearFlags(m_fileFlags, FileFlags::Dirty);
