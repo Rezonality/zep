@@ -187,6 +187,7 @@ struct SyntaxProvider
 
 const float bottomBorder = 2.0f;
 const float textBorder = 2.0f;
+const float tabToneLine = 5.0f;
 const float tabSpacing = 1.0f;
 const float leftBorderChars = 3;
 
@@ -218,6 +219,7 @@ struct EditorConfig
     float underlineHeight = 3.0f;
     bool showLineNumbers = true;
     bool shortTabNames = true;
+    bool tabToneColors = false;
     bool showIndicatorRegion = true;
     bool autoHideCommandRegion = true;
     bool cursorLineSolid = false;

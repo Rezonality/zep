@@ -4,9 +4,9 @@
 #include <set>
 
 #include "zep/mcommon/file/path.h"
-#include "zep/mcommon/string/stringutils.h"
 #include "zep/mcommon/logger.h"
 #include "zep/mcommon/signals.h"
+#include "zep/mcommon/string/stringutils.h"
 
 #include "zep/glyph_iterator.h"
 
@@ -77,8 +77,8 @@ enum class BufferType
 };
 
 // A really big cursor move; which will likely clamp
-//static const iterator MaxCursorMove = iterator(0xFFFFFFF);
-//const long InvalidByteIndex = -1;
+// static const iterator MaxCursorMove = iterator(0xFFFFFFF);
+// const long InvalidByteIndex = -1;
 
 enum class ExpressionType
 {
@@ -175,6 +175,16 @@ public:
     const std::vector<ByteIndex> GetLineEnds() const
     {
         return m_lineEnds;
+    }
+
+    void SetToneColor(const NVec4f& toneColor)
+    {
+        m_toneColor = toneColor;
+    }
+
+    const NVec4f& GetToneColor() const
+    {
+        return m_toneColor;
     }
 
     void SetSyntax(std::shared_ptr<ZepSyntax> syntax)
@@ -284,7 +294,7 @@ private:
     mutable std::string m_strName;
     uint32_t m_fileFlags = 0;
     BufferType m_bufferType = BufferType::Normal;
-    GlyphIterator m_lastEditLocation;// = 0;
+    GlyphIterator m_lastEditLocation; // = 0;
     uint64_t m_updateCount = 0;
     uint64_t m_lastUpdateTime = 0;
 
@@ -292,6 +302,7 @@ private:
     std::shared_ptr<ZepSyntax> m_spSyntax;
     std::shared_ptr<ZepTheme> m_spOverrideTheme;
     SyntaxProvider m_syntaxProvider;
+    NVec4f m_toneColor = NVec4f(0.0f);
 
     // Selections
     GlyphRange m_selection;
@@ -330,6 +341,5 @@ struct BufferMessage : public ZepMessage
     GlyphIterator startLocation;
     GlyphIterator endLocation;
 };
-
 
 } // namespace Zep
