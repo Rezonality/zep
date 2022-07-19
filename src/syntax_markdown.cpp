@@ -43,7 +43,7 @@ void ZepSyntax_Markdown::UpdateSyntax()
     bool lineBegin = true;
 
     // Walk backwards to previous delimiter
-    while (itrCurrent != itrEnd)
+    while (itrCurrent < itrEnd)
     {
         if (m_stop == true)
         {
@@ -57,7 +57,7 @@ void ZepSyntax_Markdown::UpdateSyntax()
         {
             lineBegin = false;
             auto itrStart = itrCurrent;
-            while (itrCurrent != itrEnd && *itrCurrent != '\n' && *itrCurrent != 0)
+            while (itrCurrent < itrEnd && *itrCurrent != '\n' && *itrCurrent != 0)
             {
                 itrCurrent++;
             }
@@ -69,7 +69,7 @@ void ZepSyntax_Markdown::UpdateSyntax()
             {
                 int inCount = 0;
                 auto itrStart = itrCurrent;
-                while (itrCurrent != itrEnd && *itrCurrent != '\n' && *itrCurrent != 0)
+                while (itrCurrent < itrEnd && *itrCurrent != '\n' && *itrCurrent != 0)
                 {
                     if (*itrCurrent == '[')
                     {

@@ -41,7 +41,7 @@ void ZepSyntax_Tree::UpdateSyntax()
     };
 
     // Walk backwards to previous delimiter
-    while (itrCurrent != itrEnd)
+    while (itrCurrent < itrEnd)
     {
         if (m_stop == true)
         {
