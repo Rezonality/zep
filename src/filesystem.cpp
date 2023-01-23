@@ -11,7 +11,7 @@
 #if defined(ZEP_FEATURE_CPP_FILE_SYSTEM)
 
 #include <filesystem>
-namespace cpp_fs = std::filesystem;
+namespace cpp_fs = std::__fs::filesystem;
 
 namespace Zep
 {
