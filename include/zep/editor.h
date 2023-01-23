@@ -436,7 +436,7 @@ private:
     tBuffers m_buffers;
     uint32_t m_flags = 0;
 
-    mutable std::atomic_bool m_bPendingRefresh = true;
+    mutable std::atomic_bool m_bPendingRefresh = { true };
     mutable bool m_lastCursorBlink = false;
 
     std::vector<std::string> m_commandLines; // Command information, shown under the buffer
