@@ -11,7 +11,12 @@
 #if defined(ZEP_FEATURE_CPP_FILE_SYSTEM)
 
 #include <filesystem>
-namespace cpp_fs = std::__fs::filesystem;
+
+#ifdef __APPLE__
+    namespace cpp_fs = std::__fs::filesystem;
+#else 
+    namespace cpp_fs = std::filesystem;
+#endif
 
 namespace Zep
 {
