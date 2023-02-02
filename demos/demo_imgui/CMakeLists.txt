@@ -29,7 +29,7 @@ set(DEMO_SOURCE_IMGUI
     ${ZEP_ROOT}/include/zep/imgui/editor_imgui.h
     ${META_FILES_TO_INCLUDE}
     )
- 
+
 add_executable (${DEMO_NAME}
     ${OS_BUNDLE}
     ${DEMO_SOURCE_IMGUI})
@@ -49,12 +49,13 @@ if (NOT WIN32)
         ${FREETYPE_INCLUDE_DIRS})
 endif()
 
-target_link_libraries (${DEMO_NAME} 
+target_link_libraries (${DEMO_NAME}
     PRIVATE
     Zep
     ZepExtensions
     MUtils::MUtils
     SDL2::SDL2-static
+    SDL2::SDL2main
     clipp::clipp
     ${PLATFORM_LINKLIBS}
     )
@@ -62,7 +63,7 @@ target_link_libraries (${DEMO_NAME}
 if (WIN32)
     copy_existing_files(${PROJECT_NAME} "${RESOURCE_DEPLOY_FILES}" ${CMAKE_CURRENT_BINARY_DIR}/$(Configuration) )
 else()
-    target_link_libraries (${DEMO_NAME} 
+    target_link_libraries (${DEMO_NAME}
         PRIVATE
         ${FREETYPE_LIBRARIES}
         )
