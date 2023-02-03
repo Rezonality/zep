@@ -3,27 +3,18 @@ IF (BUILD_EXTENSIONS)
 project(ZepExtensions
     VERSION 0.1.0.0)
 
-# If building Rezonality, the mutils project will be in the vcpkg
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_LIST_DIR}/../../vcpkg/packages/mutils_${VCPKG_TARGET_TRIPLET}/lib/cmake/mutils)
-
-find_package(SDL2 REQUIRED)
-find_package(gsl-lite REQUIRED)
-find_package(SDL2 REQUIRED)
-find_package(fmt REQUIRED)
-find_package(gl3w REQUIRED)
+find_package(gsl-lite CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
+find_package(gl3w CONFIG REQUIRED)
 find_package(freetype CONFIG REQUIRED)
-find_package(unofficial-concurrentqueue REQUIRED)
-find_package(tinyfiledialogs REQUIRED)
-find_package(MUtils REQUIRED)
-
-if (WIN32)
-add_compile_options("$<$<CONFIG:RELWITHDEBINFO>:-DTRACY_ENABLE=1>")
-add_compile_options("$<$<CONFIG:DEBUG>:-DTRACY_ENABLE=1>")
-endif()
+find_package(unofficial-concurrentqueue CONFIG REQUIRED)
+find_package(tinyfiledialogs CONFIG REQUIRED)
+find_package(MUtils CONFIG REQUIRED)
+find_package(imgui CONFIG REQUIRED)
 
 SET(EXTENSION_ROOT ${CMAKE_CURRENT_LIST_DIR})
 
-SET(ORCA_SRC 
+SET(ORCA_SRC
     ${EXTENSION_ROOT}/orca/mode_orca.cpp
     ${EXTENSION_ROOT}/orca/mode_orca.h
     ${EXTENSION_ROOT}/orca/orca.cpp
@@ -32,7 +23,7 @@ SET(ORCA_SRC
     ${EXTENSION_ROOT}/orca/syntax_orca.h
     )
 
-SET(REPL_SRC 
+SET(REPL_SRC
     ${EXTENSION_ROOT}/repl/mode_repl.cpp
     ${EXTENSION_ROOT}/repl/mode_repl.h)
 
@@ -54,12 +45,13 @@ target_include_directories(ZepExtensions
     PUBLIC
         $<INSTALL_INTERFACE:include/zep/extensions> # This is the target path in the installer
         $<BUILD_INTERFACE:${ZEP_ROOT}/extensions> # This is the target path in the installe
-    ) 
+    )
 
-target_link_libraries (${PROJECT_NAME} 
+target_link_libraries (${PROJECT_NAME}
     PUBLIC
     Zep
     MUtils::MUtils
+    imgui::imgui
     SDL2::SDL2-static
     SDL2::SDL2main
     ${PLATFORM_LINKLIBS})

@@ -8,12 +8,13 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_PREFIX_PATH $ENV{QT_INSTALL_LOCATION})
 
 # Note: The SDL2 package is required by the MUtils dependency; it isn't really used for the Qt demo
-find_package(SDL2 REQUIRED)
+find_package(fmt CONFIG REQUIRED)
+find_package(MUtils CONFIG REQUIRED)
 
 # Used Packages
 include(CMakePackageConfigHelpers)
 
-find_package(MUtils REQUIRED)
+find_package(MUtils CONFIG REQUIRED)
 find_package(Qt6 COMPONENTS Core Widgets Gui REQUIRED)
 
 set_property(GLOBAL PROPERTY AUTOMOC_FOLDER Automoc)
@@ -24,13 +25,13 @@ find_program(WINDEPLOYQT_EXECUTABLE NAMES windeployqt HINTS ${QTDIR} ENV QTDIR P
 find_program(MACDEPLOYQT_EXECUTABLE NAMES macdeployqt HINTS ${QTDIR} ENV QTDIR PATH_SUFFIXES bin)
 
 set(DEMO_NAME ZepDemo-qt)
-project(ZepDemo-qt 
+project(ZepDemo-qt
     VERSION 0.1.0.0)
 
 set(IS_QT YES)
 add_project_meta(META_FILES_TO_INCLUDE IS_QT)
 
-set(RESOURCE_FOLDER 
+set(RESOURCE_FOLDER
     ${DEMO_ROOT}/demo_qt/res)
 
 set(RESOURCE_FILES
@@ -64,14 +65,14 @@ target_include_directories(${DEMO_NAME}
         ${M3RDPARTY_DIR}
         ${ZEP_ROOT}/include)
 
-target_link_libraries(${DEMO_NAME} PRIVATE 
-    MUtils::MUtils 
+target_link_libraries(${DEMO_NAME} PRIVATE
+    MUtils::MUtils
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
     Zep
     ZepExtensions
-    #efsw::efsw 
+    #efsw::efsw
     ${PLATFORM_LINKLIBS})
 
 target_compile_options(${DEMO_NAME} PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W3>) # Workaround Qt + MSVC 19 compile issue in release build.
@@ -103,7 +104,7 @@ install(TARGETS ${DEMO_NAME}
     )
 
 else()
-install(TARGETS ${DEMO_NAME} 
+install(TARGETS ${DEMO_NAME}
     EXPORT zep-targets
     COMPONENT binaries
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -163,7 +164,7 @@ if(TARGET Qt6::windeployqt)
 endif()
 
 source_group (Zep FILES ${DEMO_SOURCE_QT})
-source_group(qt\\AutoMoc FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_automoc.cpp ) 
-source_group(qt\\AutoMoc REGULAR_EXPRESSION "(mocs_*|qrc_.*|QtAwesome.*)" ) 
+source_group(qt\\AutoMoc FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_automoc.cpp )
+source_group(qt\\AutoMoc REGULAR_EXPRESSION "(mocs_*|qrc_.*|QtAwesome.*)" )
 
 endif() # Build QT
