@@ -3,14 +3,8 @@ IF (BUILD_EXTENSIONS)
 project(ZepExtensions
     VERSION 0.1.0.0)
 
-find_package(gsl-lite CONFIG REQUIRED)
-find_package(fmt CONFIG REQUIRED)
-find_package(gl3w CONFIG REQUIRED)
-find_package(freetype CONFIG REQUIRED)
 find_package(unofficial-concurrentqueue CONFIG REQUIRED)
-find_package(tinyfiledialogs CONFIG REQUIRED)
-find_package(MUtils CONFIG REQUIRED)
-find_package(imgui CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
 
 SET(EXTENSION_ROOT ${CMAKE_CURRENT_LIST_DIR})
 
@@ -19,8 +13,16 @@ SET(ORCA_SRC
     ${EXTENSION_ROOT}/orca/mode_orca.h
     ${EXTENSION_ROOT}/orca/orca.cpp
     ${EXTENSION_ROOT}/orca/orca.h
+    ${EXTENSION_ROOT}/orca/time_provider.cpp
+    ${EXTENSION_ROOT}/orca/time_provider.h
+    ${EXTENSION_ROOT}/orca/time_utils.h
     ${EXTENSION_ROOT}/orca/syntax_orca.cpp
     ${EXTENSION_ROOT}/orca/syntax_orca.h
+    ${EXTENSION_ROOT}/orca/orca-c/field.c
+    ${EXTENSION_ROOT}/orca/orca-c/gbuffer.c
+    ${EXTENSION_ROOT}/orca/orca-c/sim.c
+    ${EXTENSION_ROOT}/orca/orca-c/vmio.c
+    ${EXTENSION_ROOT}/orca/orca-c/vmio.h
     )
 
 SET(REPL_SRC
@@ -50,10 +52,8 @@ target_include_directories(ZepExtensions
 target_link_libraries (${PROJECT_NAME}
     PUBLIC
     Zep
-    MUtils::MUtils
-    imgui::imgui
-    SDL2::SDL2-static
-    SDL2::SDL2main
+    unofficial::concurrentqueue::concurrentqueue
+    fmt::fmt-header-only
     ${PLATFORM_LINKLIBS})
 
 # Set locations for components

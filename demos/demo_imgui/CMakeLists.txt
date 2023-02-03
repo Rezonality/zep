@@ -9,27 +9,45 @@ project(ZepDemo
 
 add_project_meta(META_FILES_TO_INCLUDE IS_IMGUI)
 
-find_package(gsl-lite CONFIG REQUIRED)
-find_package(unofficial-concurrentqueue CONFIG REQUIRED)
 find_package(tinyfiledialogs CONFIG REQUIRED)
-find_package(fmt CONFIG REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
 find_package(clipp CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(gl3w CONFIG REQUIRED)
-find_package(freetype CONFIG REQUIRED)
-find_package(MUtils CONFIG REQUIRED)
-
+find_package(Freetype CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
 
 include(CMakePackageConfigHelpers)
 
+set(CLIP_SOURCE
+    ${DEMO_ROOT}/demo_imgui/clip/clip.cpp
+    ${DEMO_ROOT}/demo_imgui/clip/image.cpp
+    )
+
+if(WIN32)
+    LIST(APPEND CLIP_SOURCE
+        ${DEMO_ROOT}/demo_imgui/clip/clip_win.cpp)
+endif()
+if (UNIX)
+    if (APPLE)
+        LIST(APPEND CLIP_SOURCE
+            ${DEMO_ROOT}/demo_imgui/clip/clip_osx.mm)
+    else()
+        LIST(APPEND CLIP_SOURCE
+            ${DEMO_ROOT}/demo_imgui/clip/clip_x11.cpp)
+    endif() # APPLE
+endif() # UNIX
+
 set(DEMO_SOURCE_IMGUI
     ${DEMO_ROOT}/demo_imgui/main.cpp
+    ${DEMO_ROOT}/demo_imgui/dpi/dpi.cpp
+    ${DEMO_ROOT}/demo_imgui/dpi/dpi.h
     ${DEMO_ROOT}/demo_imgui/CMakeLists.txt
     ${ZEP_ROOT}/include/zep/imgui/display_imgui.h
     ${ZEP_ROOT}/include/zep/imgui/editor_imgui.h
     ${META_FILES_TO_INCLUDE}
-    )
+    ${CLIP_SOURCE}
+)
 
 add_executable (${DEMO_NAME}
     ${OS_BUNDLE}
@@ -41,6 +59,7 @@ target_include_directories(${DEMO_NAME}
     PRIVATE
     ${ZEP_ROOT}/include
     ${ZEP_ROOT}/demos
+    ${ZEP_ROOT}/demos/demo_imgui/dpi
     ${FREETYPE_INCLUDE_DIRS}
     ${SDL2_ROOT_DIR}
     ${CMAKE_BINARY_DIR}
@@ -58,9 +77,11 @@ target_link_libraries (${DEMO_NAME}
     ZepExtensions
     $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
     $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
-    MUtils::MUtils
     imgui::imgui
     clipp::clipp
+    unofficial::gl3w::gl3w
+    fmt::fmt-header-only
+    tinyfiledialogs::tinyfiledialogs
     ${PLATFORM_LINKLIBS}
     )
 

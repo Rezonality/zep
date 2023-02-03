@@ -19,7 +19,6 @@
 
 #include <fmt/format.h>
 
-using namespace MUtils;
 namespace Zep
 {
 

@@ -129,6 +129,7 @@ std::ostream& operator<<(std::ostream& str, const NVec2<T>& v)
 
 using NVec2f = NVec2<float>;
 using NVec2i = NVec2<long>;
+using NVec2int = NVec2<int>;
 
 template <class T>
 struct NVec4

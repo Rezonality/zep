@@ -1109,10 +1109,10 @@ void ZepEditor::UpdateSize()
     m_commandRegion->fixed_size = NVec2f(0.0f, commandSize);
     m_commandRegion->flags = RegionFlags::Fixed;
 
-    int toneSize = 0; 
+    int toneSize = 0;
     if (GetEditor().GetConfig().tabToneColors)
     {
-        toneSize = DPI_X(tabToneLine);
+        toneSize = int(DPI_X(tabToneLine));
     }
 
     // Add tabs for extra windows

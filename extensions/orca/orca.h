@@ -11,15 +11,15 @@
 #pragma warning(default : 4127)
 #endif
 
-#include <mutils/time/time_provider.h>
+#include "time_provider.h"
 
 #ifdef _WIN32
 #pragma warning(disable : 4505)
 #endif
 extern "C" {
-#include <orca-c/field.h>
-#include <orca-c/gbuffer.h>
-#include <orca-c/sim.h>
+#include "orca-c/field.h"
+#include "orca-c/gbuffer.h"
+#include "orca-c/sim.h"
 }
 #ifdef _WIN32
 #pragma warning(default : 4505)
@@ -105,7 +105,7 @@ inline Glyph_class glyph_class_of(Glyph glyph)
     return Glyph_class_unknown;
 }
 
-class Orca : public MUtils::ITimeConsumer
+class Orca : public ITimeConsumer
 {
 public:
     Orca();

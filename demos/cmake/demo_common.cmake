@@ -8,10 +8,7 @@ if (NOT ICON_NAME)
     set(ICON_NAME AppIcon)
 endif()
 
-find_package(MUtils CONFIG REQUIRED)
-
 set(RESOURCE_DEPLOY_FILES
-    ${MUTILS_INCLUDE_DIR}/chibi/init-7.scm
     ${ZEP_ROOT}/zep.cfg)
 
 if (APPLE)

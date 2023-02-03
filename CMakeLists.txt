@@ -27,7 +27,7 @@ if (BUILD_DEMOS OR BUILD_EXTENSIONS)
 if (WIN32)
 set(VCPKG_TARGET_TRIPLET x64-windows-static-md)
 endif()
-set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../vcpkg/scripts/buildsystems/vcpkg.cmake CACHE STRING "Vcpkg toolchain file")
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake CACHE STRING "Vcpkg toolchain file")
 endif()
 
 project(Zep
@@ -56,7 +56,7 @@ configure_file(${ZEP_ROOT}/cmake/config_app.h.cmake ${CMAKE_BINARY_DIR}/config_a
 
 include(GNUInstallDirs)
 
-# Set all compiler flags 
+# Set all compiler flags
 include(cmake/all.cmake)
 
 # Functions for file copying

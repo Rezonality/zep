@@ -6,9 +6,6 @@
 #include "orca.h"
 #include "syntax_orca.h"
 
-#include <mutils/time/profiler.h>
-
-using namespace MUtils;
 using namespace std::chrono;
 
 namespace Zep
@@ -131,8 +128,6 @@ void Orca::WriteToBuffer(ZepBuffer* pBuffer, ZepWindow& window)
         return;
     }
 
-    PROFILE_SCOPE(Orca_WriteToBuffer);
-
     std::unique_lock<std::mutex> lock(m_mutex);
 
     m_lastCursorPos = window.BufferToDisplay();
@@ -168,8 +163,6 @@ void Orca::WriteToBuffer(ZepBuffer* pBuffer, ZepWindow& window)
 // Generate the syntax information for the whole buffer
 void Orca::BuildSyntax()
 {
-    PROFILE_SCOPE(Orca_BuildSyntax);
-
     m_syntax.resize((m_field.width + 1) * m_field.height);
 
     for (long y = 0; y < m_field.height; y++)
@@ -344,8 +337,6 @@ void Orca::Tick()
     {
         return;
     }
-
-    PROFILE_SCOPE(Orca_Tick);
 
     auto& tp = TimeProvider::Instance();
 

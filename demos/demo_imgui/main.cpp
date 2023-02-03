@@ -13,15 +13,14 @@
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl.h>
 
-#include <clip/clip.h>
-#include <mutils/time/time_provider.h>
+#include "clip/clip.h" // clipboard
+#include "orca/time_provider.h"
 
-#include <clipp.h>
-#include <mutils/chibi/chibi.h>
-#include <mutils/file/file.h>
-#include <mutils/time/profiler.h>
-#include <mutils/ui/dpi.h>
+#include <clipp.h> // command line params
+#include <zep/mcommon/file/path.h>
 #include <zep/mcommon/animation/timer.h>
+
+#include "dpi/dpi.h"
 
 #include "config_app.h"
 
@@ -53,17 +52,13 @@
 #include <FileWatcher/watcher.h>
 #endif
 #define _MATH_DEFINES_DEFINED
-#include "chibi/eval.h"
 
 #include "demo_common.h"
 
 using namespace Zep;
-using namespace MUtils;
 
 namespace
 {
-
-Chibi scheme;
 
 const std::string shader = R"R(
 #version 330 core
@@ -129,8 +124,6 @@ struct ZepContainerImGui : public IZepComponent, public IZepReplProvider
         : spEditor(std::make_unique<ZepEditor_ImGui>(configPath, GetPixelScale()))
         //, fileWatcher(spEditor->GetFileSystem().GetConfigPath(), std::chrono::seconds(2))
     {
-        chibi_init(scheme, SDL_GetBasePath());
-
         // ZepEditor_ImGui will have created the fonts for us; but we need to build
         // the font atlas
         auto fontPath = std::string(SDL_GetBasePath()) + "Cousine-Regular.ttf";
@@ -234,17 +227,19 @@ struct ZepContainerImGui : public IZepComponent, public IZepReplProvider
         float time = 1.0f;
         buffer.BeginFlash(time, flashType, range);
 
-        auto ret = chibi_repl(scheme, NULL, eval);
-        ret = RTrim(ret);
-
-        GetEditor().SetCommandText(ret);
+        //* TODO: Parse input/supply output.
+        //auto ret = chibi_repl(scheme, NULL, eval);
+        //ret = RTrim(ret);
+        //GetEditor().SetCommandText(ret);
+        auto ret = "Done";
         return ret;
     }
 
     virtual std::string ReplParse(const std::string& str) override
     {
-        auto ret = chibi_repl(scheme, NULL, str);
-        ret = RTrim(ret);
+        //auto ret = chibi_repl(scheme, NULL, str);
+        //ret = RTrim(ret);
+        auto ret = "Done";
         return ret;
     }
 
@@ -396,8 +391,8 @@ int main(int argc, char* argv[])
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     SDL_GL_SetSwapInterval(0); // Enable vsync
 
-    MUtils::NVec2i winSize;
-    MUtils::NVec2i targetSize;
+    NVec2int winSize;
+    NVec2int targetSize;
     SDL_GetWindowSize(window, &winSize.x, &winSize.y);
     SDL_GL_GetDrawableSize(window, &targetSize.x, &targetSize.y);
 
@@ -428,19 +423,17 @@ int main(int argc, char* argv[])
     // Setup style
     ImGui::StyleColorsDark();
 
-    ZLOG(INFO, "DPI Scale: " << MUtils::NVec2f(GetPixelScale().x, GetPixelScale().y));
+    ZLOG(INFO, "DPI Scale: " << NVec2f(GetPixelScale().x, GetPixelScale().y));
 
     bool show_demo_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    MUtils::TimeProvider::Instance().StartThread();
+    TimeProvider::Instance().StartThread();
 
     // Main loop
     bool done = false;
     while (!done && !zep.quit)
     {
-        Profiler::NewFrame();
-
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
         // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
@@ -625,10 +618,9 @@ int main(int argc, char* argv[])
     }
 
     // Quit the ticker
-    MUtils::TimeProvider::Instance().Free();
+    TimeProvider::Instance().Free();
 
     zep.Destroy();
-    chibi_destroy(scheme);
 
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
