@@ -1,7 +1,7 @@
 [Zep](https://github.com/Rezonality/zep) - A Mini Editor
 ===================================================================================================
 [![Builds](https://github.com/Rezonality/zep/workflows/Builds/badge.svg)](https://github.com/Rezonality/zep/actions?query=workflow%3ABuilds)
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Resonality/zep/blob/master/LICENSE) 
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Resonality/zep/blob/master/LICENSE)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/b14633031dfe49498719ad58ff96328a)](https://www.codacy.com/gh/Rezonality/zep/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Rezonality/zep&amp;utm_campaign=Badge_Grade)
 [![Codacy Badge](https://app.codacy.com/project/badge/Coverage/b14633031dfe49498719ad58ff96328a)](https://www.codacy.com/gh/Rezonality/zep/dashboard?utm_source=github.com&utm_medium=referral&utm_content=Rezonality/zep&utm_campaign=Badge_Coverage)
 [![codecov](https://codecov.io/gh/Rezonality/zep/branch/master/graph/badge.svg?token=sKdLmDPcW7)](https://codecov.io/gh/Rezonality/zep)
@@ -26,7 +26,7 @@ The demos for Qt and ImGui require dditional packages, but these aren't required
 Key Features:
 * Modal 'vim' or modeless 'standard' editing styles; built around a common core of functionality.
 * Keymapper for extending existing modes or adding new commands
-* Qt or ImGui rendering (and extensible) 
+* Qt or ImGui rendering (and extensible)
 * Terminal-style text wrapping and work in progress non-wrapped mode
 * Splits and tabs
 * A simple syntax highlighting engine with pluggable secondary highlighters
@@ -52,7 +52,7 @@ Though I have limited time to work on Zep, I do try to move it forward at York D
 
 One of my targets for Zep is to get it to the point where I can use it as a standalone editor for common tasks.  It is almost equivalent to how I'd use NeoVim day-to-day.  The other target is to use Zep in a live coding environment.
 
-Pull requests are appreciated and encouraged ;) 
+Pull requests are appreciated and encouraged ;)
 
 Screenshots
 -----------
@@ -85,7 +85,7 @@ level mode code uses the buffer commands to move around inside the text.  A Glyp
 
 A command layer supplies functions to add and remove text, and supports undo; all buffer modifications are done with these simple commands.
 
-The Mode layer supports editing text using Vim commands, or using standard notepad-like commands. 
+The Mode layer supports editing text using Vim commands, or using standard notepad-like commands.
 
 A Syntax layer monitors the buffer and provides file-specific syntax coloring. Syntax highlighting can be easily extended
 
@@ -102,8 +102,8 @@ See [Vim Mode](https://github.com/Rezonality/zep/wiki/Vim-Mode), or the top of t
 You can follow the build buttons above to see the build process or look in the travis or appveyor scripts.
 
 ## 1. Get the Source
-git clone https://github.com/Rezonality/zep zep  
-cd zep  
+git clone https://github.com/Rezonality/zep zep
+cd zep
 
 ## 2. Add extra packages
 If you don't have them already, the following packages are required, depending on your system.  Note, that SDL is part of the build,
@@ -114,8 +114,8 @@ The Qt app builds on linux, but is not part of the travis setup yet.
 
 ## Linux
 ```
-sudo apt install cmake  
-sudo apt install git  
+sudo apt install cmake
+sudo apt install git
 ```
 
 ## Mac
@@ -153,21 +153,15 @@ target_include_directories(myapp
 ```
 
 # 5. Building the Demo
-The Zep demo now requires my external MUtils library in order to run.  To make the demo, hop over to https://github.com/Rezonality/mutils and build/install it.
-Here's an example script for the complete process to build the support library and all of the zep demos.
+Here's an example script for the complete process to build the zep demos.  The vcpkg prebuilds are only required for the demo, not the core library
 
 # Windows
 ```
-# MUtils
-git clone https://github.com/Rezonality/mutils
-cd mutils
-prebuild.bat
-config.bat
-build.bat
-
 # Zep
 git clone https://github.com/Rezonality/zep
 cd zep
+git submodule update --init
+prebuild.bat
 set QT_INSTALL_LOCATION=C:\Qt\5.10.0\msvc2017_64 (for example - required for building QT)
 config.bat OR config_qt.bat or config_imgui.bat (for qt and imgui respectively)
 build.bat
@@ -175,27 +169,16 @@ build.bat
 
 # GNU/Linux
 
-## Install dependencies 
+## Install dependencies
 
 ```bash
 sudo apt install cmake git
 ```
 
-## MUtils
-```bash
-git clone https://github.com/Rezonality/mutils
-cd mutils
-chmod +x prebuild.sh
-chmod +x config.sh
-chmod +x build.sh
-./config.sh
-./build.sh
-```
-
 ## Qt (required is using build_qt.sh)
 ```bash
 # for Qt/Demo support
-sudo apt install qt5-default 
+sudo apt install qt5-default
 # Adapt to your installation path
 set QT_INSTALL_LOCATION="/usr/include/x86_64-linux-gnu/qt5"
 ```
@@ -204,7 +187,9 @@ set QT_INSTALL_LOCATION="/usr/include/x86_64-linux-gnu/qt5"
 ```bash
 git clone https://github.com/Rezonality/zep
 cd zep
-# Optional argument are qt and imgui 
+git submodule update --init
+prebuild.bat
+# Optional argument are qt and imgui
 ./config.sh ( qt | imgui )
 ./build.sh
 ```
@@ -219,8 +204,8 @@ Libraries
 -----------
 This sample uses SDL for the window setup, and ImGui for the rendering, or Qt.
 
-[SDL2: Media/Window Layer](https://www.libsdl.org/download-2.0.php)  
+[SDL2: Media/Window Layer](https://www.libsdl.org/download-2.0.php)
 SDL2 is used to get a window on the screen in a cross platform way, and for OpenGL to generate a Context.
 
-[ImGui: 2D GUI](https://github.com/ocornut/imgui)  
+[ImGui: 2D GUI](https://github.com/ocornut/imgui)
 ImGui is a great 2D User interface for 3D applications

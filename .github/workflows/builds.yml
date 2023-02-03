@@ -57,22 +57,11 @@ jobs:
         sudo apt-get install lcov
       if: matrix.os == 'ubuntu-latest'
 
-    - name: Build MUtils
-      working-directory: ${{runner.workspace}}
-      shell: bash
-      run: |
-        git clone https://github.com/Rezonality/mutils
-        cd mutils
-        ./prebuild.${{matrix.script}}
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        cmake --build . --config ${{ matrix.build_type }}
-        cmake --install . --config ${{ matrix.build_type }} --prefix ../../vcpkg/packages/mutils_${{matrix.package_type}}
-    
     - name: Build
       working-directory: ${{github.workspace}}
       run: |
+        git submodule update --init
+        ./prebuild.${{matrix.script}}
         mkdir build
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
@@ -82,6 +71,8 @@ jobs:
     - name: Build (Coverage)
       working-directory: ${{github.workspace}}
       run: |
+        git submodule update --init
+        ./prebuild.${{matrix.script}}
         mkdir build
         cd build
         cmake .. -DENABLE_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug
@@ -106,7 +97,7 @@ jobs:
         lcov --remove coverage.info '/usr/local/include/*' '/usr/include/*' 'build' 'm3rdparty' 'cmake' 'scripts' -o coverage.info
         genhtml coverage.info
         bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.info
-                    
+
     - name: Archive Coverage HTML
       uses: actions/upload-artifact@v2
       if: matrix.build_type == 'Coverage'
