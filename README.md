@@ -31,7 +31,7 @@ Key Features:
 * Splits and tabs
 * A simple syntax highlighting engine with pluggable secondary highlighters
 * Theme support
-* A Repl for integrating a command/scripting language (the demo project integrates a Scheme interpreter)
+* A Repl for integrating a command/scripting language (the demo project integrates a Janet Lang interpreter - :ZRepl to get into it, try (+ 2 2))
 * CTRL+P search for quick searching files with fuzzy matching
 * Text Markers for highlighting errors, etc.
 * No dependencies, cross platform, small library, single header, static library or installed library option.
