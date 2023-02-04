@@ -1,7 +1,5 @@
-#include <mutils/chibi/chibi.h>
-#include <mutils/time/time_provider.h>
+#include <orca/time_provider.h>
 #define _MATH_DEFINES_DEFINED
-#include "chibi/eval.h"
 
 #include <QCommandLineParser>
 #include <QMenu>
@@ -53,11 +51,6 @@ void main()
 }
 )R";
 
-namespace
-{
-Chibi scheme;
-}
-
 MainWindow::MainWindow()
 {
     QCommandLineParser parser;
@@ -68,7 +61,7 @@ MainWindow::MainWindow()
 
     parser.process(*qApp);
 
-    chibi_init(scheme, qApp->applicationDirPath().toStdString());
+    //chibi_init(scheme, qApp->applicationDirPath().toStdString());
 
     auto* pWidget = new ZepWidget_Qt(this, qApp->applicationDirPath().toStdString(), DemoFontPtSize);
 
@@ -156,9 +149,7 @@ MainWindow::~MainWindow()
 
 std::string MainWindow::ReplParse(const std::string& str)
 {
-    auto ret = chibi_repl(scheme, NULL, str);
-    ret = RTrim(ret);
-    return ret;
+    return "TODO: Use ImGui Demo for Repl Implementation";
 }
 
 std::string MainWindow::ReplParse(ZepBuffer& buffer, const GlyphIterator& cursorOffset, ReplParseType type)
@@ -166,9 +157,7 @@ std::string MainWindow::ReplParse(ZepBuffer& buffer, const GlyphIterator& cursor
     ZEP_UNUSED(cursorOffset);
     ZEP_UNUSED(type);
 
-    auto ret = chibi_repl(scheme, NULL, buffer.GetWorkingBuffer().string());
-    ret = RTrim(ret);
-    return ret;
+    return "TODO: Use ImGui Demo for Repl Implementation";
 }
 
 bool MainWindow::ReplIsFormComplete(const std::string& str, int& indent)

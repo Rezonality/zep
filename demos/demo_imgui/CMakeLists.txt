@@ -40,6 +40,7 @@ endif() # UNIX
 
 set(DEMO_SOURCE_IMGUI
     ${DEMO_ROOT}/demo_imgui/janet/janet.c
+    ${DEMO_ROOT}/demo_imgui/janet_utils.cpp
     ${DEMO_ROOT}/demo_imgui/main.cpp
     ${DEMO_ROOT}/demo_imgui/dpi/dpi.cpp
     ${DEMO_ROOT}/demo_imgui/dpi/dpi.h
