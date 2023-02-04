@@ -39,6 +39,7 @@ if (UNIX)
 endif() # UNIX
 
 set(DEMO_SOURCE_IMGUI
+    ${DEMO_ROOT}/demo_imgui/janet/janet.c
     ${DEMO_ROOT}/demo_imgui/main.cpp
     ${DEMO_ROOT}/demo_imgui/dpi/dpi.cpp
     ${DEMO_ROOT}/demo_imgui/dpi/dpi.h
@@ -60,6 +61,7 @@ target_include_directories(${DEMO_NAME}
     ${ZEP_ROOT}/include
     ${ZEP_ROOT}/demos
     ${ZEP_ROOT}/demos/demo_imgui/dpi
+    ${ZEP_ROOT}/demos/demo_imgui/janet
     ${FREETYPE_INCLUDE_DIRS}
     ${SDL2_ROOT_DIR}
     ${CMAKE_BINARY_DIR}

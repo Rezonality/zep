@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <thread>
 
+#include "janet/janet.h"
 #include <imgui.h>
 
 #include <imgui_freetype.h>
@@ -56,6 +57,14 @@
 #include "demo_common.h"
 
 using namespace Zep;
+
+namespace Zep
+{
+// API
+void janet_init(const std::string& basePath);
+JanetTable* janet_get();
+std::string janet_run(const std::string& strText, std::string& strPath, Janet* out);
+} // namespace Zep
 
 namespace
 {
@@ -124,6 +133,7 @@ struct ZepContainerImGui : public IZepComponent, public IZepReplProvider
         : spEditor(std::make_unique<ZepEditor_ImGui>(configPath, GetPixelScale()))
         //, fileWatcher(spEditor->GetFileSystem().GetConfigPath(), std::chrono::seconds(2))
     {
+        janet_init("");
         // ZepEditor_ImGui will have created the fonts for us; but we need to build
         // the font atlas
         auto fontPath = std::string(SDL_GetBasePath()) + "Cousine-Regular.ttf";
@@ -227,19 +237,20 @@ struct ZepContainerImGui : public IZepComponent, public IZepReplProvider
         float time = 1.0f;
         buffer.BeginFlash(time, flashType, range);
 
-        //* TODO: Parse input/supply output.
-        //auto ret = chibi_repl(scheme, NULL, eval);
-        //ret = RTrim(ret);
-        //GetEditor().SetCommandText(ret);
-        auto ret = "Done";
+        Janet out;
+        auto ret = janet_run(eval, std::string("main"), &out);
+        ret = RTrim(ret);
+
+        GetEditor().SetCommandText(ret);
         return ret;
     }
 
     virtual std::string ReplParse(const std::string& str) override
     {
-        //auto ret = chibi_repl(scheme, NULL, str);
-        //ret = RTrim(ret);
-        auto ret = "Done";
+        Janet out;
+        auto ret = janet_run(str, std::string("main"), &out);
+        ret = RTrim(ret);
+
         return ret;
     }
 
@@ -336,7 +347,6 @@ struct ZepContainerImGui : public IZepComponent, public IZepReplProvider
 
     bool quit = false;
     std::unique_ptr<ZepEditor_ImGui> spEditor;
-    //FileWatcher fileWatcher;
 };
 
 int main(int argc, char* argv[])

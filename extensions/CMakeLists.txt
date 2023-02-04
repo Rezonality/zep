@@ -27,7 +27,8 @@ SET(ORCA_SRC
 
 SET(REPL_SRC
     ${EXTENSION_ROOT}/repl/mode_repl.cpp
-    ${EXTENSION_ROOT}/repl/mode_repl.h)
+    ${EXTENSION_ROOT}/repl/mode_repl.h
+)
 
 SET(SOURCES ${REPL_SRC} ${ORCA_SRC})
 SET(ZEP_EXTENSION_SRC ${SOURCES} PARENT_SCOPE)
