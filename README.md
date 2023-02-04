@@ -7,7 +7,7 @@
 [![codecov](https://codecov.io/gh/Rezonality/zep/branch/master/graph/badge.svg?token=sKdLmDPcW7)](https://codecov.io/gh/Rezonality/zep)
 [![Gitter](https://badges.gitter.im/Rezonality/Zep.svg)](https://gitter.im/Rezonality/Zep?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-Zep is a simple embeddable editor, with a rendering agnostic design and optional Vim mode.  It is built as a shared modern-cmake library, using a single header include, or as a static library.  The core library is dependency-free (the demo application requires an installed package), and it is possible just to copy the files into your project and build it.  Out of the box Zep can draw to a Qt Widget or an an ImGui window - useful for embedding in a game engine.  A simple syntax highlighting engine is provided, and can easily be extended. Basic theming support is included, and window tabs and vertical/horizontal splits are also available.  Zep is 'opinionated' in how it does things, but is easy to modify and supports many common features.  It is heavliy influenced by Vim, but has a good notepad-style editing mode too.  A simple search feature (Ctrl+P) is a powerful way to find things, and a Repl mode is useful for implementing a console for game scripting.  Intended to eventually sit inside a live-coding environment, Zep also has a minimal mode and several configuration options which can be set in a simple toml-format file.
+Zep is a simple embeddable editor, with a rendering agnostic design and optional Vim mode.  It is built as a shared modern-cmake library, using a single header include, or as a static library.  The core library is dependency-free (the demo application requires an installed package), and it is possible just to copy the files into your project and build it.  Out of the box Zep can draw to a Qt Widget or an ImGui window - useful for embedding in a game engine.  A simple syntax highlighting engine is provided, and can easily be extended. Basic theming support is included, and window tabs and vertical/horizontal splits are also available.  Zep is 'opinionated' in how it does things, but is easy to modify and supports many common features.  It is heavily influenced by Vim, but has a good notepad-style editing mode too.  A simple search feature (Ctrl+P) is a powerful way to find things, and a Repl mode is useful for implementing a console for game scripting.  Intended to eventually sit inside a live-coding environment, Zep also has a minimal mode and several configuration options which can be set in a simple toml-format file.
 
 For an example of building Zep into a simple ImGui application, see the example project, which shows how to add Zep as a submodule and build it as a library or just include a single header file: [Integrating Zep](https://github.com/cmaughan/zep_imgui)
 
@@ -17,7 +17,7 @@ For an example of building Zep into a simple ImGui application, see the example 
 ## Screenshot
 ![ImGui](screenshots/sample.png)
 
-Zep supports the standard editing keystrokes you'll find in most editors, along with a reasonable subset of modal Vim editing as an option.  The demo project lets you switch between the editing modes on the fly.  Zep is not meant to replace Vim.  I don't have a lifetime spare to write that, but it has most of the functionality I use day to day, and anything missing gets added over time.  A keymapper enables configuration of Zep outside the standard modes offered.
+Zep supports the standard editing keystrokes you'll find in most editors, along with a reasonable subset of modal Vim editing as an option.  The demo project lets you switch between the editing modes on the fly.  Zep is not meant to replace Vim.  I don't have a lifetime spare to write that, but it has most of the functionality I use day to day, and anything missing gets added over time.  A key-mapper enables configuration of Zep outside the standard modes offered.
 
 Zep is ideally suited to embedding in a game engine, as an in-game editor, or anywhere you need a simple editor without a massive dependency on something more substantial like NeoVim.  The core library is dependency free, small, and requires only a modern C++ compiler.  Zep can be included in your project building a dependency-free modern cmake library, and setting `Zep::Zep` in `target_link_libraries`, or as a single-header include. A header-only implementation of the ImGui and Qt backends is provided as an addendum to the core library; this enables Zep to render in an ImGui or Qt environment.  After building and installing Zep on your system, only 2 lines are required in your CMakeLists to use it.  An alternative would be to just copy and build the source files for the core library into your project.
 
@@ -33,7 +33,7 @@ Key Features:
 * Theme support
 * A Repl for integrating a command/scripting language (the demo project integrates a Scheme interpreter)
 * CTRL+P search for quick searching files with fuzzy matching
-* Text Markers for highlighing errors, etc.
+* Text Markers for highlighting errors, etc.
 * No dependencies, cross platform, small library, single header, static library or installed library option.
 * Builds on VC 2017, GCC 6, Clang. C++14 is the basic requirement
 * A work in progress extension mode to support an Orca-like environment
@@ -46,7 +46,7 @@ New Features, recently added:
 * /search support
 
 Current Limitations:
-* Vim mode is limited to common operations, not the extensive set of commmands typical in Neovim/Vim.  There are now a considerable number of commands, but notably ex commands are missing, such as %s///g for find/replace.
+* Vim mode is limited to common operations, not the extensive set of commands typical in Neovim/Vim.  There are now a considerable number of commands, but notably ex commands are missing, such as %s///g for find/replace.
 
 Though I have limited time to work on Zep, I do try to move it forward at York Developer's regular Code and Coffee sessions. Zep was my 2018 project but has already proved quite popular, and I try to throw more features in when I can.  There are over 200 unit tests for the editing modes.  This project started mainly as an experiment and a learning exercise.  I like the idea of a programmer building programmer tools for their own use, just as carpenters used to build their toolbox.
 
@@ -79,7 +79,7 @@ Embedded in a Game Engine:
 Zep is built from simple interacting layers for simplicity.
 
 ### Text
-The text layer manages manipulation of text in a single buffer.  At the bottom level, a gap buffer struture maintains the text information.
+The text layer manages manipulation of text in a single buffer.  At the bottom level, a gap buffer structure maintains the text information.
 The buffer layer is responsible for saving and loading text, and supporting simple search and navigation within the text.  Much of the higher
 level mode code uses the buffer commands to move around inside the text.  A GlyphIterator is used within the buffer in order to walk along it in UTF8 code-points.
 
@@ -106,8 +106,8 @@ git clone https://github.com/Rezonality/zep zep
 cd zep
 
 ## 2. Add extra packages
-If you don't have them already, the following packages are required, depending on your system.  Note, that SDL is part of the build,
-and not installed seperately.  It is only used for the demo, not the core editor library or unit tests. Qt is required to build the Qt demo on linux.
+If you don't have them already, the following packages are required, depending on your system.  Note, that SDL is part of the prebuild via vcpkg,
+and not installed separately.  It is only used for the demo, not the core editor library or unit tests. Qt is required to build the Qt demo on linux.
 If you have compilation problems, you might need to investigate the compiler you are using.
 Ubuntu 16 & 17 both have a recent enough version for it to work.  On Ubuntu 14 I tend to upgrade to g++6
 The Qt app builds on linux, but is not part of the travis setup yet.
@@ -125,7 +125,7 @@ brew install git
 ```
 
 # 3 Install the Zep library as a package
-Here is a typical build instruction for windows, assuming you have just synced this repo:
+Here is a typical build instruction for windows, assuming you have just synced this repo (see later if you just want to play with a working demo executable):
 ```
 mkdir build
 cd build
@@ -202,7 +202,8 @@ Type `CTest --verbose` in the build folder to run unit tests.
 
 Libraries
 -----------
-This sample uses SDL for the window setup, and ImGui for the rendering, or Qt.
+The libraries are pulled in by the prebuild step, which uses vcpkg to collect and build them cross-platform.
+The ImGui demo sample uses SDL for the window setup, and ImGui for the rendering.  The Qt sample just uses Qt.
 
 [SDL2: Media/Window Layer](https://www.libsdl.org/download-2.0.php)
 SDL2 is used to get a window on the screen in a cross platform way, and for OpenGL to generate a Context.
