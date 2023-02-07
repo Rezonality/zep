@@ -15,5 +15,11 @@ This project and everyone participating in it is governed by the [Zep Code of Co
 
 ## How Can I Contribute?
 
-This document is incomplete, but either report an issue or send a pull request!
+This document is incomplete, but either report an issue or send a pull request!  In your pull request, add the following comment:
+
+`@all-contributors please add @your-user-name for code`
+
+This will add you to the list of the contributors on the readme page, once your PR is accepted.  You can also use 'docs', 'tests', etc. depending on your contribution.
+
+
 
