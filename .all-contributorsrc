@@ -32,6 +32,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "totalgee",
+      "name": "Glen Fraser",
+      "avatar_url": "https://avatars.githubusercontent.com/u/306082?v=4",
+      "profile": "http://glenfraser.com",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
