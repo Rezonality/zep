@@ -1,6 +1,6 @@
 [Zep](https://github.com/Rezonality/zep) - A Mini Editor
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-3-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 ===================================================================================================
 [![Builds](https://github.com/Rezonality/zep/workflows/Builds/badge.svg)](https://github.com/Rezonality/zep/actions?query=workflow%3ABuilds)
@@ -225,6 +225,7 @@ ImGui is a great 2D User interface for 3D applications
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/jacobfriedman"><img src="https://avatars.githubusercontent.com/u/697310?v=4?s=100" width="100px;" alt="Jacob Friedman"/><br /><sub><b>Jacob Friedman</b></sub></a><br /><a href="https://github.com/Rezonality/zep/commits?author=jacobfriedman" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/FredrikAleksander"><img src="https://avatars.githubusercontent.com/u/14351056?v=4?s=100" width="100px;" alt="FredrikAleksander"/><br /><sub><b>FredrikAleksander</b></sub></a><br /><a href="https://github.com/Rezonality/zep/commits?author=FredrikAleksander" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://sam.hocevar.net/"><img src="https://avatars.githubusercontent.com/u/245089?v=4?s=100" width="100px;" alt="Sam Hocevar"/><br /><sub><b>Sam Hocevar</b></sub></a><br /><a href="https://github.com/Rezonality/zep/commits?author=samhocevar" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://glenfraser.com"><img src="https://avatars.githubusercontent.com/u/306082?v=4?s=100" width="100px;" alt="Glen Fraser"/><br /><sub><b>Glen Fraser</b></sub></a><br /><a href="https://github.com/Rezonality/zep/commits?author=totalgee" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
