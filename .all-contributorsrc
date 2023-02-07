@@ -14,6 +14,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "samhocevar",
+      "name": "Sam Hocevar",
+      "avatar_url": "https://avatars.githubusercontent.com/u/245089?v=4",
+      "profile": "http://sam.hocevar.net/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
