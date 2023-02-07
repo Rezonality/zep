@@ -50,6 +50,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "ABelliqueux",
+      "name": "Schnappy",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1405255?v=4",
+      "profile": "https://schnappy.xyz",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
