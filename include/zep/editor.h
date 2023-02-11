@@ -264,6 +264,7 @@ public:
 
     void Reset();
     ZepBuffer* InitWithFileOrDir(const std::string& str);
+    ZepBuffer* InitWithFile(const std::string& str);
     ZepBuffer* InitWithText(const std::string& strName, const std::string& strText);
 
     ZepMode* GetGlobalMode();

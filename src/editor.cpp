@@ -451,6 +451,12 @@ ZepBuffer* ZepEditor::InitWithFileOrDir(const std::string& str)
         }
     }
 
+    return InitWithFile(str);
+}
+
+ZepBuffer* ZepEditor::InitWithFile(const std::string& str)
+{
+    ZepPath startPath(str);
     // Get a buffer for the start file; even if the path is not valid; it can be created but not saved
     auto pFileBuffer = GetFileBuffer(startPath);
     auto pTab = EnsureTab();
