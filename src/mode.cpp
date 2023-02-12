@@ -113,8 +113,7 @@ void CommandContext::GetCommandRegisters()
     // No specified register, so use the default
     if (keymap.RegisterName() == 0)
     {
-        registers.push('*');
-        registers.push('+');
+        registers.push('"');
     }
     else
     {
@@ -1361,11 +1360,11 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_StandardPaste)
     {
+        context.pRegister = &GetEditor().GetRegister('+');
         if (context.currentMode == EditorMode::Visual)
         {
             context.replaceRangeMode = ReplaceRangeMode::Replace;
             context.op = CommandOperation::Replace;
-            context.pRegister = &GetEditor().GetRegister('"');
             auto range = GetInclusiveVisualRange();
             context.beginRange = range.first;
             context.endRange = range.second.Peek(1);
