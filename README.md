@@ -2,7 +2,6 @@
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-6-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
-===================================================================================================
 [![Builds](https://github.com/Rezonality/zep/workflows/Builds/badge.svg)](https://github.com/Rezonality/zep/actions?query=workflow%3ABuilds)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Resonality/zep/blob/master/LICENSE)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/b14633031dfe49498719ad58ff96328a)](https://www.codacy.com/gh/Rezonality/zep/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Rezonality/zep&amp;utm_campaign=Badge_Grade)
