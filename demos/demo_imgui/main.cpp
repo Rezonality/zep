@@ -63,7 +63,7 @@ namespace Zep
 // API
 void janet_init(const std::string& basePath);
 JanetTable* janet_get();
-std::string janet_run(const std::string& strText, std::string& strPath, Janet* out);
+std::string janet_run(const std::string& strText, std::string strPath, Janet* out);
 } // namespace Zep
 
 namespace
@@ -238,7 +238,7 @@ struct ZepContainerImGui : public IZepComponent, public IZepReplProvider
         buffer.BeginFlash(time, flashType, range);
 
         Janet out;
-        auto ret = janet_run(eval, std::string("main"), &out);
+        auto ret = janet_run(eval, "main", &out);
         ret = RTrim(ret);
 
         GetEditor().SetCommandText(ret);
@@ -248,7 +248,7 @@ struct ZepContainerImGui : public IZepComponent, public IZepReplProvider
     virtual std::string ReplParse(const std::string& str) override
     {
         Janet out;
-        auto ret = janet_run(str, std::string("main"), &out);
+        auto ret = janet_run(str, "main", &out);
         ret = RTrim(ret);
 
         return ret;

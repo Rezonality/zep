@@ -68,7 +68,7 @@ static Janet io_printf(int32_t argc, Janet* argv)
     return janet_wrap_nil();
 }
 
-std::string janet_run(const std::string& strText, std::string& strPath, Janet* out)
+std::string janet_run(const std::string& strText, std::string strPath, Janet* out)
 {
     JanetParser parser;
     int errflags = 0, done = 0;

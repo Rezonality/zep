@@ -27,7 +27,6 @@
 #include "demo_common.h"
 
 using namespace Zep;
-using namespace MUtils;
 
 const std::string shader = R"R(
 #version 330 core
