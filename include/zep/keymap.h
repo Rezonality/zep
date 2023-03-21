@@ -142,6 +142,8 @@ DECLARE_COMMANDID(MotionGotoLine)
 DECLARE_COMMANDID(PreviousTabWindow)
 DECLARE_COMMANDID(NextTabWindow)
 
+DECLARE_COMMANDID(Save)
+
 // Standard mode commands
 DECLARE_COMMANDID(StandardCopy)
 DECLARE_COMMANDID(StandardPaste)
