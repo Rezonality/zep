@@ -59,6 +59,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "fezjo",
+      "name": "Jozef Číž",
+      "avatar_url": "https://avatars.githubusercontent.com/u/26350212?v=4",
+      "profile": "https://github.com/fezjo",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
