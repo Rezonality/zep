@@ -39,6 +39,9 @@ public:
     virtual void AddOverStrikeMaps();
     virtual void AddCopyMaps();
     virtual void AddPasteMaps();
+    virtual void AddGlobalKeyMaps();
+    virtual void AddNavigationKeyMaps(bool allowInVisualMode = true);
+    virtual void AddSearchKeyMaps();
     virtual bool UsesRelativeLines() const override { return true; }
 };
 

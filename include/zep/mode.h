@@ -202,9 +202,6 @@ protected:
 
     virtual void UpdateVisualSelection();
 
-    void AddGlobalKeyMaps();
-    void AddNavigationKeyMaps(bool allowInVisualMode = true);
-    void AddSearchKeyMaps();
     void AddKeyMapWithCountRegisters(const std::vector<KeyMap*>& maps, const std::vector<std::string>& commands, const StringId& id);
 
     virtual void ClampCursorForMode();
