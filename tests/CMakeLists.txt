@@ -19,7 +19,7 @@ enable_testing()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGTEST_HAS_TR1_TUPLE=0")
 
 set (TEST_SOURCES
-    ${M3RDPARTY_DIR}/googletest/googletest/src/gtest-all.cc
+    ${ZEP_ROOT}/tests/googletest/googletest/src/gtest-all.cc
     ${TEST_SOURCES}
 )
 
@@ -32,10 +32,10 @@ target_link_libraries (unittests PRIVATE Zep ${PLATFORM_LINKLIBS} ${CMAKE_THREAD
 add_test(unittests unittests)
 
 target_include_directories(unittests PRIVATE
-    ${M3RDPARTY_DIR}/googletest/googletest/include
-    ${M3RDPARTY_DIR}/googletest/googletest
-    ${M3RDPARTY_DIR}/googletest/googlemock/include
-    ${M3RDPARTY_DIR}/googletest/googlemock
+    ${ZEP_ROOT}/tests/googletest/googletest/include
+    ${ZEP_ROOT}/tests/googletest/googletest
+    ${ZEP_ROOT}/tests/googletest/googlemock/include
+    ${ZEP_ROOT}/tests/googletest/googlemock
     ${CMAKE_BINARY_DIR}
     ${ZEP_ROOT}/include
 )

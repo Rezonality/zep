@@ -7,7 +7,8 @@
 #include "zep/mcommon/logger.h"
 #include "zep/mcommon/threadutils.h"
 
-#include "mode_repl.h"
+#include "zep/mode_repl.h"
+
 namespace Zep
 {
 

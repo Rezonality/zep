@@ -7,7 +7,6 @@ option(BUILD_QT "Make Qt Library" OFF)
 option(BUILD_IMGUI "Make Imgui Library" OFF)
 option(BUILD_DEMOS "Make the demo app" ON)
 option(BUILD_TESTS "Make the tests" ON)
-option(BUILD_EXTENSIONS "Make the extension library (required for demo)" OFF)
 option(ZEP_FEATURE_CPP_FILE_SYSTEM "Default File system enabled" ON)
 
 # Global Settings
@@ -23,7 +22,7 @@ set(gtest_force_shared_crt ON CACHE BOOL "Always use msvcrt.dll" FORCE)
 set(CMAKE_DEBUG_POSTFIX "-debug")
 set(CMAKE_RELWITHDEBINFO_POSTFIX "-reldbg")
 
-if (BUILD_DEMOS OR BUILD_EXTENSIONS)
+if (BUILD_DEMOS)
 if (WIN32)
 set(VCPKG_TARGET_TRIPLET x64-windows-static-md)
 endif()
@@ -42,15 +41,10 @@ if (ZEP_FEATURE_CPP_FILE_SYSTEM)
 add_definitions(-DZEP_FEATURE_CPP_FILE_SYSTEM)
 endif()
 
-if (BUILD_DEMOS)
-SET(BUILD_EXTENSIONS ON)
-endif()
-
 # config_app.h checks
 # This makes a config_shared.h file which can be included for system settings
 #  Must be after setting up the platforms
 set (ZEP_ROOT ${CMAKE_CURRENT_LIST_DIR})
-set (M3RDPARTY_DIR ${CMAKE_CURRENT_LIST_DIR}/m3rdparty)
 
 configure_file(${ZEP_ROOT}/cmake/config_app.h.cmake ${CMAKE_BINARY_DIR}/config_app.h)
 
@@ -60,13 +54,12 @@ include(GNUInstallDirs)
 include(cmake/all.cmake)
 
 # Functions for file copying
-include(m3rdparty/cmake/copy_files.cmake)
+include(cmake/copy_files.cmake)
 
 enable_testing()
 
 # The main library
 add_subdirectory(src)
-add_subdirectory(extensions)
 add_subdirectory(tests)
 add_subdirectory(demos)
 

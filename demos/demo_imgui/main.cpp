@@ -35,12 +35,10 @@
 #include "zep/imgui/editor_imgui.h"
 #include "zep/mode_standard.h"
 #include "zep/mode_vim.h"
+#include "zep/mode_repl.h"
 #include "zep/tab_window.h"
 #include "zep/theme.h"
 #include "zep/window.h"
-
-#include "repl/mode_repl.h"
-
 #include "zep/regress.h"
 
 #include <tinyfiledialogs/tinyfiledialogs.h>

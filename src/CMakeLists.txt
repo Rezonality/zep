@@ -23,6 +23,7 @@ ${ZEP_ROOT}/include/zep/mode_search.h
 ${ZEP_ROOT}/include/zep/mode_standard.h
 ${ZEP_ROOT}/include/zep/mode_tree.h
 ${ZEP_ROOT}/include/zep/mode_vim.h
+${ZEP_ROOT}/include/zep/mode_repl.h
 ${ZEP_ROOT}/include/zep/regress.h
 ${ZEP_ROOT}/include/zep/scroller.h
 ${ZEP_ROOT}/include/zep/splits.h
@@ -53,6 +54,7 @@ ${ZEP_ROOT}/src/mode_search.cpp
 ${ZEP_ROOT}/src/mode_standard.cpp
 ${ZEP_ROOT}/src/mode_tree.cpp
 ${ZEP_ROOT}/src/mode_vim.cpp
+${ZEP_ROOT}/src/mode_repl.cpp
 ${ZEP_ROOT}/src/regress.cpp
 ${ZEP_ROOT}/src/scroller.cpp
 ${ZEP_ROOT}/src/splits.cpp
