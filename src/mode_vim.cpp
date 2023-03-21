@@ -111,6 +111,88 @@ void ZepMode_Vim::Init()
     SetupKeyMaps();
 }
 
+void ZepMode_Vim::AddNavigationKeyMaps(bool allowInVisualMode)
+{
+    std::vector<KeyMap*> navigationMaps = { &m_normalMap };
+    if (allowInVisualMode)
+    {
+        navigationMaps.push_back(&m_visualMap);
+    }
+
+    // Up/Down/Left/Right
+    AddKeyMapWithCountRegisters(navigationMaps, { "j", "<Down>" }, id_MotionDown);
+    AddKeyMapWithCountRegisters(navigationMaps, { "k", "<Up>" }, id_MotionUp);
+    AddKeyMapWithCountRegisters(navigationMaps, { "l", "<Right>" }, id_MotionRight);
+    AddKeyMapWithCountRegisters(navigationMaps, { "h", "<Left>" }, id_MotionLeft);
+
+    // Page Motions
+    AddKeyMapWithCountRegisters(navigationMaps, { "<C-f>", "<PageDown>" }, id_MotionPageForward);
+    AddKeyMapWithCountRegisters(navigationMaps, { "<C-b>", "<PageUp>" }, id_MotionPageBackward);
+    AddKeyMapWithCountRegisters(navigationMaps, { "<C-d>" }, id_MotionHalfPageForward);
+    AddKeyMapWithCountRegisters(navigationMaps, { "<C-u>" }, id_MotionHalfPageBackward);
+    AddKeyMapWithCountRegisters(navigationMaps, { "G" }, id_MotionGotoLine);
+
+    // Line Motions
+    AddKeyMapWithCountRegisters(navigationMaps, { "$", "<End>" }, id_MotionLineEnd);
+    AddKeyMapWithCountRegisters(navigationMaps, { "^" }, id_MotionLineFirstChar);
+    keymap_add(navigationMaps, { "0", "<Home>" }, id_MotionLineBegin);
+
+    // Word motions
+    AddKeyMapWithCountRegisters(navigationMaps, { "w" }, id_MotionWord);
+    AddKeyMapWithCountRegisters(navigationMaps, { "b" }, id_MotionBackWord);
+    AddKeyMapWithCountRegisters(navigationMaps, { "W" }, id_MotionWORD);
+    AddKeyMapWithCountRegisters(navigationMaps, { "B" }, id_MotionBackWORD);
+    AddKeyMapWithCountRegisters(navigationMaps, { "e" }, id_MotionEndWord);
+    AddKeyMapWithCountRegisters(navigationMaps, { "E" }, id_MotionEndWORD);
+    AddKeyMapWithCountRegisters(navigationMaps, { "ge" }, id_MotionBackEndWord);
+    AddKeyMapWithCountRegisters(navigationMaps, { "gE" }, id_MotionBackEndWORD);
+    AddKeyMapWithCountRegisters(navigationMaps, { "gg" }, id_MotionGotoBeginning);
+
+    // Navigate between splits
+    keymap_add(navigationMaps, { "<C-j>" }, id_MotionDownSplit);
+    keymap_add(navigationMaps, { "<C-l>" }, id_MotionRightSplit);
+    keymap_add(navigationMaps, { "<C-k>" }, id_MotionUpSplit);
+    keymap_add(navigationMaps, { "<C-h>" }, id_MotionLeftSplit);
+
+    // Arrows always navigate in insert mode
+    keymap_add({ &m_insertMap }, { "<Down>" }, id_MotionDown);
+    keymap_add({ &m_insertMap }, { "<Up>" }, id_MotionUp);
+    keymap_add({ &m_insertMap }, { "<Right>" }, id_MotionRight);
+    keymap_add({ &m_insertMap }, { "<Left>" }, id_MotionLeft);
+
+    keymap_add({ &m_insertMap }, { "<End>" }, id_MotionLineBeyondEnd);
+    keymap_add({ &m_insertMap }, { "<Home>" }, id_MotionLineBegin);
+}
+
+void ZepMode_Vim::AddSearchKeyMaps()
+{
+    // Normal mode searching
+    AddKeyMapWithCountRegisters({ &m_normalMap }, { "f<.>" }, id_Find);
+    AddKeyMapWithCountRegisters({ &m_normalMap }, { "F<.>" }, id_FindBackwards);
+    AddKeyMapWithCountRegisters({ &m_normalMap }, { ";" }, id_FindNext);
+    AddKeyMapWithCountRegisters({ &m_normalMap }, { "%" }, id_FindNextDelimiter);
+    AddKeyMapWithCountRegisters({ &m_normalMap }, { "n" }, id_MotionNextSearch);
+    AddKeyMapWithCountRegisters({ &m_normalMap }, { "N" }, id_MotionPreviousSearch);
+    keymap_add({ &m_normalMap }, { "<F8>" }, id_MotionNextMarker);
+    keymap_add({ &m_normalMap }, { "<S-F8>" }, id_MotionPreviousMarker);
+}
+
+void ZepMode_Vim::AddGlobalKeyMaps()
+{
+    // Global bits
+    keymap_add({ &m_normalMap, &m_insertMap }, { "<C-p>", "<C-,>" }, id_QuickSearch);
+    keymap_add({ &m_normalMap }, { ":", "/", "?" }, id_ExMode);
+    keymap_add({ &m_normalMap }, { "H" }, id_PreviousTabWindow);
+    keymap_add({ &m_normalMap }, { "L" }, id_NextTabWindow);
+    keymap_add({ &m_normalMap }, { "<C-i><C-o>" }, id_SwitchToAlternateFile);
+    keymap_add({ &m_normalMap }, { "+" }, id_FontBigger);
+    keymap_add({ &m_normalMap }, { "-" }, id_FontSmaller);
+
+    // CTRL + =/- to zoom fonts while in non-normal mode
+    keymap_add({ &m_normalMap, &m_visualMap, &m_insertMap }, { "<C-=>" }, id_FontBigger);
+    keymap_add({ &m_normalMap, &m_visualMap, &m_insertMap }, { "<C-->" }, id_FontSmaller);
+}
+
 void ZepMode_Vim::SetupKeyMaps()
 {
     // Standard choices
