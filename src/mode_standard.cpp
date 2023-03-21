@@ -51,6 +51,7 @@ void ZepMode_Standard::Init()
     keymap_add({ &m_insertMap }, { "<Tab>" }, id_InsertTab);
     keymap_add({ &m_insertMap, &m_visualMap }, { "<Del>" }, id_Delete);
     keymap_add({ &m_insertMap, &m_visualMap }, { "<C-y>" }, id_Redo);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<C-S-z>" }, id_Redo);
     keymap_add({ &m_insertMap, &m_visualMap }, { "<C-z>" }, id_Undo);
 
     keymap_add({ &m_insertMap, &m_visualMap }, { "<Left>" }, id_MotionStandardLeft);
@@ -61,6 +62,8 @@ void ZepMode_Standard::Init()
     keymap_add({ &m_insertMap }, { "<Home>" }, id_MotionLineHomeToggle);
     keymap_add({ &m_insertMap }, { "<C-Left>" }, id_MotionStandardLeftWord);
     keymap_add({ &m_insertMap }, { "<C-Right>" }, id_MotionStandardRightWord);
+    keymap_add({ &m_insertMap }, { "<PageDown>" }, id_MotionPageForward);
+    keymap_add({ &m_insertMap }, { "<PageUp>" }, id_MotionPageBackward);
 
     keymap_add({ &m_insertMap, &m_visualMap }, { "<C-S-Left>" }, id_MotionStandardLeftWordSelect);
     keymap_add({ &m_insertMap, &m_visualMap }, { "<C-S-Right>" }, id_MotionStandardRightWordSelect);
@@ -79,7 +82,11 @@ void ZepMode_Standard::Init()
     keymap_add({ &m_insertMap, &m_visualMap }, { "<C-a>" }, id_StandardSelectAll);
 
     keymap_add({ &m_normalMap, &m_visualMap, &m_insertMap }, { "<Escape>" }, id_InsertMode);
-    keymap_add({ &m_normalMap }, { "<Backspace>" }, id_MotionStandardLeft);
+
+    keymap_add({ &m_visualMap, &m_insertMap }, { "<C-=>" }, id_FontBigger);
+    keymap_add({ &m_visualMap, &m_insertMap }, { "<C-->" }, id_FontSmaller);
+
+    keymap_add({ &m_visualMap, &m_insertMap }, { "<C-s>" }, id_Save);
 }
 
 void ZepMode_Standard::Begin(ZepWindow* pWindow)
