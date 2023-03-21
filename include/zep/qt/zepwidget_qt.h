@@ -241,7 +241,7 @@ public:
     {
         if (m_spEditor)
         {
-            m_spEditor->OnMouseDown(toNVec2f(ev->localPos()), GetMouseButton(ev));
+            m_spEditor->OnMouseDown(toNVec2f(ev->position()), GetMouseButton(ev));
         }
     }
     virtual void mouseReleaseEvent(QMouseEvent* ev) override
@@ -249,7 +249,7 @@ public:
         (void)ev;
         if (m_spEditor)
         {
-            m_spEditor->OnMouseUp(toNVec2f(ev->localPos()), GetMouseButton(ev));
+            m_spEditor->OnMouseUp(toNVec2f(ev->position()), GetMouseButton(ev));
         }
     }
 
@@ -262,7 +262,7 @@ public:
     {
         if (m_spEditor)
         {
-            m_spEditor->OnMouseMove(toNVec2f(ev->localPos()));
+            m_spEditor->OnMouseMove(toNVec2f(ev->position()));
         }
     }
 

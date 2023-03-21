@@ -57,7 +57,6 @@ target_include_directories(${DEMO_NAME}
         ${Qt6Gui_INCLUDE_DIRS}
         ${Qt6Core_INCLUDE_DIRS}
         ${CMAKE_BINARY_DIR}
-        ${M3RDPARTY_DIR}
         ${ZEP_ROOT}/include)
 
 target_link_libraries(${DEMO_NAME} PRIVATE
@@ -65,11 +64,10 @@ target_link_libraries(${DEMO_NAME} PRIVATE
     Qt6::Gui
     Qt6::Widgets
     Zep
-    ZepExtensions
     ${PLATFORM_LINKLIBS})
 
 target_compile_options(${DEMO_NAME} PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W3>) # Workaround Qt + MSVC 19 compile issue in release build.
-add_dependencies(${DEMO_NAME} Zep ZepExtensions)
+add_dependencies(${DEMO_NAME} Zep)
 
 if(WIN32)
 message(STATUS "Copying required Qt libraries and binaries to output directory....")

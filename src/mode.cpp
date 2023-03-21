@@ -2198,6 +2198,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
         }
         else if (strCommand.find(":tree") == 0)
         {
+            // Note this is a work in progress; not done yet.
             GetEditor().AddTree();
         }
         else if (strCommand.find(":vsplit") == 0)

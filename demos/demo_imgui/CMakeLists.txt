@@ -65,8 +65,7 @@ target_include_directories(${DEMO_NAME}
     ${ZEP_ROOT}/demos/demo_imgui/janet
     ${FREETYPE_INCLUDE_DIRS}
     ${SDL2_ROOT_DIR}
-    ${CMAKE_BINARY_DIR}
-    ${M3RDPARTY_DIR})
+    ${CMAKE_BINARY_DIR})
 
 if (NOT WIN32)
     target_include_directories(${DEMO_NAME}
@@ -77,7 +76,6 @@ endif()
 target_link_libraries (${DEMO_NAME}
     PRIVATE
     Zep
-    ZepExtensions
     $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
     $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
     imgui::imgui

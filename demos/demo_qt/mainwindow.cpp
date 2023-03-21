@@ -1,4 +1,3 @@
-#include <orca/time_provider.h>
 #define _MATH_DEFINES_DEFINED
 
 #include <QCommandLineParser>
@@ -16,18 +15,15 @@
 #include "zep/theme.h"
 #include "zep/window.h"
 
-#include "orca/mode_orca.h"
-
 // Repl example
 #include "config_app.h"
 #include "mainwindow.h"
-#include "repl/mode_repl.h"
+#include "zep/mode_repl.h"
 #include "zep/qt/zepwidget_qt.h"
 
 #include "demo_common.h"
 
 using namespace Zep;
-using namespace MUtils;
 
 const std::string shader = R"R(
 #version 330 core
@@ -66,7 +62,6 @@ MainWindow::MainWindow()
     auto* pWidget = new ZepWidget_Qt(this, qApp->applicationDirPath().toStdString(), DemoFontPtSize);
 
     // Register our extensions
-    ZepMode_Orca::Register(pWidget->GetEditor());
     ZepRegressExCommand::Register(pWidget->GetEditor());
     ZepReplExCommand::Register(pWidget->GetEditor(), this);
 
@@ -138,13 +133,10 @@ MainWindow::MainWindow()
 
     setMenuBar(menu);
     setCentralWidget(pWidget);
-
-    TimeProvider::Instance().StartThread();
 }
 
 MainWindow::~MainWindow()
 {
-    TimeProvider::Instance().EndThread();
 }
 
 std::string MainWindow::ReplParse(const std::string& str)

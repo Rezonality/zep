@@ -94,7 +94,7 @@ Tab windows are like workspaces, each containing a set of windows arranged in sp
 display layer to draw the text.  This makes it simple to draw the editor using different rendering code.  Adding Qt took just an hour to do.
 
 ### Vim & Standard Modes
-Mode plugins provide the editing facility - currently that is Vim & Standard and extension modes for the Repl and the Search panels.
+Mode plugins provide the editing facility - currently that is Vim & Standard and modes for the Repl and the Search panels.
 The Vim mode has most of the usual word motions, visual mode, etc.  The standard mode has the usual shift, select, cut/copy/paste, etc.
 See [Vim Mode](https://github.com/Rezonality/zep/wiki/Vim-Mode), or the top of the mode_vim.cpp file for a list of supported operations in Vim
 

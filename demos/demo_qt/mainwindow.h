@@ -3,8 +3,7 @@
 #include <QMainWindow>
 #include <memory>
 
-#include <orca/mode_orca.h>
-#include <repl/mode_repl.h>
+#include <zep/mode_repl.h>
 
 QT_FORWARD_DECLARE_CLASS(QDockWidget)
 QT_FORWARD_DECLARE_CLASS(QMenu)
