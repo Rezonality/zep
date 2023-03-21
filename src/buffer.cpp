@@ -510,7 +510,7 @@ std::pair<GlyphIterator, GlyphIterator> ZepBuffer::FindMatchingPair(GlyphIterato
 
 // Only works on searches of ascii characters (but navigates unicode buffer); useful for some vim operations
 // Returns the index of the first found char and its location
-GlyphIterator ZepBuffer::FindFirstCharOf(GlyphIterator& start, const std::string& chars, int32_t& found_index, Direction dir) const
+GlyphIterator ZepBuffer::FindFirstCharOf(GlyphIterator start, const std::string& chars, int32_t& found_index, Direction dir) const
 {
     GlyphIterator itr = start;
     if (!itr.Valid())
