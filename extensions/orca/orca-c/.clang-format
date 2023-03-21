@@ -1,5 +1,0 @@
-BasedOnStyle: LLVM
-ReflowComments: false
-
-MacroBlockBegin: "^BEGIN_OPERATOR"
-MacroBlockEnd: "^END_OPERATOR"

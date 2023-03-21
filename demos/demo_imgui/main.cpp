@@ -15,7 +15,6 @@
 #include <imgui_impl_sdl.h>
 
 #include "clip/clip.h" // clipboard
-#include "orca/time_provider.h"
 
 #include <clipp.h> // command line params
 #include <zep/mcommon/file/path.h>
@@ -40,7 +39,6 @@
 #include "zep/theme.h"
 #include "zep/window.h"
 
-#include "orca/mode_orca.h"
 #include "repl/mode_repl.h"
 
 #include "zep/regress.h"
@@ -165,8 +163,6 @@ struct ZepContainerImGui : public IZepComponent, public IZepReplProvider
         ImGuiFreeType::BuildFontAtlas(ImGui::GetIO().Fonts, flags);
 
         spEditor->RegisterCallback(this);
-
-        ZepMode_Orca::Register(*spEditor);
 
         ZepRegressExCommand::Register(*spEditor);
 
@@ -438,8 +434,6 @@ int main(int argc, char* argv[])
     bool show_demo_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    TimeProvider::Instance().StartThread();
-
     // Main loop
     bool done = false;
     while (!done && !zep.quit)
@@ -626,9 +620,6 @@ int main(int argc, char* argv[])
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(window);
     }
-
-    // Quit the ticker
-    TimeProvider::Instance().Free();
 
     zep.Destroy();
 

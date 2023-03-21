@@ -8,29 +8,12 @@ find_package(fmt CONFIG REQUIRED)
 
 SET(EXTENSION_ROOT ${CMAKE_CURRENT_LIST_DIR})
 
-SET(ORCA_SRC
-    ${EXTENSION_ROOT}/orca/mode_orca.cpp
-    ${EXTENSION_ROOT}/orca/mode_orca.h
-    ${EXTENSION_ROOT}/orca/orca.cpp
-    ${EXTENSION_ROOT}/orca/orca.h
-    ${EXTENSION_ROOT}/orca/time_provider.cpp
-    ${EXTENSION_ROOT}/orca/time_provider.h
-    ${EXTENSION_ROOT}/orca/time_utils.h
-    ${EXTENSION_ROOT}/orca/syntax_orca.cpp
-    ${EXTENSION_ROOT}/orca/syntax_orca.h
-    ${EXTENSION_ROOT}/orca/orca-c/field.c
-    ${EXTENSION_ROOT}/orca/orca-c/gbuffer.c
-    ${EXTENSION_ROOT}/orca/orca-c/sim.c
-    ${EXTENSION_ROOT}/orca/orca-c/vmio.c
-    ${EXTENSION_ROOT}/orca/orca-c/vmio.h
-    )
-
 SET(REPL_SRC
     ${EXTENSION_ROOT}/repl/mode_repl.cpp
     ${EXTENSION_ROOT}/repl/mode_repl.h
 )
 
-SET(SOURCES ${REPL_SRC} ${ORCA_SRC})
+SET(SOURCES ${REPL_SRC})
 SET(ZEP_EXTENSION_SRC ${SOURCES} PARENT_SCOPE)
 
 # Create the library - No depenencies on anything else in this file
@@ -74,9 +57,6 @@ install(TARGETS ${PROJECT_NAME}
 )
 
 # Install the extension files
-install(DIRECTORY ${ZEP_ROOT}/extensions/orca
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/zep/extensions
-)
 install(DIRECTORY ${ZEP_ROOT}/extensions/repl
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/zep/extensions)
 

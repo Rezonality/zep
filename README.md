@@ -38,8 +38,6 @@ Key Features:
 * Text Markers for highlighting errors, etc.
 * No dependencies, cross platform, small library, single header, static library or installed library option.
 * Builds on VC 2017, GCC 6, Clang. C++14 is the basic requirement
-* A work in progress extension mode to support an Orca-like environment
-* A work in progress tree control for file navigation
 
 New Features, recently added:
 * Support for tabs instead of spaces; display of tabs as whitespace arrows.
