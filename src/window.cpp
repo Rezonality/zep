@@ -240,6 +240,15 @@ void ZepWindow::Notify(std::shared_ptr<ZepMessage> payload)
             SetBufferCursor(m_mouseIterator);
         }
     }
+    else if (payload->messageId == Msg::MouseWheel)
+    {
+        /* TBD: From PR #106: this does not work correctly: It scrolls the text off the page
+        * completely at the bottom
+        m_textOffsetPx = std::min(m_textSizePx.y, std::max(0.0f, m_textOffsetPx - 5 * stof(payload->str) * GetEditor().GetDisplay().GetFont(ZepTextType::Text).GetPixelHeight()));
+        UpdateVisibleLineRange();
+        DisableToolTipTillMove();
+        */ 
+    }
 }
 
 void ZepWindow::SetDisplayRegion(const NRectf& region)
@@ -442,8 +451,6 @@ void ZepWindow::UpdateLineSpans()
     std::for_each(m_windowLines.begin(), m_windowLines.end(), [](SpanInfo* pInfo) { delete pInfo; });
     m_windowLines.clear();
 
-    //auto& display = GetEditor().GetDisplay();
-
     auto widgetMarkers = m_pBuffer->GetRangeMarkers(RangeMarkerType::Widget);
     auto itrWidgetMarkers = widgetMarkers.begin();
 
@@ -526,7 +533,7 @@ void ZepWindow::UpdateLineSpans()
         {
             const uint8_t* pCh = &textBuffer[ch];
             auto textSize = font.GetCharSize(pCh);
-            
+
             // Skip to current marker
             while (itrWidgetMarkers != widgetMarkers.end() && itrWidgetMarkers->first < ch)
             {
@@ -550,9 +557,7 @@ void ZepWindow::UpdateLineSpans()
 
             // Wrap if we have displayed at least one char, and we are wrapping.
             // Don't wrap just for the CR
-            if (ZTestFlags(GetWindowFlags(), WindowFlags::WrapText) && 
-                ch != lineByteRange.first && 
-                *pCh != '\n' && *pCh != 0)
+            if (ZTestFlags(GetWindowFlags(), WindowFlags::WrapText) && ch != lineByteRange.first && *pCh != '\n' && *pCh != 0)
             {
                 // At least a single char has wrapped; close the old line, start a new one
                 if (((xOffset + textSize.x) + textSize.x) >= (m_textRegion->rect.Width()))
@@ -937,7 +942,7 @@ void ZepWindow::DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax)
         cp.pos = NVec2f(screenPosX, ToWindowY(lineInfo.yOffsetPx));
 
         // Background and underlines
-        // Track the background color for multiple overlapping markers and blend the alpha correctly by 
+        // Track the background color for multiple overlapping markers and blend the alpha correctly by
         // doing a mix between the previous color and the new one.
         NVec4f backgroundColor = backColor;
 
@@ -1061,8 +1066,8 @@ void ZepWindow::DisplayLineNumbers()
                 display.DrawChars(numFont,
                     NVec2f(m_numberRegion->rect.bottomRightPx.x - textSize.x,
                         ToWindowY(lineCenter - numFont.GetPixelHeight() * .5f)),
-                        digitCol,
-                        (const uint8_t*)strNum.c_str(), (const uint8_t*)(strNum.c_str() + strNum.size()));
+                    digitCol,
+                    (const uint8_t*)strNum.c_str(), (const uint8_t*)(strNum.c_str() + strNum.size()));
             }
 
             if (m_indicatorRegion->rect.Width() > 0)
