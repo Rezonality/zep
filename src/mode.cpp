@@ -1877,27 +1877,25 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (m_currentMode == EditorMode::Insert)
     {
-        // If not a single char, then we are trying to input a special, which isn't allowed
-        // TOOD: Cleaner detection of this?
-        // Special case for 'j + another character' which is an insert
-        if (true) // context.keymap.commandWithoutGroups.size() == 1 || ((context.keymap.commandWithoutGroups.size() == 2) && context.keymap.commandWithoutGroups[0] == 'j'))
-        {
-            context.beginRange = context.bufferCursor;
-            context.tempReg.text = context.keymap.commandWithoutGroups;
-            context.pRegister = &context.tempReg;
-            context.op = CommandOperation::Insert;
-            context.commandResult.modeSwitch = EditorMode::Insert;
-            context.commandResult.flags |= CommandResultFlags::HandledCount;
+        auto& text = context.keymap.commandWithoutGroups;
 
-            // Insert grouping command if necessary
-            if (context.fullCommand == " ")
-            {
-                context.commandResult.flags = ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
-            }
-        }
-        else
+        // Detect attempted insertion of a 'special', such as <C-u> which may not have been mapped
+        if (text.size() > 3 && text[0] == '<' && text[text.size() - 1] == '>')
         {
             return false;
+        }
+
+        context.beginRange = context.bufferCursor;
+        context.tempReg.text = text;
+        context.pRegister = &context.tempReg;
+        context.op = CommandOperation::Insert;
+        context.commandResult.modeSwitch = EditorMode::Insert;
+        context.commandResult.flags |= CommandResultFlags::HandledCount;
+
+        // Insert grouping command if necessary
+        if (context.fullCommand == " ")
+        {
+            context.commandResult.flags = ZSetFlags(context.commandResult.flags, CommandResultFlags::BeginUndoGroup, shouldGroupInserts);
         }
     }
 
