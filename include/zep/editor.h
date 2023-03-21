@@ -89,6 +89,7 @@ enum class Msg
     MouseMove,
     MouseDown,
     MouseUp,
+    MouseWheel,
     Buffer,
     ComponentChanged,
     Tick,
@@ -110,6 +111,13 @@ public:
         : messageId(id)
         , pos(p)
         , button(b)
+    {
+    }
+    
+    ZepMessage(Msg id, const NVec2f& p, std::string strIn)
+        : messageId(id)
+        , pos(p)
+        , str(strIn)
     {
     }
 
@@ -189,7 +197,7 @@ const float bottomBorder = 2.0f;
 const float textBorder = 2.0f;
 const float tabToneLine = 5.0f;
 const float tabSpacing = 1.0f;
-const float leftBorderChars = 3;
+const float leftBorderChars = 4;
 
 #define DPI_VEC2(value) (value * GetEditor().GetDisplay().GetPixelScale())
 #define DPI_Y(value) (GetEditor().GetDisplay().GetPixelScale().y * value)
@@ -264,6 +272,7 @@ public:
 
     void Reset();
     ZepBuffer* InitWithFileOrDir(const std::string& str);
+    ZepBuffer* InitWithFile(const std::string& str);
     ZepBuffer* InitWithText(const std::string& strName, const std::string& strText);
 
     ZepMode* GetGlobalMode();
@@ -374,6 +383,7 @@ public:
     bool OnMouseMove(const NVec2f& mousePos);
     bool OnMouseDown(const NVec2f& mousePos, ZepMouseButton button);
     bool OnMouseUp(const NVec2f& mousePos, ZepMouseButton button);
+    bool OnMouseWheel(const NVec2f& mousePos, float scrollDistance);
     const NVec2f GetMousePos() const;
 
     void SetBufferSyntax(ZepBuffer& buffer) const;
@@ -404,6 +414,9 @@ private:
 
     // Ensure there is a valid tab window and return it
     ZepTabWindow* EnsureTab();
+
+public:
+    bool isFocused = true;
 
 private:
     ZepDisplay* m_pDisplay;

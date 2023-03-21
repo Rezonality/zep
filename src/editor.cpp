@@ -451,6 +451,12 @@ ZepBuffer* ZepEditor::InitWithFileOrDir(const std::string& str)
         }
     }
 
+    return InitWithFile(str);
+}
+
+ZepBuffer* ZepEditor::InitWithFile(const std::string& str)
+{
+    ZepPath startPath(str);
     // Get a buffer for the start file; even if the path is not valid; it can be created but not saved
     auto pFileBuffer = GetFileBuffer(startPath);
     auto pTab = EnsureTab();
@@ -1087,6 +1093,7 @@ bool ZepEditor::RefreshRequired()
 
 bool ZepEditor::GetCursorBlinkState() const
 {
+    if (!isFocused) return false;
     m_lastCursorBlink = (int(timer_get_elapsed_seconds(m_cursorTimer) * 1.75f) & 1) ? true : false;
     return m_lastCursorBlink;
 }
@@ -1306,6 +1313,14 @@ bool ZepEditor::OnMouseUp(const NVec2f& mousePos, ZepMouseButton button)
 {
     m_mousePos = mousePos;
     bool handled = Broadcast(std::make_shared<ZepMessage>(Msg::MouseUp, mousePos, button));
+    m_bPendingRefresh = true;
+    return handled;
+}
+
+bool ZepEditor::OnMouseWheel(const NVec2f& mousePos, float scrollDistance)
+{
+    m_mousePos = mousePos;
+    bool handled = Broadcast(std::make_shared<ZepMessage>(Msg::MouseWheel, mousePos, std::to_string(scrollDistance)));
     m_bPendingRefresh = true;
     return handled;
 }
