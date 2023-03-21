@@ -11,6 +11,7 @@ tags
 **/build/*
 indexdb
 cmake-build*
+.cache/*
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 **/*.DS_Store
