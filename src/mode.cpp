@@ -281,31 +281,27 @@ void ZepMode::SwitchMode(EditorMode currentMode)
 
 std::string ZepMode::ConvertInputToMapString(uint32_t key, uint32_t modifierKeys)
 {
-    std::ostringstream str;
+    bool brackets = false;
+    std::string str;
     bool closeBracket = false;
     if (modifierKeys & ModifierKey::Ctrl)
     {
-        str << "<C-";
-        if (modifierKeys & ModifierKey::Shift)
-        {
-            // Add the S- modifier for shift enabled special keys
-            // We want to avoid adding S- to capitalized (and already shifted)
-            // keys
-            if (key < ' ')
-            {
-                str << "S-";
-            }
-        }
-        closeBracket = true;
+        str += "C-";
     }
-    else if (modifierKeys & ModifierKey::Shift)
+
+    if (modifierKeys & ModifierKey::Alt)
     {
-        if (key < ' ')
+        str += "A-";
+    }
+
+    if (modifierKeys & ModifierKey::Shift)
+    {
+        if (modifierKeys != ModifierKey::Shift || key < ' ')
         {
-            str << "<S-";
-            closeBracket = true;
+            str += "S-";
         }
     }
+    brackets = !str.empty();
 
     std::string mapped;
 
@@ -341,27 +337,15 @@ std::string ZepMode::ConvertInputToMapString(uint32_t key, uint32_t modifierKeys
 
     if (!mapped.empty())
     {
-        if (!closeBracket)
-        {
-            str << "<" << mapped;
-            closeBracket = true;
-        }
-        else
-        {
-            str << mapped;
-        }
+        brackets = true;
+        str += mapped;
     }
     else
     {
-        str << std::string((const char*)&key);
+        str += std::string((const char*)&key);
     }
 
-    if (closeBracket)
-    {
-        str << ">";
-    }
-
-    return str.str();
+    return brackets ? "<" + str + ">" : str;
 }
 
 // Handle a key press, convert it to an input command and context, and return it.
@@ -1641,7 +1625,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             {
                 if ((range.first + 1) == range.second)
                 {
-                    // A closed pair (); so insert between them 
+                    // A closed pair (); so insert between them
                     GetCurrentWindow()->SetBufferCursor(range.first + 1);
                     context.commandResult.modeSwitch = EditorMode::Insert;
                     return true;
@@ -1651,23 +1635,23 @@ bool ZepMode::GetCommand(CommandContext& context)
                     GlyphIterator lineEnd = context.buffer.GetLinePos(range.first, LineLocation::LineCRBegin);
                     if (lineEnd.Valid() && lineEnd < range.second)
                     {
-						GlyphIterator lineStart = context.buffer.GetLinePos(range.first, LineLocation::LineBegin);
+                        GlyphIterator lineStart = context.buffer.GetLinePos(range.first, LineLocation::LineBegin);
                         auto offsetStart = (range.first.Index() - lineStart.Index());
 
                         // If change in a pair of delimeters that are on seperate lines, then
                         // we remove everything and replace with 2 CRs and an indent based on the start bracket
                         // Since Zep doesn't auto indent, this is the best we can do for now.
-					    context.replaceRangeMode = ReplaceRangeMode::Replace;
-						context.op = CommandOperation::Replace;
-                        
+                        context.replaceRangeMode = ReplaceRangeMode::Replace;
+                        context.op = CommandOperation::Replace;
+
                         auto offsetText = std::string(offsetStart + 4, ' ');
                         auto offsetBracket = std::string(offsetStart, ' ');
-						context.tempReg.text = std::string("\n") + offsetText + "\n" + offsetBracket;
-						context.pRegister = &context.tempReg;
-						context.beginRange = range.first + 1;
-						context.endRange = range.second;
+                        context.tempReg.text = std::string("\n") + offsetText + "\n" + offsetBracket;
+                        context.pRegister = &context.tempReg;
+                        context.beginRange = range.first + 1;
+                        context.endRange = range.second;
                         context.cursorAfterOverride = range.first + (long)offsetText.length() + 2;
-						context.commandResult.modeSwitch = EditorMode::Insert;
+                        context.commandResult.modeSwitch = EditorMode::Insert;
                     }
                     else
                     {
@@ -1886,6 +1870,10 @@ bool ZepMode::GetCommand(CommandContext& context)
             context.endRange = buffer.FindOnLineMotion(bufferCursor, (const uint8_t*)&context.keymap.captureChars[0], Direction::Forward);
             context.op = CommandOperation::Delete;
         }
+    }
+    else if (mappedCommand == id_Save)
+    {
+        GetEditor().SaveBuffer(GetCurrentWindow()->GetBuffer());
     }
     else if (m_currentMode == EditorMode::Insert)
     {
