@@ -704,12 +704,15 @@ void ZepEditor::RemoveTabWindow(ZepTabWindow* pTabWindow)
     {
         if (m_pActiveTabWindow == pTabWindow)
         {
+            assert(!m_tabWindows.empty());
             m_pActiveTabWindow = m_tabWindows[m_tabWindows.size() - 1];
 
             // Force a reset of active to initialize the mode
             m_pActiveTabWindow->SetActiveWindow(m_pActiveTabWindow->GetActiveWindow());
         }
     }
+    
+    GetEditor().UpdateTabs();
 }
 
 const ZepEditor::tTabWindows& ZepEditor::GetTabWindows() const

@@ -377,6 +377,7 @@ void ZepTabWindow::RemoveWindow(ZepWindow* pWindow)
         if (m_pActiveWindow == pWindow)
         {
             // TODO: Active window ordering - remember the last active and switch to it when this one is closed
+            assert(!m_windows.empty());
             SetActiveWindow(m_windows[m_windows.size() - 1]);
         }
         SetDisplayRegion(m_lastRegionRect, true);
