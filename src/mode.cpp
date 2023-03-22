@@ -1000,15 +1000,17 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_StandardSelectAll)
     {
+        m_visualBegin = context.buffer.Begin();
+        m_visualEnd = context.buffer.End();
         auto range = GetInclusiveVisualRange();
         if (!range.Valid())
         {
             return true;
         }
+        // In standard mode, we don't normally select the last character, but here we want it.
+        range.second++;
         
         context.commandResult.modeSwitch = EditorMode::Visual;
-        m_visualBegin = context.buffer.Begin();
-        m_visualEnd = context.buffer.End();
         GetCurrentWindow()->GetBuffer().SetSelection(range);
         GetCurrentWindow()->SetBufferCursor(range.second);
         return true;
