@@ -1,5 +1,6 @@
 #include <chrono> // Timing
 #include <iomanip>
+
 #include "zep/mcommon/logger.h"
 
 #include "zep/mcommon/animation/timer.h"
@@ -74,6 +75,5 @@ void profile_add_value(profile_value& val, double av)
     val.average = val.average * (val.count - 1) / val.count + av / val.count;
     val.current = av;
 }
-
 
 } // namespace Zep

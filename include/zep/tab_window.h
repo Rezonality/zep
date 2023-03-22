@@ -31,7 +31,7 @@ public:
     ZepWindow* DoMotion(WindowMotion motion);
     ZepWindow* AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent = nullptr, RegionLayoutType layoutType = RegionLayoutType::HBox);
     void RemoveWindow(ZepWindow* pWindow);
-    //void WalkRegions();
+    // void WalkRegions();
     void SetActiveWindow(ZepWindow* pBuffer);
     ZepWindow* GetActiveWindow() const
     {
@@ -52,7 +52,7 @@ public:
     void Display();
 
 private:
-    ZepEditor& m_editor;    // Editor that owns this window
+    ZepEditor& m_editor; // Editor that owns this window
     NRectf m_lastRegionRect;
 
     tWindows m_windows;

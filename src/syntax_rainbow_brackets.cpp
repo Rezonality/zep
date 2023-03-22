@@ -1,8 +1,8 @@
 #include "zep/syntax_rainbow_brackets.h"
 #include "zep/theme.h"
 
-#include "zep/mcommon/string/stringutils.h"
 #include "zep/mcommon/logger.h"
+#include "zep/mcommon/string/stringutils.h"
 
 // A Simple adornment to add rainbow brackets to the syntax
 namespace Zep
@@ -12,7 +12,7 @@ ZepSyntaxAdorn_RainbowBrackets::ZepSyntaxAdorn_RainbowBrackets(ZepSyntax& syntax
     : ZepSyntaxAdorn(syntax, buffer)
 {
     syntax.GetEditor().RegisterCallback(this);
-    
+
     Update(buffer.Begin(), buffer.End());
 }
 
@@ -34,8 +34,7 @@ void ZepSyntaxAdorn_RainbowBrackets::Notify(std::shared_ptr<ZepMessage> spMsg)
         {
             Clear(spBufferMsg->startLocation, spBufferMsg->endLocation);
         }
-        else if (spBufferMsg->type == BufferMessageType::TextAdded ||
-            spBufferMsg->type == BufferMessageType::Loaded)
+        else if (spBufferMsg->type == BufferMessageType::TextAdded || spBufferMsg->type == BufferMessageType::Loaded)
         {
             Insert(spBufferMsg->startLocation, spBufferMsg->endLocation);
             Update(spBufferMsg->startLocation, spBufferMsg->endLocation);
@@ -68,7 +67,7 @@ SyntaxResult ZepSyntaxAdorn_RainbowBrackets::GetSyntaxAt(const GlyphIterator& of
         data.foreground = (ThemeColor)(((int32_t)ThemeColor::UniqueColor0 + itr->second.indent) % (int32_t)ThemeColor::UniqueColorLast);
         data.background = ThemeColor::None;
     }
-        
+
     return data;
 }
 
@@ -128,27 +127,27 @@ void ZepSyntaxAdorn_RainbowBrackets::Update(const GlyphIterator& start, const Gl
     {
         if (*itrBracket == '(')
         {
-            m_brackets[itrBracket.Index()] = Bracket{0, BracketType::Bracket, true};
+            m_brackets[itrBracket.Index()] = Bracket{ 0, BracketType::Bracket, true };
         }
         else if (*itrBracket == ')')
         {
-            m_brackets[itrBracket.Index()] = Bracket{0, BracketType::Bracket, false};
+            m_brackets[itrBracket.Index()] = Bracket{ 0, BracketType::Bracket, false };
         }
         else if (*itrBracket == '[')
         {
-            m_brackets[itrBracket.Index()] = Bracket{0, BracketType::Group, true};
+            m_brackets[itrBracket.Index()] = Bracket{ 0, BracketType::Group, true };
         }
         else if (*itrBracket == ']')
         {
-            m_brackets[itrBracket.Index()] = Bracket{0, BracketType::Group, false};
+            m_brackets[itrBracket.Index()] = Bracket{ 0, BracketType::Group, false };
         }
         else if (*itrBracket == '{')
         {
-            m_brackets[itrBracket.Index()] = Bracket{0, BracketType::Brace, true};
+            m_brackets[itrBracket.Index()] = Bracket{ 0, BracketType::Brace, true };
         }
         else if (*itrBracket == '}')
         {
-            m_brackets[itrBracket.Index()] = Bracket{0, BracketType::Brace, false};
+            m_brackets[itrBracket.Index()] = Bracket{ 0, BracketType::Brace, false };
         }
         else
         {
@@ -185,8 +184,7 @@ void ZepSyntaxAdorn_RainbowBrackets::RefreshBrackets()
         }
     }
 
-    auto MarkTails = [&](auto type)
-    {
+    auto MarkTails = [&](auto type) {
         if (indents[int(type)] > 0)
         {
             for (auto& b : m_brackets)
@@ -197,7 +195,6 @@ void ZepSyntaxAdorn_RainbowBrackets::RefreshBrackets()
                     return;
                 }
             }
-
         }
     };
     MarkTails(BracketType::Brace);

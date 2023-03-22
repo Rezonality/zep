@@ -102,7 +102,7 @@ ZepBuffer& RangeMarker::GetBuffer()
 // - Remove themselves from the buffer if text is edited _inside_ them.
 // Derived markers can modify this behavior.
 // Its up to marker owners to update this behavior if necessary
-// Markers do not act inside the undo/redo system.  They live on the buffer but are not stored with it.  They are adornments that 
+// Markers do not act inside the undo/redo system.  They live on the buffer but are not stored with it.  They are adornments that
 // must be managed externally
 void RangeMarker::HandleBufferInsert(ZepBuffer& buffer, const GlyphIterator& itrStart, const std::string& str)
 {
@@ -186,7 +186,7 @@ void RangeMarker::SetEnabled(bool enabled)
 {
     m_enabled = enabled;
 }
-    
+
 const NVec2f& RangeMarker::GetInlineSize() const
 {
     return m_inlineSize;

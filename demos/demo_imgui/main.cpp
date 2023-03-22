@@ -17,8 +17,8 @@
 #include "clip/clip.h" // clipboard
 
 #include <clipp.h> // command line params
-#include <zep/mcommon/file/path.h>
 #include <zep/mcommon/animation/timer.h>
+#include <zep/mcommon/file/path.h>
 
 #include "dpi/dpi.h"
 
@@ -33,17 +33,17 @@
 #include "zep/filesystem.h"
 #include "zep/imgui/display_imgui.h"
 #include "zep/imgui/editor_imgui.h"
+#include "zep/mode_repl.h"
 #include "zep/mode_standard.h"
 #include "zep/mode_vim.h"
-#include "zep/mode_repl.h"
+#include "zep/regress.h"
 #include "zep/tab_window.h"
 #include "zep/theme.h"
 #include "zep/window.h"
-#include "zep/regress.h"
 
 #include <tinyfiledialogs/tinyfiledialogs.h>
 #ifndef __APPLE__
-//#define WATCHER 1
+// #define WATCHER 1
 #endif
 #ifdef WATCHER
 #include <FileWatcher/watcher.h>
@@ -116,7 +116,7 @@ bool ReadCommandLine(int argc, char* argv[], int& exitCode)
     auto cli = group(opt_value("input file", startupFile));
     if (!parse(argc, argv, cli))
     {
-        //ZLOG(INFO, "Failed parse: " << make_man_page(cli, argv[0]));
+        // ZLOG(INFO, "Failed parse: " << make_man_page(cli, argv[0]));
         return false;
     }
     return true;
@@ -127,7 +127,7 @@ struct ZepContainerImGui : public IZepComponent, public IZepReplProvider
 {
     ZepContainerImGui(const std::string& startupFilePath, const std::string& configPath)
         : spEditor(std::make_unique<ZepEditor_ImGui>(configPath, GetPixelScale()))
-        //, fileWatcher(spEditor->GetFileSystem().GetConfigPath(), std::chrono::seconds(2))
+    //, fileWatcher(spEditor->GetFileSystem().GetConfigPath(), std::chrono::seconds(2))
     {
         janet_init("");
         // ZepEditor_ImGui will have created the fonts for us; but we need to build
@@ -416,7 +416,7 @@ int main(int argc, char* argv[])
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
 
     ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);

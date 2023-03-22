@@ -1,9 +1,11 @@
 #include <QApplication>
 #include <QGuiApplication>
 #include <QTimer>
-#include <qmainwindow.h>
+
 #include "mainwindow.h"
 #include "zep/qt/common_qt.h"
+
+#include <qmainwindow.h>
 
 int main(int argc, char** argv)
 {
@@ -12,7 +14,7 @@ int main(int argc, char** argv)
 
     // Same calculation as the ImGui demo - so that the window sizes should match
     // if DPI calculations work out the same
-    QScreen *screen = QGuiApplication::primaryScreen();
+    QScreen* screen = QGuiApplication::primaryScreen();
     QRect current = screen->geometry();
     float ratio = current.width() / (float)current.height();
     int startWidth = uint32_t(current.width() * .6666);

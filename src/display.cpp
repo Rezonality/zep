@@ -149,7 +149,7 @@ void ZepDisplay::Bigger()
                 textFont.SetPixelHeight((int)std::min((float)ceil(textFont.GetPixelHeight() * 1.05), 800.0f));
             }
             default:
-            break;
+                break;
             }
         }
     }
@@ -172,7 +172,7 @@ void ZepDisplay::Smaller()
                 textFont.SetPixelHeight((int)std::max(4.0f, (float)floor(textFont.GetPixelHeight() / 1.05)));
             }
             default:
-            break;
+                break;
             }
         }
     }

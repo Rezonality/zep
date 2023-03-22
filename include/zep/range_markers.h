@@ -1,14 +1,13 @@
 #pragma once
 
-#include <set>
 #include <map>
+#include <set>
 
 #include "zep/mcommon/animation/timer.h"
 #include "zep/mcommon/signals.h"
 
 #include "zep/glyph_iterator.h"
 #include "zep/theme.h"
-
 
 // Range Markers are adornments over the text; they represent any additional marks over the existing text buffer.
 // For example, tooltips, underlines, inline widgets, etc.
@@ -69,7 +68,7 @@ struct RangeMarker : std::enable_shared_from_this<RangeMarker>
     bool ContainsLocation(GlyphIterator loc) const;
     bool IntersectsRange(const ByteRange& i) const;
     virtual ThemeColor GetBackgroundColor(const GlyphIterator& itr = GlyphIterator()) const;
-    virtual ThemeColor GetTextColor(const GlyphIterator& itr = GlyphIterator()) const ;
+    virtual ThemeColor GetTextColor(const GlyphIterator& itr = GlyphIterator()) const;
     virtual ThemeColor GetHighlightColor(const GlyphIterator& itr = GlyphIterator()) const;
     virtual float GetAlpha(const GlyphIterator& itr = GlyphIterator()) const;
     virtual const std::string& GetName() const;
@@ -123,4 +122,4 @@ protected:
 
 using tRangeMarkers = std::map<ByteIndex, std::set<std::shared_ptr<RangeMarker>>>;
 
-}; // Zep
+}; // namespace Zep

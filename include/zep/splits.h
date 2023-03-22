@@ -1,12 +1,13 @@
 #pragma once
 
-#include "zep/mcommon/math/math.h"
 #include <algorithm>
 #include <limits>
 #include <memory>
-#include <vector>
-#include <string>
 #include <ostream>
+#include <string>
+#include <vector>
+
+#include "zep/mcommon/math/math.h"
 
 namespace Zep
 {
@@ -67,6 +68,5 @@ inline std::ostream& operator<<(std::ostream& str, const Region& region)
 }
 
 void LayoutRegion(Region& region);
-
 
 } // namespace Zep

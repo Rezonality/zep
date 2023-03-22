@@ -20,8 +20,11 @@ public:
     virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
     virtual void Begin(ZepWindow* pWindow) override;
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
-    virtual EditorMode DefaultMode() const override { return EditorMode::Normal; }
-    
+    virtual EditorMode DefaultMode() const override
+    {
+        return EditorMode::Normal;
+    }
+
     static const char* StaticName()
     {
         return "Search";
@@ -49,7 +52,6 @@ private:
     void OpenSelection(OpenType type);
 
 private:
-
     // List of lines in the file result, with last found char
     struct SearchResult
     {
@@ -77,8 +79,8 @@ private:
     // The 'top' of the tree is the most narrow finding from a set of 'n' characters
     // index a,b,c -> index b,c -> index c
     std::vector<std::shared_ptr<IndexSet>> m_indexTree;
-   
-    // What we are searching for 
+
+    // What we are searching for
     std::string m_searchTerm;
     bool m_caseImportant = false;
 

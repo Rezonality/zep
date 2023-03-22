@@ -2,11 +2,11 @@
 
 #include <QTimer>
 #include <QWidget>
-#include <memory>
-
 #include <QClipboard>
 #include <QDebug>
 #include <QKeyEvent>
+
+#include <memory>
 
 #include "zep/editor.h"
 #include "zep/mode.h"
@@ -26,7 +26,7 @@ public:
     ZepWidget_Qt(QWidget* pParent, const ZepPath& root, float fontPointSize)
         : QWidget(pParent)
     {
-        setFocusPolicy ( Qt::StrongFocus );
+        setFocusPolicy(Qt::StrongFocus);
 
         // On Apple/Qt, we scale 1.0 because the OS and Qt take care of the details
 #ifdef __APPLE__
@@ -53,7 +53,6 @@ public:
         m_refreshTimer.setSingleShot(false);
         m_refreshTimer.start();
         connect(&m_refreshTimer, &QTimer::timeout, this, &ZepWidget_Qt::OnTimer);
-
     }
 
     ~ZepWidget_Qt()
@@ -108,20 +107,19 @@ public:
         uint32_t mod = 0;
         auto pMode = m_spEditor->GetActiveTabWindow()->GetActiveWindow()->GetBuffer().GetMode();
 
-        auto isCtrl = [&]()
-        {
-            // Meta an control swapped on Apple!
-            #ifdef __APPLE__
+        auto isCtrl = [&]() {
+// Meta an control swapped on Apple!
+#ifdef __APPLE__
             if (ev->modifiers() & Qt::MetaModifier)
             {
                 return true;
             }
-            #else
+#else
             if (ev->modifiers() & Qt::ControlModifier)
             {
                 return true;
             }
-            #endif
+#endif
             return false;
         };
 

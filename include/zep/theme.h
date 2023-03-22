@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vector>
 #include <map>
+#include <vector>
 
 #include "zep/mcommon/math/math.h"
 

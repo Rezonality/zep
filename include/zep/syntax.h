@@ -71,7 +71,10 @@ public:
     const NVec4f& ToBackgroundColor(const SyntaxResult& res) const;
     const NVec4f& ToForegroundColor(const SyntaxResult& res) const;
 
-    virtual void IgnoreLineHighlight() { m_flags |= ZepSyntaxFlags::IgnoreLineHighlight; }
+    virtual void IgnoreLineHighlight()
+    {
+        m_flags |= ZepSyntaxFlags::IgnoreLineHighlight;
+    }
 
 private:
     virtual void QueueUpdateSyntax(GlyphIterator startLocation, GlyphIterator endLocation);

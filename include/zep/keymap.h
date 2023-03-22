@@ -1,12 +1,12 @@
 #pragma once
 
 #include <functional>
-#include <string>
-#include <regex>
 #include <map>
-#include <unordered_map>
-#include <set>
 #include <numeric>
+#include <regex>
+#include <set>
+#include <string>
+#include <unordered_map>
 
 #include "mcommon/string/stringutils.h"
 
@@ -206,7 +206,7 @@ struct KeyMapResult
         }
         return std::accumulate(captureNumbers.begin(), captureNumbers.end(), 0);
     }
-    
+
     // Return the first register for commands that only want 1
     char RegisterName() const
     {

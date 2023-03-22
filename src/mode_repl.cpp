@@ -116,8 +116,7 @@ void ZepReplExCommand::Run(const std::vector<std::string>& tokens)
     m_pReplBuffer = GetEditor().GetEmptyBuffer("Repl.lisp"); // , FileFlags::ReadOnly);
     m_pReplBuffer->SetBufferType(BufferType::Repl);
     m_pReplBuffer->GetSyntax()->IgnoreLineHighlight();
-    m_pReplBuffer->SetPostKeyNotifier([&](uint32_t key, uint32_t modifier)
-    {
+    m_pReplBuffer->SetPostKeyNotifier([&](uint32_t key, uint32_t modifier) {
         return AddKeyPress(key, modifier);
     });
 
@@ -139,7 +138,6 @@ void ZepReplExCommand::MoveToEnd()
     m_pReplWindow->SetBufferCursor(m_pReplBuffer->End());
     m_startLocation = m_pReplWindow->GetBufferCursor();
 }
-
 
 bool ZepReplExCommand::AddKeyPress(uint32_t key, uint32_t modifiers)
 {

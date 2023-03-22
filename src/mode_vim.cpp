@@ -87,7 +87,7 @@ void ZepMode_Vim::AddCopyMaps()
     AddKeyMapWithCountRegisters({ &m_visualMap }, { "y" }, id_Yank);
     AddKeyMapWithCountRegisters({ &m_normalMap, &m_visualMap }, { "Y" }, id_YankLine);
     AddKeyMapWithCountRegisters({ &m_normalMap }, { "yy" }, id_YankLine);
-    
+
     // Visual mode
     AddKeyMapWithCountRegisters({ &m_visualMap }, { "aW" }, id_VisualSelectAWORD);
     AddKeyMapWithCountRegisters({ &m_visualMap }, { "aw" }, id_VisualSelectAWord);
@@ -97,7 +97,6 @@ void ZepMode_Vim::AddCopyMaps()
 
 void ZepMode_Vim::AddPasteMaps()
 {
-
 }
 
 void ZepMode_Vim::Init()
@@ -260,7 +259,7 @@ void ZepMode_Vim::SetupKeyMaps()
     AddKeyMapWithCountRegisters({ &m_normalMap, &m_visualMap }, { "<C-z>", "u" }, id_Undo);
 
     keymap_add({ &m_normalMap }, { "<Backspace>" }, id_MotionStandardLeft);
-    
+
     // No count allowed on backspace in insert mode, or that would interfere with text.
     keymap_add({ &m_insertMap }, { "<Backspace>" }, id_Backspace);
     keymap_add({ &m_insertMap }, { "<Del>" }, id_Delete);
@@ -281,13 +280,11 @@ void ZepMode_Vim::Begin(ZepWindow* pWindow)
 
 void ZepMode_Vim::PreDisplay(ZepWindow& window)
 {
-    // After .25 seconds of not pressing the 'k' escape code after j, 
+    // After .25 seconds of not pressing the 'k' escape code after j,
     // put the j in.
     // We can do better than this and fix the keymapper to handle timed key events.
     // This is an easier fix for now
-    if (timer_get_elapsed_seconds(m_lastKeyPressTimer) > .25f &&
-        m_currentMode == EditorMode::Insert &&
-        m_currentCommand == "j")
+    if (timer_get_elapsed_seconds(m_lastKeyPressTimer) > .25f && m_currentMode == EditorMode::Insert && m_currentCommand == "j")
     {
         auto cmd = std::make_shared<ZepCommand_Insert>(
             window.GetBuffer(),
@@ -300,4 +297,3 @@ void ZepMode_Vim::PreDisplay(ZepWindow& window)
 }
 
 } // namespace Zep
-

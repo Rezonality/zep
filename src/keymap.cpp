@@ -346,7 +346,6 @@ void keymap_find(const KeyMap& map, const std::string& strCommand, KeyMapResult&
 
         // Searched and found nothing in this level
         return false;
-
     }; // fnSearch
 
     findResult.needMoreChars = false;
@@ -363,8 +362,7 @@ void keymap_find(const KeyMap& map, const std::string& strCommand, KeyMapResult&
         {
             // Special case where the user typed a j followed by _not_ a k.
             // Return it as an insert command
-            if (strCommand.size() == 2 &&
-                strCommand[0] == 'j')
+            if (strCommand.size() == 2 && strCommand[0] == 'j')
             {
                 findResult.needMoreChars = false;
                 findResult.commandWithoutGroups = strCommand;
@@ -386,7 +384,7 @@ void keymap_find(const KeyMap& map, const std::string& strCommand, KeyMapResult&
         }
     }
 
-    //ZLOG(DBG, strCommand << " - " << findResult.searchPath);
+    // ZLOG(DBG, strCommand << " - " << findResult.searchPath);
 }
 
 } // namespace Zep

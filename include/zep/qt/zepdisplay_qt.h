@@ -6,10 +6,10 @@
 #include <windows.h>
 #endif
 
-#include "zep/qt/common_qt.h"
 #include "zep/display.h"
-#include "zep/syntax.h"
 #include "zep/editor.h"
+#include "zep/qt/common_qt.h"
+#include "zep/syntax.h"
 #include <string>
 
 namespace Zep
@@ -39,11 +39,11 @@ public:
 
     virtual void SetPixelHeight(int val) override
     {
-        #ifdef __APPLE__
+#ifdef __APPLE__
         m_font = QFont("Menlo");
-        #else
+#else
         m_font = QFont("Consolas");
-        #endif
+#endif
         m_font.setStyleHint(QFont::Monospace);
         m_font.setPixelSize(val);
         m_pixelHeight = val;
@@ -74,7 +74,6 @@ public:
             // Make invalid characters a default fixed_size
             const char chDefault = 'A';
             rc = met.size(Qt::TextIncludeTrailingSpaces | Qt::TextLongestVariant, QString("A"));
-
         }
         return NVec2f(rc.width(), rc.height());
     }
@@ -126,7 +125,7 @@ public:
         m_pPainter->setPen(QColor::fromRgbF(col.x, col.y, col.z, col.w));
 
         // Note: this logic works, but is suspect; I had trouble getting the font to align with where it should be placed!
-        //m_pPainter->drawText(p0.x(), p0.y() + font.GetPixelHeight() - qtFont.Descent() + 1, QString::fromUtf8((char*)text_begin, text_end - text_begin));
+        // m_pPainter->drawText(p0.x(), p0.y() + font.GetPixelHeight() - qtFont.Descent() + 1, QString::fromUtf8((char*)text_begin, text_end - text_begin));
 
         m_pPainter->drawText(p0.x(), p0.y() - qtFont.Descent() + GetPixelScale().y * 1, m_pPainter->viewport().width() - p0.x(), m_pPainter->viewport().height() - p0.y(), Qt::TextLongestVariant, QString::fromUtf8((char*)text_begin, text_end - text_begin));
     }
@@ -159,7 +158,7 @@ public:
             m_pPainter->setClipping(false);
         }
     }
-    
+
     virtual ZepFont& GetFont(ZepTextType type) override
     {
         if (m_fonts[(int)type] == nullptr)

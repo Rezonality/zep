@@ -56,8 +56,7 @@ void ZepSyntax_Tree::UpdateSyntax()
             mark(itrCurrent, itrCurrent + 1, ThemeColor::CursorNormal, ThemeColor::None);
             itrCurrent++;
             auto itrNext = itrCurrent;
-            while (itrNext != itrEnd &&
-                *itrNext != '\n')
+            while (itrNext != itrEnd && *itrNext != '\n')
             {
                 itrNext++;
             }

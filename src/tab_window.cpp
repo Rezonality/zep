@@ -61,7 +61,8 @@ ZepWindow* ZepTabWindow::DoMotion(WindowMotion motion)
         float dist = 0.0f;
         switch (motion)
         {
-        case WindowMotion::Right: {
+        case WindowMotion::Right:
+        {
             if (overlap_x(pRegion->rect, pCurrentRegion->rect))
                 continue;
             if (!overlap_y(pRegion->rect, pCurrentRegion->rect))
@@ -69,7 +70,8 @@ ZepWindow* ZepTabWindow::DoMotion(WindowMotion motion)
             dist = thisCenter.x - center.x;
         }
         break;
-        case WindowMotion::Left: {
+        case WindowMotion::Left:
+        {
             if (overlap_x(pRegion->rect, pCurrentRegion->rect))
                 continue;
             if (!overlap_y(pRegion->rect, pCurrentRegion->rect))
@@ -77,7 +79,8 @@ ZepWindow* ZepTabWindow::DoMotion(WindowMotion motion)
             dist = center.x - thisCenter.x;
         }
         break;
-        case WindowMotion::Up: {
+        case WindowMotion::Up:
+        {
             if (overlap_y(pRegion->rect, pCurrentRegion->rect))
                 continue;
             if (!overlap_x(pRegion->rect, pCurrentRegion->rect))
@@ -85,7 +88,8 @@ ZepWindow* ZepTabWindow::DoMotion(WindowMotion motion)
             dist = center.y - thisCenter.y;
         }
         break;
-        case WindowMotion::Down: {
+        case WindowMotion::Down:
+        {
             if (overlap_y(pRegion->rect, pCurrentRegion->rect))
                 continue;
             if (!overlap_x(pRegion->rect, pCurrentRegion->rect))
@@ -126,7 +130,7 @@ void ZepTabWindow::SetActiveWindow(ZepWindow* pBuffer)
 // Each region contains a list of either vertical or horizontally split regions.
 // Any region can have child regions of the same type.
 // If you split a window, you effectively create a stacked region within the parent region.
-// Sometimes this code will create extra regions to hold children regions.  The RemoveWindow code has a special 
+// Sometimes this code will create extra regions to hold children regions.  The RemoveWindow code has a special
 // case to deal with that.
 ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, RegionLayoutType layoutType)
 {
@@ -135,8 +139,7 @@ ZepWindow* ZepTabWindow::AddWindow(ZepBuffer* pBuffer, ZepWindow* pParent, Regio
     if (m_windows.size() == 1 && pParent == nullptr)
     {
         auto& buffer = m_windows[0]->GetBuffer();
-        if (buffer.HasFileFlags(FileFlags::DefaultBuffer) && 
-            !buffer.HasFileFlags(FileFlags::Dirty))
+        if (buffer.HasFileFlags(FileFlags::DefaultBuffer) && !buffer.HasFileFlags(FileFlags::Dirty))
         {
             m_windows[0]->SetBuffer(pBuffer);
             return m_windows[0];
@@ -448,6 +451,5 @@ std::string ZepTabWindow::GetName() const
     }
     return name;
 }
-
 
 } // namespace Zep

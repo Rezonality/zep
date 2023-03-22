@@ -2,12 +2,14 @@
 
 #ifdef WIN32
 #include <ShellScalingApi.h>
+
 #include "winuser.h"
-#pragma comment (lib, "shcore.lib")
+
+#pragma comment(lib, "shcore.lib")
 #endif
 
-#include "zep/mcommon/logger.h"
 #include "dpi.h"
+#include "zep/mcommon/logger.h"
 
 namespace Zep
 {
@@ -55,4 +57,4 @@ float dpi_pixel_height_from_point_size(float pointSize, float pixelScaleY)
     return inches * (pixelScaleY * 96.0f);
 }
 
-} // Zep
+} // namespace Zep

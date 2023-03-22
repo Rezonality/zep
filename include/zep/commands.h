@@ -41,17 +41,23 @@ protected:
 class ZepCommand_GroupMarker : public ZepCommand
 {
 public:
-    ZepCommand_GroupMarker(ZepBuffer& currentMode) : ZepCommand(currentMode) {}
-    virtual void Redo() override {};
-    virtual void Undo() override {};
+    ZepCommand_GroupMarker(ZepBuffer& currentMode)
+        : ZepCommand(currentMode)
+    {
+    }
+    virtual void Redo() override{};
+    virtual void Undo() override{};
 };
 
 class ZepCommand_EndGroup : public ZepCommand
 {
 public:
-    ZepCommand_EndGroup(ZepBuffer& currentMode) : ZepCommand(currentMode) {}
-    virtual void Redo() override {};
-    virtual void Undo() override {};
+    ZepCommand_EndGroup(ZepBuffer& currentMode)
+        : ZepCommand(currentMode)
+    {
+    }
+    virtual void Redo() override{};
+    virtual void Undo() override{};
 };
 
 class ZepCommand_DeleteRange : public ZepCommand

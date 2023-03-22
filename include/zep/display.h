@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+
 #include "buffer.h"
 
 namespace Zep
@@ -37,7 +38,7 @@ public:
         : m_display(display)
     {
     }
-   
+
     // Implemented in API specific ways
     virtual void SetPixelHeight(int height) = 0;
     virtual NVec2f GetTextSize(const uint8_t* pBegin, const uint8_t* pEnd = nullptr) const = 0;
@@ -104,7 +105,6 @@ public:
     ZepFontNull(ZepDisplay& display)
         : ZepFont(display)
     {
-    
     }
 
     virtual void SetPixelHeight(int val) override
@@ -127,7 +127,6 @@ public:
     ZepDisplayNull()
         : ZepDisplay()
     {
-    
     }
 
     virtual void DrawLine(const NVec2f& start, const NVec2f& end, const NVec4f& color = NVec4f(1.0f), float width = 1.0f) const override
@@ -153,7 +152,7 @@ public:
     {
         (void)rc;
     }
-    
+
     virtual ZepFont& GetFont(ZepTextType type) override
     {
         if (m_fonts[(int)type] == nullptr)
@@ -166,7 +165,6 @@ public:
         }
         return *m_fonts[(int)type];
     }
-
 };
 
 } // namespace Zep

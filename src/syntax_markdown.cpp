@@ -57,14 +57,11 @@ void ZepSyntax_Markdown::UpdateSyntax()
         {
             lineBegin = false;
             auto itrStart = itrCurrent;
-            while (itrCurrent != itrEnd &&
-                *itrCurrent != '\n' &&
-                *itrCurrent != 0)
+            while (itrCurrent != itrEnd && *itrCurrent != '\n' && *itrCurrent != 0)
             {
                 itrCurrent++;
             }
             mark(itrStart, itrCurrent, ThemeColor::Identifier, ThemeColor::None);
-
         }
         else
         {
@@ -72,9 +69,7 @@ void ZepSyntax_Markdown::UpdateSyntax()
             {
                 int inCount = 0;
                 auto itrStart = itrCurrent;
-                while (itrCurrent != itrEnd &&
-                    *itrCurrent != '\n' &&
-                    *itrCurrent != 0)
+                while (itrCurrent != itrEnd && *itrCurrent != '\n' && *itrCurrent != 0)
                 {
                     if (*itrCurrent == '[')
                     {

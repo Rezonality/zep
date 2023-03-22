@@ -57,7 +57,7 @@ MainWindow::MainWindow()
 
     parser.process(*qApp);
 
-    //chibi_init(scheme, qApp->applicationDirPath().toStdString());
+    // chibi_init(scheme, qApp->applicationDirPath().toStdString());
 
     auto* pWidget = new ZepWidget_Qt(this, qApp->applicationDirPath().toStdString(), DemoFontPtSize);
 
@@ -78,7 +78,7 @@ MainWindow::MainWindow()
     setContentsMargins(2, 2, 2, 2);
 
     auto menu = new QMenuBar();
-    //auto pFile = menu->addMenu("File");
+    // auto pFile = menu->addMenu("File");
     auto pSettings = menu->addMenu("Settings");
     {
         auto pMode = pSettings->addMenu("Editor Mode");

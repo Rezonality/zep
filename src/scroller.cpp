@@ -1,7 +1,7 @@
+#include "zep/scroller.h"
+#include "zep/display.h"
 #include "zep/editor.h"
 #include "zep/theme.h"
-#include "zep/display.h"
-#include "zep/scroller.h"
 
 #include "zep/mcommon/logger.h"
 
@@ -55,21 +55,21 @@ void Scroller::CheckState()
 
     switch (m_scrollState)
     {
-        default:
-        case ScrollState::None:
-            break;
-        case ScrollState::ScrollUp:
-            ClickUp();
-            break;
-        case ScrollState::ScrollDown:
-            ClickDown();
-            break;
-        case ScrollState::PageUp:
-            PageUp();
-            break;
-        case ScrollState::PageDown:
-            PageDown();
-            break;
+    default:
+    case ScrollState::None:
+        break;
+    case ScrollState::ScrollUp:
+        ClickUp();
+        break;
+    case ScrollState::ScrollDown:
+        ClickDown();
+        break;
+    case ScrollState::PageUp:
+        PageUp();
+        break;
+    case ScrollState::PageDown:
+        PageDown();
+        break;
     }
 
     GetEditor().RequestRefresh();
@@ -142,62 +142,62 @@ void Scroller::Notify(std::shared_ptr<ZepMessage> message)
 {
     switch (message->messageId)
     {
-        case Msg::Tick:
-        {
-            CheckState();
-        }
-        break;
+    case Msg::Tick:
+    {
+        CheckState();
+    }
+    break;
 
-        case Msg::MouseDown:
-            if (message->button == ZepMouseButton::Left)
+    case Msg::MouseDown:
+        if (message->button == ZepMouseButton::Left)
+        {
+            if (m_bottomButtonRegion->rect.Contains(message->pos))
             {
-                if (m_bottomButtonRegion->rect.Contains(message->pos))
+                ClickDown();
+                timer_start(m_start_delay_timer);
+                message->handled = true;
+            }
+            else if (m_topButtonRegion->rect.Contains(message->pos))
+            {
+                ClickUp();
+                timer_start(m_start_delay_timer);
+                message->handled = true;
+            }
+            else if (m_mainRegion->rect.Contains(message->pos))
+            {
+                auto thumbRect = ThumbRect();
+                if (thumbRect.Contains(message->pos))
                 {
-                    ClickDown();
+                    m_mouseDownPos = message->pos;
+                    m_mouseDownPercent = vScrollPosition;
+                    m_scrollState = ScrollState::Drag;
+                    message->handled = true;
+                }
+                else if (message->pos.y > thumbRect.BottomLeft().y)
+                {
+                    PageDown();
                     timer_start(m_start_delay_timer);
                     message->handled = true;
                 }
-                else if (m_topButtonRegion->rect.Contains(message->pos))
+                else if (message->pos.y < thumbRect.TopRight().y)
                 {
-                    ClickUp();
+                    PageUp();
                     timer_start(m_start_delay_timer);
                     message->handled = true;
-                }
-                else if (m_mainRegion->rect.Contains(message->pos))
-                {
-                    auto thumbRect = ThumbRect();
-                    if (thumbRect.Contains(message->pos))
-                    {
-                        m_mouseDownPos = message->pos;
-                        m_mouseDownPercent = vScrollPosition;
-                        m_scrollState = ScrollState::Drag;
-                        message->handled = true;
-                    }
-                    else if (message->pos.y > thumbRect.BottomLeft().y)
-                    {
-                        PageDown();
-                        timer_start(m_start_delay_timer);
-                        message->handled = true;
-                    }
-                    else if (message->pos.y < thumbRect.TopRight().y)
-                    {
-                        PageUp();
-                        timer_start(m_start_delay_timer);
-                        message->handled = true;
-                    }
                 }
             }
-            break;
-        case Msg::MouseUp:
-        {
-            m_scrollState = ScrollState::None;
         }
         break;
-        case Msg::MouseMove:
-            DoMove(message->pos);
-            break;
-        default:
-            break;
+    case Msg::MouseUp:
+    {
+        m_scrollState = ScrollState::None;
+    }
+    break;
+    case Msg::MouseMove:
+        DoMove(message->pos);
+        break;
+    default:
+        break;
     }
 }
 

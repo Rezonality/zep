@@ -25,11 +25,26 @@ public:
 
     ZepTreeNode(const std::string& strName, uint32_t flags = ZepTreeNodeFlags::None);
 
-    virtual const std::string& GetName() const { return m_strName; }
-    virtual void SetName(const std::string& name) { m_strName = name; }
-    virtual ZepTreeNode* GetParent() const { return m_pParent; }
-    virtual TChildren GetChildren() const { return m_children; }
-    virtual bool HasChildren() const { return !m_children.empty(); }
+    virtual const std::string& GetName() const
+    {
+        return m_strName;
+    }
+    virtual void SetName(const std::string& name)
+    {
+        m_strName = name;
+    }
+    virtual ZepTreeNode* GetParent() const
+    {
+        return m_pParent;
+    }
+    virtual TChildren GetChildren() const
+    {
+        return m_children;
+    }
+    virtual bool HasChildren() const
+    {
+        return !m_children.empty();
+    }
 
     virtual ZepTreeNode* AddChild(const TNode& pNode)
     {
@@ -40,8 +55,7 @@ public:
 
     virtual bool RemoveChild(ZepTreeNode* pNode)
     {
-        auto itr = std::find_if(m_children.begin(), m_children.end(), [=](TNode& node)
-        {
+        auto itr = std::find_if(m_children.begin(), m_children.end(), [=](TNode& node) {
             if (node.get() == pNode)
             {
                 return true;
@@ -75,7 +89,7 @@ public:
 
     virtual void ExpandAll(bool expand)
     {
-        using fnVisit = std::function<void(ZepTreeNode* pNode, bool ex)>;
+        using fnVisit = std::function<void(ZepTreeNode * pNode, bool ex)>;
         fnVisit visitor = [&](ZepTreeNode* pNode, bool ex) {
             pNode->Expand(ex);
             if (pNode->HasChildren())
@@ -93,6 +107,7 @@ public:
     {
         m_pParent = pParent;
     }
+
 protected:
     bool m_expanded = false;
     ZepTreeNode* m_pParent = nullptr;
@@ -104,7 +119,10 @@ protected:
 class ZepTree
 {
 public:
-    virtual ZepTreeNode* GetRoot() const { return m_spRoot.get(); }
+    virtual ZepTreeNode* GetRoot() const
+    {
+        return m_spRoot.get();
+    }
 
 protected:
     ZepTreeNode::TNode m_spRoot;
@@ -116,7 +134,6 @@ public:
     ZepFileNode(const std::string& name, uint32_t flags = ZepTreeNodeFlags::None)
         : ZepTreeNode(name, flags)
     {
-
     }
 };
 
@@ -124,7 +141,6 @@ class ZepFileTree : public ZepTree
 {
 public:
     ZepFileTree();
-
 };
 
 class ZepMode_Tree : public ZepMode_Vim
@@ -139,7 +155,10 @@ public:
     }
     virtual void Begin(ZepWindow* pWindow) override;
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
-    virtual const char* Name() const override { return StaticName(); }
+    virtual const char* Name() const override
+    {
+        return StaticName();
+    }
 
 private:
     void BuildTree();

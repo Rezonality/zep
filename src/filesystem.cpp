@@ -13,9 +13,9 @@
 #include <filesystem>
 
 #ifdef __APPLE__
-    namespace cpp_fs = std::__fs::filesystem;
-#else 
-    namespace cpp_fs = std::filesystem;
+namespace cpp_fs = std::__fs::filesystem;
+#else
+namespace cpp_fs = std::filesystem;
 #endif
 
 namespace Zep

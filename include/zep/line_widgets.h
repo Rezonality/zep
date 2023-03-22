@@ -22,11 +22,10 @@ class FloatSlider : public IWidget
 {
 public:
     FloatSlider(ZepEditor& editor, uint32_t dimension, fnWidgetValueChanged fnChanged = nullptr)
-        : m_editor(editor),
-        m_dimension(dimension),
-        m_fnChanged(fnChanged)
+        : m_editor(editor)
+        , m_dimension(dimension)
+        , m_fnChanged(fnChanged)
     {
-
     }
     virtual NVec2f GetSize() const override;
     virtual void MouseDown(const NVec2f& pos, ZepMouseButton button) override;
@@ -38,7 +37,8 @@ public:
     virtual const NVec4f& Get() const override;
 
 private:
-    virtual ZepEditor& GetEditor() const {
+    virtual ZepEditor& GetEditor() const
+    {
         return m_editor;
     };
 
@@ -55,10 +55,9 @@ class ColorPicker : public IWidget
 {
 public:
     ColorPicker(ZepEditor& editor, fnWidgetValueChanged fnChanged = nullptr)
-        : m_editor(editor),
-        m_fnChanged(fnChanged)
+        : m_editor(editor)
+        , m_fnChanged(fnChanged)
     {
-
     }
     virtual NVec2f GetSize() const override;
     virtual void MouseDown(const NVec2f& pos, ZepMouseButton button) override;
@@ -70,7 +69,8 @@ public:
     virtual const NVec4f& Get() const override;
 
 private:
-    virtual ZepEditor& GetEditor() const {
+    virtual ZepEditor& GetEditor() const
+    {
         return m_editor;
     };
 
@@ -79,4 +79,4 @@ private:
     fnWidgetValueChanged m_fnChanged = nullptr;
     NVec4f m_color;
 };
-} // Zep
+} // namespace Zep

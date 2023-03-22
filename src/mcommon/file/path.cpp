@@ -35,4 +35,4 @@ ZepPath path_get_relative(const ZepPath& from, const ZepPath& to)
     return finalPath;
 }
 
-} // Zep
+} // namespace Zep

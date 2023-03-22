@@ -7,13 +7,14 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
 #include "zep_config.h"
 
-#include "zep/mcommon/math/math.h"
 #include "zep/mcommon/animation/timer.h"
-#include "zep/mcommon/threadpool.h"
-#include "zep/mcommon/file/path.h"
 #include "zep/mcommon/file/cpptoml.h"
+#include "zep/mcommon/file/path.h"
+#include "zep/mcommon/math/math.h"
+#include "zep/mcommon/threadpool.h"
 
 #include "zep/keymap.h"
 
@@ -57,10 +58,24 @@ struct Region;
 
 #define ZEP_UNUSED(var) (void)var;
 
-// Helpers 
-inline bool ZTestFlags(const uint32_t& flags, uint32_t value) { return ((flags & value) ? true : false); }
-inline uint32_t ZSetFlags(const uint32_t& flags, uint32_t value, bool set = true) { if (set) { return flags | value; } else return flags; }
-inline uint32_t ZClearFlags(const uint32_t& flags, uint32_t value) { return flags & ~value; }
+// Helpers
+inline bool ZTestFlags(const uint32_t& flags, uint32_t value)
+{
+    return ((flags & value) ? true : false);
+}
+inline uint32_t ZSetFlags(const uint32_t& flags, uint32_t value, bool set = true)
+{
+    if (set)
+    {
+        return flags | value;
+    }
+    else
+        return flags;
+}
+inline uint32_t ZClearFlags(const uint32_t& flags, uint32_t value)
+{
+    return flags & ~value;
+}
 
 namespace ZepEditorFlags
 {
@@ -106,14 +121,14 @@ public:
         , str(strIn)
     {
     }
-    
+
     ZepMessage(Msg id, const NVec2f& p, ZepMouseButton b = ZepMouseButton::Unknown)
         : messageId(id)
         , pos(p)
         , button(b)
     {
     }
-    
+
     ZepMessage(Msg id, const NVec2f& p, std::string strIn)
         : messageId(id)
         , pos(p)
@@ -128,8 +143,8 @@ public:
     }
 
     Msg messageId; // Message ID
-    std::string str;       // Generic string for simple messages
-    bool handled = false;  // If the message was handled
+    std::string str; // Generic string for simple messages
+    bool handled = false; // If the message was handled
     NVec2f pos;
     ZepMouseButton button = ZepMouseButton::Unknown;
     IZepComponent* pComponent = nullptr;
@@ -137,7 +152,10 @@ public:
 
 struct IZepComponent
 {
-    virtual void Notify(std::shared_ptr<ZepMessage> message) { ZEP_UNUSED(message); };
+    virtual void Notify(std::shared_ptr<ZepMessage> message)
+    {
+        ZEP_UNUSED(message);
+    };
     virtual ZepEditor& GetEditor() const = 0;
 };
 
@@ -242,13 +260,20 @@ class ZepExCommand : public ZepComponent
 public:
     ZepExCommand(ZepEditor& editor)
         : ZepComponent(editor)
-    {}
+    {
+    }
     virtual ~ZepExCommand() {}
     virtual void Run(const std::vector<std::string>& args = {}) = 0;
     virtual const char* ExCommandName() const = 0;
-    virtual StringId ExCommandId() const { return StringId(ExCommandName()); }
-    virtual void Init() {};
-    virtual const KeyMap* GetKeyMappings(ZepMode&) const { return nullptr; };
+    virtual StringId ExCommandId() const
+    {
+        return StringId(ExCommandName());
+    }
+    virtual void Init(){};
+    virtual const KeyMap* GetKeyMappings(ZepMode&) const
+    {
+        return nullptr;
+    };
 };
 
 struct TabRegionTab : public Region
@@ -256,7 +281,6 @@ struct TabRegionTab : public Region
     NVec4f color;
     ZepTabWindow* pTabWindow = nullptr;
 };
-
 
 class ZepEditor
 {
@@ -389,13 +413,16 @@ public:
     void SetBufferSyntax(ZepBuffer& buffer) const;
     void SetBufferMode(ZepBuffer& buffer) const;
 
-    EditorConfig& GetConfig() 
+    EditorConfig& GetConfig()
     {
         return m_config;
     }
 
     // Helper for macros
-    ZepEditor& GetEditor() { return *this; }
+    ZepEditor& GetEditor()
+    {
+        return *this;
+    }
 
     ThreadPool& GetThreadPool() const;
 

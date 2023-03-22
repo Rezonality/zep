@@ -120,7 +120,6 @@ void ZepMode_Search::AddKeyPress(uint32_t key, uint32_t modifiers)
     GetEditor().SetCommandText(str.str());
 }
 
-
 void ZepMode_Search::Begin(ZepWindow* pWindow)
 {
     ZepMode::Begin(pWindow);
@@ -145,7 +144,7 @@ void ZepMode_Search::Notify(std::shared_ptr<ZepMessage> message)
             {
                 return;
             }
-    
+
             fileSearchActive = false;
 
             m_spFilePaths = m_indexResult.get();
@@ -237,7 +236,7 @@ void ZepMode_Search::OpenSelection(OpenType type)
                         m_launchWindow.SetBuffer(pBuffer);
                     }
                 }
-                 break;
+                break;
                 case OpenType::VSplit:
                     GetEditor().GetActiveTabWindow()->AddWindow(pBuffer, &m_launchWindow, RegionLayoutType::HBox);
                     break;

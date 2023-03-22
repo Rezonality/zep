@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QMainWindow>
+
 #include <memory>
 
 #include <zep/mode_repl.h>

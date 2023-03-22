@@ -818,7 +818,7 @@ void ZepBuffer::SetFilePath(const ZepPath& path)
     }
     else
     {
-        if (!path.is_absolute()) 
+        if (!path.is_absolute())
         {
             auto full = GetEditor().GetFileSystem().GetWorkingDirectory() / path;
             if (GetEditor().GetFileSystem().Exists(full))

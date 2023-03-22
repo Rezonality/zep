@@ -102,8 +102,8 @@ void ZepSyntax::QueueUpdateSyntax(GlyphIterator startLocation, GlyphIterator end
 
     // Have the thread update the syntax in the new region
     // If the pool has no threads, this will end up serial
-    //m_syntaxResult = GetEditor().GetThreadPool().enqueue([=]() {
-        UpdateSyntax();
+    // m_syntaxResult = GetEditor().GetThreadPool().enqueue([=]() {
+    UpdateSyntax();
     //});
 }
 
@@ -155,7 +155,7 @@ void ZepSyntax::UpdateSyntax()
     std::string lineEnd("\n");
 
     if (m_flags & ZepSyntaxFlags::LispLike)
-    { 
+    {
         delim = std::string(" \t.\n(){}[]");
     }
     else

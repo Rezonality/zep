@@ -33,7 +33,7 @@ class Indexer : public ZepComponent
 {
 public:
     Indexer(ZepEditor& editor);
-    
+
     virtual void Notify(std::shared_ptr<ZepMessage> message) override;
 
     bool StartIndexing();
@@ -53,7 +53,6 @@ private:
     std::mutex m_symbolMutex;
     SymbolContainer m_symbols;
     ZepPath m_searchRoot;
-    
 };
 
-} // Zep
+} // namespace Zep

@@ -1,12 +1,13 @@
 #pragma once
 
+#include <functional>
+#include <map>
+#include <memory>
+#include <string>
+
 #include "zep_config.h"
 
-#include <memory>
-#include <map>
-#include <string>
 #include "zep/mcommon/file/path.h"
-#include <functional>
 
 namespace Zep
 {
@@ -22,7 +23,7 @@ enum ZepFileSystemFlags
 class IZepFileSystem
 {
 public:
-    virtual ~IZepFileSystem() {};
+    virtual ~IZepFileSystem(){};
     virtual std::string Read(const ZepPath& filePath) = 0;
     virtual bool Write(const ZepPath& filePath, const void* pData, size_t size) = 0;
 
@@ -43,7 +44,7 @@ public:
     virtual bool IsReadOnly(const ZepPath& path) const = 0;
     virtual bool Exists(const ZepPath& path) const = 0;
 
-    // A callback API for scaning 
+    // A callback API for scaning
     virtual void ScanDirectory(const ZepPath& path, std::function<bool(const ZepPath& path, bool& dont_recurse)> fnScan) const = 0;
 
     // Equivalent means 'the same file'

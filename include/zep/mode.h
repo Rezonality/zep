@@ -3,10 +3,10 @@
 #include <stack>
 
 #include "zep/buffer.h"
-#include "zep/display.h"
-#include "zep/window.h"
 #include "zep/commands.h"
+#include "zep/display.h"
 #include "zep/keymap.h"
+#include "zep/window.h"
 
 namespace Zep
 {
@@ -102,7 +102,7 @@ enum
     HandledCount = (1 << 2), // Command implements the count, no need to recall it.
     BeginUndoGroup = (1 << 4)
 };
-} // CommandResultFlags
+} // namespace CommandResultFlags
 
 struct CommandResult
 {
@@ -154,16 +154,22 @@ public:
     ZepMode(ZepEditor& editor);
     virtual ~ZepMode();
 
-    virtual void Init() {};
+    virtual void Init(){};
     virtual void AddKeyPress(uint32_t key, uint32_t modifierKeys = ModifierKey::None);
     virtual const char* Name() const = 0;
     virtual void Begin(ZepWindow* pWindow);
     virtual void Notify(std::shared_ptr<ZepMessage> message) override {}
-    virtual uint32_t ModifyWindowFlags(uint32_t windowFlags) { return windowFlags; }
+    virtual uint32_t ModifyWindowFlags(uint32_t windowFlags)
+    {
+        return windowFlags;
+    }
     virtual EditorMode GetEditorMode() const;
     virtual EditorMode DefaultMode() const = 0;
-    virtual bool UsesRelativeLines() const { return false; }
-    
+    virtual bool UsesRelativeLines() const
+    {
+        return false;
+    }
+
     // About to display this window, which is associated with this mode
     virtual void PreDisplay(ZepWindow&){};
 
@@ -184,7 +190,10 @@ public:
 
     virtual GlyphRange GetInclusiveVisualRange() const;
 
-    virtual std::vector<Airline> GetAirlines(ZepWindow&) const { return std::vector<Airline>{}; }
+    virtual std::vector<Airline> GetAirlines(ZepWindow&) const
+    {
+        return std::vector<Airline>{};
+    }
 
 protected:
     // Do the actual input handling
@@ -196,7 +205,10 @@ protected:
     virtual bool GetCommand(CommandContext& context);
     virtual void ResetCommand();
 
-    virtual bool HandleSpecialCommand(CommandContext&) { return false; };
+    virtual bool HandleSpecialCommand(CommandContext&)
+    {
+        return false;
+    };
 
     virtual bool GetOperationRange(const std::string& op, EditorMode currentMode, GlyphIterator& beginRange, GlyphIterator& endRange) const;
 
@@ -208,7 +220,10 @@ protected:
     virtual bool HandleExCommand(std::string strCommand);
     virtual std::string ConvertInputToMapString(uint32_t key, uint32_t modifierKeys);
 
-    virtual bool HandleIgnoredInput(CommandContext&) { return false; };
+    virtual bool HandleIgnoredInput(CommandContext&)
+    {
+        return false;
+    };
 
 protected:
     std::stack<std::shared_ptr<ZepCommand>> m_undoStack;
@@ -223,7 +238,7 @@ protected:
     KeyMap m_normalMap;
     KeyMap m_visualMap;
     KeyMap m_insertMap;
-    
+
     Direction m_lastFindDirection = Direction::Forward;
     Direction m_lastSearchDirection = Direction::Forward;
 

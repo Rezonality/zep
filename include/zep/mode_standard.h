@@ -13,7 +13,10 @@ public:
 
     virtual void Init() override;
     virtual void Begin(ZepWindow* pWindow) override;
-    virtual EditorMode DefaultMode() const override { return EditorMode::Insert; }
+    virtual EditorMode DefaultMode() const override
+    {
+        return EditorMode::Insert;
+    }
 
     static const char* StaticName()
     {

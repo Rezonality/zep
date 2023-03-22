@@ -78,7 +78,7 @@ void ZepRegressExCommand::Tick()
     {
         return;
     }
-    
+
     m_windowOperationCount--;
     if (m_windowOperationCount == 0)
     {

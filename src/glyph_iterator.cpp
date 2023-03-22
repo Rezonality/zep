@@ -36,7 +36,7 @@ bool GlyphIterator::Valid() const
         return false;
     }
 
-    // We should never have a valid buffer index but be outside the start of a 
+    // We should never have a valid buffer index but be outside the start of a
     // utf8 glyph
     assert(!utf8_is_trailing(Char()));
     return true;
@@ -121,7 +121,8 @@ GlyphIterator& GlyphIterator::MoveClamped(long count, LineLocation clamp)
         auto lineBegin = m_pBuffer->GetLinePos(*this, LineLocation::LineBegin);
         for (long c = count; c < 0; c++)
         {
-            while ((m_index > lineBegin.Index()) && utf8_is_trailing(gapBuffer[--m_index]));
+            while ((m_index > lineBegin.Index()) && utf8_is_trailing(gapBuffer[--m_index]))
+                ;
         }
     }
 
@@ -152,7 +153,8 @@ GlyphIterator& GlyphIterator::Move(long count)
     {
         for (long c = count; c < 0; c++)
         {
-            while ((m_index > 0) && utf8::internal::is_trail(gapBuffer[--m_index]));
+            while ((m_index > 0) && utf8::internal::is_trail(gapBuffer[--m_index]))
+                ;
         }
     }
     Clamp();
@@ -174,7 +176,7 @@ GlyphIterator& GlyphIterator::Clamp()
         return *this;
     }
 
-    // Clamp to the 0 on the end of the buffer 
+    // Clamp to the 0 on the end of the buffer
     // Since indices are usually exclusive, this allows selection of everything but the 0
     m_index = std::min(m_index, long(m_pBuffer->GetWorkingBuffer().size()) - 1);
     m_index = std::max(m_index, 0l);
@@ -244,15 +246,15 @@ void GlyphIterator::operator-=(long count)
     Move(-count);
 }
 
-
 GlyphRange::GlyphRange(GlyphIterator a, GlyphIterator b)
     : first(a)
     , second(b)
 {
 }
-    
+
 GlyphRange::GlyphRange(const ZepBuffer* pBuffer, ByteRange range)
-    : first(pBuffer, range.first), second(pBuffer, range.second)
+    : first(pBuffer, range.first)
+    , second(pBuffer, range.second)
 {
 }
 

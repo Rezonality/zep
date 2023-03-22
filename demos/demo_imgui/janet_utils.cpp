@@ -1,8 +1,10 @@
-#include <string>
 #include <sstream>
+#include <string>
 
 #include <fmt/format.h>
+
 #include <zep/mcommon/logger.h>
+
 #include "janet.h"
 
 namespace Zep

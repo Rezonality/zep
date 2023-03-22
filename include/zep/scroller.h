@@ -1,7 +1,7 @@
 #pragma once
 
-#include "splits.h"
 #include "editor.h"
+#include "splits.h"
 #include "zep/mcommon/animation/timer.h"
 
 namespace Zep

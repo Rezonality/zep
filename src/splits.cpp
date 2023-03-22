@@ -76,14 +76,12 @@ void LayoutRegion(Region& region)
             }
         }
 
-        if (!(rcChild->flags & RegionFlags::Expanding) &&
-            rcChild->fixed_size.x != 0.0f &&
-            rcChild->fixed_size.y != 0.0f)
+        if (!(rcChild->flags & RegionFlags::Expanding) && rcChild->fixed_size.x != 0.0f && rcChild->fixed_size.y != 0.0f)
         {
             auto currentSize = rcChild->rect.Size();
 
             rcChild->rect.SetSize(Clamp(rcChild->fixed_size, NVec2f(0.0f, 0.0f), currentSize));
-        
+
             if (region.layoutType == RegionLayoutType::HBox)
             {
                 currentRect.topLeftPx = rcChild->rect.TopRight();

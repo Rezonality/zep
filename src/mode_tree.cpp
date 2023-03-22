@@ -30,7 +30,6 @@ ZepMode_Tree::~ZepMode_Tree()
 
 void ZepMode_Tree::Notify(std::shared_ptr<ZepMessage> message)
 {
-
 }
 
 void ZepMode_Tree::BuildTree()

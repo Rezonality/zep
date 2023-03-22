@@ -5,7 +5,7 @@
 #include <string>
 
 // Can't include this publicly
-//#include "zep/mcommon/logger.h"
+// #include "zep/mcommon/logger.h"
 
 namespace Zep
 {
@@ -14,6 +14,7 @@ inline NVec2f toNVec2f(const ImVec2& im)
 {
     return NVec2f(im.x, im.y);
 }
+
 inline ImVec2 toImVec2(const NVec2f& im)
 {
     return ImVec2(im.x, im.y);
@@ -139,7 +140,6 @@ public:
         }
         return *m_fonts[(int)type];
     }
-
 
 private:
     static ImU32 GetStyleModulatedColor(const NVec4f& color)
