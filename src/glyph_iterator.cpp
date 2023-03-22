@@ -277,4 +277,9 @@ bool GlyphRange::ContainsInclusiveLocation(GlyphIterator loc) const
     return loc >= first && loc <= second;
 }
 
+bool GlyphRange::Valid() const
+{
+    return first.Valid() && second.Valid();
+}
+
 } // namespace Zep

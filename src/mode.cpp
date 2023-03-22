@@ -648,16 +648,35 @@ GlyphRange ZepMode::GetInclusiveVisualRange() const
     auto startOffset = m_visualBegin.Clamped();
     auto endOffset = m_visualEnd.Clamped();
 
+    if (DefaultMode() == EditorMode::Insert)
+    {
+        if (startOffset == endOffset)
+        {
+            // In standard mode, if the cursor has not moved, this is not a selection
+            startOffset = endOffset = GlyphIterator();
+        }
+        else
+        {
+            // In standard/insert mode, selections exclude the last character, 
+            // depending on direction.  Starting from an insert mode cursor, 
+            // selections are not made until at least one step
+            // (remembering that an insert mode cursor is effectively sitting on the character in front of it.)
+            if (endOffset > startOffset)
+            {
+                endOffset--;
+            }
+            else
+            {
+                startOffset--;
+            }
+        }
+    }
+
     if (startOffset > endOffset)
     {
         std::swap(startOffset, endOffset);
     }
 
-    if (DefaultMode() == EditorMode::Insert)
-    {
-        // In standard/insert mode, selections exclude the last character
-        endOffset.Move(-1);
-    }
 
     return GlyphRange(startOffset, endOffset);
 }
@@ -981,10 +1000,15 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_StandardSelectAll)
     {
+        auto range = GetInclusiveVisualRange();
+        if (!range.Valid())
+        {
+            return true;
+        }
+        
         context.commandResult.modeSwitch = EditorMode::Visual;
         m_visualBegin = context.buffer.Begin();
         m_visualEnd = context.buffer.End();
-        auto range = GetInclusiveVisualRange();
         GetCurrentWindow()->GetBuffer().SetSelection(range);
         GetCurrentWindow()->SetBufferCursor(range.second);
         return true;
@@ -1235,6 +1259,10 @@ bool ZepMode::GetCommand(CommandContext& context)
         if (m_currentMode == EditorMode::Visual)
         {
             auto range = GetInclusiveVisualRange();
+            if (!range.Valid())
+            {
+                return true;
+            }
             context.beginRange = range.first;
             context.endRange = range.second.Peek(1);
             context.op = CommandOperation::Delete;
@@ -1318,6 +1346,10 @@ bool ZepMode::GetCommand(CommandContext& context)
         context.registers.push('*');
         context.registers.push('+');
         auto range = GetInclusiveVisualRange();
+        if (!range.Valid())
+        {
+            return true;
+        }
         context.beginRange = range.first;
         context.endRange = range.second.Peek(1);
         // Note: select line wise yank if we started in linewise copy mode
@@ -1329,6 +1361,10 @@ bool ZepMode::GetCommand(CommandContext& context)
     {
         // Ignore empty copy
         auto range = GetInclusiveVisualRange();
+        if (!range.Valid())
+        {
+            return true;
+        }
         context.beginRange = range.first;
         context.endRange = range.second.Peek(1);
         if (context.beginRange == context.endRange)
@@ -1350,10 +1386,14 @@ bool ZepMode::GetCommand(CommandContext& context)
     {
         if (context.currentMode == EditorMode::Visual)
         {
+            auto range = GetInclusiveVisualRange();
+            if (!range.Valid())
+            {
+                return true;
+            }
             context.replaceRangeMode = ReplaceRangeMode::Replace;
             context.op = CommandOperation::Replace;
             context.pRegister = &GetEditor().GetRegister('"');
-            auto range = GetInclusiveVisualRange();
             context.beginRange = range.first;
             context.endRange = range.second.Peek(1);
             context.cursorAfterOverride = context.beginRange.PeekByteOffset(long(context.pRegister->text.size()));
@@ -1373,10 +1413,14 @@ bool ZepMode::GetCommand(CommandContext& context)
             // Already in visual mode, so replace the selection
             if (context.currentMode == EditorMode::Visual)
             {
+                auto range = GetInclusiveVisualRange();
+                if (!range.Valid())
+                {
+                    return true;
+                }
                 context.replaceRangeMode = ReplaceRangeMode::Replace;
                 context.op = CommandOperation::Replace;
                 context.pRegister = &GetEditor().GetRegister('"');
-                auto range = GetInclusiveVisualRange();
                 context.beginRange = range.first;
                 context.endRange = range.second.Peek(1);
                 context.cursorAfterOverride = context.beginRange.PeekByteOffset(long(context.pRegister->text.size()));
@@ -1405,8 +1449,12 @@ bool ZepMode::GetCommand(CommandContext& context)
             // Already in visual mode, so replace the selection with whatever we copied
             if (context.currentMode == EditorMode::Visual)
             {
-                context.pRegister = &GetEditor().GetRegister('"');
                 auto range = GetInclusiveVisualRange();
+                if (!range.Valid())
+                {
+                    return true;
+                }
+                context.pRegister = &GetEditor().GetRegister('"');
                 context.beginRange = range.first;
                 context.endRange = range.second.Peek(1);
                 context.cursorAfterOverride = context.beginRange.PeekByteOffset(long(context.pRegister->text.size()));
@@ -1968,6 +2016,10 @@ bool ZepMode::GetOperationRange(const std::string& op, EditorMode currentMode, G
         if (currentMode == EditorMode::Visual)
         {
             auto range = GetInclusiveVisualRange();
+            if (!range.Valid())
+            {
+                return false;
+            }
             beginRange = range.first;
             endRange = range.second.Peek(1);
         }
@@ -2059,7 +2111,14 @@ void ZepMode::UpdateVisualSelection()
         }
 
         auto range = GetInclusiveVisualRange();
-        GetCurrentWindow()->GetBuffer().SetSelection(range);
+        if (range.Valid())
+        {
+            GetCurrentWindow()->GetBuffer().SetSelection(range);
+        }
+        else
+        {
+            GetCurrentWindow()->GetBuffer().ClearSelection();
+        }
     }
 }
 

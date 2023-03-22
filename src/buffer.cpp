@@ -1287,13 +1287,13 @@ void ZepBuffer::SetTheme(std::shared_ptr<ZepTheme> spTheme)
 
 bool ZepBuffer::HasSelection() const
 {
-    return m_selection.first != m_selection.second;
+    return m_selection.first.Valid() && m_selection.second.Valid();
 }
 
 void ZepBuffer::ClearSelection()
 {
-    m_selection.first = Begin();
-    m_selection.second = Begin();
+    m_selection.first = GlyphIterator();
+    m_selection.second = GlyphIterator();
 }
 
 GlyphRange ZepBuffer::GetInclusiveSelection() const
@@ -1304,7 +1304,8 @@ GlyphRange ZepBuffer::GetInclusiveSelection() const
 void ZepBuffer::SetSelection(const GlyphRange& selection)
 {
     m_selection = selection;
-    if (m_selection.first > m_selection.second)
+    if (m_selection.first.Valid() && m_selection.second.Valid() &&
+        (m_selection.first > m_selection.second))
     {
         std::swap(m_selection.first, m_selection.second);
     }
