@@ -702,6 +702,9 @@ bool ZepMode::GetCommand(CommandContext& context)
 
     auto mappedCommand = context.keymap.foundMapping;
 
+    // Using movement in insert mode vs normal mode is different; should be able to move the cursor beyond the end of the line in insert mode.
+    auto movementLineEndLocation = (context.currentMode == EditorMode::Insert ? LineLocation::LineCRBegin : LineLocation::LineLastNonCR);
+
     auto pEx = GetEditor().FindExCommand(mappedCommand);
     if (pEx)
     {
@@ -932,19 +935,19 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_MotionDown)
     {
-        GetCurrentWindow()->MoveCursorY(context.keymap.TotalCount());
+        GetCurrentWindow()->MoveCursorY(context.keymap.TotalCount(), movementLineEndLocation);
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
     else if (mappedCommand == id_MotionUp)
     {
-        GetCurrentWindow()->MoveCursorY(-context.keymap.TotalCount());
+        GetCurrentWindow()->MoveCursorY(-context.keymap.TotalCount(), movementLineEndLocation);
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }
     else if (mappedCommand == id_MotionRight)
     {
-        GetCurrentWindow()->SetBufferCursor(cursorItr.MoveClamped(context.keymap.TotalCount()));
+        GetCurrentWindow()->SetBufferCursor(cursorItr.MoveClamped(context.keymap.TotalCount(), movementLineEndLocation));
         context.commandResult.flags |= CommandResultFlags::HandledCount;
         return true;
     }

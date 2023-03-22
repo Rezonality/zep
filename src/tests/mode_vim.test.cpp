@@ -167,6 +167,19 @@ TEST_F(VimTest, ESCAPE)
     ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "Hello");
 }
 
+TEST_F(VimTest, InsertMotionEnd)
+{
+    pBuffer->SetText("Hello");
+    spMode->AddCommandText("i");
+    spMode->AddKeyPress(ExtKeys::RIGHT);
+    spMode->AddKeyPress(ExtKeys::RIGHT);
+    spMode->AddKeyPress(ExtKeys::RIGHT);
+    spMode->AddKeyPress(ExtKeys::RIGHT);
+    spMode->AddKeyPress(ExtKeys::RIGHT);
+    spMode->AddCommandText("y");
+    ASSERT_STREQ(pBuffer->GetWorkingBuffer().string().c_str(), "Helloy");
+}
+
 TEST_F(VimTest, RETURN)
 {
     pBuffer->SetText("Õne\ntwo");
