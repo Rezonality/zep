@@ -58,12 +58,12 @@ void ZepMode_Standard::Init()
     keymap_add({ &m_insertMap, &m_visualMap }, { "<Right>" }, id_MotionStandardRight);
     keymap_add({ &m_insertMap, &m_visualMap }, { "<Up>" }, id_MotionStandardUp);
     keymap_add({ &m_insertMap, &m_visualMap }, { "<Down>" }, id_MotionStandardDown);
-    keymap_add({ &m_insertMap }, { "<End>" }, id_MotionLineBeyondEnd);
-    keymap_add({ &m_insertMap }, { "<Home>" }, id_MotionLineHomeToggle);
-    keymap_add({ &m_insertMap }, { "<C-Left>" }, id_MotionStandardLeftWord);
-    keymap_add({ &m_insertMap }, { "<C-Right>" }, id_MotionStandardRightWord);
-    keymap_add({ &m_insertMap }, { "<PageDown>" }, id_MotionPageForward);
-    keymap_add({ &m_insertMap }, { "<PageUp>" }, id_MotionPageBackward);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<End>" }, id_MotionLineBeyondEnd);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<Home>" }, id_MotionLineHomeToggle);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<C-Left>" }, id_MotionStandardLeftWord);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<C-Right>" }, id_MotionStandardRightWord);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<PageDown>" }, id_MotionPageForward);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<PageUp>" }, id_MotionPageBackward);
 
     keymap_add({ &m_insertMap, &m_visualMap }, { "<C-S-Left>" }, id_MotionStandardLeftWordSelect);
     keymap_add({ &m_insertMap, &m_visualMap }, { "<C-S-Right>" }, id_MotionStandardRightWordSelect);

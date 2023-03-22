@@ -7,6 +7,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <limits>
 
 #include "zep_config.h"
 
