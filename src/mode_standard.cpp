@@ -50,9 +50,8 @@ void ZepMode_Standard::Init()
     keymap_add({ &m_insertMap }, { "<Return>" }, id_InsertCarriageReturn);
     keymap_add({ &m_insertMap }, { "<Tab>" }, id_InsertTab);
     keymap_add({ &m_insertMap, &m_visualMap }, { "<Del>" }, id_Delete);
-    keymap_add({ &m_insertMap, &m_visualMap }, { "<C-y>" }, id_Redo);
-    keymap_add({ &m_insertMap, &m_visualMap }, { "<C-S-z>" }, id_Redo);
-    keymap_add({ &m_insertMap, &m_visualMap }, { "<C-z>" }, id_Undo);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<C-S-z>", "<C-y>" }, id_Redo);
+    keymap_add({ &m_insertMap, &m_visualMap }, { "<C-z>", "<C-u>" }, id_Undo);
 
     keymap_add({ &m_insertMap, &m_visualMap }, { "<Left>" }, id_MotionStandardLeft);
     keymap_add({ &m_insertMap, &m_visualMap }, { "<Right>" }, id_MotionStandardRight);
