@@ -11,11 +11,9 @@ add_project_meta(META_FILES_TO_INCLUDE IS_IMGUI)
 
 find_package(tinyfiledialogs CONFIG REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
-find_package(clipp CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(gl3w CONFIG REQUIRED)
 find_package(Freetype CONFIG REQUIRED)
-find_package(fmt CONFIG REQUIRED)
 
 include(CMakePackageConfigHelpers)
 
@@ -80,7 +78,6 @@ target_link_libraries (${DEMO_NAME}
     $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
     imgui::imgui
     unofficial::gl3w::gl3w
-    fmt::fmt-header-only
     tinyfiledialogs::tinyfiledialogs
     ${PLATFORM_LINKLIBS}
     )

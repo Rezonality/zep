@@ -1,8 +1,6 @@
 #include <sstream>
 #include <string>
 
-#include <fmt/format.h>
-
 #include <zep/mcommon/logger.h>
 
 #include "janet.h"
@@ -123,7 +121,7 @@ std::string janet_run(const std::string& strText, const std::string& strPathIn, 
                 {
                     janet_stacktrace(cres.macrofiber, janet_wrap_string(cres.error));
                 }
-                strOut << fmt::format("{}", (const char*)cres.error) << std::endl;
+                strOut << std::string((const char*)cres.error) << std::endl;
                 errflags |= 0x02;
                 done = 1;
             }
@@ -137,7 +135,7 @@ std::string janet_run(const std::string& strText, const std::string& strPathIn, 
             break;
         case JANET_PARSE_ERROR:
             errflags |= 0x04;
-            strOut << fmt::format("Parse Error {}", janet_parser_error(&parser)) << std::endl;
+            strOut << "Parse Error " << std::string(janet_parser_error(&parser)) << std::endl;
             done = 1;
             break;
         case JANET_PARSE_PENDING:

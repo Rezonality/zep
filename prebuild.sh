@@ -14,7 +14,7 @@ if [ "$(uname)" == "Darwin" ]; then
 fi
 
 cd vcpkg
-./vcpkg install fmt imgui[freetype,sdl2-binding,opengl3-binding] tinyfiledialogs gl3w freetype sdl2 --triplet ${triplet[0]} --recurse
+./vcpkg install imgui[freetype,sdl2-binding,opengl3-binding] tinyfiledialogs gl3w freetype sdl2 --triplet ${triplet[0]} --recurse
 if [ "$(uname)" != "Darwin" ]; then
 ./vcpkg install glib --triplet ${triplet[0]} --recurse
 fi
