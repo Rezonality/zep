@@ -107,6 +107,7 @@ struct GlyphRange
     bool ContainsLocation(GlyphIterator loc) const;
     bool ContainsInclusiveLocation(GlyphIterator loc) const;
     bool Valid() const;
+    void Invalidate();
 };
 
 } // namespace Zep

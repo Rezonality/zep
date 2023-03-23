@@ -282,4 +282,10 @@ bool GlyphRange::Valid() const
     return first.Valid() && second.Valid();
 }
 
+void GlyphRange::Invalidate()
+{
+    first.Invalidate();
+    second.Invalidate();
+}
+
 } // namespace Zep

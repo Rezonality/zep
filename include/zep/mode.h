@@ -225,6 +225,8 @@ protected:
         return false;
     };
 
+    virtual void ClearSelection();
+
 protected:
     std::stack<std::shared_ptr<ZepCommand>> m_undoStack;
     std::stack<std::shared_ptr<ZepCommand>> m_redoStack;
@@ -232,6 +234,7 @@ protected:
     bool m_lineWise = false;
     GlyphIterator m_visualBegin;
     GlyphIterator m_visualEnd;
+    GlyphIterator m_selectionStartPos;
     std::string m_dotCommand;
 
     // Keyboard mappings

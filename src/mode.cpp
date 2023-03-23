@@ -197,6 +197,18 @@ void ZepMode::ClampCursorForMode()
     }
 }
 
+// Clear our active selection markers and whatever selection we have set in the buffer
+void ZepMode::ClearSelection()
+{
+    auto& buffer = GetCurrentWindow()->GetBuffer();
+
+    buffer.ClearSelection();
+
+    m_selectionStartPos.Invalidate();
+    m_visualBegin.Invalidate();
+    m_visualEnd.Invalidate();
+}
+
 void ZepMode::SwitchMode(EditorMode currentMode)
 {
     if (m_pCurrentWindow == nullptr)
@@ -226,13 +238,6 @@ void ZepMode::SwitchMode(EditorMode currentMode)
     if (m_currentMode == EditorMode::Ex)
     {
         buffer.HideMarkers(RangeMarkerType::Search);
-
-        // Bailed out of ex mode; reset the start location
-        /*if (mode != EditorMode::Ex)
-        {
-            pWindow->SetBufferCursor(m_exCommandStartLocation);
-        }
-        */
     }
     else if (m_currentMode == EditorMode::Insert)
     {
@@ -252,15 +257,17 @@ void ZepMode::SwitchMode(EditorMode currentMode)
     {
     case EditorMode::Normal:
     {
-        buffer.ClearSelection();
+        ClearSelection();
         ClampCursorForMode();
         ResetCommand();
     }
     break;
     case EditorMode::Insert:
-        buffer.ClearSelection();
+    {
+        ClearSelection();
         ResetCommand();
-        break;
+    }
+    break;
     case EditorMode::Visual:
     {
         ResetCommand();
@@ -657,8 +664,8 @@ GlyphRange ZepMode::GetInclusiveVisualRange() const
         }
         else
         {
-            // In standard/insert mode, selections exclude the last character, 
-            // depending on direction.  Starting from an insert mode cursor, 
+            // In standard/insert mode, selections exclude the last character,
+            // depending on direction.  Starting from an insert mode cursor,
             // selections are not made until at least one step
             // (remembering that an insert mode cursor is effectively sitting on the character in front of it.)
             if (endOffset > startOffset)
@@ -676,7 +683,6 @@ GlyphRange ZepMode::GetInclusiveVisualRange() const
     {
         std::swap(startOffset, endOffset);
     }
-
 
     return GlyphRange(startOffset, endOffset);
 }
@@ -1009,7 +1015,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         }
         // In standard mode, we don't normally select the last character, but here we want it.
         range.second++;
-        
+
         context.commandResult.modeSwitch = EditorMode::Visual;
         GetCurrentWindow()->GetBuffer().SetSelection(range);
         GetCurrentWindow()->SetBufferCursor(range.second);
@@ -2102,17 +2108,35 @@ void ZepMode::UpdateVisualSelection()
     // Visual mode update - after a command
     if (m_currentMode == EditorMode::Visual)
     {
+        auto pos = GetCurrentWindow()->GetBufferCursor();
+
         // Update the visual range
         if (m_lineWise)
         {
-            m_visualEnd = GetCurrentWindow()->GetBuffer().GetLinePos(GetCurrentWindow()->GetBufferCursor(), LineLocation::LineCRBegin);
+            // Record the first selected character position
+            if (!m_selectionStartPos.Valid())
+            {
+                m_selectionStartPos = pos;
+            }
+
+            if (m_selectionStartPos > pos)
+            {
+                m_visualBegin = GetCurrentWindow()->GetBuffer().GetLinePos(pos, LineLocation::LineBegin);
+                m_visualEnd = GetCurrentWindow()->GetBuffer().GetLinePos(m_selectionStartPos, LineLocation::LineCRBegin);
+            }
+            else
+            {
+                m_visualBegin = GetCurrentWindow()->GetBuffer().GetLinePos(m_selectionStartPos, LineLocation::LineBegin);
+                m_visualEnd = GetCurrentWindow()->GetBuffer().GetLinePos(pos, LineLocation::LineCRBegin);
+            }
         }
         else
         {
-            m_visualEnd = GetCurrentWindow()->GetBufferCursor();
+            m_visualEnd = pos;
         }
 
         auto range = GetInclusiveVisualRange();
+
         if (range.Valid())
         {
             GetCurrentWindow()->GetBuffer().SetSelection(range);
@@ -2684,9 +2708,7 @@ void ZepMode::Begin(ZepWindow* pWindow)
 
     if (pWindow)
     {
-        m_visualBegin = pWindow->GetBuffer().Begin();
-        m_visualEnd = pWindow->GetBuffer().End();
-        pWindow->GetBuffer().ClearSelection();
+        ClearSelection();
     }
 
     // If we are an overlay mode, make sure that the global mode is also begun on the new window
