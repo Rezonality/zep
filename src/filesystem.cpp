@@ -114,7 +114,11 @@ bool ZepFileSystemCPP::Write(const ZepPath& fileName, const void* pData, size_t 
     {
         return false;
     }
-    fwrite(pData, sizeof(uint8_t), size, pFile);
+    // Valid to open/close with size == 0, which will truncate
+    if (size != 0)
+    {
+        fwrite(pData, sizeof(uint8_t), size, pFile);
+    }
     fclose(pFile);
     return true;
 }

@@ -776,10 +776,8 @@ bool ZepBuffer::Save(int64_t& size)
         size--;
     }
 
-    if (size <= 0)
-    {
-        return true;
-    }
+    // Ensure size is at least 0
+    size = std::max(size, int64_t(0));
 
     if (GetEditor().GetFileSystem().Write(m_filePath, &str[0], (size_t)size))
     {
