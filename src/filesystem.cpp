@@ -238,6 +238,10 @@ ZepPath ZepFileSystemCPP::GetSearchRoot(const ZepPath& start, bool& foundGit) co
                     return testPath;
                 }
 
+                if (!testPath.has_relative_path())
+                {
+                    break;
+                }
                 testPath = testPath.parent_path();
             }
 

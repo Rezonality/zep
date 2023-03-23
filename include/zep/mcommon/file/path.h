@@ -6,11 +6,14 @@
 #include <chrono>
 #include <sstream>
 #include <fstream>
+#include <filesystem>
 
 namespace Zep
 {
 
-typedef std::chrono::system_clock::time_point file_time_type;
+//typedef std::chrono::system_clock::time_point file_time_type;
+using ZepPath = std::filesystem::path;
+/*
 class ZepPath
 {
 public:
@@ -196,6 +199,7 @@ private:
     mutable std::vector<std::string> m_components;
     std::string m_strPath;
 };
+*/
 
 ZepPath path_get_relative(const ZepPath& from, const ZepPath& to);
 
