@@ -79,7 +79,6 @@ target_link_libraries (${DEMO_NAME}
     $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
     $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
     imgui::imgui
-    clipp::clipp
     unofficial::gl3w::gl3w
     fmt::fmt-header-only
     tinyfiledialogs::tinyfiledialogs

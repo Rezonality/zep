@@ -1,4 +1,5 @@
 #include "zep/mcommon/file/fnmatch.h"
+#include "zep/mcommon/file/path.h"
 #include "zep/mcommon/logger.h"
 #include "zep/mcommon/string/stringutils.h"
 #include "zep/mcommon/threadutils.h"
@@ -49,9 +50,9 @@ Indexer::Indexer(ZepEditor& editor)
 {
 }
 
-void Indexer::GetSearchPaths(ZepEditor& editor, const ZepPath& path, std::vector<std::string>& ignore_patterns, std::vector<std::string>& include_patterns, std::string& errors)
+void Indexer::GetSearchPaths(ZepEditor& editor, const fs::path& path, std::vector<std::string>& ignore_patterns, std::vector<std::string>& include_patterns, std::string& errors)
 {
-    ZepPath config = path / ".zep" / "project.cfg";
+    fs::path config = path / ".zep" / "project.cfg";
     if (!editor.GetFileSystem().Exists(config))
     {
         config = editor.GetConfigRoot() / "zep.cfg";
@@ -107,7 +108,7 @@ void Indexer::GetSearchPaths(ZepEditor& editor, const ZepPath& path, std::vector
     }
 } // namespace Zep
 
-std::future<std::shared_ptr<FileIndexResult>> Indexer::IndexPaths(ZepEditor& editor, const ZepPath& startPath)
+std::future<std::shared_ptr<FileIndexResult>> Indexer::IndexPaths(ZepEditor& editor, const fs::path& startPath)
 {
     std::vector<std::string> ignorePaths;
     std::vector<std::string> includePaths;
@@ -122,13 +123,13 @@ std::future<std::shared_ptr<FileIndexResult>> Indexer::IndexPaths(ZepEditor& edi
     }
 
     auto pFileSystem = &editor.GetFileSystem();
-    return editor.GetThreadPool().enqueue([=](ZepPath root) {
+    return editor.GetThreadPool().enqueue([=](fs::path root) {
         spResult->root = root;
 
         try
         {
             // Index the whole subtree, ignoring any patterns supplied to us
-            pFileSystem->ScanDirectory(root, [&](const ZepPath& p, bool& recurse) -> bool {
+            pFileSystem->ScanDirectory(root, [&](const fs::path& p, bool& recurse) -> bool {
                 recurse = true;
 
                 auto bDir = pFileSystem->IsDirectory(p);
@@ -233,7 +234,7 @@ void Indexer::StartSymbolSearch()
     GetEditor().GetThreadPool().enqueue([=]() {
         for (;;)
         {
-            ZepPath path;
+            fs::path path;
             {
                 std::lock_guard<std::mutex> lock(m_queueMutex);
                 if (m_searchQueue.empty())

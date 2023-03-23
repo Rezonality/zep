@@ -11,7 +11,7 @@
 namespace Zep
 {
 
-ZepMode_Search::ZepMode_Search(ZepEditor& editor, ZepWindow& launchWindow, ZepWindow& window, const ZepPath& path)
+ZepMode_Search::ZepMode_Search(ZepEditor& editor, ZepWindow& launchWindow, ZepWindow& window, const fs::path& path)
     : ZepMode(editor)
     , m_launchWindow(launchWindow)
     , m_window(window)

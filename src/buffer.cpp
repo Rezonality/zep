@@ -8,7 +8,6 @@
 #include "zep/editor.h"
 #include "zep/filesystem.h"
 
-#include "zep/mcommon/file/path.h"
 #include "zep/mcommon/string/stringutils.h"
 
 #include "zep/mcommon/logger.h"
@@ -67,7 +66,7 @@ ZepBuffer::ZepBuffer(ZepEditor& editor, const std::string& strName)
     Clear();
 }
 
-ZepBuffer::ZepBuffer(ZepEditor& editor, const ZepPath& path)
+ZepBuffer::ZepBuffer(ZepEditor& editor, const fs::path& path)
     : ZepComponent(editor)
 {
     Load(path);
@@ -710,7 +709,7 @@ std::string ZepBuffer::GetFileExtension() const
 
 // Basic load support; read a file if it's present, but keep
 // the file path in case you want to write later
-void ZepBuffer::Load(const ZepPath& path)
+void ZepBuffer::Load(const fs::path& path)
 {
     // Set the name from the path
     if (path.has_filename())
@@ -802,12 +801,12 @@ std::string ZepBuffer::GetDisplayName() const
     return m_filePath.string();
 }
 
-ZepPath ZepBuffer::GetFilePath() const
+fs::path ZepBuffer::GetFilePath() const
 {
     return m_filePath;
 }
 
-void ZepBuffer::SetFilePath(const ZepPath& path)
+void ZepBuffer::SetFilePath(const fs::path& path)
 {
     auto testPath = path;
     if (GetEditor().GetFileSystem().Exists(testPath))

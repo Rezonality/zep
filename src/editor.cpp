@@ -37,7 +37,7 @@ ZepComponent::~ZepComponent()
     m_editor.UnRegisterCallback(this);
 }
 
-ZepEditor::ZepEditor(ZepDisplay* pDisplay, const ZepPath& configRoot, uint32_t flags, IZepFileSystem* pFileSystem)
+ZepEditor::ZepEditor(ZepDisplay* pDisplay, const fs::path& configRoot, uint32_t flags, IZepFileSystem* pFileSystem)
     : m_pDisplay(pDisplay)
     , m_pFileSystem(pFileSystem)
     , m_flags(flags)
@@ -116,7 +116,7 @@ ThreadPool& ZepEditor::GetThreadPool() const
     return *m_threadPool;
 }
 
-void ZepEditor::OnFileChanged(const ZepPath& path)
+void ZepEditor::OnFileChanged(const fs::path& path)
 {
     if (path.filename() == "zep.cfg")
     {
@@ -128,7 +128,7 @@ void ZepEditor::OnFileChanged(const ZepPath& path)
 
 // If you pass a valid path to a 'zep.cfg' file, then editor settings will serialize from that
 // You can even edit it inside zep for immediate changes :)
-void ZepEditor::LoadConfig(const ZepPath& config_path)
+void ZepEditor::LoadConfig(const fs::path& config_path)
 {
     if (!GetFileSystem().Exists(config_path))
     {
@@ -230,7 +230,7 @@ void ZepEditor::SaveConfig(std::shared_ptr<cpptoml::table> spConfig)
     */
 }
 
-void ZepEditor::SaveBufferAs(ZepBuffer& buffer, ZepPath path)
+void ZepEditor::SaveBufferAs(ZepBuffer& buffer, fs::path path)
 {
     buffer.SetFilePath(path);
     SaveBuffer(buffer);
@@ -312,7 +312,7 @@ ZepBuffer* ZepEditor::GetEmptyBuffer(const std::string& name, uint32_t fileFlags
     return pBuffer;
 }
 
-ZepBuffer* ZepEditor::FindFileBuffer(const ZepPath& filePath)
+ZepBuffer* ZepEditor::FindFileBuffer(const fs::path& filePath)
 {
     auto& buffers = GetBuffers();
     for (auto& buff : buffers)
@@ -325,7 +325,7 @@ ZepBuffer* ZepEditor::FindFileBuffer(const ZepPath& filePath)
     return nullptr;
 }
 
-ZepBuffer* ZepEditor::GetFileBuffer(const ZepPath& filePath, uint32_t fileFlags, bool create)
+ZepBuffer* ZepEditor::GetFileBuffer(const fs::path& filePath, uint32_t fileFlags, bool create)
 {
     auto path = GetFileSystem().Exists(filePath) ? GetFileSystem().Canonical(filePath) : filePath;
     if (!path.empty())
@@ -426,7 +426,7 @@ void ZepEditor::Reset()
 // TODO fix for directory startup; it won't work
 ZepBuffer* ZepEditor::InitWithFileOrDir(const std::string& str)
 {
-    ZepPath startPath(str);
+    fs::path startPath(str);
 
     auto& fs = GetFileSystem();
     if (fs.Exists(startPath))
@@ -456,7 +456,7 @@ ZepBuffer* ZepEditor::InitWithFileOrDir(const std::string& str)
 
 ZepBuffer* ZepEditor::InitWithFile(const std::string& str)
 {
-    ZepPath startPath(str);
+    fs::path startPath(str);
     // Get a buffer for the start file; even if the path is not valid; it can be created but not saved
     auto pFileBuffer = GetFileBuffer(startPath);
     auto pTab = EnsureTab();
@@ -936,7 +936,7 @@ ZepBuffer* ZepEditor::CreateNewBuffer(const std::string& str)
     return pBuffer.get();
 }
 
-ZepBuffer* ZepEditor::CreateNewBuffer(const ZepPath& path)
+ZepBuffer* ZepEditor::CreateNewBuffer(const fs::path& path)
 {
     auto pBuffer = std::make_shared<ZepBuffer>(*this, path);
     m_buffers.push_front(pBuffer);
@@ -1407,7 +1407,7 @@ ZepWindow* ZepEditor::EnsureWindow(ZepBuffer& buffer)
     return pTab->AddWindow(&buffer);
 }
 
-const ZepPath& ZepEditor::GetConfigRoot() const
+const fs::path& ZepEditor::GetConfigRoot() const
 {
     return m_configRoot;
 }

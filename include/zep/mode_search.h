@@ -14,7 +14,7 @@ class ZepWindow;
 class ZepMode_Search : public ZepMode
 {
 public:
-    ZepMode_Search(ZepEditor& editor, ZepWindow& previousWindow, ZepWindow& window, const ZepPath& startPath);
+    ZepMode_Search(ZepEditor& editor, ZepWindow& previousWindow, ZepWindow& window, const fs::path& startPath);
     ~ZepMode_Search();
 
     virtual void AddKeyPress(uint32_t key, uint32_t modifiers = 0) override;
@@ -37,7 +37,7 @@ public:
     virtual CursorType GetCursorType() const override;
 
 private:
-    void GetSearchPaths(const ZepPath& path, std::vector<std::string>& ignore, std::vector<std::string>& include) const;
+    void GetSearchPaths(const fs::path& path, std::vector<std::string>& ignore, std::vector<std::string>& include) const;
     void InitSearchTree();
     void ShowTreeResult();
     void UpdateTree();
@@ -86,7 +86,7 @@ private:
 
     ZepWindow& m_launchWindow;
     ZepWindow& m_window;
-    ZepPath m_startPath;
+    fs::path m_startPath;
 };
 
 } // namespace Zep

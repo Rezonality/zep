@@ -803,7 +803,7 @@ bool ZepMode::GetCommand(CommandContext& context)
         if (!path.empty() && GetEditor().GetFileSystem().Exists(path))
         {
             auto ext = path.extension();
-            auto searchPaths = std::vector<ZepPath>{
+            auto searchPaths = std::vector<fs::path>{
                 path.parent_path(),
                 path.parent_path().parent_path(),
                 path.parent_path().parent_path().parent_path()
@@ -822,10 +822,10 @@ bool ZepMode::GetCommand(CommandContext& context)
                 bool found = false;
 
                 // Look for the priority folder locations
-                std::vector<ZepPath> searchFolders{ path.parent_path() };
+                std::vector<fs::path> searchFolders{ path.parent_path() };
                 for (auto& priorityFolder : priorityFolders)
                 {
-                    GetEditor().GetFileSystem().ScanDirectory(p, [&](const ZepPath& currentPath, bool& recurse) {
+                    GetEditor().GetFileSystem().ScanDirectory(p, [&](const fs::path& currentPath, bool& recurse) {
                         recurse = false;
                         if (GetEditor().GetFileSystem().IsDirectory(currentPath))
                         {
@@ -848,7 +848,7 @@ bool ZepMode::GetCommand(CommandContext& context)
                 {
                     ZLOG(INFO, "Searching: " << folder.string());
 
-                    GetEditor().GetFileSystem().ScanDirectory(folder, [&](const ZepPath& currentPath, bool& recurse) {
+                    GetEditor().GetFileSystem().ScanDirectory(folder, [&](const fs::path& currentPath, bool& recurse) {
                         recurse = true;
                         if (path.stem() == currentPath.stem() && !(currentPath.extension() == path.extension()))
                         {
@@ -2335,7 +2335,7 @@ bool ZepMode::HandleExCommand(std::string strCommand)
             if (strTok.size() > 1)
             {
                 auto fname = strTok[1];
-                GetEditor().SaveBufferAs(GetCurrentWindow()->GetBuffer(), ZepPath(fname));
+                GetEditor().SaveBufferAs(GetCurrentWindow()->GetBuffer(), fs::path(fname));
             }
             else
             {

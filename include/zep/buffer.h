@@ -3,7 +3,6 @@
 #include <functional>
 #include <set>
 
-#include "zep/mcommon/file/path.h"
 #include "zep/mcommon/logger.h"
 #include "zep/mcommon/signals.h"
 #include "zep/mcommon/string/stringutils.h"
@@ -113,17 +112,17 @@ class ZepBuffer : public ZepComponent
 {
 public:
     ZepBuffer(ZepEditor& editor, const std::string& strName);
-    ZepBuffer(ZepEditor& editor, const ZepPath& path);
+    ZepBuffer(ZepEditor& editor, const fs::path& path);
     virtual ~ZepBuffer();
 
     void Clear();
     void SetText(const std::string& strText, bool initFromFile = false);
-    void Load(const ZepPath& path);
+    void Load(const fs::path& path);
     bool Save(int64_t& size);
 
-    ZepPath GetFilePath() const;
+    fs::path GetFilePath() const;
     std::string GetFileExtension() const;
-    void SetFilePath(const ZepPath& path);
+    void SetFilePath(const fs::path& path);
 
     GlyphIterator GetLinePos(GlyphIterator bufferLocation, LineLocation lineLocation) const;
     bool GetLineOffsets(const long line, ByteRange& range) const;
@@ -290,7 +289,7 @@ private:
     std::vector<ByteIndex> m_lineEnds;
 
     // File and modification info
-    ZepPath m_filePath;
+    fs::path m_filePath;
     mutable std::string m_strName;
     uint32_t m_fileFlags = 0;
     BufferType m_bufferType = BufferType::Normal;

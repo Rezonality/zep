@@ -23,7 +23,7 @@ namespace Zep
 class ZepWidget_Qt : public QWidget, public IZepComponent
 {
 public:
-    ZepWidget_Qt(QWidget* pParent, const ZepPath& root, float fontPointSize)
+    ZepWidget_Qt(QWidget* pParent, const fs::path& root, float fontPointSize)
         : QWidget(pParent)
     {
         setFocusPolicy(Qt::StrongFocus);

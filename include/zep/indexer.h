@@ -15,8 +15,8 @@ class ZepEditor;
 // List of files found in the directory search
 struct FileIndexResult
 {
-    ZepPath root;
-    std::vector<ZepPath> paths;
+    fs::path root;
+    std::vector<fs::path> paths;
     std::vector<std::string> lowerPaths;
     std::string errors;
 };
@@ -39,8 +39,8 @@ public:
     bool StartIndexing();
     void StartSymbolSearch();
 
-    static void GetSearchPaths(ZepEditor& editor, const ZepPath& path, std::vector<std::string>& ignore_patterns, std::vector<std::string>& include_patterns, std::string& errors);
-    static std::future<std::shared_ptr<FileIndexResult>> IndexPaths(ZepEditor& editor, const ZepPath& startPath);
+    static void GetSearchPaths(ZepEditor& editor, const fs::path& path, std::vector<std::string>& ignore_patterns, std::vector<std::string>& include_patterns, std::string& errors);
+    static std::future<std::shared_ptr<FileIndexResult>> IndexPaths(ZepEditor& editor, const fs::path& startPath);
 
 private:
     bool m_fileSearchActive = false;
@@ -48,11 +48,11 @@ private:
     std::shared_ptr<FileIndexResult> m_spFilePaths;
 
     std::mutex m_queueMutex;
-    std::deque<ZepPath> m_searchQueue;
+    std::deque<fs::path> m_searchQueue;
 
     std::mutex m_symbolMutex;
     SymbolContainer m_symbols;
-    ZepPath m_searchRoot;
+    fs::path m_searchRoot;
 };
 
 } // namespace Zep

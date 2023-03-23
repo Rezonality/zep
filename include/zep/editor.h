@@ -8,12 +8,12 @@
 #include <string>
 #include <vector>
 #include <limits>
+#include <filesystem>
 
 #include "zep_config.h"
 
 #include "zep/mcommon/animation/timer.h"
 #include "zep/mcommon/file/cpptoml.h"
-#include "zep/mcommon/file/path.h"
 #include "zep/mcommon/math/math.h"
 #include "zep/mcommon/threadpool.h"
 
@@ -41,6 +41,8 @@
 // The Modes receive key presses and act on a buffer region
 namespace Zep
 {
+
+namespace fs = std::filesystem;
 
 class ZepBuffer;
 class ZepMode;
@@ -287,10 +289,10 @@ class ZepEditor
 {
 public:
     // Root path is the path to search for a config file
-    ZepEditor(ZepDisplay* pDisplay, const ZepPath& root, uint32_t flags = 0, IZepFileSystem* pFileSystem = nullptr);
+    ZepEditor(ZepDisplay* pDisplay, const fs::path& root, uint32_t flags = 0, IZepFileSystem* pFileSystem = nullptr);
     ~ZepEditor();
 
-    void LoadConfig(const ZepPath& config_path);
+    void LoadConfig(const fs::path& config_path);
     void LoadConfig(std::shared_ptr<cpptoml::table> spConfig);
     void SaveConfig(std::shared_ptr<cpptoml::table> spConfig);
     void RequestQuit();
@@ -307,7 +309,7 @@ public:
     ZepExCommand* FindExCommand(const StringId& strName);
     void SetGlobalMode(const std::string& currentMode);
     ZepMode* GetSecondaryMode() const;
-    const ZepPath& GetConfigRoot() const;
+    const fs::path& GetConfigRoot() const;
 
     std::vector<const KeyMap*> GetGlobalKeyMaps(ZepMode& mode);
 
@@ -329,13 +331,13 @@ public:
     const tBuffers& GetBuffers() const;
     ZepBuffer* GetMRUBuffer() const;
     void SaveBuffer(ZepBuffer& buffer);
-    void SaveBufferAs(ZepBuffer& buffer, ZepPath filePath);
-    ZepBuffer* GetFileBuffer(const ZepPath& filePath, uint32_t fileFlags = 0, bool create = true);
+    void SaveBufferAs(ZepBuffer& buffer, fs::path filePath);
+    ZepBuffer* GetFileBuffer(const fs::path& filePath, uint32_t fileFlags = 0, bool create = true);
     ZepBuffer* GetEmptyBuffer(const std::string& name, uint32_t fileFlags = 0);
     void RemoveBuffer(ZepBuffer* pBuffer);
     std::vector<ZepWindow*> FindBufferWindows(const ZepBuffer* pBuffer) const;
     ZepBuffer* GetActiveBuffer() const;
-    ZepBuffer* FindFileBuffer(const ZepPath& filePath);
+    ZepBuffer* FindFileBuffer(const fs::path& filePath);
     ZepWindow* EnsureWindow(ZepBuffer& buffer);
 
     void SetRegister(const std::string& reg, const Register& val);
@@ -428,14 +430,14 @@ public:
     ThreadPool& GetThreadPool() const;
 
     // Used to inform when a file changes - called from outside zep by the platform specific code, if possible
-    virtual void OnFileChanged(const ZepPath& path);
+    virtual void OnFileChanged(const fs::path& path);
 
     ZepBuffer* GetBufferFromHandle(uint64_t handle);
 
 private:
     // Call GetBuffer publicly, to stop creation of duplicate buffers refering to the same file
     ZepBuffer* CreateNewBuffer(const std::string& bufferName);
-    ZepBuffer* CreateNewBuffer(const ZepPath& path);
+    ZepBuffer* CreateNewBuffer(const fs::path& path);
 
     void InitBuffer(ZepBuffer& buffer);
     void InitDataGrid(ZepBuffer& buffer, const NVec2i& dimensions);
@@ -494,7 +496,7 @@ private:
 
     // Config
     EditorConfig m_config;
-    ZepPath m_configRoot;
+    fs::path m_configRoot;
 
     std::unique_ptr<ThreadPool> m_threadPool;
 

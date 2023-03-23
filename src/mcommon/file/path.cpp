@@ -4,13 +4,13 @@ namespace Zep
 {
 
 // http://stackoverflow.com/a/29221546/18942
-ZepPath path_get_relative(const ZepPath& from, const ZepPath& to)
+fs::path path_get_relative(const fs::path& from, const fs::path& to)
 {
     // Start at the root path and while they are the same then do nothing then when they first
     // diverge take the remainder of the two path and replace the entire from path with ".."
     // segments.
-    ZepPath::const_iterator fromIter = from.begin();
-    ZepPath::const_iterator toIter = to.begin();
+    fs::path::const_iterator fromIter = from.begin();
+    fs::path::const_iterator toIter = to.begin();
 
     // Loop through both
     while (fromIter != from.end() && toIter != to.end() && (*toIter) == (*fromIter))
@@ -19,7 +19,7 @@ ZepPath path_get_relative(const ZepPath& from, const ZepPath& to)
         ++fromIter;
     }
 
-    ZepPath finalPath;
+    fs::path finalPath;
     while (fromIter != from.end())
     {
         finalPath = finalPath / "..";
