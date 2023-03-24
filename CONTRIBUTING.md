@@ -15,10 +15,13 @@ This project and everyone participating in it is governed by the [Zep Code of Co
 
 ## How Can I Contribute?
 
-This document is incomplete, but either report an issue or send a pull request!  In your pull request, add the following comment:
+Either report an issue or send a pull request!  
 
+Instructions for building are on the main page.  Make sure you at least build the demo and play with it, and run the unit tests - instructions on the main page also.
+The CI, on the 'Actions' tab builds on all 3 platforms, along with running unit tests.  If you are stuck on build issues, consult the scripts in the .github/workflows folder to see how the application is built.
+
+In your pull request, add the following comment:
 `@all-contributors please add @your-user-name for code`
-
 This will add you to the list of the contributors on the readme page, once your PR is accepted.  You can also use 'docs', 'tests', etc. depending on your contribution.
 
 
