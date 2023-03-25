@@ -55,12 +55,9 @@ void ZepTheme::SetDarkTheme()
     m_colors[ThemeColor::Keyword] = NVec4f(0.1f, 1.0f, 1.0f, 1.0f);
     m_colors[ThemeColor::Light] = NVec4f(1.0f);
     m_colors[ThemeColor::LineNumberActive] = NVec4f(.13f, 1.0f, .13f, 1.0f);
-    m_colors[ThemeColor::LineNumberBackground] = m_colors[ThemeColor::Background] + NVec4f(.02f, .02f, .02f, 0.0f);
     m_colors[ThemeColor::LineNumber] = NVec4f(.13f, 1.0f, .13f, 1.0f);
     m_colors[ThemeColor::Mode] = NVec4f(.2f, 0.8f, 0.2f, 1.0f);
-    m_colors[ThemeColor::Normal] = m_colors[ThemeColor::Text];
     m_colors[ThemeColor::Number] = NVec4f(1.0f, 1.0f, 0.1f, 1.0f);
-    m_colors[ThemeColor::Parenthesis] = m_colors[ThemeColor::Text];
     m_colors[ThemeColor::String] = NVec4f(1.0f, 0.5f, 1.0f, 1.0f);
     m_colors[ThemeColor::TabActive] = NVec4f(.65f, .65f, .65f, 1.0f);
     m_colors[ThemeColor::TabBorder] = NVec4f(.55f, .55f, .55f, 1.0f);
@@ -70,9 +67,13 @@ void ZepTheme::SetDarkTheme()
     m_colors[ThemeColor::VisualSelectBackground] = NVec4f(.47f, 0.30f, 0.25f, 1.0f);
     m_colors[ThemeColor::Warning] = NVec4f(0.15f, .2f, .65f, 1.0f);
     m_colors[ThemeColor::Whitespace] = NVec4f(0.3f, .3f, .3f, 1.0f);
-    m_colors[ThemeColor::WidgetActive] = m_colors[ThemeColor::TabActive];
     m_colors[ThemeColor::WidgetBackground] = NVec4f(.2f, .2f, .2f, 1.0f);
     m_colors[ThemeColor::WidgetBorder] = NVec4f(.5f, .5f, .5f, 1.0f);
+
+    m_colors[ThemeColor::LineNumberBackground] = m_colors[ThemeColor::Background] + NVec4f(.02f, .02f, .02f, 0.0f);
+    m_colors[ThemeColor::Normal] = m_colors[ThemeColor::Text];
+    m_colors[ThemeColor::Parenthesis] = m_colors[ThemeColor::Text];
+    m_colors[ThemeColor::WidgetActive] = m_colors[ThemeColor::TabActive];
     m_colors[ThemeColor::WidgetInactive] = m_colors[ThemeColor::TabInactive];
 }
 
@@ -93,12 +94,9 @@ void ZepTheme::SetLightTheme()
     m_colors[ThemeColor::Keyword] = NVec4f(0.1f, .2f, .3f, 1.0f);
     m_colors[ThemeColor::Light] = NVec4f(1.0f);
     m_colors[ThemeColor::LineNumberActive] = NVec4f(.13f, 0.6f, .13f, 1.0f);
-    m_colors[ThemeColor::LineNumberBackground] = m_colors[ThemeColor::Background] - NVec4f(.02f, .02f, .02f, 0.0f);
     m_colors[ThemeColor::LineNumber] = NVec4f(.13f, .4f, .13f, 1.0f);
     m_colors[ThemeColor::Mode] = NVec4f(.2f, 0.8f, 0.2f, 1.0f);
-    m_colors[ThemeColor::Normal] = m_colors[ThemeColor::Text];
     m_colors[ThemeColor::Number] = NVec4f(0.1f, .3f, .2f, 1.0f);
-    m_colors[ThemeColor::Parenthesis] = m_colors[ThemeColor::Text];
     m_colors[ThemeColor::String] = NVec4f(0.1f, .1f, .4f, 1.0f);
     m_colors[ThemeColor::TabActive] = NVec4f(.55f, .55f, .55f, 1.0f);
     m_colors[ThemeColor::TabBorder] = NVec4f(.55f, .55f, .55f, 1.0f);
@@ -108,9 +106,13 @@ void ZepTheme::SetLightTheme()
     m_colors[ThemeColor::VisualSelectBackground] = NVec4f(.49f, 0.60f, 0.45f, 1.0f);
     m_colors[ThemeColor::Warning] = NVec4f(0.15f, .2f, .89f, 1.0f);
     m_colors[ThemeColor::Whitespace] = NVec4f(0.2f, .2f, .2f, 1.0f);
-    m_colors[ThemeColor::WidgetActive] = m_colors[ThemeColor::TabActive];
     m_colors[ThemeColor::WidgetBackground] = NVec4f(.8f, .8f, .8f, 1.0f);
     m_colors[ThemeColor::WidgetBorder] = NVec4f(.5f, .5f, .5f, 1.0f);
+    
+    m_colors[ThemeColor::LineNumberBackground] = m_colors[ThemeColor::Background] - NVec4f(.02f, .02f, .02f, 0.0f);
+    m_colors[ThemeColor::Normal] = m_colors[ThemeColor::Text];
+    m_colors[ThemeColor::Parenthesis] = m_colors[ThemeColor::Text];
+    m_colors[ThemeColor::WidgetActive] = m_colors[ThemeColor::TabActive];
     m_colors[ThemeColor::WidgetInactive] = m_colors[ThemeColor::TabInactive];
 }
 
