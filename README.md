@@ -99,48 +99,86 @@ The Vim mode has most of the usual word motions, visual mode, etc.  The standard
 See [Vim Mode](https://github.com/Rezonality/zep/wiki/Vim-Mode), or the top of the mode_vim.cpp file for a list of supported operations in Vim
 
 # Building
-You can follow the build buttons above to see the build process or look in the travis or appveyor scripts.
+After every change, Zep is built on Mac, Linux and PC.  You can see the script which does this in https://github.com/Rezonality/zep/.github/workflows/builds.yml.  You can choose to build just a library using modern CMake, or the full demo, or just include the library in a subfolder without building it at all.
 
-## 1. Get the Source
-git clone https://github.com/Rezonality/zep zep
-cd zep
-
-## 2. Add extra packages
-If you don't have them already, the following packages are required, depending on your system.  Note, that SDL is part of the prebuild via vcpkg,
-and not installed separately.  It is only used for the demo, not the core editor library or unit tests. Qt is required to build the Qt demo on linux.
-If you have compilation problems, you might need to investigate the compiler you are using.
-Ubuntu 16 & 17 both have a recent enough version for it to work.  On Ubuntu 14 I tend to upgrade to g++6
-The Qt app builds on linux, but is not part of the travis setup yet.
-
-## Linux
+Here is an example of building the demo (and hence the library and tests).  The build without Qt is easier, and it is recommended as a starting point, unless you are familiar with Qt and have it already installed.
+## Add extra packages
+Below is the minimum; your system may indicate it needs extra packages.
+### Linux
 ```
 sudo apt install cmake
 sudo apt install git
 ```
-
-## Mac
+### Mac
 ```
 brew install cmake
 brew install git
 ```
-
-# 3 Install the Zep library as a package
-Here is a typical build instruction for windows, assuming you have just synced this repo (see later if you just want to play with a working demo executable):
+## Qt
+Qt is only required if you want that version of the demo (there is little difference between the functionality of the Qt and ImGui demos - they are just different ways to achieve the same thing); it is better to start without it if you are just evaluating Zep, since it is just one more complication and installation...
+Here is an example of installing Qt on Linux
+```bash
+# for Qt/Demo support
+sudo apt install qt5-default
+# Adapt to your installation path - you will need to set this appropriately
+set QT_INSTALL_LOCATION="/usr/include/x86_64-linux-gnu/qt5"
+```
+On Windows you would typically install the Qt library and then set an environment variable to point to it:
+```bat
+set QT_INSTALL_LOCATION=C:\Qt\5.10.0\msvc2017_64
+```
+## Buildling the demo
+Start by getting the source and running the prebuild.  Ensure the prebuild runs successfully and if not, make sure you have any dependencies on your system that it asks for.  The demo cannot build without the prebuild components.
+```
+git clone https://github.com/Rezonality/zep zep
+cd zep
+git submodule update --init
+./prebuild.sh or prebuild.bat (select based on your system)
+``` 
+Change to the build directory:
 ```
 mkdir build
 cd build
-cmake -G "Visual Studio 16 2019" -A x64 -DZEP_FEATURE_CPP_FILE_SYSTEM=1 -DBUILD_IMGUI=0 -DBUILD_TESTS=0 -DBUILD_DEMOS=0 ..
-cmake --build . --target install
+```
+Create the makefiles and build the code:
+### Linux/Mac
+This will make standard makefiles on linux and Mac.  There may be other options for the generator, such as XCode, but this will work as a starting point:
+```
+cmake -G "Unix Makefiles" -DBUILD_QT=OFF -DBUILD_IMGUI=ON -DCMAKE_BUILD_TYPE=Release ..
+cmake --build . --config Release
+```
+### Windows
+Assuming you have Visual Studio 17, this will make a solution for you.  Note there is a convenient config_imgui.bat which will do the same thing.
+```
+cmake -G "Visual Studio 17 2022" -DBUILD_QT=OFF -DBUILD_IMGUI=ON -DCMAKE_BUILD_TYPE=Release ..
+cmake --build . --config Release
 ```
 
-At this point your system will have installed the zep library.  You can add its paths and library to your project like this:
+On Windows you will find the built demo in:
+```
+.\build\demos\demo_imgui\Debug\ZepDemo.exe
+```
+
+## Tests
+Type `CTest --verbose` in the build folder to run unit tests.
+
+# Integration
+If you want to use the Zep library in your own software you have 2 options:
+### Option 1: Install the Zep library as a package
+Here is a typical build instruction for windows, which just builds the library
+```
+mkdir build
+cd build
+cmake -G "Visual Studio 17 2022" -DBUILD_IMGUI=0 -DBUILD_TESTS=0 -DBUILD_DEMOS=0 ..
+cmake --build . --target install
+```
+At this point your system will have installed the zep library.  You can add its paths and library to your project like this, in the standard CMake way.
 ```
 find_package(Zep REQUIRED)
 target_link_libraries(MYPROJECT PRIVATE Zep::Zep)
 ```
-
-# 4. (Alternative) Use zep as a single header library
-A typical example of including Zep as a single header library (see the sister integration project for an example):
+### Option 2: Use zep as a single header library
+A typical example of including Zep as a single header library (see the sister integration project for an example).  This is a really easy way to get started...
 ```
 git submodule add zep https://github.com/Rezonality/zep
 
@@ -151,65 +189,15 @@ target_include_directories(myapp
 
 #include "zep\zep.h"
 ```
-
-# 5. Building the Demo
-Here's an example script for the complete process to build the zep demos.  The vcpkg prebuilds are only required for the demo, not the core library
-
-# Windows
-```
-# Zep
-git clone https://github.com/Rezonality/zep
-cd zep
-git submodule update --init
-prebuild.bat
-set QT_INSTALL_LOCATION=C:\Qt\5.10.0\msvc2017_64 (for example - required for building QT)
-config.bat OR config_qt.bat or config_imgui.bat (for qt and imgui respectively)
-build.bat
-```
-
-# GNU/Linux
-
-## Install dependencies
-
-```bash
-sudo apt install cmake git
-```
-
-## Qt (required is using build_qt.sh)
-```bash
-# for Qt/Demo support
-sudo apt install qt5-default
-# Adapt to your installation path
-set QT_INSTALL_LOCATION="/usr/include/x86_64-linux-gnu/qt5"
-```
-
-## Zep
-```bash
-git clone https://github.com/Rezonality/zep
-cd zep
-git submodule update --init
-prebuild.bat
-# Optional argument are qt and imgui
-./config.sh ( qt | imgui )
-./build.sh
-```
-
-# Mac
-Build instructions and testing on mac needs an update; consult the travis build to see examples
-
-## Tests
-Type `CTest --verbose` in the build folder to run unit tests.
-
-Libraries
------------
-The libraries are pulled in by the prebuild step, which uses vcpkg to collect and build them cross-platform.
-The ImGui demo sample uses SDL for the window setup, and ImGui for the rendering.  The Qt sample just uses Qt.
-
+# Libraries used
 [SDL2: Media/Window Layer](https://www.libsdl.org/download-2.0.php)
-SDL2 is used to get a window on the screen in a cross platform way, and for OpenGL to generate a Context.
+SDL2 is used by the demo to get a window on the screen in a cross platform way, and for OpenGL to generate a Context.
 
 [ImGui: 2D GUI](https://github.com/ocornut/imgui)
-ImGui is a great 2D User interface for 3D applications
+ImGui is a great 2D User interface for 3D applications, used in the ImGui version of the demo
+
+[Qt](https://www.qt.io)
+Qt is a cross platform GUI.  Zep uses it as a renderer in the Qt Demo.
 
 ## Contributors ✨
 
