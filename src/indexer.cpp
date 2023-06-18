@@ -253,7 +253,7 @@ void Indexer::StartSymbolSearch()
             auto fullPath = m_searchRoot / path;
             if (fs.Exists(fullPath))
             {
-                ZLOG(DBG, "Parsing: " << fullPath.c_str());
+                ZLOG(DBG, "Parsing: " << fullPath.string());
                 auto strFile = GetEditor().GetFileSystem().Read(fullPath);
 
                 std::vector<std::string> tokens;

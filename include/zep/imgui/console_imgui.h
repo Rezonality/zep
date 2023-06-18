@@ -1,8 +1,9 @@
 #pragma once
 
 #include "zep.h"
+#include <zep/filesystem.h>
 
-namespace ImGui
+namespace Zep
 {
 
 struct ZepConsole : Zep::IZepComponent

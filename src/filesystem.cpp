@@ -33,8 +33,8 @@ ZepFileSystemCPP::ZepFileSystemCPP(const fs::path& configPath)
         m_configPath = m_workingDirectory;
     }
 
-    ZLOG(INFO, "Config Dir: " << m_configPath.c_str());
-    ZLOG(INFO, "Working Dir: " << m_workingDirectory.c_str());
+    ZLOG(INFO, "Config Dir: " << m_configPath.string());
+    ZLOG(INFO, "Working Dir: " << m_workingDirectory.string());
 }
 
 ZepFileSystemCPP::~ZepFileSystemCPP()
