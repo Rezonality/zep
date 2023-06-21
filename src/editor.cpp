@@ -37,6 +37,34 @@ ZepComponent::~ZepComponent()
     m_editor.UnRegisterCallback(this);
 }
 
+float ZepEditor::GetBackgroundAlpha() const
+{
+    // TODO: I should be able to make some kind of global functions.
+    // Rewriting zep, it would be much flatter and less class based ;)
+    if (m_config.style == EditorStyle::Minimal)
+    {
+        float lastEdit = GetLastEditElapsedTime();
+        if (lastEdit > m_config.backgroundFadeWait)
+        {
+            // lastEdit -= m_config.backgroundFadeWait;
+            return std::max(0.0f, 1.0f - (lastEdit - m_config.backgroundFadeWait) / m_config.backgroundFadeTime);
+        }
+    }
+    return 1.0f;
+}
+
+NVec4f ZepEditor::ModifyBackgroundColor(const NVec4f& c) const
+{
+    // TODO: I should be able to make some kind of global functions.
+    // Rewriting zep, it would be much flatter and less class based ;)
+    if (m_config.style == EditorStyle::Minimal)
+    {
+        float alpha = GetBackgroundAlpha();
+        return NVec4f(c.x, c.y, c.z, alpha);
+    }
+    return c;
+}
+
 ZepEditor::ZepEditor(ZepDisplay* pDisplay, const fs::path& configRoot, uint32_t flags, IZepFileSystem* pFileSystem)
     : m_pDisplay(pDisplay)
     , m_pFileSystem(pFileSystem)
@@ -623,23 +651,6 @@ void ZepEditor::UpdateTabs()
 
             auto tabColor = GetTheme().GetColor(ThemeColor::TabActive);
 
-            if (buffer.HasFileFlags(FileFlags::HasWarnings))
-            {
-                tabColor = GetTheme().GetColor(ThemeColor::Warning);
-            }
-
-            // Errors win for coloring
-            if (buffer.HasFileFlags(FileFlags::HasErrors))
-            {
-                tabColor = GetTheme().GetColor(ThemeColor::Error);
-            }
-
-            if (window != GetActiveTabWindow())
-            {
-                // Desaturate unselected ones
-                tabColor = tabColor * .55f;
-                tabColor.w = 1.0f;
-            }
             auto name = window->GetName();
             auto tabLength = m_pDisplay->GetFont(ZepTextType::Text).GetTextSize((const uint8_t*)name.c_str()).x + DPI_X(textBorder) * 2;
 
@@ -711,7 +722,7 @@ void ZepEditor::RemoveTabWindow(ZepTabWindow* pTabWindow)
             m_pActiveTabWindow->SetActiveWindow(m_pActiveTabWindow->GetActiveWindow());
         }
     }
-    
+
     GetEditor().UpdateTabs();
 }
 
@@ -1174,13 +1185,13 @@ void ZepEditor::Display()
     // This fill will effectively fill the region around the tabs in Normal mode
     if (GetConfig().style == EditorStyle::Normal)
     {
-        GetDisplay().DrawRectFilled(m_editorRegion->rect, GetTheme().GetColor(ThemeColor::Background));
+        GetDisplay().DrawRectFilled(m_editorRegion->rect, ModifyBackgroundColor(GetTheme().GetColor(ThemeColor::Background)));
     }
 
     // Background rect for CommandLine
     if (!GetCommandText().empty() || (GetConfig().autoHideCommandRegion == false))
     {
-        m_pDisplay->DrawRectFilled(m_commandRegion->rect, GetTheme().GetColor(ThemeColor::Background));
+        m_pDisplay->DrawRectFilled(m_commandRegion->rect, ModifyBackgroundColor(GetTheme().GetColor(ThemeColor::Background)));
     }
 
     // Draw command text
@@ -1225,6 +1236,7 @@ void ZepEditor::Display()
     }
 
     // Move the tab bar origin if approriate
+    /*
     if (tabRect.Width() != 0.0f)
     {
         if ((tabRect.Left() - tabRect.Width() + m_tabOffsetX) < m_tabRegion->rect.Left())
@@ -1235,11 +1247,11 @@ void ZepEditor::Display()
         {
             m_tabOffsetX -= (tabRect.Right() + m_tabOffsetX - m_tabRegion->rect.Right() + tabRect.Width());
         }
-    }
+    }*/
 
     // Clamp it
     m_tabOffsetX = std::min(m_tabOffsetX, 0.0f);
-    m_tabOffsetX = std::max(std::min(tabRegionSize - virtualSize, 0.0f), m_tabOffsetX);
+    // m_tabOffsetX = std::max(std::min(tabRegionSize - virtualSize, 0.0f), m_tabOffsetX);
 
     // Now display the tabs
     for (auto& tab : m_tabRegion->children)
@@ -1249,10 +1261,34 @@ void ZepEditor::Display()
         auto rc = spTabRegionTab->rect;
         rc.Adjust(m_tabOffsetX, 0.0f);
 
-        // Tab background rect
-        m_pDisplay->DrawRectFilled(rc, spTabRegionTab->color);
+        auto toneColor = spTabRegionTab->color;
 
-        auto lum = Luminosity(spTabRegionTab->color);
+        // I don't think tab window will ever be NULL!
+        // Adding a check here for the time being
+        std::string text;
+        assert(spTabRegionTab->pTabWindow);
+
+        if (GetEditor().GetConfig().tabToneColors)
+        {
+            if (spTabRegionTab->pTabWindow)
+            {
+                text = spTabRegionTab->pTabWindow->GetName();
+                if (spTabRegionTab->pTabWindow->GetActiveWindow() && spTabRegionTab->pTabWindow->GetActiveWindow()->GetBuffer().GetToneColor().w != 0.0f)
+                {
+                    toneColor = spTabRegionTab->pTabWindow->GetActiveWindow()->GetBuffer().GetToneColor();
+                }
+            }
+        }
+
+        if (spTabRegionTab->pTabWindow != GetActiveTabWindow())
+        {
+            toneColor *= NVec4f(0.33f, 0.33f, 0.33f, 1.0f);
+        }
+
+        auto backColor = ModifyBackgroundColor(toneColor);
+        m_pDisplay->DrawRectFilled(rc, backColor);
+
+        auto lum = Luminosity(backColor);
         auto textCol = NVec4f(1.0f);
         if (lum > .5f)
         {
@@ -1261,27 +1297,28 @@ void ZepEditor::Display()
             textCol.z = 0.0f;
         }
 
-        // I don't think tab window will ever be NULL!
-        // Adding a check here for the time being
-        std::string text;
-        NVec4f toneColor = spTabRegionTab->color;
-        assert(spTabRegionTab->pTabWindow);
-        if (spTabRegionTab->pTabWindow)
-        {
-            text = spTabRegionTab->pTabWindow->GetName();
-            if (spTabRegionTab->pTabWindow->GetActiveWindow() && spTabRegionTab->pTabWindow->GetActiveWindow()->GetBuffer().GetToneColor().w != 0.0f)
-            {
-                toneColor = spTabRegionTab->pTabWindow->GetActiveWindow()->GetBuffer().GetToneColor();
-            }
-        }
-
+        // Tab background rect
         // Tab text
         m_pDisplay->DrawChars(uiFont, rc.topLeftPx + DPI_VEC2(NVec2f(textBorder, 0.0f)), textCol, (const uint8_t*)text.c_str());
 
-        if (GetEditor().GetConfig().tabToneColors)
+        auto& buffer = spTabRegionTab->pTabWindow->GetActiveWindow()->GetBuffer();
+        if (buffer.HasFileFlags(FileFlags::HasWarnings) || buffer.HasFileFlags(FileFlags::HasErrors))
         {
-            auto top = rc.Bottom() - DPI_Y(tabToneLine);
-            m_pDisplay->DrawRectFilled(NRectf(rc.Left(), top, rc.Width(), DPI_Y(tabToneLine)), toneColor);
+            NVec4f overrideColor;
+            if (buffer.HasFileFlags(FileFlags::HasWarnings))
+            {
+                overrideColor = GetTheme().GetColor(ThemeColor::Warning);
+            }
+
+            // Errors win for coloring
+            if (buffer.HasFileFlags(FileFlags::HasErrors))
+            {
+                overrideColor = GetTheme().GetColor(ThemeColor::Error);
+            }
+
+            auto top = rc.Bottom() - DPI_Y(tabToneLine) - 2;
+            m_pDisplay->DrawRectFilled(NRectf(rc.Left(), top, rc.Width(), 2), ModifyBackgroundColor(NVec4f(0.0f, 0.0f, 0.0f, 1.0f)));
+            m_pDisplay->DrawRectFilled(NRectf(rc.Left(), top + 1, rc.Width(), DPI_Y(tabToneLine)), ModifyBackgroundColor(overrideColor));
         }
     }
 

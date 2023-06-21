@@ -20,6 +20,16 @@ inline ImVec2 toImVec2(const NVec2f& im)
     return ImVec2(im.x, im.y);
 }
 
+inline NVec4f toNVec4f(const ImVec4& im)
+{
+    return NVec4f(im.x, im.y, im.z, im.w);
+}
+
+inline ImVec4 toImVec4(const NVec4f& im)
+{
+    return ImVec4(im.x, im.y, im.z, im.w);
+}
+
 static ImWchar greek_range[] = { 0x300, 0x52F, 0x1f00, 0x1fff, 0, 0 };
 
 class ZepFont_ImGui : public ZepFont

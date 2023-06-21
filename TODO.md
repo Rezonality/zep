@@ -1,29 +1,19 @@
 # Bugs
-VIM: Select lines all the way up to the first line should cover all chars
-VIM: 'J' should join next line and remove all intervening white space
 
-SYNTAX: Rainbow brackets have odd behavior when starting typing - investigate
 
-# General
-- Finish cut/paste to OS buffer
+ALL: 
+Undo shouldn't affect other buffers; need to understand how that even happens.
+Tabs don't work well, especially when there isn't room for them
+Tweak the blend fade out.  Understand the ImGui strange behavior
+insert a bad character near the top of the primitives demo before the macros, and the scene goes.
 
-# VIM Mode
-- % Jump to bracket matching
-- f (find) / next, previous
-- / Searching
-- visual-repeat (dot command should use last visual selection range)
-- 'R' multi-overstrike
-- Implement > < for indent of selected region
+VIM:
 
-# Standard Mode
-- SHIFT+UP/DOWN for line selection
-- Insert char over selected text (replaces it)
+(VK not specifically Zep):
+Key presses should direct back to Zep and active it
 
-# Syntax Highlight
-More file types/keywords
-Flash
-Change to a layer mode?
-
-# Tests
-- Add tests for syntax highlighting
-- Add more standard mode tests
+# Top Priority Features
+Auto Indent
+Pointer to errors outside the view
+Full screen mode
+Shadertoy compatibility entry point, add a header?

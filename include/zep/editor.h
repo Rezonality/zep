@@ -434,6 +434,9 @@ public:
 
     ZepBuffer* GetBufferFromHandle(uint64_t handle);
 
+    NVec4f ModifyBackgroundColor(const NVec4f& col) const;
+    float GetBackgroundAlpha() const;
+
 private:
     // Call GetBuffer publicly, to stop creation of duplicate buffers refering to the same file
     ZepBuffer* CreateNewBuffer(const std::string& bufferName);

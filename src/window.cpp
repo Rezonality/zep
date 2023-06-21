@@ -745,19 +745,10 @@ void ZepWindow::DisplayToolTip(const NVec2f& pos, const RangeMarker& marker) con
     display.DrawChars(display.GetFont(ZepTextType::Text), tipBox.topLeftPx + NVec2f(textBorder, textBorder), m_pBuffer->GetTheme().GetColor(marker.GetTextColor()), (const uint8_t*)marker.GetDescription().c_str());
 }
 
-NVec4f ZepWindow::GetBlendedColor(ThemeColor color) const
+NVec4f ZepWindow::ModifyBackgroundColor(ThemeColor color) const
 {
     auto col = m_pBuffer->GetTheme().GetColor(color);
-    if (GetEditor().GetConfig().style == EditorStyle::Minimal)
-    {
-        float lastEdit = GetEditor().GetLastEditElapsedTime();
-        if (lastEdit > GetEditor().GetConfig().backgroundFadeWait)
-        {
-            lastEdit -= GetEditor().GetConfig().backgroundFadeWait;
-            col.w = std::max(0.0f, 1.0f - lastEdit / GetEditor().GetConfig().backgroundFadeTime);
-        }
-    }
-    return col;
+    return GetEditor().ModifyBackgroundColor(col);
 }
 
 void ZepWindow::DrawAboveLineWidgets(SpanInfo& lineInfo)
@@ -865,26 +856,29 @@ void ZepWindow::DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax)
     // Fill entire line background
     if (lineInfo.lineByteRange.ContainsLocation(GetBufferCursor().Index()) && IsActiveWindow())
     {
-        backColor = GetBlendedColor(ThemeColor::CursorLineBackground);
-
-        // Note; We fill below the line for underlines for now, to make them standout in minimal mode
-        display.DrawRectFilled(
-            NRectf(
-                NVec2f(linePx.x, ToWindowY(lineInfo.yOffsetPx)),
-                NVec2f(linePx.y, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx() + lineInfo.lineWidgetHeights.y))),
-            backColor);
+        backColor = ModifyBackgroundColor(ThemeColor::CursorLineBackground);
     }
     else
     {
-        backColor = GetBlendedColor(ThemeColor::Background);
-
-        // Fill the background of the line
-        display.DrawRectFilled(
-            NRectf(
-                NVec2f(linePx.x, ToWindowY(lineInfo.yOffsetPx)),
-                NVec2f(linePx.y, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx() + lineInfo.lineWidgetHeights.y))),
-            backColor);
+        backColor = ModifyBackgroundColor(ThemeColor::Background);
     }
+
+    if (GetEditor().GetConfig().style == EditorStyle::Minimal)
+    {
+        auto copyLinePx = linePx;
+        if (lastLinePx.y > linePx.y)
+        {
+            linePx.y = lastLinePx.y;
+        }
+        lastLinePx = copyLinePx;
+    }
+
+    // Note; We fill below the line for underlines for now, to make them standout in minimal mode
+    display.DrawRectFilled(
+        NRectf(
+            NVec2f(linePx.x, ToWindowY(lineInfo.yOffsetPx)),
+            NVec2f(linePx.y, ToWindowY(lineInfo.yOffsetPx + lineInfo.FullLineHeightPx() + lineInfo.lineWidgetHeights.y))),
+        backColor);
 
     // Walk from the start of the line to the end of the line (in buffer chars)
     for (auto& cp : lineInfo.lineCodePoints)
@@ -1629,7 +1623,7 @@ void ZepWindow::DisplayGridMarkers()
     rc.Adjust(-1, -1, 1, 1);
 
     // Border around the edge
-    display.DrawRect(rc, GetBlendedColor(ThemeColor::TabActive));
+    display.DrawRect(rc, ModifyBackgroundColor(ThemeColor::TabActive));
 
     /*
     for (long windowLine = m_visibleLineIndices.x; windowLine < m_visibleLineIndices.y; windowLine++)
@@ -1687,17 +1681,17 @@ void ZepWindow::Display()
     if (GetEditor().GetConfig().style == EditorStyle::Normal)
     {
         // Fill the background color for the whole area, only in normal mode.
-        display.DrawRectFilled(m_textRegion->rect, GetBlendedColor(ThemeColor::Background));
+        display.DrawRectFilled(m_textRegion->rect, ModifyBackgroundColor(ThemeColor::Background));
     }
 
     if (m_numberRegion->rect.Width() > 0)
     {
-        display.DrawRectFilled(m_numberRegion->rect, GetBlendedColor(ThemeColor::LineNumberBackground));
+        display.DrawRectFilled(m_numberRegion->rect, ModifyBackgroundColor(ThemeColor::LineNumberBackground));
     }
 
     if (m_indicatorRegion->rect.Width() > 0)
     {
-        display.DrawRectFilled(m_indicatorRegion->rect, GetBlendedColor(ThemeColor::LineNumberBackground));
+        display.DrawRectFilled(m_indicatorRegion->rect, ModifyBackgroundColor(ThemeColor::LineNumberBackground));
     }
 
     DisplayScrollers();
@@ -1706,12 +1700,15 @@ void ZepWindow::Display()
     if (GetEditor().GetConfig().style == EditorStyle::Normal && !ZTestFlags(GetWindowFlags(), WindowFlags::HideSplitMark))
     {
         display.DrawRectFilled(
-            NRectf(NVec2f(m_expandingEditRegion->rect.topLeftPx.x, m_expandingEditRegion->rect.topLeftPx.y), NVec2f(m_expandingEditRegion->rect.topLeftPx.x + 1, m_expandingEditRegion->rect.bottomRightPx.y)), GetBlendedColor(ThemeColor::TabInactive));
+            NRectf(NVec2f(m_expandingEditRegion->rect.topLeftPx.x, m_expandingEditRegion->rect.topLeftPx.y), NVec2f(m_expandingEditRegion->rect.topLeftPx.x + 1, m_expandingEditRegion->rect.bottomRightPx.y)), ModifyBackgroundColor(ThemeColor::TabInactive));
     }
 
     DisplayLineNumbers();
 
     {
+        // Reset the last line pixel size
+        lastLinePx = NVec2f(0.0f);
+
         TIME_SCOPE(DrawLine);
         for (int displayPass = 0; displayPass < WindowPass::Max; displayPass++)
         {
@@ -1813,7 +1810,7 @@ void ZepWindow::Display()
         auto modeAirlines = GetBuffer().GetMode()->GetAirlines(*this);
 
         // Airline and underline
-        display.DrawRectFilled(m_airlineRegion->rect, GetBlendedColor(ThemeColor::AirlineBackground));
+        display.DrawRectFilled(m_airlineRegion->rect, ModifyBackgroundColor(ThemeColor::AirlineBackground));
 
         auto airHeight = GetEditor().GetDisplay().GetFont(ZepTextType::UI).GetPixelHeight();
         auto border = 12.0f;
@@ -1830,7 +1827,7 @@ void ZepWindow::Display()
                 auto textSize = uiFont.GetTextSize(pText, pText + airline.leftBoxes[i].text.size());
                 textSize.x += border * 2;
 
-                auto col = airline.leftBoxes[i].background;
+                auto col = GetEditor().ModifyBackgroundColor(airline.leftBoxes[i].background);
                 display.DrawRectFilled(NRectf(screenPosYPx, NVec2f(textSize.x + screenPosYPx.x, screenPosYPx.y + airHeight)), col);
 
                 NVec4f textCol = m_pBuffer->GetTheme().GetComplement(airline.leftBoxes[i].background, IsActiveWindow() ? NVec4f(0.0f) : NVec4f(.5f, .5f, .5f, 0.0f));
@@ -1858,7 +1855,7 @@ void ZepWindow::Display()
                     auto textSize = uiFont.GetTextSize(pText, pText + airline.rightBoxes[i].text.size());
                     textSize.x += border * 2;
 
-                    auto col = airline.rightBoxes[i].background;
+                    auto col = GetEditor().ModifyBackgroundColor(airline.rightBoxes[i].background);
                     display.DrawRectFilled(NRectf(screenPosYPx, NVec2f(textSize.x + screenPosYPx.x, screenPosYPx.y + float(airHeight))), col);
 
                     NVec4f textCol = m_pBuffer->GetTheme().GetComplement(airline.rightBoxes[i].background, IsActiveWindow() ? NVec4f(0.0f) : NVec4f(.5f, .5f, .5f, 0.0f));

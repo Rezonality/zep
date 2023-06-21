@@ -194,7 +194,7 @@ private:
 
     void DisableToolTipTillMove();
 
-    NVec4f GetBlendedColor(ThemeColor color) const;
+    NVec4f ModifyBackgroundColor(ThemeColor color) const;
     void GetCursorInfo(NVec2f& pos, NVec2f& size);
 
     void PlaceToolTip(const NVec2f& pos, ToolTipPos location, uint32_t lineGap, const std::shared_ptr<RangeMarker> spMarker);
@@ -262,6 +262,8 @@ private:
     NVec2f m_lastTipQueryPos; // last query location for the tip
     bool m_tipDisabledTillMove = false; // Certain operations will stop the tip until the mouse is moved
     std::map<NVec2f, std::shared_ptr<RangeMarker>> m_toolTips; // All tooltips for a given position, currently only 1 at a time
+
+    NVec2f lastLinePx;
 };
 
 } // namespace Zep

@@ -192,6 +192,15 @@ inline NVec4<T>& operator+=(NVec4<T>& lhs, const NVec4<T>& rhs)
     return lhs;
 }
 template <class T>
+inline NVec4<T>& operator*=(NVec4<T>& lhs, const NVec4<T>& rhs)
+{
+    lhs.x *= rhs.x;
+    lhs.y *= rhs.y;
+    lhs.z *= rhs.z;
+    lhs.w *= rhs.w;
+    return lhs;
+}
+template <class T>
 inline NVec4<T>& operator-=(NVec4<T>& lhs, const NVec4<T>& rhs)
 {
     lhs.x -= rhs.x;
