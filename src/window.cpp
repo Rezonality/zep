@@ -1625,6 +1625,9 @@ void ZepWindow::DisplayMarkerHints()
     const auto lastIndex = m_windowLines[m_visibleLineIndices.y]->lineByteRange.second;
     const auto lineHeight = m_windowLines[m_visibleLineIndices.x]->FullLineHeightPx();
     const float indicatorWidth = 10.0f;
+    auto& theme = m_pBuffer->GetTheme();
+    auto& display = GetEditor().GetDisplay();
+    auto& font = display.GetFont(ZepTextType::Text);
 
     m_pBuffer->ForEachMarker(RangeMarkerType::Mark, Direction::Forward, m_pBuffer->Begin(), m_pBuffer->End(), [&](const std::shared_ptr<RangeMarker>& marker) {
         if (!(marker->displayType & RangeMarkerDisplayType::Background))
@@ -1632,19 +1635,20 @@ void ZepWindow::DisplayMarkerHints()
             return true;
         }
 
+        auto indicatorWidth = font.GetTextSize((const uint8_t*)"More...").x;
         if (marker->GetRange().second > lastIndex)
         {
             const auto lineInfo = m_windowLines[m_visibleLineIndices.y];
-            auto& display = GetEditor().GetDisplay();
             auto rc = NRectf(m_textRegion->rect.Right() - indicatorWidth, m_textRegion->rect.Bottom() - lineHeight, indicatorWidth, lineHeight);
             display.DrawRectFilled(rc, ModifyBackgroundColor(marker->GetBackgroundColor()));
+            display.DrawChars(font, rc.topLeftPx, theme.GetColor(marker->GetTextColor()), (const uint8_t*)"More...");
         }
         else if (marker->GetRange().first < firstIndex)
         {
             const auto lineInfo = m_windowLines[m_visibleLineIndices.x];
-            auto& display = GetEditor().GetDisplay();
             auto rc = NRectf(m_textRegion->rect.Right() - indicatorWidth, m_textRegion->rect.Top(), indicatorWidth, lineHeight);
             display.DrawRectFilled(rc, ModifyBackgroundColor(marker->GetBackgroundColor()));
+            display.DrawChars(font, rc.topLeftPx, theme.GetColor(marker->GetTextColor()), (const uint8_t*)"More...");
         }
 
         return true;

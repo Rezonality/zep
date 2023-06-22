@@ -564,12 +564,15 @@ void ZepMode::AddCommand(std::shared_ptr<ZepCommand> spCmd)
         return;
     }
 
+    auto& undoStack = m_pCurrentWindow->GetBuffer().GetUndoStack();
+    auto& redoStack = m_pCurrentWindow->GetBuffer().GetRedoStack();
+
     spCmd->Redo();
-    m_undoStack.push(spCmd);
+    undoStack.push(spCmd);
 
     // Can't redo anything beyond this point
     std::stack<std::shared_ptr<ZepCommand>> empty;
-    m_redoStack.swap(empty);
+    redoStack.swap(empty);
 
     if (spCmd->GetCursorAfter().Valid())
     {
@@ -584,18 +587,21 @@ void ZepMode::Redo()
         return;
     }
 
-    if (m_redoStack.empty())
+    auto& undoStack = m_pCurrentWindow->GetBuffer().GetUndoStack();
+    auto& redoStack = m_pCurrentWindow->GetBuffer().GetRedoStack();
+
+    if (redoStack.empty())
         return;
 
-    if (std::dynamic_pointer_cast<ZepCommand_GroupMarker>(m_redoStack.top()) != nullptr)
+    if (std::dynamic_pointer_cast<ZepCommand_GroupMarker>(redoStack.top()) != nullptr)
     {
-        m_undoStack.push(m_redoStack.top());
-        m_redoStack.pop();
+        undoStack.push(redoStack.top());
+        redoStack.pop();
     }
 
-    while (!m_redoStack.empty())
+    while (!redoStack.empty())
     {
-        auto& spCommand = m_redoStack.top();
+        auto& spCommand = redoStack.top();
         spCommand->Redo();
 
         if (spCommand->GetCursorAfter().Valid())
@@ -603,8 +609,8 @@ void ZepMode::Redo()
             GetCurrentWindow()->SetBufferCursor(spCommand->GetCursorAfter());
         }
 
-        m_undoStack.push(spCommand);
-        m_redoStack.pop();
+        undoStack.push(spCommand);
+        redoStack.pop();
 
         if (std::dynamic_pointer_cast<ZepCommand_GroupMarker>(spCommand) != nullptr)
         {
@@ -620,18 +626,20 @@ void ZepMode::Undo()
         return;
     }
 
-    if (m_undoStack.empty())
+    auto& undoStack = m_pCurrentWindow->GetBuffer().GetUndoStack();
+    auto& redoStack = m_pCurrentWindow->GetBuffer().GetRedoStack();
+    if (undoStack.empty())
         return;
 
-    if (std::dynamic_pointer_cast<ZepCommand_GroupMarker>(m_undoStack.top()) != nullptr)
+    if (std::dynamic_pointer_cast<ZepCommand_GroupMarker>(undoStack.top()) != nullptr)
     {
-        m_redoStack.push(m_undoStack.top());
-        m_undoStack.pop();
+        redoStack.push(undoStack.top());
+        undoStack.pop();
     }
 
-    while (!m_undoStack.empty())
+    while (!undoStack.empty())
     {
-        auto& spCommand = m_undoStack.top();
+        auto& spCommand = undoStack.top();
         spCommand->Undo();
 
         if (spCommand->GetCursorBefore().Valid())
@@ -639,8 +647,8 @@ void ZepMode::Undo()
             GetCurrentWindow()->SetBufferCursor(spCommand->GetCursorBefore());
         }
 
-        m_redoStack.push(spCommand);
-        m_undoStack.pop();
+        redoStack.push(spCommand);
+        undoStack.pop();
 
         if (std::dynamic_pointer_cast<ZepCommand_GroupMarker>(spCommand) != nullptr)
         {

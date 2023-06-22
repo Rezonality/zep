@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <set>
+#include <stack>
 
 #include "zep/mcommon/logger.h"
 #include "zep/mcommon/signals.h"
@@ -19,6 +20,7 @@ namespace Zep
 class ZepSyntax;
 class ZepTheme;
 class ZepMode;
+class ZepCommand;
 enum class ThemeColor;
 
 enum class Direction
@@ -279,6 +281,9 @@ public:
     Zep::signal<void(ZepBuffer& buffer, const GlyphIterator&, const std::string&)> sigPreInsert;
     Zep::signal<void(ZepBuffer& buffer, const GlyphIterator&, const GlyphIterator&)> sigPreDelete;
 
+    std::stack<std::shared_ptr<ZepCommand>>& GetUndoStack();
+    std::stack<std::shared_ptr<ZepCommand>>& GetRedoStack();
+
 private:
     void MarkUpdate();
 
@@ -310,6 +315,9 @@ private:
     // Modes
     std::shared_ptr<ZepMode> m_spMode;
     fnKeyNotifier m_postKeyNotifier;
+    
+    std::stack<std::shared_ptr<ZepCommand>> m_undoStack;
+    std::stack<std::shared_ptr<ZepCommand>> m_redoStack;
 };
 
 // Notification payload

@@ -228,8 +228,6 @@ protected:
     virtual void ClearSelection();
 
 protected:
-    std::stack<std::shared_ptr<ZepCommand>> m_undoStack;
-    std::stack<std::shared_ptr<ZepCommand>> m_redoStack;
     EditorMode m_currentMode = EditorMode::Normal;
     bool m_lineWise = false;
     GlyphIterator m_visualBegin;

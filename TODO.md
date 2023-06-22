@@ -1,9 +1,7 @@
 # Bugs
 
-
 ALL: 
 Undo shouldn't affect other buffers; need to understand how that even happens.
-Tabs don't work well, especially when there isn't room for them
 Tweak the blend fade out.  Understand the ImGui strange behavior
 insert a bad character near the top of the primitives demo before the macros, and the scene goes.
 

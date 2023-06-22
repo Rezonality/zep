@@ -121,6 +121,11 @@ ThemeColor ZepTheme::GetUniqueColor(uint32_t index) const
     return ThemeColor((uint32_t)ThemeColor::UniqueColor0 + (uint32_t)(index % (uint32_t)ThemeColor::UniqueColorLast));
 }
 
+void ZepTheme::SetColor(ThemeColor themeColor, const NVec4f& col)
+{
+    m_colors[themeColor] = col;
+}
+
 const NVec4f& ZepTheme::GetColor(ThemeColor themeColor) const
 {
     if (themeColor >= ThemeColor::UniqueColor0)

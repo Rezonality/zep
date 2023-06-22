@@ -84,6 +84,7 @@ public:
     virtual const NVec4f& GetColor(ThemeColor themeColor) const;
     virtual NVec4f GetComplement(const NVec4f& col, const NVec4f& adjust = NVec4f(0.0f)) const;
     virtual ThemeColor GetUniqueColor(uint32_t id) const;
+    virtual void SetColor(ThemeColor themeColor, const NVec4f& col);
 
     void SetThemeType(ThemeType type);
     ThemeType GetThemeType() const;

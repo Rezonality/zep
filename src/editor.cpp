@@ -1207,8 +1207,7 @@ void ZepEditor::Display()
     if (GetConfig().style == EditorStyle::Normal)
     {
         // A line along the bottom of the tab region
-        m_pDisplay->DrawRectFilled(
-            NRectf(NVec2f(m_tabRegion->rect.Left(), m_tabRegion->rect.Bottom() - DPI_Y(1)), NVec2f(m_tabRegion->rect.Right(), m_tabRegion->rect.Bottom())), GetTheme().GetColor(ThemeColor::TabInactive));
+        //m_pDisplay->DrawRectFilled(NRectf(NVec2f(m_tabRegion->rect.Left(), m_tabRegion->rect.Bottom() - DPI_Y(1)), NVec2f(m_tabRegion->rect.Right(), m_tabRegion->rect.Bottom())), GetTheme().GetColor(ThemeColor::TabInactive));
     }
 
     // Figure out the active region
@@ -1231,7 +1230,7 @@ void ZepEditor::Display()
         virtualSize = m_tabRegion->children.back()->rect.Right();
     }
 
-    const auto selectHeight = int(DPI_Y(tabSelectLine));
+    const auto selectHeight = DPI_Y(tabSelectLine);
 
     // Clamp it
     m_tabOffsetX = std::min(m_tabOffsetX, 0.0f);
@@ -1312,7 +1311,6 @@ void ZepEditor::Display()
         m_pDisplay->DrawChars(uiFont, rc.topLeftPx + DPI_VEC2(NVec2f(textBorder, textBorder)), textCol, (const uint8_t*)text.c_str());
 
         auto drawTabLine = [&](auto yPos, auto col, auto height) {
-            m_pDisplay->DrawRectFilled(NRectf(rc.Left(), yPos, rc.Width(), height / 2), ModifyBackgroundColor(NVec4f(0.0f, 0.0f, 0.0f, 1.0f)));
             m_pDisplay->DrawRectFilled(NRectf(rc.Left(), yPos + height / 2, rc.Width(), height / 2), ModifyBackgroundColor(col));
         };
 

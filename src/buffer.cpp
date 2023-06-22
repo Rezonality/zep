@@ -1766,5 +1766,15 @@ const std::string& ZepBuffer::GetName() const
     }
     return m_strName;
 }
+    
+std::stack<std::shared_ptr<ZepCommand>>& ZepBuffer::GetUndoStack()
+{
+    return m_undoStack;
+}
+
+std::stack<std::shared_ptr<ZepCommand>>& ZepBuffer::GetRedoStack()
+{
+    return m_redoStack;
+}
 
 } // namespace Zep
