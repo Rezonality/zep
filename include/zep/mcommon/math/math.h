@@ -446,6 +446,11 @@ struct NRect
     {
         bottomRightPx = topLeftPx + size;
     }
+    
+    void SetHeight(const T height)
+    {
+        bottomRightPx.y = topLeftPx.y + height;
+    }
 
     void Adjust(float x, float y, float z, float w)
     {

@@ -1131,16 +1131,12 @@ void ZepEditor::UpdateSize()
     m_commandRegion->fixed_size = NVec2f(0.0f, commandSize);
     m_commandRegion->flags = RegionFlags::Fixed;
 
-    int toneSize = 0;
-    if (GetEditor().GetConfig().tabToneColors)
-    {
-        toneSize = int(DPI_X(tabToneLine));
-    }
+    const auto selectHeight = int(DPI_Y(tabSelectLine));
 
     // Add tabs for extra windows
     if (GetTabWindows().size() > 1)
     {
-        m_tabRegion->fixed_size = NVec2f(0.0f, uiFont.GetPixelHeight() + DPI_X(textBorder) * 2 + toneSize);
+        m_tabRegion->fixed_size = NVec2f(0.0f, uiFont.GetPixelHeight() + DPI_X(textBorder) * 2 + selectHeight);
         m_tabRegion->flags = RegionFlags::Fixed;
     }
     else
@@ -1235,23 +1231,10 @@ void ZepEditor::Display()
         virtualSize = m_tabRegion->children.back()->rect.Right();
     }
 
-    // Move the tab bar origin if approriate
-    /*
-    if (tabRect.Width() != 0.0f)
-    {
-        if ((tabRect.Left() - tabRect.Width() + m_tabOffsetX) < m_tabRegion->rect.Left())
-        {
-            m_tabOffsetX += m_tabRegion->rect.Left() - (tabRect.Left() + m_tabOffsetX - tabRect.Width());
-        }
-        else if ((tabRect.Right() + m_tabOffsetX + tabRect.Width()) > m_tabRegion->rect.Right())
-        {
-            m_tabOffsetX -= (tabRect.Right() + m_tabOffsetX - m_tabRegion->rect.Right() + tabRect.Width());
-        }
-    }*/
+    const auto selectHeight = int(DPI_Y(tabSelectLine));
 
     // Clamp it
     m_tabOffsetX = std::min(m_tabOffsetX, 0.0f);
-    // m_tabOffsetX = std::max(std::min(tabRegionSize - virtualSize, 0.0f), m_tabOffsetX);
 
     // Now display the tabs
     for (auto& tab : m_tabRegion->children)
@@ -1259,7 +1242,8 @@ void ZepEditor::Display()
         auto spTabRegionTab = std::static_pointer_cast<TabRegionTab>(tab);
 
         auto rc = spTabRegionTab->rect;
-        rc.Adjust(m_tabOffsetX, 0.0f);
+        rc.Adjust(m_tabOffsetX, 0);
+        rc.SetHeight(rc.Height() - selectHeight);
 
         auto toneColor = spTabRegionTab->color;
 
@@ -1282,24 +1266,10 @@ void ZepEditor::Display()
 
         if (spTabRegionTab->pTabWindow != GetActiveTabWindow())
         {
-            toneColor *= NVec4f(0.33f, 0.33f, 0.33f, 1.0f);
+            toneColor *= NVec4f(0.4f, 0.4f, 0.4f, 1.0f);
         }
 
         auto backColor = ModifyBackgroundColor(toneColor);
-        m_pDisplay->DrawRectFilled(rc, backColor);
-
-        auto lum = Luminosity(backColor);
-        auto textCol = NVec4f(1.0f);
-        if (lum > .5f)
-        {
-            textCol.x = 0.0f;
-            textCol.y = 0.0f;
-            textCol.z = 0.0f;
-        }
-
-        // Tab background rect
-        // Tab text
-        m_pDisplay->DrawChars(uiFont, rc.topLeftPx + DPI_VEC2(NVec2f(textBorder, 0.0f)), textCol, (const uint8_t*)text.c_str());
 
         auto& buffer = spTabRegionTab->pTabWindow->GetActiveWindow()->GetBuffer();
         if (buffer.HasFileFlags(FileFlags::HasWarnings) || buffer.HasFileFlags(FileFlags::HasErrors))
@@ -1315,11 +1285,42 @@ void ZepEditor::Display()
             {
                 overrideColor = GetTheme().GetColor(ThemeColor::Error);
             }
+            
+            m_pDisplay->DrawRectFilled(rc, backColor);
 
-            auto top = rc.Bottom() - DPI_Y(tabToneLine) - 2;
-            m_pDisplay->DrawRectFilled(NRectf(rc.Left(), top, rc.Width(), 2), ModifyBackgroundColor(NVec4f(0.0f, 0.0f, 0.0f, 1.0f)));
-            m_pDisplay->DrawRectFilled(NRectf(rc.Left(), top + 1, rc.Width(), DPI_Y(tabToneLine)), ModifyBackgroundColor(overrideColor));
+            auto rcError = rc;
+            rcError.SetSize(NVec2f(m_pDisplay->GetFont(ZepTextType::Text).GetDefaultCharSize().x + textBorder, rc.Height()));
+
+            m_pDisplay->DrawRectFilled(rcError, overrideColor);
         }
+        else
+        {
+            m_pDisplay->DrawRectFilled(rc, backColor);
+        }
+
+        auto lum = Luminosity(backColor);
+        auto textCol = NVec4f(1.0f);
+        if (lum > .5f)
+        {
+            textCol.x = 0.0f;
+            textCol.y = 0.0f;
+            textCol.z = 0.0f;
+        }
+
+        // Tab background rect
+        // Tab text
+        m_pDisplay->DrawChars(uiFont, rc.topLeftPx + DPI_VEC2(NVec2f(textBorder, textBorder)), textCol, (const uint8_t*)text.c_str());
+
+        auto drawTabLine = [&](auto yPos, auto col, auto height) {
+            m_pDisplay->DrawRectFilled(NRectf(rc.Left(), yPos, rc.Width(), height / 2), ModifyBackgroundColor(NVec4f(0.0f, 0.0f, 0.0f, 1.0f)));
+            m_pDisplay->DrawRectFilled(NRectf(rc.Left(), yPos + height / 2, rc.Width(), height / 2), ModifyBackgroundColor(col));
+        };
+
+        if (spTabRegionTab->pTabWindow == GetActiveTabWindow())
+        {
+            drawTabLine(rc.Bottom(), GetTheme().GetColor(ThemeColor::TabActive), selectHeight);
+        }
+
     }
 
     // Display the tab

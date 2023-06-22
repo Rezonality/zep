@@ -190,6 +190,7 @@ private:
     void DisplayLineBackground(SpanInfo& lineInfo, ZepSyntax* pSyntax);
     void DisplayScrollers();
     void DisplayGridMarkers();
+    void DisplayMarkerHints();
     void DisplayLineNumbers();
 
     void DisableToolTipTillMove();

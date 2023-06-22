@@ -216,7 +216,7 @@ struct SyntaxProvider
 
 const float bottomBorder = 2.0f;
 const float textBorder = 2.0f;
-const float tabToneLine = 5.0f;
+const float tabSelectLine = 8.0f;
 const float tabSpacing = 1.0f;
 const float leftBorderChars = 4;
 

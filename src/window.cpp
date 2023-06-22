@@ -676,12 +676,12 @@ void ZepWindow::UpdateVisibleLineRange()
         auto& windowLine = *m_windowLines[line];
         m_textSizePx.x = std::max(m_textSizePx.x, windowLine.lineTextSizePx.x);
 
-        if ((windowLine.yOffsetPx + windowLine.FullLineHeightPx()) <= m_textOffsetPx)
+        if (windowLine.yOffsetPx < m_textOffsetPx)
         {
             continue;
         }
 
-        if ((windowLine.yOffsetPx - m_textOffsetPx) >= m_textRegion->rect.Height())
+        if ((windowLine.yOffsetPx) >= (m_textOffsetPx + m_textRegion->rect.Height()))
         {
             break;
         }
@@ -692,7 +692,6 @@ void ZepWindow::UpdateVisibleLineRange()
 
     m_textSizePx.y = m_windowLines[m_windowLines.size() - 1]->yOffsetPx + GetEditor().GetDisplay().GetFont(ZepTextType::Text).GetPixelHeight() + DPI_Y(GetEditor().GetConfig().lineMargins.y) + DPI_Y(GetEditor().GetConfig().lineMargins.x);
 
-    m_visibleLineIndices.y++;
     UpdateScrollers();
 }
 
@@ -1615,6 +1614,43 @@ void ZepWindow::PlaceToolTip(const NVec2f& pos, ToolTipPos location, uint32_t li
     m_toolTips[tipBox.topLeftPx] = spMarker;
 }
 
+void ZepWindow::DisplayMarkerHints()
+{
+    if ((m_visibleLineIndices.x >= m_windowLines.size()) || (m_visibleLineIndices.y >= m_windowLines.size()))
+    {
+        return;
+    }
+
+    const auto firstIndex = m_windowLines[m_visibleLineIndices.x]->lineByteRange.first;
+    const auto lastIndex = m_windowLines[m_visibleLineIndices.y]->lineByteRange.second;
+    const auto lineHeight = m_windowLines[m_visibleLineIndices.x]->FullLineHeightPx();
+    const float indicatorWidth = 10.0f;
+
+    m_pBuffer->ForEachMarker(RangeMarkerType::Mark, Direction::Forward, m_pBuffer->Begin(), m_pBuffer->End(), [&](const std::shared_ptr<RangeMarker>& marker) {
+        if (!(marker->displayType & RangeMarkerDisplayType::Background))
+        {
+            return true;
+        }
+
+        if (marker->GetRange().second > lastIndex)
+        {
+            const auto lineInfo = m_windowLines[m_visibleLineIndices.y];
+            auto& display = GetEditor().GetDisplay();
+            auto rc = NRectf(m_textRegion->rect.Right() - indicatorWidth, m_textRegion->rect.Bottom() - lineHeight, indicatorWidth, lineHeight);
+            display.DrawRectFilled(rc, ModifyBackgroundColor(marker->GetBackgroundColor()));
+        }
+        else if (marker->GetRange().first < firstIndex)
+        {
+            const auto lineInfo = m_windowLines[m_visibleLineIndices.x];
+            auto& display = GetEditor().GetDisplay();
+            auto rc = NRectf(m_textRegion->rect.Right() - indicatorWidth, m_textRegion->rect.Top(), indicatorWidth, lineHeight);
+            display.DrawRectFilled(rc, ModifyBackgroundColor(marker->GetBackgroundColor()));
+        }
+
+        return true;
+    });
+}
+
 void ZepWindow::DisplayGridMarkers()
 {
     auto& display = GetEditor().GetDisplay();
@@ -1722,6 +1758,8 @@ void ZepWindow::Display()
             }
         }
     }
+
+    DisplayMarkerHints();
 
     if (ZTestFlags(GetWindowFlags(), WindowFlags::GridStyle))
     {
