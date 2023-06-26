@@ -681,7 +681,7 @@ void ZepWindow::UpdateVisibleLineRange()
             continue;
         }
 
-        if ((windowLine.yOffsetPx) >= (m_textOffsetPx + m_textRegion->rect.Height()))
+        if ((windowLine.yOffsetPx) > (m_textOffsetPx + m_textRegion->rect.Height()))
         {
             break;
         }
@@ -689,6 +689,9 @@ void ZepWindow::UpdateVisibleLineRange()
         m_visibleLineIndices.x = std::min(m_visibleLineIndices.x, long(line));
         m_visibleLineIndices.y = long(line);
     }
+
+    // This seems
+    m_visibleLineIndices.y++;
 
     m_textSizePx.y = m_windowLines[m_windowLines.size() - 1]->yOffsetPx + GetEditor().GetDisplay().GetFont(ZepTextType::Text).GetPixelHeight() + DPI_Y(GetEditor().GetConfig().lineMargins.y) + DPI_Y(GetEditor().GetConfig().lineMargins.x);
 
@@ -1621,8 +1624,10 @@ void ZepWindow::DisplayMarkerHints()
         return;
     }
 
-    const auto firstIndex = m_windowLines[m_visibleLineIndices.x]->lineByteRange.first;
-    const auto lastIndex = m_windowLines[m_visibleLineIndices.y]->lineByteRange.second;
+    const auto lastLineInfo = m_windowLines[m_visibleLineIndices.y];
+    const auto firstLineInfo = m_windowLines[m_visibleLineIndices.x];
+    const auto firstIndex = firstLineInfo->lineByteRange.first;
+    const auto lastIndex = lastLineInfo->lineByteRange.second;
     const auto lineHeight = m_windowLines[m_visibleLineIndices.x]->FullLineHeightPx();
     const float indicatorWidth = 10.0f;
     auto& theme = m_pBuffer->GetTheme();
@@ -1638,14 +1643,12 @@ void ZepWindow::DisplayMarkerHints()
         auto indicatorWidth = font.GetTextSize((const uint8_t*)"More...").x;
         if (marker->GetRange().second > lastIndex)
         {
-            const auto lineInfo = m_windowLines[m_visibleLineIndices.y];
             auto rc = NRectf(m_textRegion->rect.Right() - indicatorWidth, m_textRegion->rect.Bottom() - lineHeight, indicatorWidth, lineHeight);
             display.DrawRectFilled(rc, ModifyBackgroundColor(marker->GetBackgroundColor()));
             display.DrawChars(font, rc.topLeftPx, theme.GetColor(marker->GetTextColor()), (const uint8_t*)"More...");
         }
         else if (marker->GetRange().first < firstIndex)
         {
-            const auto lineInfo = m_windowLines[m_visibleLineIndices.x];
             auto rc = NRectf(m_textRegion->rect.Right() - indicatorWidth, m_textRegion->rect.Top(), indicatorWidth, lineHeight);
             display.DrawRectFilled(rc, ModifyBackgroundColor(marker->GetBackgroundColor()));
             display.DrawChars(font, rc.topLeftPx, theme.GetColor(marker->GetTextColor()), (const uint8_t*)"More...");

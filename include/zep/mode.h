@@ -187,6 +187,7 @@ public:
 
     // Keys handled by modes
     virtual void AddCommandText(std::string strText);
+    virtual void AddCommand(std::shared_ptr<ZepCommand> spCmd);
 
     virtual GlyphRange GetInclusiveVisualRange() const;
 
@@ -198,8 +199,6 @@ public:
 protected:
     // Do the actual input handling
     virtual void HandleMappedInput(const std::string& input);
-
-    virtual void AddCommand(std::shared_ptr<ZepCommand> spCmd);
 
     virtual const std::string& GetLastCommand() const;
     virtual bool GetCommand(CommandContext& context);
