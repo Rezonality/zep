@@ -32,7 +32,8 @@ enum class ZLT
     DBG,
     INFO,
     WARNING,
-    ERROR
+    ERROR,
+    ALWAYS
 };
 
 struct ZLogger
@@ -101,6 +102,9 @@ private:
                 break;
         case ZLT::ERROR:
                 label = "ERROR";
+                break;
+        case ZLT::ALWAYS:
+                label = "ALWAYS";
                 break;
         case ZLT::NONE:
                 label = "NONE";
