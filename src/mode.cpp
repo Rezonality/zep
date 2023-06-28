@@ -1966,6 +1966,8 @@ bool ZepMode::GetCommand(CommandContext& context)
         }
     }
 
+    GetEditor().Broadcast(std::make_shared<ModifyCommandMessage>(context));
+
     // Update the registers based on context state
     context.UpdateRegisters();
 

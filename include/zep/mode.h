@@ -256,4 +256,16 @@ protected:
     timer m_lastKeyPressTimer;
 };
 
+// Give a client the option to modify a command before it is sent
+struct ModifyCommandMessage : ZepMessage
+{
+    ModifyCommandMessage(CommandContext& c)
+        : ZepMessage(Msg::ModifyCommand)
+        , context(c)
+    {
+    }
+
+    CommandContext& context;
+};
+
 } // namespace Zep

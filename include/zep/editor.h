@@ -100,6 +100,7 @@ enum class ZepMouseButton
 
 enum class Msg
 {
+    ModifyCommand,
     HandleCommand,
     RequestQuit,
     GetClipBoard,
