@@ -1777,4 +1777,86 @@ std::stack<std::shared_ptr<ZepCommand>>& ZepBuffer::GetRedoStack()
     return m_redoStack;
 }
 
+GlyphIterator ZepBuffer::FindMatchingParen(GlyphIterator bufferCursor)
+{
+    int32_t findIndex = 0;
+    std::string delims = "\n(){}[]";
+    Direction dir = Direction::Forward;
+
+    GlyphIterator loc;
+    loc = FindFirstCharOf(bufferCursor, delims, findIndex, dir);
+
+    if (findIndex > 0)
+    {
+        // Make a new end location
+        auto end_loc = loc;
+
+        std::string closing;
+        std::string opening = std::string(1, delims[findIndex]);
+
+        // opening bracket
+        if (findIndex & 0x1)
+        {
+            end_loc++;
+            closing = delims[findIndex + 1];
+        }
+        else
+        {
+            end_loc--;
+            closing = delims[findIndex - 1];
+            dir = Direction::Backward;
+        }
+        std::string openClose = opening + closing;
+
+        // Track open/close braket pairs
+        int closingCount = 1;
+
+        for (;;)
+        {
+            // Find the next open or close of the current delim type
+            int newIndex;
+            end_loc = FindFirstCharOf(end_loc, openClose, newIndex, dir);
+
+            // Fell off, no find
+            if (newIndex < 0)
+            {
+                break;
+            }
+
+            // Found another opener/no good
+            if (newIndex == 0)
+            {
+                closingCount++;
+            }
+            // Found a closer
+            else if (newIndex == 1)
+            {
+                closingCount--;
+                if (closingCount == 0)
+                {
+                    return end_loc;
+                }
+            }
+
+            if (dir == Direction::Forward)
+            {
+                if (end_loc == End())
+                {
+                    break;
+                }
+                end_loc++;
+            }
+            else
+            {
+                if (end_loc == Begin())
+                {
+                    break;
+                }
+                end_loc--;
+            }
+        }
+    }
+    return GlyphIterator();
+}
+
 } // namespace Zep
