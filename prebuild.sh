@@ -1,6 +1,8 @@
-#!/bin/bash -x
+#!/bin/bash -xe
 # Remember to preinstall linux libraries:
 # (ibus,  tar, zip, unzip, buid-prerequisits, xorg-dev)
+
+git submodule update --init
 
 if [ ! -f "./vcpkg/vcpkg" ]; then
     cd vcpkg
