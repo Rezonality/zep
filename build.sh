@@ -8,7 +8,7 @@ fi
 
 if [ "$1" == "qt" ]; then
     CONF_SCRIPT="config_qt.sh"
-elif ["$1" == "imgui"];then
+elif [ "$1" == "imgui" ];then
     CONF_SCRIPT="config_imgui.sh"
 else
     CONF_SCRIPT="config.sh"
