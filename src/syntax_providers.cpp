@@ -55,7 +55,7 @@ static std::unordered_set<std::string> hlsl_identifiers = {
 
 // From here: https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.4.00.pdf
 static std::unordered_set<std::string> glsl_keywords{
-    "#version", "attribute", "const", "uniform", "varying", "layout", "centroid", "flat", "smooth", "noperspective", "patch", "sample", "break", "continue", "do", "for", "while", "switch", "case", "default",
+    "#version", "#extension", "#include", "attribute", "const", "uniform", "varying", "layout", "centroid", "flat", "smooth", "noperspective", "patch", "sample", "break", "continue", "do", "for", "while", "switch", "case", "default",
     "if", "else", "subroutine", "in", "out", "inout", "float", "double", "int", "void", "bool", "true", "false", "invariant", "discard", "return", "mat2", "mat3", "mat4", "dmat2", "dmat3", "dmat4",
     "mat2x2", "mat2x3", "mat2x4", "dmat2x2", "dmat2x3", "dmat2x4", "mat3x2", "mat3x3", "mat3x4", "dmat3x2", "dmat3x3", "dmat3x4", "mat4x2", "mat4x3", "mat4x4", "dmat4x2", "dmat4x3", "dmat4x4",
     "vec2", "vec3", "vec4", "ivec2", "ivec3", "ivec4", "bvec2", "bvec3", "bvec4", "dvec2", "dvec3", "dvec4", "uint", "uvec2", "uvec3", "uvec4", "lowp", "mediump", "highp", "precision",
@@ -182,7 +182,7 @@ static std::unordered_set<std::string> janet_identifiers = {
 };
 
 static std::unordered_set<std::string> scenegraph_keywords = {
-    "pass", "geometry", "vs", "gs", "fs", "model", "scale", "path", "surface", "size", "format", "targets", "clear"
+    "pass", "geometry", "camera", "position", "look_at", "field_of_view", "near_far", "build_as", "vs", "gs", "fs", "model", "scale", "path", "surface", "size", "format", "targets", "clear"
 };
 
 static std::unordered_set<std::string> scenegraph_identifiers = {
