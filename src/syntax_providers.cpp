@@ -182,7 +182,7 @@ static std::unordered_set<std::string> janet_identifiers = {
 };
 
 static std::unordered_set<std::string> scenegraph_keywords = {
-    "pass", "geometry", "camera", "position", "look_at", "field_of_view", "near_far", "build_as", "vs", "gs", "fs", "model", "scale", "path", "surface", "size", "format", "targets", "clear"
+    "pass", "geometry", "camera", "position", "look_at", "field_of_view", "near_far", "build_as", "vs", "gs", "fs", "model", "scale", "path", "surface", "size", "format", "targets", "clear", "ray_group_triangles", "ray_group_general", "ray_group_procedural", "ray_gen", "closest_hit", "miss", "any_hit", "callable", "intersection"
 };
 
 static std::unordered_set<std::string> scenegraph_identifiers = {
@@ -199,7 +199,7 @@ void RegisterSyntaxProviders(ZepEditor& editor)
     editor.RegisterSyntaxFactory({ ".scenegraph" }, SyntaxProvider{ "scenegraph", tSyntaxFactory([](ZepBuffer* pBuffer) {
                                                                        return std::make_shared<ZepSyntax>(*pBuffer, scenegraph_keywords, scenegraph_identifiers);
                                                                    }) });
-    editor.RegisterSyntaxFactory({ ".vert", ".frag", ".geom" }, SyntaxProvider{ "gl_shader", tSyntaxFactory([](ZepBuffer* pBuffer) {
+    editor.RegisterSyntaxFactory({ ".vert", ".frag", ".geom", ".rchit", ".rgen", ".rmiss" }, SyntaxProvider{ "gl_shader", tSyntaxFactory([](ZepBuffer* pBuffer) {
                                                                                    return std::make_shared<ZepSyntax>(*pBuffer, glsl_keywords, glsl_identifiers);
                                                                                }) });
 
