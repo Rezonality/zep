@@ -1312,8 +1312,8 @@ void ZepEditor::Display()
         m_pDisplay->DrawChars(uiFont, rc.topLeftPx + DPI_VEC2(NVec2f(textBorder, textBorder)), textCol, (const uint8_t*)text.c_str());
 
         auto drawTabLine = [&](auto yPos, auto col, auto height) {
-            m_pDisplay->DrawRectFilled(NRectf(rc.Left(), yPos, rc.Width(), height / 2), ModifyBackgroundColor(NVec4f(0.0f, 0.0f, 0.0f, 1.0f)));
-            m_pDisplay->DrawRectFilled(NRectf(rc.Left(), yPos + height / 2, rc.Width(), height / 2), ModifyBackgroundColor(col));
+            m_pDisplay->DrawRectFilled(NRectf(rc.Left(), yPos, rc.Width(), float(height / 2)), ModifyBackgroundColor(NVec4f(0.0f, 0.0f, 0.0f, 1.0f)));
+            m_pDisplay->DrawRectFilled(NRectf(rc.Left(), yPos + height / 2, rc.Width(), float(height / 2)), ModifyBackgroundColor(col));
         };
 
         if (spTabRegionTab->pTabWindow == GetActiveTabWindow())
