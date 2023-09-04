@@ -153,7 +153,7 @@ void RegisterSyntaxProviders(ZepEditor& editor)
     editor.RegisterSyntaxFactory({ ".scenegraph" }, SyntaxProvider{ "scenegraph", tSyntaxFactory([](ZepBuffer* pBuffer) {
                                                                        return std::make_shared<ZepSyntax>(*pBuffer, scenegraph_keywords, scenegraph_identifiers);
                                                                    }) });
-    editor.RegisterSyntaxFactory({ ".vert", ".frag", ".geom", ".rchit", ".rgen", ".rmiss" }, SyntaxProvider{ "gl_shader", tSyntaxFactory([](ZepBuffer* pBuffer) {
+    editor.RegisterSyntaxFactory({ ".vert", ".frag", ".geom", ".rchit", ".rgen", ".rmiss", ".glsl" }, SyntaxProvider{ "gl_shader", tSyntaxFactory([](ZepBuffer* pBuffer) {
                                                                                    return std::make_shared<ZepSyntax>(*pBuffer, glsl_keywords, glsl_identifiers);
                                                                                }) });
 
@@ -161,7 +161,7 @@ void RegisterSyntaxProviders(ZepEditor& editor)
                                                                                                 return std::make_shared<ZepSyntax>(*pBuffer, hlsl_keywords, hlsl_identifiers);
                                                                                             }) });
 
-    editor.RegisterSyntaxFactory({ ".cpp", ".cxx", ".h", ".c" }, SyntaxProvider{ "cpp", tSyntaxFactory([](ZepBuffer* pBuffer) {
+    editor.RegisterSyntaxFactory({ ".cpp", ".cxx", ".hpp", ".h", ".c" }, SyntaxProvider{ "cpp", tSyntaxFactory([](ZepBuffer* pBuffer) {
                                                                                     return std::make_shared<ZepSyntax>(*pBuffer, cpp_keywords, cpp_identifiers);
                                                                                 }) });
 
@@ -177,7 +177,7 @@ void RegisterSyntaxProviders(ZepEditor& editor)
                                                                                                                   return std::make_shared<ZepSyntax>(*pBuffer, lisp_keywords, lisp_identifiers, ZepSyntaxFlags::LispLike);
                                                                                                               }) });
 
-    editor.RegisterSyntaxFactory({ ".cmake", "CMakeLists.txt" }, SyntaxProvider{ "cmake", tSyntaxFactory([](ZepBuffer* pBuffer) {
+    editor.RegisterSyntaxFactory({ ".cmake", "CMakeLists.txt", "CMakeCache.txt" }, SyntaxProvider{ "cmake", tSyntaxFactory([](ZepBuffer* pBuffer) {
                                                                                     return std::make_shared<ZepSyntax>(*pBuffer, cmake_keywords, cmake_identifiers, ZepSyntaxFlags::CaseInsensitive);
                                                                                 }) });
 
