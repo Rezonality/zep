@@ -111,12 +111,7 @@ void CommandContext::UpdateRegisters()
 void CommandContext::GetCommandRegisters()
 {
     // No specified register, so use the default
-    if (keymap.RegisterName() == 0)
-    {
-        registers.push('*');
-        registers.push('+');
-    }
-    else
+    if (keymap.RegisterName() != 0)
     {
         if (keymap.RegisterName() == '_')
         {
@@ -477,9 +472,9 @@ void ZepMode::HandleMappedInput(const std::string& input)
         if (spContext->commandResult.spCommand)
         {
             // If not in insert mode, begin the group, because we have started a new operation
+            // i.e. one group before adding characters and typing stuff.
             if (m_currentMode != EditorMode::Insert || ZTestFlags(spContext->commandResult.flags, CommandResultFlags::BeginUndoGroup))
             {
-                AddCommand(std::make_shared<ZepCommand_GroupMarker>(spContext->buffer));
 
                 // Record for the dot command
                 m_dotCommand = m_currentCommand;
@@ -487,6 +482,7 @@ void ZepMode::HandleMappedInput(const std::string& input)
             else
             {
                 // In insert mode keep the text for the dot command.  An insert adds a command too!
+                // Accumulate
                 m_dotCommand += input;
             }
 
@@ -1400,6 +1396,8 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_StandardPaste)
     {
+        GetEditor().ReadClipboard();
+
         if (context.currentMode == EditorMode::Visual)
         {
             auto range = GetInclusiveVisualRange();
@@ -1407,6 +1405,7 @@ bool ZepMode::GetCommand(CommandContext& context)
             {
                 return true;
             }
+
             context.replaceRangeMode = ReplaceRangeMode::Replace;
             context.op = CommandOperation::Replace;
             context.pRegister = &GetEditor().GetRegister('"');
@@ -1424,6 +1423,8 @@ bool ZepMode::GetCommand(CommandContext& context)
     }
     else if (mappedCommand == id_PasteAfter)
     {
+        GetEditor().ReadClipboard();
+
         if (!context.pRegister->text.empty())
         {
             // Already in visual mode, so replace the selection

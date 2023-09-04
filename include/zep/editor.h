@@ -345,8 +345,8 @@ public:
     void SetRegister(const char reg, const Register& val);
     void SetRegister(const std::string& reg, const char* pszText);
     void SetRegister(const char reg, const char* pszText);
-    Register& GetRegister(const std::string& reg);
-    Register& GetRegister(const char reg);
+    const Register& GetRegister(const std::string& reg);
+    const Register& GetRegister(const char reg);
     const tRegisters& GetRegisters();
 
     void ReadClipboard();
