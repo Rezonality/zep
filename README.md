@@ -1,6 +1,6 @@
 [Zep](https://github.com/Rezonality/zep) - A Mini Editor
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Builds](https://github.com/Rezonality/zep/workflows/Builds/badge.svg)](https://github.com/Rezonality/zep/actions?query=workflow%3ABuilds)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Resonality/zep/blob/master/LICENSE)
@@ -216,6 +216,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://mastodon.world/@nicolas_noble"><img src="https://avatars.githubusercontent.com/u/7281574?v=4?s=100" width="100px;" alt="Nicolas Noble"/><br /><sub><b>Nicolas Noble</b></sub></a><br /><a href="https://github.com/Rezonality/zep/commits?author=nicolasnoble" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://schnappy.xyz"><img src="https://avatars.githubusercontent.com/u/1405255?v=4?s=100" width="100px;" alt="Schnappy"/><br /><sub><b>Schnappy</b></sub></a><br /><a href="https://github.com/Rezonality/zep/commits?author=ABelliqueux" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/fezjo"><img src="https://avatars.githubusercontent.com/u/26350212?v=4?s=100" width="100px;" alt="Jozef Číž"/><br /><sub><b>Jozef Číž</b></sub></a><br /><a href="https://github.com/Rezonality/zep/commits?author=fezjo" title="Code">💻</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Green-Sky"><img src="https://avatars.githubusercontent.com/u/2938071?v=4?s=100" width="100px;" alt="Erik Scholz"/><br /><sub><b>Erik Scholz</b></sub></a><br /><a href="https://github.com/Rezonality/zep/commits?author=Green-Sky" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
