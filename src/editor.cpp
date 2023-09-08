@@ -1236,6 +1236,35 @@ void ZepEditor::Display()
     // Clamp it
     m_tabOffsetX = std::min(m_tabOffsetX, 0.0f);
 
+    NRectf currentTabRc;
+    for (auto& tab : m_tabRegion->children)
+    {
+        auto spTabRegionTab = std::static_pointer_cast<TabRegionTab>(tab);
+        currentTabRc = spTabRegionTab->rect;
+        currentTabRc.Adjust(m_tabOffsetX, 0);
+
+        if (spTabRegionTab->pTabWindow == GetActiveTabWindow())
+        {
+            // Move back to ensure the tab is shown
+            if (currentTabRc.Left() < m_tabRegion->rect.Left())
+            {
+                m_tabOffsetX += (m_tabRegion->rect.Left() - currentTabRc.Left());
+            }
+            else if (currentTabRc.Right() > m_tabRegion->rect.Right())
+            {
+                m_tabOffsetX -= (currentTabRc.Right() - m_tabRegion->rect.Right());
+            }
+        }
+    }
+
+    // If there is extra space and tabOffset is < 0, then adjust it.
+    if (currentTabRc.Right() < m_tabRegion->rect.Right())
+    {
+        m_tabOffsetX += m_tabRegion->rect.Right() - currentTabRc.Right();
+    }
+
+    m_tabOffsetX = std::min(m_tabOffsetX, 0.0f);
+
     // Now display the tabs
     for (auto& tab : m_tabRegion->children)
     {
@@ -1285,7 +1314,7 @@ void ZepEditor::Display()
             {
                 overrideColor = GetTheme().GetColor(ThemeColor::Error);
             }
-            
+
             m_pDisplay->DrawRectFilled(rc, backColor);
 
             auto rcError = rc;
@@ -1320,7 +1349,6 @@ void ZepEditor::Display()
         {
             drawTabLine(rc.Bottom(), GetTheme().GetColor(ThemeColor::TabActive), selectHeight);
         }
-
     }
 
     // Display the tab
