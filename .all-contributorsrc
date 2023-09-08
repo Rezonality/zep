@@ -68,6 +68,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Green-Sky",
+      "name": "Erik Scholz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2938071?v=4",
+      "profile": "https://github.com/Green-Sky",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
@@ -75,5 +84,6 @@
   "repoType": "github",
   "repoHost": "https://github.com",
   "projectName": "zep",
-  "projectOwner": "Rezonality"
+  "projectOwner": "Rezonality",
+  "commitType": "docs"
 }
