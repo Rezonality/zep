@@ -10,6 +10,11 @@
 namespace Zep
 {
 
+namespace
+{
+const NVec2 FontScaleRange(0.25f, 4.0f);
+}
+
 void ZepFont::InvalidateCharCache()
 {
     m_display.SetLayoutDirty();
@@ -78,6 +83,7 @@ NVec2f ZepFont::GetCharSize(const uint8_t* pCh)
 ZepDisplay::ZepDisplay()
     : m_pixelScale(Zep::NVec2f(1.0f))
 {
+    m_defaultTextSize = DefaultTextSize;
     for (size_t i = 0; i < m_fonts.size(); i++)
     {
         m_fonts[i] = nullptr;
@@ -115,6 +121,10 @@ void ZepDisplay::SetLayoutDirty(bool dirty)
 
 void ZepDisplay::SetFont(ZepTextType type, std::shared_ptr<ZepFont> spFont)
 {
+    if (type == ZepTextType::Text)
+    {
+        m_defaultTextSize = spFont->GetPixelHeight();
+    }
     m_fonts[(int)type] = spFont;
 }
 
@@ -134,6 +144,9 @@ void ZepDisplay::SetPixelScale(const NVec2f& scale)
 
 void ZepDisplay::Bigger()
 {
+    m_fontScale += 0.05f;
+    m_fontScale = std::clamp(m_fontScale, FontScaleRange.x, FontScaleRange.y);
+
     for (int i = 0; i < (int)m_fonts.size(); i++)
     {
         if (m_fonts[i] != nullptr)
@@ -146,7 +159,7 @@ void ZepDisplay::Bigger()
             case ZepTextType::Heading3:
             {
                 auto& textFont = GetFont(ZepTextType(i));
-                textFont.SetPixelHeight((int)std::min((float)ceil(textFont.GetPixelHeight() * 1.05), 800.0f));
+                textFont.SetPixelHeight(std::ceil(m_defaultTextSize * m_fontScale));
             }
             default:
                 break;
@@ -157,6 +170,9 @@ void ZepDisplay::Bigger()
 
 void ZepDisplay::Smaller()
 {
+    m_fontScale -= 0.05f;
+    m_fontScale = std::clamp(m_fontScale, FontScaleRange.x, FontScaleRange.y);
+
     for (int i = 0; i < (int)m_fonts.size(); i++)
     {
         if (m_fonts[i] != nullptr)
@@ -169,13 +185,18 @@ void ZepDisplay::Smaller()
             case ZepTextType::Heading3:
             {
                 auto& textFont = GetFont(ZepTextType(i));
-                textFont.SetPixelHeight((int)std::max(4.0f, (float)floor(textFont.GetPixelHeight() / 1.05)));
+                textFont.SetPixelHeight(std::ceil(m_defaultTextSize * m_fontScale));
             }
             default:
                 break;
             }
         }
     }
+}
+    
+float ZepDisplay::GetDefaultTextSize() const
+{
+    return m_defaultTextSize;
 }
 
 } // namespace Zep

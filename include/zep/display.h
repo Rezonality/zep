@@ -31,6 +31,8 @@ enum class ZepTextType
     Count
 };
 
+static const inline float DefaultTextSize = 16.0;
+
 class ZepFont
 {
 public:
@@ -92,11 +94,15 @@ public:
     void Bigger();
     void Smaller();
 
+    float GetDefaultTextSize() const;
+
 protected:
     bool m_bRebuildLayout = false;
     std::array<std::shared_ptr<ZepFont>, (int)ZepTextType::Count> m_fonts;
     std::shared_ptr<ZepFont> m_spDefaultFont;
     NVec2f m_pixelScale;
+    float m_defaultTextSize = DefaultTextSize;
+    float m_fontScale = 1.0f;
 };
 
 class ZepFontNull : public ZepFont

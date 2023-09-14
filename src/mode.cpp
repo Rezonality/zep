@@ -111,7 +111,12 @@ void CommandContext::UpdateRegisters()
 void CommandContext::GetCommandRegisters()
 {
     // No specified register, so use the default
-    if (keymap.RegisterName() != 0)
+    if (keymap.RegisterName() == 0)
+    {
+        registers.push('+');
+        registers.push('*');
+    }
+    else
     {
         if (keymap.RegisterName() == '_')
         {
@@ -475,6 +480,7 @@ void ZepMode::HandleMappedInput(const std::string& input)
             // i.e. one group before adding characters and typing stuff.
             if (m_currentMode != EditorMode::Insert || ZTestFlags(spContext->commandResult.flags, CommandResultFlags::BeginUndoGroup))
             {
+                AddCommand(std::make_shared<ZepCommand_GroupMarker>(spContext->buffer));
 
                 // Record for the dot command
                 m_dotCommand = m_currentCommand;

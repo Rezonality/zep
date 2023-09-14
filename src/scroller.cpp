@@ -30,7 +30,7 @@ Scroller::Scroller(ZepEditor& editor, Region& parent)
     m_bottomButtonRegion->padding = NVec2f(scrollButtonMargin, scrollButtonMargin);
     m_mainRegion->padding = NVec2f(scrollButtonMargin, 0.0f);
 
-    const float scrollButtonSize = 16.0f * editor.GetDisplay().GetPixelScale().x;
+    const float scrollButtonSize = DefaultTextSize * editor.GetDisplay().GetPixelScale().x;
     m_topButtonRegion->fixed_size = NVec2f(0.0f, scrollButtonSize);
     m_bottomButtonRegion->fixed_size = NVec2f(0.0f, scrollButtonSize);
 

@@ -652,7 +652,7 @@ void ZepEditor::UpdateTabs()
             auto tabColor = GetTheme().GetColor(ThemeColor::TabActive);
 
             auto name = window->GetName();
-            auto tabLength = m_pDisplay->GetFont(ZepTextType::Text).GetTextSize((const uint8_t*)name.c_str()).x + DPI_X(textBorder) * 2;
+            auto tabLength = m_pDisplay->GetFont(ZepTextType::UI).GetTextSize((const uint8_t*)name.c_str()).x + DPI_X(textBorder) * 2;
 
             auto spTabRegionTab = std::make_shared<TabRegionTab>();
 
@@ -968,9 +968,12 @@ void ZepEditor::ReadClipboard()
     Broadcast(pMsg);
     if (pMsg->handled)
     {
-        m_registers["+"] = pMsg->str;
-        m_registers["*"] = pMsg->str;
-        m_registers["\""] = pMsg->str;
+        if (pMsg->str != m_registers["+"].text)
+        {
+            m_registers["+"] = pMsg->str;
+            m_registers["*"] = pMsg->str;
+            m_registers["\""] = pMsg->str;
+        }
     }
 }
 
@@ -1318,7 +1321,7 @@ void ZepEditor::Display()
             m_pDisplay->DrawRectFilled(rc, backColor);
 
             auto rcError = rc;
-            rcError.SetSize(NVec2f(m_pDisplay->GetFont(ZepTextType::Text).GetDefaultCharSize().x + textBorder, rc.Height()));
+            rcError.SetSize(NVec2f(uiFont.GetDefaultCharSize().x + textBorder, rc.Height()));
 
             m_pDisplay->DrawRectFilled(rcError, overrideColor);
         }
