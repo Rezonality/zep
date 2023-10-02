@@ -136,7 +136,7 @@ static std::unordered_set<std::string> janet_identifiers = {
 };
 
 static std::unordered_set<std::string> scenegraph_keywords = {
-    "pass", "geometry", "camera", "position", "look_at", "field_of_view", "near_far", "build_as", "vs", "gs", "fs", "model", "scale", "path", "surface", "size", "format", "targets", "clear", "ray_group_triangles", "ray_group_general", "ray_group_procedural", "ray_gen", "closest_hit", "miss", "any_hit", "callable", "intersection"
+    "pass", "post_2d", "geometry", "camera", "position", "look_at", "field_of_view", "near_far", "build_as", "vs", "gs", "fs", "model", "scale", "path", "surface", "size", "format", "targets", "clear", "ray_group_triangles", "ray_group_general", "ray_group_procedural", "ray_gen", "closest_hit", "miss", "any_hit", "callable", "intersection"
 };
 
 static std::unordered_set<std::string> scenegraph_identifiers = {
