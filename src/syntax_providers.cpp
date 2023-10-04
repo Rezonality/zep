@@ -139,6 +139,14 @@ static std::unordered_set<std::string> scenegraph_keywords = {
     "pass", "post_2d", "geometry", "camera", "position", "look_at", "field_of_view", "near_far", "build_as", "vs", "gs", "fs", "model", "scale", "path", "surface", "size", "format", "targets", "clear", "ray_group_triangles", "ray_group_general", "ray_group_procedural", "ray_gen", "closest_hit", "miss", "any_hit", "callable", "intersection"
 };
 
+static std::unordered_set<std::string> py_keywords = {
+    "for", "in", "fn", "def", "range", "import", "from", "int", "float", "vec2", "vec4", "vec3"
+};
+
+static std::unordered_set<std::string> py_identifiers = {
+    "math", "sin", "cos", "circle", "bezier", "line", "text"
+};
+
 static std::unordered_set<std::string> scenegraph_identifiers = {
     ":", "=", "default", "default_color", "default_depth", "screen_rect"
 };
@@ -197,6 +205,12 @@ void RegisterSyntaxProviders(ZepEditor& editor)
         { ".md", ".markdown" },
         SyntaxProvider{ "markdown", tSyntaxFactory([](ZepBuffer* pBuffer) {
                            return std::make_shared<ZepSyntax_Markdown>(*pBuffer, markdown_keywords, markdown_identifiers, ZepSyntaxFlags::CaseInsensitive);
+                       }) });
+    
+    editor.RegisterSyntaxFactory(
+        { ".py", ".python" },
+        SyntaxProvider{ "python", tSyntaxFactory([](ZepBuffer* pBuffer) {
+                           return std::make_shared<ZepSyntax>(*pBuffer, py_keywords, py_identifiers, ZepSyntaxFlags::CaseInsensitive);
                        }) });
 }
 
