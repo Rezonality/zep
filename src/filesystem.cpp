@@ -25,7 +25,7 @@ ZepFileSystemCPP::ZepFileSystemCPP(const fs::path& configPath)
     // Use the config path
     m_configPath = configPath;
 
-    m_workingDirectory = fs::path(cpp_fs::current_path().string());
+    m_workingDirectory = cpp_fs::current_path();
 
     // Didn't find the config path, try the working directory
     if (!Exists(m_configPath))
