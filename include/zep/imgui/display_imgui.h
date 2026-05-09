@@ -52,7 +52,9 @@ public:
     {
         // This is the code from ImGui internals; we can't call GetTextSize, because it doesn't return the correct 'advance' formula, which we
         // need as we draw one character at a time...
-        const float font_size = m_pFont->FontSize;
+        // ImFont::FontSize was removed in ImGui v1.92; LegacySize preserves the
+        // pre-1.92 fixed-size value (the size passed to AddFontFromFileTTF).
+        const float font_size = m_pFont->LegacySize;
         ImVec2 text_size = m_pFont->CalcTextSizeA(float(GetPixelHeight()), FLT_MAX, FLT_MAX, (const char*)pBegin, (const char*)pEnd, NULL);
         if (text_size.x == 0.0)
         {
