@@ -4,7 +4,7 @@
 #include <locale>
 #include <string>
 
-#include <codecvt>
+#include <cstdint>
 
 #include "zep/mcommon/string/stringutils.h"
 
@@ -47,18 +47,66 @@ void string_replace_in_place(std::string& subject, const std::string& search, co
     }
 }
 
-#pragma warning(disable : 4996)
-// https://stackoverflow.com/questions/4804298/how-to-convert-wstring-into-string
+// std::wstring_convert and std::codecvt_utf8 were deprecated in C++17 and
+// removed in C++26. libstdc++ still ships them, which is why this built; libc++
+// does not, so it breaks under any libc++ toolchain (emscripten today, Apple
+// clang once it catches up). Hand-rolled UTF-8 encoding instead - it needs no
+// locale facet, and it also retires the MSVC 4996 deprecation pragma this
+// function used to be wrapped in.
 std::string string_from_wstring(const std::wstring& str)
 {
-    using convert_type = std::codecvt_utf8<wchar_t>;
-    std::wstring_convert<convert_type, wchar_t> converter;
+    std::string out;
+    out.reserve(str.size());
 
-    // use converter (.to_bytes: wstr->str, .from_bytes: str->wstr)
-    std::string converted_str = converter.to_bytes(str);
-    return converted_str;
+    for (size_t i = 0; i < str.size(); i++)
+    {
+        uint32_t cp = static_cast<uint32_t>(str[i]);
+
+        // On Windows wchar_t is 16 bits, so a non-BMP code point arrives as a
+        // surrogate pair that has to be recombined before encoding.
+        if (sizeof(wchar_t) == 2 && cp >= 0xd800 && cp <= 0xdbff && (i + 1) < str.size())
+        {
+            uint32_t low = static_cast<uint32_t>(str[i + 1]);
+            if (low >= 0xdc00 && low <= 0xdfff)
+            {
+                cp = 0x10000 + ((cp - 0xd800) << 10) + (low - 0xdc00);
+                i++;
+            }
+        }
+
+        // Anything unpaired or out of range becomes U+FFFD rather than emitting
+        // invalid UTF-8; a lone surrogate has no encoding.
+        if (cp > 0x10ffff || (cp >= 0xd800 && cp <= 0xdfff))
+        {
+            cp = 0xfffd;
+        }
+
+        if (cp < 0x80)
+        {
+            out += static_cast<char>(cp);
+        }
+        else if (cp < 0x800)
+        {
+            out += static_cast<char>(0xc0 | (cp >> 6));
+            out += static_cast<char>(0x80 | (cp & 0x3f));
+        }
+        else if (cp < 0x10000)
+        {
+            out += static_cast<char>(0xe0 | (cp >> 12));
+            out += static_cast<char>(0x80 | ((cp >> 6) & 0x3f));
+            out += static_cast<char>(0x80 | (cp & 0x3f));
+        }
+        else
+        {
+            out += static_cast<char>(0xf0 | (cp >> 18));
+            out += static_cast<char>(0x80 | ((cp >> 12) & 0x3f));
+            out += static_cast<char>(0x80 | ((cp >> 6) & 0x3f));
+            out += static_cast<char>(0x80 | (cp & 0x3f));
+        }
+    }
+
+    return out;
 }
-#pragma warning(default : 4996)
 
 // CM: I can't remember where this came from; please let me know if you do!
 // I know it is open source, but not sure who wrote it.
