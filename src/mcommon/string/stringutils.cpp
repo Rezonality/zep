@@ -338,12 +338,12 @@ std::string string_slurp_if(std::string::const_iterator& itr, std::string::const
     auto itrCurrent = itr;
     if (*itrCurrent == first)
     {
-        while ((itrCurrent != itrEnd) && *itrCurrent != last)
+        while ((itrCurrent < itrEnd) && *itrCurrent != last)
         {
             itrCurrent++;
         }
 
-        if ((itrCurrent != itrEnd) && *itrCurrent == last)
+        if ((itrCurrent < itrEnd) && *itrCurrent == last)
         {
             itrCurrent++;
             auto ret = std::string(itr, itrCurrent);
@@ -362,7 +362,7 @@ std::string string_slurp_if(std::string::const_iterator& itr, std::string::const
     }
 
     auto itrCurrent = itr;
-    while ((itrCurrent != itrEnd) && fnIs(*itrCurrent))
+    while ((itrCurrent < itrEnd) && fnIs(*itrCurrent))
     {
         itrCurrent++;
     }
